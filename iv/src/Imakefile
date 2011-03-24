@@ -1,0 +1,22 @@
+/**/#
+/**/# src - root of the InterViews sources' directory tree
+/**/# 
+
+#define IHaveSubdirs
+
+SUBDIRS = \
+	config \
+	InterViews \
+	libInterViews \
+	libgraphic \
+	bin
+
+MakeSubdirs($(SUBDIRS))
+DependSubdirs($(SUBDIRS))
+BootstrapSubdirs(bin)
+InstallManSubdirs(man)
+FormatSubdirs(man)
+PrintSubdirs(man)
+
+subinstall:
+	$(MAKE) install SUBDIRS="libInterViews libgraphic bin"

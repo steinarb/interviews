@@ -1,0 +1,35 @@
+/**/#
+/**/# cover - release notes and changes from previous releases
+/**/#
+
+all::
+depend::
+install.man::
+
+FORMATTED	= title.PS preface.PS notes2.6.PS diffs2.6.PS
+PRINTED		= title.LP preface.LP notes2.6.LP diffs2.6.LP
+TROFFFLAGS	= -ms
+TROFFSRCS	= title.nr preface.ms notes2.6.ms diffs2.6.ms
+
+print: $(PRINTED)
+
+format: $(FORMATTED)
+
+.SUFFIXES: .nr .ms .LP .PS
+
+.nr.LP:
+	$(TROFF) $<
+
+.ms.LP:
+	$(TROFF) $(TROFFFLAGS) $<
+
+.nr.PS:
+	$(RM) $@
+	$(TROFF) -t $< > $@
+
+.ms.PS:
+	$(RM) $@
+	$(TROFF) -t $(TROFFFLAGS) $< > $@
+
+clean::
+	$(RM) $(FORMATTED)

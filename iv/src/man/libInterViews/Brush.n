@@ -1,0 +1,51 @@
+.TH Brush 3I "15 June 1987" "InterViews" "InterViews Reference Manual"
+.SH NAME
+Brush \- line style and width for a painter
+.SH SYNOPSIS
+.B #include <InterViews/brush.h>
+.SH DESCRIPTION
+A
+.B Brush
+defines the line thickness and line style for Painter operations that
+draw lines, curves, and unfilled shapes.  The effect of these
+operations is as if a line-segment equal in length to the brush's
+width were dragged along an infinitely thin path between the specified
+coordinates.  At each point along the path the brush is angled
+perpendicular to the path.  As a special case, a brush width of zero
+specifies a minimal-width line.  Many devices can render minimal-width
+lines more quickly than wide lines, but the resultant display may be
+device-dependent.
+.PP
+The effect of the operations is further influenced by the brush style.
+A solid brush paints all pixels along the path with foreground color.
+A dashed brush defines alternating foreground and background segments,
+measured along the length of the path.  Foreground segments are
+painted with foreground color.  The filling of background segments is
+affected by the setting of the painter's FillBg flag: if FillBg is
+true, background segments are painted with background color; if the
+flag is false, background segments are left unpainted.
+.PP
+The global variable ``single''
+points to a Brush for drawing minimal-width solid lines.
+.SH PUBLIC OPERATIONS
+.TP
+.B "Brush(int pattern[], int count, int width = 1)"
+Construct a brush with the specified width and line style.
+\fIPattern\fP contains an array of integers that specifies the length
+of successive foreground and background segments.  Even-numbered array
+indices (starting from 0) specify the length of foreground segments;
+odd-numbered indices specify background segments.  \fICount\fP
+contains the number of entries in the array.  A \fIcount\fP of zero
+specifies a solid brush.
+.TP
+.B "Brush(int pattern, int width = 1)"
+Define a brush with a given width and a style specified by a bit
+vector.  The least significant 16 bits of \fIpattern\fP are
+interpreted as a bit pattern; one bits specify foreground segments and
+zero bits specify background segments.  A \fIpattern\fP of 0xffff
+specifies a solid brush.
+.TP
+.B "int Width()"
+Return the brush's width in pixels.
+.SH SEE ALSO
+Painter(3I)

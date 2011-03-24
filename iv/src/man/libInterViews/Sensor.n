@@ -1,0 +1,60 @@
+.TH Sensor 3I "11 December 1987" "InterViews" "InterViews Reference Manual"
+.SH NAME
+Sensor \- input interest for interactors
+.SH SYNOPSIS
+.B #include <InterViews/sensor.h>
+.SH DESCRIPTION
+A sensor specifies a set of interesting input events.
+Several sensors are predefined as global variables.
+The sensor ``allEvents'' is interested in all user input events
+(excludes ChannelEvent and TimerEvent);
+``noEvents'' is not interested in any events;
+``updownEvents'' is interested in UpEvents and DownEvents;
+and ``onoffEvents'' is interested in EnterEvents and LeaveEvents.
+.SH PUBLIC OPERATIONS
+.TP
+.B Sensor()
+Create a new sensor that is not interested in any events.
+.TP
+.B Sensor(Sensor*)
+Create a sensor whose interests are the same as the given sensor.
+.TP
+.B "void Catch(EventType)"
+.ns
+.TP
+.B "void CatchButton(EventType, int)"
+.ns
+.TP
+.B "void CatchChannel(int)"
+.ns
+.TP
+.B "void CatchTimer(int sec, int usec)"
+Express interest in an event.
+CatchButton can be used for keys as well as buttons,
+though it is necessary to know the key code.
+Not all types of events make sense for all the operations;
+for example, Catch(ChannelEvent) is not meaningful.
+Such requests are silently ignored.
+.TP
+.B "void Ignore(EventType)"
+.ns
+.TP
+.B "void IgnoreButton(EventType, int)"
+.ns
+.TP
+.B "void IgnoreChannel(int)"
+Remove interest in an event.
+Ignore means no interest in any events of a particular kind;
+thus Ignore(DownEvent) means pressing any button will not generate an event.
+.TP
+.B "void CatchRemote()"
+.ns
+.TP
+.B "void IgnoreRemote()"
+Express or remove interest in access to the structure
+of an interactor's canvas.
+Only a world view should use these operations, as such access
+is reported using the WorldView::InsertRemote and WorldView::ChangeRemote
+operations.
+.SH SEE ALSO
+Interactor(3I), World(3I), WorldView(3I)

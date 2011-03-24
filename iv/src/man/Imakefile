@@ -1,0 +1,26 @@
+/**/#
+/**/# man - root of the InterViews manual's directory tree
+/**/#
+
+#define IHaveSubdirs
+
+SUBDIRS	= \
+	cover \
+	commands \
+	libInterViews \
+	libgraphic
+
+all::
+depend::
+install.man:: install
+FormatSubdirs($(SUBDIRS))
+PrintSubdirs($(SUBDIRS))
+
+/*
+ * Create the directories in which to install man pages if necessary.
+ */
+
+MakeDirectories(install,$(MANPATH) $(MANDIR) $(LIBMANDIR))
+#if InstallRelative
+MakeDirectories(install,$(RELATIVEMANDIR))
+#endif

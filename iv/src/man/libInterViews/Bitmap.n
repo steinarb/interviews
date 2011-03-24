@@ -1,0 +1,105 @@
+.TH Bitmap 3I "24 April 1989" "InterViews" "InterViews Reference Manual"
+.SH NAME
+Bitmap \- bit mapped data
+.SH SYNOPSIS
+.B #include <InterViews/bitmap.h>
+.SH DESCRIPTION
+A \fIBitmap\fP is a two\-dimensional array of boolean values.  Bitmaps
+can be used in Painter operations or to define window manager icons
+for top\-level Interactors.  Bitmaps can be constructed from data
+contained in a file, from data supplied by the application program, or
+from a font character.  Operations include geometric transformations,
+common bit transformations, and individual bit manipulations.
+Geometric transformations and painting operations are relative to an
+\fIorigin\fP.
+.SH PUBLIC OPERATIONS
+.TP
+.B "Bitmap(const char* filename)"
+Create a bitmap from the named file.
+The file format is that produced by the X bitmap(3X) program.  The
+bitmap origin will be the \fIhot spot\fP specified by the file or the
+lower left corner if the file does not define a hot spot.
+.TP
+.B "Bitmap(void* data, int width, int height, int x0 = 0, int y0 = 0)"
+Create a bitmap from the data specified.  The data format is the same
+as that of a bitmap(3X) file.  The coordinates \fIx0\fP and \fIy0\fP
+specify the bitmap origin.  The data is transferred into an internal
+format, so subsequent changes in either the passed data or the bitmap
+will not affect the other.  Passing a nil pointer to \fIdata\fP is
+equivalent to passing an array with all values set to \fIfalse\fP.
+.TP
+.B "Bitmap(Font* font, int character)"
+Create a bitmap from the given character of the font.  The bitmap
+width and height will reflect the actual size of the character glyph
+and will not usually equal the width and height of the character cell
+as reported by operations on the Font.  The bitmap origin is set to
+the character origin.
+.TP
+.B "Bitmap(Bitmap*)"
+Create a copy of the given bitmap.
+.TP
+.B "int Left()"
+.ns
+.TP
+.B "int Right()"
+.ns
+.TP
+.B "int Top()"
+.ns
+.TP
+.B "int Bottom()"
+.ns
+.TP
+.B "int Width()"
+.ns
+.TP
+.B "int Height()"
+These operations return the size and bounds of the bitmap.
+.TP
+.B "void Transform(Transformer*)"
+.ns
+.TP
+.B "void Scale(float x, float y)"
+.ns
+.TP
+.B "void Rotate(float angle)"
+Transform the bitmap in place.  \fIScale\fP and \fIRotate\fP provide
+convenient interfaces to common transformations.  Transformations are
+relative to the bitmap origin.
+.TP
+.B "void FlipHorizontal()"
+.ns
+.TP
+.B "void FlipVertical()"
+.ns
+.TP
+.B "void Rotate90()"
+.ns
+.TP
+.B "void Rotate180()"
+.ns
+.TP
+.B "void Rotate270()"
+.ns
+.TP
+.B "void Invert()"
+Perform an operation on the bitmap data.  \fIFlipHorizontal\fP and
+\fIFlipVertical\fP reflect the data about its vertical or horizontal
+center respectively.  The \fIRotate\fP functions move the data in a
+counter\-clockwise direction about the bitmap center.  \fIInvert\fP
+toggles each bit in the bitmap.  In each case, the bitmap origin is
+unchanged.
+.TP
+.B "boolean Peek(int x, int y)"
+.ns
+.TP
+.B "void Poke(boolean bit, int x, int y)"
+.ns
+.TP
+.B "boolean Contains(int x, int y)"
+Operations for reading and writing individual bits in the bitmap.  If
+the specified coordinates are not within the bitmap bounds,
+\fIContains\fP and \fIPeek\fP return false, and \fIPoke\fP has no
+effect.
+.SH "SEE ALSO"
+Painter(3I), Transformer(3I)

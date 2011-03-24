@@ -1,0 +1,23 @@
+/**/#
+/**/# graphics - libgraphic library demo program
+/**/#
+
+#if CompileInMachineDepSubdir && !defined(InMachineDepSubdir)
+#define IHaveMachineDepSubdirs
+
+MakeMachineDepSubdir()
+DependMachineDepSubdir()
+
+#else
+
+LOCAL_LIBRARIES	= $(LIBGRAPHIC) $(LIBINTERVIEWS)
+SYS_LIBRARIES	= -l$X -lm
+
+SRCS = ${SRC}//**/*.c
+OBJS = graphics.o
+
+ComplexProgramTarget(graphics)
+
+MakeObjectFromSrc(graphics)
+
+#endif /* if compiling in subdirectory */

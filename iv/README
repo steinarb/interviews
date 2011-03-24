@@ -1,0 +1,23 @@
+	How to Build InterViews in Five Easy Steps
+
+1. Install bootstrap programs			make bootstrap
+2. Generate the global Makefile			make Makefile
+3. Generate local Makefiles			make Makefiles
+4. Generate dependencies in local Makefiles	make depend
+5. Generate all the binaries			make -k
+
+Alternatively, saying 'make World' does steps 2,3,4 and 5.
+
+Step 1 creates a directory named iv/installed/bin/<CPU>, where <CPU>
+represents your computer's cpu type, and installs imake, makedepend,
+and some other programs in it.  To make the rest of the steps work,
+you must type
+
+   setenv CPU <CPU>
+   setenv PATH /iv/installed/bin/<CPU>:$PATH
+
+before you say 'make Makefile' or 'make World' in step 2.
+
+For more detailed instructions, read the release notes and differences
+from previous releases in iv/src/man/cover.  These files also tell you
+who to contact if you have any questions or problems.

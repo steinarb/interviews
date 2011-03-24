@@ -1,0 +1,182 @@
+/*
+ * IVproj.tmpl - project-specific parameters and make variables
+ */
+
+/*
+ * You can install InterViews directly into your system area if you don't
+ * want to make these symbolic links by hand to "install" InterViews:
+ *
+ * /usr/lib/X11/config/InterViews -> installed/config
+ * /usr/include/InterViews	  -> installed/include
+ * /usr/lib/libInterViewsX11.a	  -> installed/lib/CPU/libInterViewsX11.a
+ * /usr/lib/libgraphic.a	  -> installed/lib/CPU/libgraphic.a
+ * /usr/lib/libtext.a		  -> installed/lib/CPU/libtext.a
+ *
+ * (People must also put installed/bin/{CPU.X11,CPU,all} in their PATH.)
+ *
+ */
+#ifndef InstallRelative
+#ifdef UseInstalled
+/* exception: relative install impossible outside of source tree */
+#define InstallRelative NO
+#else
+/* always install under $(TOP)/installed when inside source tree */
+#define InstallRelative YES
+#endif
+#endif
+
+/*
+ * BinDir, etc., tell the Makefiles where to install things directly
+ * into the system area.  RelativeBinDir, etc., tell the Makefiles where
+ * to install things under $(TOP)/installed.
+ */
+#ifndef DestDir
+#define DestDir /* as nothing */
+#endif
+
+#ifndef BinDir
+#define BinDir $(DESTDIR)/usr/bin/WindowSystem
+#endif
+#ifndef RelativeBinDir
+#define RelativeBinDir $(TOP)/installed/bin/$$CPU.$X
+#endif
+
+#ifndef LocalBinDir
+#define LocalBinDir $(DESTDIR)/usr/local/bin
+#endif
+#ifndef RelativeLocalBinDir
+#define RelativeLocalBinDir $(TOP)/installed/bin/$$CPU
+#endif
+
+#ifndef IncRoot
+#define IncRoot $(DESTDIR)/usr/include
+#endif
+#ifndef IncDir
+#define IncDir $(INCROOT)/InterViews
+#endif
+#ifndef RelativeIncDir
+#define RelativeIncDir $(TOP)/installed/include
+#endif
+
+#ifndef UsrLibDir
+#define UsrLibDir $(DESTDIR)/usr/lib
+#endif
+#ifndef RelativeUsrLibDir
+#define RelativeUsrLibDir $(TOP)/installed/lib/$$CPU
+#endif
+
+#ifndef XConfigDir
+#define XConfigDir UsrLibDir/X11/config
+#endif
+#ifndef ConfigDir
+#define ConfigDir $(XCONFIGDIR)/InterViews
+#endif
+#ifndef RelativeConfigDir
+#define RelativeConfigDir $(TOP)/installed/config
+#endif
+
+#ifndef ManDirectoryRoot
+#define ManDirectoryRoot /usr/man	/* if not set in .cf */
+#endif
+#ifndef ManPath
+#define ManPath $(DESTDIR)/**/ManDirectoryRoot
+#endif
+#ifndef ManSourcePath
+#define ManSourcePath $(MANPATH)/man
+#endif
+#ifndef ManSuffix
+#define ManSuffix	n		/* use just one tab or cpp will die */
+#endif
+#ifndef LibManSuffix
+#define LibManSuffix	n		/* use just one tab or cpp will die */
+#endif
+#ifndef ManDir
+#define ManDir $(MANSOURCEPATH)/**/ManSuffix
+#endif
+#ifndef LibmanDir
+#define LibmanDir $(MANSOURCEPATH)/**/LibManSuffix
+#endif
+#ifndef RelativeManDir
+#define RelativeManDir $(TOP)/installed/man
+#endif
+
+/*
+ * You can install InterViews' copies of the platform .cf files if you
+ * want imake to use an InterViews platform .cf file rather than any
+ * platform .cf file you may have in /usr/lib/X11/config.
+ */
+#ifndef InstallPlatformCfFiles
+#define InstallPlatformCfFiles NO
+#endif
+
+/**/#
+/**/# project-specific make variables
+/**/#
+
+/*
+ * Where "make install" should install things.
+ */
+#if InstallRelative
+        USRLIBDIR = RelativeUsrLibDir	/* installed libraries */
+           BINDIR = RelativeBinDir	/* installed window sys-dep programs */
+      LOCALBINDIR = RelativeLocalBinDir	/* installed window sys-ind programs */
+           INCDIR = RelativeIncDir	/* installed includes */
+     TEMPLATESDIR = $(INCDIR)/Templates	/* installed templates */
+        CONFIGDIR = RelativeConfigDir	/* installed config files */
+       XCONFIGDIR = XConfigDir		/* installed config files for X11 */
+          MANPATH = ManPath		/* parent dir of next path */
+    MANSOURCEPATH = ManSourcePath	/* prefix of next two paths */
+           MANDIR = ManDir		/* installed program man pages */
+        LIBMANDIR = LibmanDir		/* installed library man pages */
+   RELATIVEMANDIR = RelativeManDir	/* installed man pages */
+#else
+          DESTDIR = DestDir		/* parent dir of all following paths */
+        USRLIBDIR = UsrLibDir		/* installed libraries */
+           BINDIR = BinDir		/* installed window sys-dep programs */
+      LOCALBINDIR = LocalBinDir		/* installed window sys-ind programs */
+          INCROOT = IncRoot		/* parent dir of next path */
+           INCDIR = IncDir		/* installed includes */
+     TEMPLATESDIR = $(INCDIR)/Templates	/* installed templates */
+        CONFIGDIR = ConfigDir		/* installed config files */
+       XCONFIGDIR = XConfigDir		/* installed config files for X11 */
+          MANPATH = ManPath		/* parent dir of next path */
+    MANSOURCEPATH = ManSourcePath	/* prefix of next two paths */
+           MANDIR = ManDir		/* installed program man pages */
+        LIBMANDIR = LibmanDir		/* installed library man pages */
+#endif
+
+/*
+ * Where Makefiles should find things to compile, link with, or whatever.
+ */
+#ifndef UseInstalled
+            IVSRC = $(TOP)/src
+        CONFIGSRC = $(IVSRC)/config
+       INCLUDESRC = $(IVSRC)/InterViews
+     TEMPLATESSRC = $(INCLUDESRC)/Templates
+           BINSRC = $(IVSRC)/bin
+         IMAKESRC = $(BINSRC)/imake
+        SCRIPTSRC = $(BINSRC)/scripts
+ LIBINTERVIEWSSRC = $(IVSRC)/libInterViews
+    LIBGRAPHICSRC = $(IVSRC)/libgraphic
+       LIBTEXTSRC = $(IVSRC)/libtext
+           MANSRC = $(IVSRC)/man
+#endif
+
+#ifdef UseInstalled
+        TEMPLATES = $(TEMPLATESDIR)
+    LIBINTERVIEWS = $(USRLIBDIR)/libInterViews$X.a
+       LIBGRAPHIC = $(USRLIBDIR)/libgraphic.a
+          LIBTEXT = $(USRLIBDIR)/libtext.a
+#else
+#if CompileInMachineDepSubdir
+        TEMPLATES = $(TEMPLATESSRC)
+    LIBINTERVIEWS = $(LIBINTERVIEWSSRC)/$M/libInterViews$X.a
+       LIBGRAPHIC = $(LIBGRAPHICSRC)/$M/libgraphic.a
+          LIBTEXT = $(LIBTEXTSRC)/$M/libtext.a
+#else
+        TEMPLATES = $(TEMPLATESSRC)
+    LIBINTERVIEWS = $(LIBINTERVIEWSSRC)/libInterViews$X.a
+       LIBGRAPHIC = $(LIBGRAPHICSRC)/libgraphic.a
+          LIBTEXT = $(LIBTEXTSRC)/libtext.a
+#endif
+#endif

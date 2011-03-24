@@ -1,0 +1,66 @@
+.TH Connection 3I "29 May 1989" "InterViews" "InterViews Reference Manual"
+.SH NAME
+Connection \- interprocess communication
+.SH SYNOPSIS
+.B #include <InterViews/connection.h>
+.SH DESCRIPTION
+Connection provides a simple interface to interprocess communication.
+A general connection can be made between processes
+on the same or different machines.
+A local connection can only be made between processes on the same machine.
+.SH PUBLIC OPERATIONS
+.TP
+.B "Connection()"
+.ns
+.TP
+.B "~Connection()"
+Construct a connection, initially not associated with any process.
+.TP
+.B "Connection(int)"
+Construct a connection associated with the given Unix file descriptor.
+.TP
+.B "void CreateService(const char* host, int port)"
+.ns
+.TP
+.B "void CreateLocalService(const char*)"
+Create a connection and bind it to a particular address.
+In the general case, the address is defined by
+the host name and Internet port number.
+In the local case, a string name is used.
+.TP
+.B "boolean OpenService(const char* host, int port)"
+.ns
+.TP
+.B "boolean OpenLocalService(const char*)"
+Establish a connection with another process.
+It is assumed the process has already created the service.
+If no connection can be made, the open functions return false.
+.TP
+.B "Connection* AcceptClient()"
+Create a new connection for communicating with a client.
+AcceptClient is called by servers that receive input
+on a general service connection.
+.TP
+.B "int Pending()"
+Return the number of bytes waiting to be read from a connection.
+.TP
+.B "int Read(void* buf, int n)"
+Read up to \fIn\fP bytes from the connection into \fIbuf\fP
+Return the actual number of bytes read.
+.TP
+.B "int Write(const void* buf, int n)"
+Write \fIn\fP bytes from \fIbuf\fP to the connection.
+Return the actual number of bytes written.
+.TP
+.B "int WritePad(const void* buf, int n, int pad)"
+Write \fIpad\fP bytes to the connection.
+The first \fIn\fP bytes are from \fIbuf\fP, any remaining are zero.
+Return the actual number of bytes written.
+.TP
+.B "int Descriptor()"
+Return the file descriptor associated with the connection.
+.TP
+.B "void Close()"
+Close the connection.
+Subsequent operations, such as Read and Write, will return
+an error code of -1.

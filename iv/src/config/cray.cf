@@ -1,0 +1,47 @@
+/**/# platform:  $XConsortium: cray.cf,v 1.12 89/10/09 17:27:19 jim Exp $
+
+
+/*
+ * SET VERSION NUMBERS BEFORE MAKING MAKEFILES; 
+ */
+
+#define SystemV			YES
+
+#define OSName			UNICOS 5.1
+#define OSMajorVersion		5
+#define OSMinorVersion		1
+
+#define InstallCmd sh $(SCRIPTSRC)/install.sh
+#define RemoveTargetProgramByMoving YES
+#define LibraryDefines 		-DWORD64 -DSYSV  -DUSG
+#define StandardDefines		-DSYSV  -DUSG
+#define StandardCppDefines	-DSYSV -DUSG
+#define ExecableScripts		NO
+#define BuildServer		NO
+#define HasVoidSignalReturn	YES
+#define NeedBerklibInXlib	NO
+#define CcCmd			scc
+
+#if CRAY2 && !UNICOS6
+#define LoaderLibPrefix -L
+#else			/* XMP, YMP, CRAY2 && UNICOS6 */
+#define LoaderLibPrefix -l
+#endif
+
+#if UNICOS4
+#define ConnectionFlags -DTCPCONN -DOLDTCP
+#else
+#define ConnectionFlags -DTCPCONN 
+#endif
+
+#define ExtraLoadFlags        -lnet
+#define ArCmd                 bld cr
+
+#ifdef CRAY1
+#define DefaultCDebugFlags    -halign
+#define Cray1Architecture
+#else /* CRAY 2 */
+#define DefaultCDebugFlags    
+#define Cray2Architecture
+#endif
+

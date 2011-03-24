@@ -1,0 +1,54 @@
+/*
+ * SET VERSION NUMBERS BEFORE MAKING MAKEFILES
+ */
+
+/*
+ * Note that pre-SR10.1 releases are not supported.
+ */
+
+#define OSName            Domain/OS SR10.1
+#define OSMajorVersion    10
+#define OSMinorVersion    1
+
+#define CCompilerMajorVersion   6
+#define CCompilerMinorVersion   0
+
+    /* Does cpp handle "##" correctly yet? (0=no, 1=yes) */
+#define CppFullANSISupport      0
+
+#define XapolloServer     Xapollo
+
+#define CppCmd            /usr/lib/cpp
+
+            PAS = /com/pas
+
+#define HasVoidSignalReturn NO
+
+
+/**/# platform:  $XConsortium: apollo.cf,v 1.15 89/10/11 18:54:55 jim Exp $
+/**/# operating system:  OSName
+
+/*****************************************************************************
+ *			  Platform-specific parameters                       *
+ *****************************************************************************/
+
+#if (OSMajorVersion == 10) && (! CppFullANSISupport)
+#define DefaultCCOptions -U__STDC__ -D_PROTOTYPES
+#endif
+
+#if (OSMajorVersion == 10) && (OSMinorVersion < 2)
+    /* <netinet/tcp.h> doesn't exist until SR10.2 */
+#define ConnectionFlags -DTCPCONN -DUNIXCONN -DNO_TCP_H
+#define OSReleaseDefines -DPRE_SR10_2
+#else
+#define ConnectionFlags -DTCPCONN -DUNIXCONN
+#define OSReleaseDefines /* as nothing */
+#endif
+
+#define miOptChoices -DAVOID_GLYPHBLT -DNEED_OLD_MFB_MASKS
+
+#define ExtensionDefines -DSHAPE -DMULTIBUFFER -DMITMISC
+
+#define ServerDefines StandardDefines ExtensionDefines -DXDMCP miOptChoices OSReleaseDefines
+#define FontDefines	-DFONT_SNF -DFONT_BDF
+

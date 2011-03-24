@@ -1,0 +1,16 @@
+/**/#
+/**/# arpa - more include files for the internet system
+/**/#
+
+all::
+depend::
+
+/*
+ * Install header files.
+ */
+
+HEADERS		= \
+	inet.h
+
+MakeDirectories(install,$(INCDIR)/Std/arpa)
+InstallMultipleFlags($(HEADERS),$(INCDIR)/Std/arpa,$(INSTINCFLAGS))

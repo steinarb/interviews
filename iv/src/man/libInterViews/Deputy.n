@@ -1,0 +1,36 @@
+.TH Deputy 3I "29 May 1989" "InterViews" "InterViews Reference Manual"
+.SH NAME
+Deputy \- pack and send remote messages
+.SH SYNOPSIS
+.B #include <InterViews/deputy.h>
+.SH DESCRIPTION
+A deputy object performs operations on remote objects.
+A caller performs a local call on the deputy,
+which packs the parameters into a message.
+Deputies place the message into a buffer
+managed by a ChiefDeputy(3I), which then take care
+of sending the message to the remote space.
+.SH PUBLIC OPERATIONS
+.TP
+.B "Deputy()"
+.ns
+.TP
+.B "Deputy(ChiefDeputy*)"
+Construct a deputy, optionally specifying the chief deputy
+that will manage the message buffer.
+The chief deputy is accessible through a protected member \fIchief\fP.
+.TP
+.B "void Sync()"
+Force all messages to be sent to the remote object space.
+Without doing a Sync, messages are buffered locally to reduce
+message-passing overhead.
+.TP
+.B "ObjectTag Tag()"
+Return a tag to use in messages to identify the remote object.
+Because the client defines the tag, a deputy uses its address (this pointer)
+as its tag.
+.TP
+.B "Connection* GetServer()"
+Return the connection associated with the remote object.
+.SH "SEE ALSO"
+ChiefDeputy(3I), ObjectSpace(3I)

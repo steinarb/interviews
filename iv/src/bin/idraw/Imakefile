@@ -1,0 +1,96 @@
+/**/#
+/**/# idraw - InterViews drawing editor
+/**/#
+
+#if CompileInMachineDepSubdir && !defined(InMachineDepSubdir)
+#define IHaveMachineDepSubdirs
+
+MakeMachineDepSubdir()
+DependMachineDepSubdir()
+
+#else
+
+LOCAL_LIBRARIES	= $(LIBGRAPHIC) $(LIBINTERVIEWS)
+SYS_LIBRARIES	= -l$X -lm
+
+#if SystemV==YES
+EXTRA_LOAD_FLAGS = -lPW
+#endif
+
+SRCS		= $(SRC)//**/*.c
+OBJS		= \
+	commands.o \
+	dialogbox.o \
+	drawing.o \
+	drawingview.o \
+	editor.o \
+	errhandler.o \
+	highlighter.o \
+	history.o \
+	idraw.o \
+	iellipses.o \
+	ilines.o \
+	ipaint.o \
+	ipolygons.o \
+	isplines.o \
+	list.o \
+	listchange.o \
+	listgroup.o \
+	main.o \
+	mapipaint.o \
+	mapkey.o \
+	page.o \
+	panel.o \
+	pdmenu.o \
+	rubbands.o \
+	selection.o \
+	slellipses.o \
+	sllines.o \
+	slpict.o \
+	slpolygons.o \
+	slsplines.o \
+	sltext.o \
+	state.o \
+	stateviews.o \
+	textedit.o \
+	tools.o
+
+ComplexProgramTarget(idraw)
+
+MakeObjectFromSrc(commands)
+MakeObjectFromSrc(dialogbox)
+MakeObjectFromSrc(drawing)
+MakeObjectFromSrc(drawingview)
+MakeObjectFromSrc(editor)
+MakeObjectFromSrc(errhandler)
+MakeObjectFromSrc(highlighter)
+MakeObjectFromSrc(history)
+MakeObjectFromSrc(idraw)
+MakeObjectFromSrc(iellipses)
+MakeObjectFromSrc(ilines)
+MakeObjectFromSrc(ipaint)
+MakeObjectFromSrc(ipolygons)
+MakeObjectFromSrc(isplines)
+MakeObjectFromSrc(list)
+MakeObjectFromSrc(listchange)
+MakeObjectFromSrc(listgroup)
+MakeObjectFromSrc(main)
+MakeObjectFromSrc(mapipaint)
+MakeObjectFromSrc(mapkey)
+MakeObjectFromSrc(page)
+MakeObjectFromSrc(panel)
+MakeObjectFromSrc(pdmenu)
+MakeObjectFromSrc(rubbands)
+MakeObjectFromSrc(selection)
+MakeObjectFromSrc(slellipses)
+MakeObjectFromSrc(sllines)
+MakeObjectFromSrc(slpict)
+MakeObjectFromSrc(slpolygons)
+MakeObjectFromSrc(slsplines)
+MakeObjectFromSrc(sltext)
+MakeObjectFromSrc(state)
+MakeObjectFromSrc(stateviews)
+MakeObjectFromSrc(textedit)
+MakeObjectFromSrc(tools)
+
+#endif /* if compiling in subdirectory */

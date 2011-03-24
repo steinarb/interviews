@@ -1,0 +1,7187 @@
+%!PS-Adobe-
+%%DocumentFonts:
+%%Pages: 1
+%%BoundingBox: 103 298 448 642
+%%EndComments
+
+/arrowHeight 8 def
+/arrowWidth 4 def
+/none null def
+/numGraphicParameters 17 def
+/stringLimit 65535 def
+
+/Begin {
+save
+numGraphicParameters dict begin
+} def
+
+/End {
+end
+restore
+} def
+
+/SetB {
+dup type /nulltype eq {
+pop true /brushNone idef
+} {
+/brushDashOffset idef
+/brushDashArray idef
+0 ne /brushRightArrow idef
+0 ne /brushLeftArrow idef
+/brushWidth idef
+false /brushNone idef
+} ifelse
+} def
+
+/SetCFg {
+/fgred idef
+/fggreen idef
+/fgblue idef
+} def
+
+/SetCBg {
+/bgred idef
+/bggreen idef
+/bgblue idef
+} def
+
+/SetF {
+/printSize idef
+/printFont idef
+} def
+
+/SetP {
+dup type /nulltype eq {
+pop true /patternNone idef
+} {
+/patternGrayLevel idef
+patternGrayLevel -1 eq {
+/patternString idef
+} if
+false /patternNone idef
+} ifelse
+} def
+
+/BSpl {
+0 begin
+storexyn
+newpath
+n 1 gt {
+0 0 0 0 0 0 1 1 true subspline
+n 2 gt {
+0 0 0 0 1 1 2 2 false subspline
+1 1 n 3 sub {
+/i exch def
+i 1 sub dup i dup i 1 add dup i 2 add dup false subspline
+} for
+n 3 sub dup n 2 sub dup n 1 sub dup 2 copy false subspline
+} if
+n 2 sub dup n 1 sub dup 2 copy 2 copy false subspline
+patternNone not brushLeftArrow not brushRightArrow not and and { ifill } if
+brushNone not { istroke } if
+0 0 1 1 leftarrow
+n 2 sub dup n 1 sub dup rightarrow
+} if
+end
+} dup 0 4 dict put def
+
+/Circ {
+newpath
+0 360 arc
+patternNone not { ifill } if
+brushNone not { istroke } if
+} def
+
+/CBSpl {
+0 begin
+dup 2 gt {
+storexyn
+newpath
+n 1 sub dup 0 0 1 1 2 2 true subspline
+1 1 n 3 sub {
+/i exch def
+i 1 sub dup i dup i 1 add dup i 2 add dup false subspline
+} for
+n 3 sub dup n 2 sub dup n 1 sub dup 0 0 false subspline
+n 2 sub dup n 1 sub dup 0 0 1 1 false subspline
+patternNone not { ifill } if
+brushNone not { istroke } if
+} {
+Poly
+} ifelse
+end
+} dup 0 4 dict put def
+
+/Elli {
+0 begin
+newpath
+4 2 roll
+translate
+scale
+0 0 1 0 360 arc
+patternNone not { ifill } if
+brushNone not { istroke } if
+end
+} dup 0 1 dict put def
+
+/Line {
+0 begin
+2 storexyn
+newpath
+x 0 get y 0 get moveto
+x 1 get y 1 get lineto
+brushNone not { istroke } if
+0 0 1 1 leftarrow
+0 0 1 1 rightarrow
+end
+} dup 0 4 dict put def
+
+/MLine {
+0 begin
+storexyn
+newpath
+n 1 gt {
+x 0 get y 0 get moveto
+1 1 n 1 sub {
+/i exch def
+x i get y i get lineto
+} for
+patternNone not brushLeftArrow not brushRightArrow not and and { ifill } if
+brushNone not { istroke } if
+0 0 1 1 leftarrow
+n 2 sub dup n 1 sub dup rightarrow
+} if
+end
+} dup 0 4 dict put def
+
+/Poly {
+3 1 roll
+newpath
+moveto
+-1 add
+{ lineto } repeat
+closepath
+patternNone not { ifill } if
+brushNone not { istroke } if
+} def
+
+/Rect {
+0 begin
+/t exch def
+/r exch def
+/b exch def
+/l exch def
+newpath
+l b moveto
+l t lineto
+r t lineto
+r b lineto
+closepath
+patternNone not { ifill } if
+brushNone not { istroke } if
+end
+} dup 0 4 dict put def
+
+/Text {
+ishow
+} def
+
+/idef {
+dup where { pop pop pop } { exch def } ifelse
+} def
+
+/ifill {
+0 begin
+gsave
+patternGrayLevel -1 ne {
+fgred bgred fgred sub patternGrayLevel mul add
+fggreen bggreen fggreen sub patternGrayLevel mul add
+fgblue bgblue fgblue sub patternGrayLevel mul add setrgbcolor
+eofill
+} {
+eoclip
+originalCTM setmatrix
+pathbbox /t exch def /r exch def /b exch def /l exch def
+/w r l sub ceiling cvi def
+/h t b sub ceiling cvi def
+/imageByteWidth w 8 div ceiling cvi def
+/imageHeight h def
+bgred bggreen bgblue setrgbcolor
+eofill
+fgred fggreen fgblue setrgbcolor
+l b translate w h scale
+w h true [w 0 0 h neg 0 h] { patternproc } imagemask
+} ifelse
+grestore
+end
+} dup 0 8 dict put def
+
+/istroke {
+gsave
+brushDashOffset -1 eq {
+[] 0 setdash
+1 setgray
+} {
+brushDashArray brushDashOffset setdash
+fgred fggreen fgblue setrgbcolor
+} ifelse
+brushWidth setlinewidth
+originalCTM setmatrix
+stroke
+grestore
+} def
+
+/ishow {
+0 begin
+gsave
+0 2.5 originalCTM dtransform idtransform
+/yoff exch def
+/xoff exch def
+printFont /Courier ne printSize 10 ne and { xoff yoff translate } if
+printFont findfont printSize scalefont setfont
+fgred fggreen fgblue setrgbcolor
+/vertoffset printSize neg def {
+0 vertoffset moveto show
+/vertoffset vertoffset printSize sub def
+} forall
+grestore
+end
+} dup 0 3 dict put def
+
+/patternproc {
+0 begin
+/patternByteLength patternString length def
+/patternHeight patternByteLength 8 mul sqrt cvi def
+/patternWidth patternHeight def
+/patternByteWidth patternWidth 8 idiv def
+/imageByteMaxLength imageByteWidth imageHeight mul
+stringLimit patternByteWidth sub min def
+/imageMaxHeight imageByteMaxLength imageByteWidth idiv patternHeight idiv
+patternHeight mul patternHeight max def
+/imageHeight imageHeight imageMaxHeight sub store
+/imageString imageByteWidth imageMaxHeight mul patternByteWidth add string def
+0 1 imageMaxHeight 1 sub {
+/y exch def
+/patternRow y patternByteWidth mul patternByteLength mod def
+/patternRowString patternString patternRow patternByteWidth getinterval def
+/imageRow y imageByteWidth mul def
+0 patternByteWidth imageByteWidth 1 sub {
+/x exch def
+imageString imageRow x add patternRowString putinterval
+} for
+} for
+imageString
+end
+} dup 0 12 dict put def
+
+/min {
+dup 3 2 roll dup 4 3 roll lt { exch } if pop
+} def
+
+/max {
+dup 3 2 roll dup 4 3 roll gt { exch } if pop
+} def
+
+/arrowhead {
+0 begin
+transform originalCTM itransform
+/taily exch def
+/tailx exch def
+transform originalCTM itransform
+/tipy exch def
+/tipx exch def
+/dy tipy taily sub def
+/dx tipx tailx sub def
+/angle dx 0 ne dy 0 ne or { dy dx atan } { 90 } ifelse def
+gsave
+originalCTM setmatrix
+tipx tipy translate
+angle rotate
+newpath
+0 0 moveto
+arrowHeight neg arrowWidth 2 div lineto
+arrowHeight neg arrowWidth 2 div neg lineto
+closepath
+patternNone not { ifill } if
+brushNone not { istroke } if
+grestore
+end
+} dup 0 7 dict put def
+
+/leftarrow {
+0 begin
+y exch get /taily exch def
+x exch get /tailx exch def
+y exch get /tipy exch def
+x exch get /tipx exch def
+brushLeftArrow { tipx tipy tailx taily arrowhead } if
+end
+} dup 0 4 dict put def
+
+/rightarrow {
+0 begin
+y exch get /tipy exch def
+x exch get /tipx exch def
+y exch get /taily exch def
+x exch get /tailx exch def
+brushRightArrow { tipx tipy tailx taily arrowhead } if
+end
+} dup 0 4 dict put def
+
+/midpoint {
+0 begin
+/y1 exch def
+/x1 exch def
+/y0 exch def
+/x0 exch def
+x0 x1 add 2 div
+y0 y1 add 2 div
+end
+} dup 0 4 dict put def
+
+/thirdpoint {
+0 begin
+/y1 exch def
+/x1 exch def
+/y0 exch def
+/x0 exch def
+x0 2 mul x1 add 3 div
+y0 2 mul y1 add 3 div
+end
+} dup 0 4 dict put def
+
+/subspline {
+0 begin
+/movetoNeeded exch def
+y exch get /y3 exch def
+x exch get /x3 exch def
+y exch get /y2 exch def
+x exch get /x2 exch def
+y exch get /y1 exch def
+x exch get /x1 exch def
+y exch get /y0 exch def
+x exch get /x0 exch def
+x1 y1 x2 y2 thirdpoint
+/p1y exch def
+/p1x exch def
+x2 y2 x1 y1 thirdpoint
+/p2y exch def
+/p2x exch def
+x1 y1 x0 y0 thirdpoint
+p1x p1y midpoint
+/p0y exch def
+/p0x exch def
+x2 y2 x3 y3 thirdpoint
+p2x p2y midpoint
+/p3y exch def
+/p3x exch def
+movetoNeeded { p0x p0y moveto } if
+p1x p1y p2x p2y p3x p3y curveto
+end
+} dup 0 17 dict put def
+
+/storexyn {
+/n exch def
+/y n array def
+/x n array def
+n 1 sub -1 0 {
+/i exch def
+y i 3 2 roll put
+x i 3 2 roll put
+} for
+} def
+
+%%EndProlog
+
+%I Idraw 4
+
+Begin
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+/originalCTM matrix currentmatrix def
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Elli
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.337931 0 0 0.337931 363.728 428.686 ] concat
+%I
+267 484 145 145 Elli
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.270345 0 0 0.270345 345.682 461.398 ] concat
+%I
+267 484 145 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.256829 0 0 0.256829 342.073 467.94 ] concat
+%I
+267 484 145 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.245 0 0 0.245 338.915 473.665 ] concat
+%I
+267 484 145 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+none SetP %I p n
+%I t
+[ -0.245 0 0 0.245 340.875 473.665 ] concat
+%I
+275 484 128 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+none SetP %I p n
+%I t
+[ -0.231389 0 0 0.231389 337.132 478.402 ] concat
+%I
+275 492 144 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+none SetP %I p n
+%I t
+[ -0.230588 0 0 0.230588 336.912 480.64 ] concat
+%I
+275 484 136 Circ
+End
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Line
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.245 0 0 0.245 340.63 471.705 ] concat
+%I
+274 620 274 364 Line
+End
+
+Begin %I Line
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -1.8497e-08 -0.245 -0.245 1.8497e-08 394.04 659.375 ] concat
+%I
+274 620 274 364 Line
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Line
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.173241 -0.173241 -0.173241 0.173241 406.203 554.478 ] concat
+%I
+274 620 274 364 Line
+End
+
+Begin %I Line
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.173241 -0.173241 -0.173241 -0.173241 311.267 724.947 ] concat
+%I
+274 620 274 364 Line
+End
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Line
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.224316 -0.0985255 -0.0985255 0.224316 383.437 508.877 ] concat
+%I
+274 620 274 364 Line
+End
+
+Begin %I Line
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0985255 -0.224316 -0.224316 -0.0985255 356.868 702.181 ] concat
+%I
+274 620 274 364 Line
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Line
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.0889473 -0.228283 -0.228283 0.0889473 410.187 611.033 ] concat
+%I
+274 620 274 364 Line
+End
+
+Begin %I Line
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.228283 -0.0889473 -0.0889473 -0.228283 254.712 728.933 ] concat
+%I
+274 620 274 364 Line
+End
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Line
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.240211 -0.0482033 -0.0482033 0.240211 363.034 487.269 ] concat
+%I
+274 620 274 364 Line
+End
+
+Begin %I Line
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0482033 -0.240211 -0.240211 -0.0482033 378.476 681.779 ] concat
+%I
+274 620 274 364 Line
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Line
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.13577 -0.20394 -0.20394 0.13577 411.04 581.326 ] concat
+%I
+274 620 274 364 Line
+End
+
+Begin %I Line
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.20394 -0.13577 -0.13577 -0.20394 284.42 729.783 ] concat
+%I
+274 620 274 364 Line
+End
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Line
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.200547 -0.140733 -0.140733 0.200547 397.691 532.137 ] concat
+%I
+274 620 274 364 Line
+End
+
+Begin %I Line
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.140733 -0.200547 -0.200547 -0.140733 333.608 716.436 ] concat
+%I
+274 620 274 364 Line
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Line
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.0422944 -0.241322 -0.241322 0.0422944 403.819 637.558 ] concat
+%I
+274 620 274 364 Line
+End
+
+Begin %I Line
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.241322 -0.0422944 -0.0422944 -0.241322 228.187 722.565 ] concat
+%I
+274 620 274 364 Line
+End
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.49 0 0 0.49 416.09 392.57 ] concat
+%I
+291 407 23 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.49 0 0 0.49 416.09 393.06 ] concat
+%I
+291 406 19 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.49 0 0 0.49 416.09 393.55 ] concat
+%I
+291 405 16 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.776698 0 0 0.776698 -23.0238 390.835 ] concat
+%I
+235 259 63 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.965624 0 0 0.965624 -119.565 474.194 ] concat
+%I
+289 122 37 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+none SetP %I p n
+%I t
+[ 0.26776 0 0 0.26776 88.811 536.038 ] concat
+%I
+264 209 127 Circ
+End
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+none SetP %I p n
+%I t
+[ 0.348087 0 0 0.348087 65.4362 514.028 ] concat
+%I
+271 224 40 Circ
+End
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.138353 -0.0806141 0.0806141 0.138353 129.165 569.462 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.138353 -0.0806141 0.0806141 0.138353 127.92 570.188 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.138353 0.0806141 0.0806141 0.138353 155.084 554.296 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.138353 0.0806141 0.0806141 0.138353 156.33 553.571 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0806141 -0.138353 0.138353 -0.0806141 137.121 622.574 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0806141 -0.138353 0.138353 -0.0806141 137.846 623.819 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0806141 0.138353 0.138353 -0.0806141 121.955 596.654 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0806141 0.138353 0.138353 -0.0806141 121.229 595.409 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.26776 0 0 0.26776 89.0791 534.967 ] concat
+%I
+263 213 12 Circ
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+none SetP %I p n
+%I t
+[ 0.26776 0 0 0.26776 89.213 535.503 ] concat
+%I
+263 211 123 Circ
+End
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.172436 0 0 0.172436 162.73 554.409 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.172436 0 0 0.172436 161.178 554.409 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.172436 0 0 0.172436 156.365 554.409 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.172436 0 0 0.172436 157.917 554.409 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 1.30186e-08 -0.172436 0.172436 1.30186e-08 121.902 588.873 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 1.30186e-08 -0.172436 0.172436 1.30186e-08 121.902 590.425 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -1.30186e-08 0.172436 0.172436 1.30186e-08 121.902 595.128 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -1.30186e-08 0.172436 0.172436 1.30186e-08 121.902 593.576 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.122015 0.121847 -0.121847 0.122015 188.154 567.648 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.122015 0.121847 -0.121847 0.122015 187.055 566.551 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.122015 -0.121847 -0.121847 0.122015 183.675 563.154 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.122015 -0.121847 -0.121847 0.122015 184.773 564.25 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.121847 -0.122015 0.122015 0.121847 134.999 563.143 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.121847 -0.122015 0.122015 0.121847 133.903 564.241 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.121847 0.122015 0.122015 0.121847 130.506 567.732 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.121847 0.122015 0.122015 0.121847 131.602 566.634 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.159457 0.0656327 -0.0656327 0.159457 176.805 558.417 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.159457 0.0656327 -0.0656327 0.159457 175.37 557.826 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.159457 -0.0656327 -0.0656327 0.159457 170.919 555.994 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.159457 -0.0656327 -0.0656327 0.159457 172.355 556.585 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0656327 -0.159457 0.159457 0.0656327 125.932 574.746 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0656327 -0.159457 0.159457 0.0656327 125.341 576.182 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0656327 0.159457 0.159457 0.0656327 123.551 580.53 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.0656327 0.159457 0.159457 0.0656327 124.142 579.095 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0664531 0.159117 -0.159117 0.0664531 195.276 580.336 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0664531 0.159117 -0.159117 0.0664531 194.678 578.904 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0664531 -0.159117 -0.159117 0.0664531 192.845 574.476 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.0664531 -0.159117 -0.159117 0.0664531 193.443 575.908 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.159117 -0.0664531 0.0664531 0.159117 147.837 555.939 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.159117 -0.0664531 0.0664531 0.159117 146.405 556.537 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.159117 0.0664531 0.0664531 0.159117 141.935 558.471 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.159117 0.0664531 0.0664531 0.159117 143.367 557.873 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+none SetB %I b n
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.684932 0 0 0.684932 59 162.411 ] concat
+%I
+140 452 73 Circ
+End
+
+Begin %I Circ
+none SetB %I b n
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.684932 0 0 0.684932 61.739 161.726 ] concat
+%I
+136 453 63 Circ
+End
+
+Begin %I Circ
+none SetB %I b n
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.65179 0 0 0.65179 -8.7085 163.704 ] concat
+%I
+251 473 62 Circ
+End
+
+Begin %I Circ
+none SetB %I b n
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.684932 0 0 0.684932 59 161.726 ] concat
+%I
+140 453 53 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+none SetP %I p n
+%I t
+[ 0.684932 0 0 0.684932 61.0549 161.041 ] concat
+%I
+137 454 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+none SetP %I p n
+%I t
+[ 0.684932 0 0 0.684932 57.6305 162.411 ] concat
+%I
+142 452 49 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+none SetP %I p n
+%I t
+[ 0.684932 0 0 0.684932 57.6305 163.096 ] concat
+%I
+142 451 45 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.490566 0 0 0.490566 231.415 395.245 ] concat
+%I
+335 397 106 Circ
+End
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.245283 0 0 0.245283 316.651 499.981 ] concat
+%I
+323 366 167 Circ
+End
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+none SetP %I p n
+%I t
+[ 0.245283 0 0 0.245283 316.651 500.472 ] concat
+%I
+323 364 160 Circ
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.31657 -0.00323764 0.00323764 0.31657 294.41 481.515 ] concat
+%I 7
+322 455
+273 455
+284 430
+312 428
+325 444
+359 456
+359 456
+7 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.265215 0.00422696 -0.00422696 0.265215 314.429 501.855 ] concat
+%I 7
+322 455
+273 455
+284 430
+312 428
+325 444
+359 456
+359 456
+7 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.31657 0.00323769 -0.00323769 -0.31657 497.344 697.996 ] concat
+%I 7
+322 455
+273 455
+284 430
+312 428
+325 444
+359 456
+359 456
+7 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.265215 -0.00422694 0.00422694 -0.265215 477.326 677.655 ] concat
+%I 7
+322 455
+273 455
+284 430
+312 428
+325 444
+359 456
+359 456
+7 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.00323766 0.31657 -0.31657 0.00323766 504.118 488.288 ] concat
+%I 7
+322 455
+273 455
+284 430
+312 428
+325 444
+359 456
+359 456
+7 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.00422694 0.265215 -0.265215 -0.00422694 483.777 508.306 ] concat
+%I 7
+322 455
+273 455
+284 430
+312 428
+325 444
+359 456
+359 456
+7 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.00323771 -0.31657 0.31657 -0.00323771 287.637 691.221 ] concat
+%I 7
+322 455
+273 455
+284 430
+312 428
+325 444
+359 456
+359 456
+7 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.00422691 -0.265215 0.265215 0.00422691 307.977 671.203 ] concat
+%I 7
+322 455
+273 455
+284 430
+312 428
+325 444
+359 456
+359 456
+7 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.226515 0.221174 -0.221174 0.226515 400.414 441.461 ] concat
+%I 7
+322 455
+273 455
+284 430
+312 428
+325 444
+359 456
+359 456
+7 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.18487 0.190209 -0.190209 0.18487 400.235 469.999 ] concat
+%I 7
+322 455
+273 455
+284 430
+312 428
+325 444
+359 456
+359 456
+7 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.226515 -0.221174 0.221174 -0.226515 391.34 738.048 ] concat
+%I 7
+322 455
+273 455
+284 430
+312 428
+325 444
+359 456
+359 456
+7 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.18487 -0.190209 0.190209 -0.18487 391.52 709.51 ] concat
+%I 7
+322 455
+273 455
+284 430
+312 428
+325 444
+359 456
+359 456
+7 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.221174 0.226515 -0.226515 -0.221174 544.171 594.292 ] concat
+%I 7
+322 455
+273 455
+284 430
+312 428
+325 444
+359 456
+359 456
+7 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.190209 0.18487 -0.18487 -0.190209 515.632 594.112 ] concat
+%I 7
+322 455
+273 455
+284 430
+312 428
+325 444
+359 456
+359 456
+7 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.221174 -0.226515 0.226515 0.221174 247.584 585.218 ] concat
+%I 7
+322 455
+273 455
+284 430
+312 428
+325 444
+359 456
+359 456
+7 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.190209 -0.18487 0.18487 0.190209 276.122 585.397 ] concat
+%I 7
+322 455
+273 455
+284 430
+312 428
+325 444
+359 456
+359 456
+7 CBSpl
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+none SetP %I p n
+%I t
+[ 0.245283 0 0 0.245283 316.651 500.472 ] concat
+%I
+323 364 70 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+none SetP %I p n
+%I t
+[ 0.245283 0 0 0.245283 317.142 499.981 ] concat
+%I
+321 366 64 Circ
+End
+
+Begin %I Rect
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+none SetP %I p n
+%I t
+[ 0.245283 0 0 0.245283 317.142 500.349 ] concat
+%I
+328 359 382 370 Rect
+End
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+none SetP %I p n
+%I t
+[ -0.00656849 -0.348026 0.348026 -0.00656849 255.593 622.409 ] concat
+%I
+271 224 40 Circ
+End
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.083211 -0.136808 0.136808 -0.083211 309.813 557.645 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.083211 -0.136808 0.136808 -0.083211 310.563 558.877 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.083211 0.136808 0.136808 -0.083211 294.162 532.016 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.083211 0.136808 0.136808 -0.083211 293.412 530.785 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.136807 0.0832102 -0.0832102 -0.136807 362.766 548.689 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.136807 0.0832102 -0.0832102 -0.136807 363.997 547.94 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.136807 -0.0832102 -0.0832102 -0.136807 337.137 564.341 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.136807 -0.0832102 -0.0832102 -0.136807 335.907 565.09 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0050513 -0.267712 0.267712 -0.0050513 276.082 598.374 ] concat
+%I
+263 213 12 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.0146548 -0.77656 0.77656 -0.0146548 76.0901 645.677 ] concat
+%I
+235 259 63 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0182195 -0.965451 0.965451 -0.0182195 161.256 740.629 ] concat
+%I
+289 122 37 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+none SetP %I p n
+%I t
+[ -0.0050513 -0.267712 0.267712 -0.0050513 219.157 531.122 ] concat
+%I
+264 209 127 Circ
+End
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+none SetP %I p n
+%I t
+[ -0.00656849 -0.348026 0.348026 -0.00656849 197.593 554.909 ] concat
+%I
+271 224 40 Circ
+End
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.083211 -0.136808 0.136808 -0.083211 251.813 490.145 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.083211 -0.136808 0.136808 -0.083211 252.563 491.377 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.083211 0.136808 0.136808 -0.083211 236.162 464.516 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.083211 0.136808 0.136808 -0.083211 235.412 463.285 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.136807 0.0832102 -0.0832102 -0.136807 304.766 481.189 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.136807 0.0832102 -0.0832102 -0.136807 305.997 480.44 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.136807 -0.0832102 -0.0832102 -0.136807 279.137 496.841 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.136807 -0.0832102 -0.0832102 -0.136807 277.907 497.59 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0050513 -0.267712 0.267712 -0.0050513 218.082 530.874 ] concat
+%I
+263 213 12 Circ
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+none SetP %I p n
+%I t
+[ -0.0050513 -0.267712 0.267712 -0.0050513 218.615 530.731 ] concat
+%I
+263 211 123 Circ
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+none SetP %I p n
+%I t
+[ 0.219117 -0.44943 0.44943 0.219117 -6.18396 493.948 ] concat
+%I
+307 473 48 Circ
+End
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Rect
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.219117 -0.44943 0.44943 0.219117 50.498 437.587 ] concat
+%I
+154 360 159 380 Rect
+End
+
+Begin %I Rect
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.219117 -0.44943 0.44943 0.219117 95.89 459.718 ] concat
+%I
+154 360 159 380 Rect
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Rect
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.44943 -0.219117 0.219117 -0.44943 251.972 682.668 ] concat
+%I
+154 360 159 380 Rect
+End
+
+Begin %I Rect
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.44943 -0.219117 0.219117 -0.44943 274.103 637.275 ] concat
+%I
+154 360 159 380 Rect
+End
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Rect
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.16193 -0.473053 0.473053 -0.16193 100.199 601.515 ] concat
+%I
+154 360 159 380 Rect
+End
+
+Begin %I Rect
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.16193 -0.473053 0.473053 -0.16193 147.978 585.16 ] concat
+%I
+154 360 159 380 Rect
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Rect
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.473053 0.16193 -0.16193 -0.473053 415.899 632.967 ] concat
+%I
+154 360 159 380 Rect
+End
+
+Begin %I Rect
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.473053 0.16193 -0.16193 -0.473053 399.545 585.188 ] concat
+%I
+154 360 159 380 Rect
+End
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Rect
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0199419 -0.499602 0.499602 0.0199419 60.572 529.193 ] concat
+%I
+154 360 159 380 Rect
+End
+
+Begin %I Rect
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0199419 -0.499602 0.499602 0.0199419 111.031 531.207 ] concat
+%I
+154 360 159 380 Rect
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Rect
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.499602 -0.0199419 0.0199419 -0.499602 343.577 672.594 ] concat
+%I
+154 360 159 380 Rect
+End
+
+Begin %I Rect
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.499602 -0.0199419 0.0199419 -0.499602 345.592 622.134 ] concat
+%I
+154 360 159 380 Rect
+End
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Rect
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.338452 -0.368036 0.368036 -0.338452 171.984 659.307 ] concat
+%I
+154 360 159 380 Rect
+End
+
+Begin %I Rect
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.338452 -0.368036 0.368036 -0.338452 209.156 625.123 ] concat
+%I
+154 360 159 380 Rect
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Rect
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.368036 0.338452 -0.338452 -0.368036 473.692 561.182 ] concat
+%I
+154 360 159 380 Rect
+End
+
+Begin %I Rect
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.368036 0.338452 -0.338452 -0.368036 439.508 524.01 ] concat
+%I
+154 360 159 380 Rect
+End
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.132231 0 0 0.132231 356.684 409.903 ] concat
+%I
+302 410 363 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.140496 0 0 0.140496 353.774 407.646 ] concat
+%I
+304 401 247 Circ
+End
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.140496 0 0 0.140496 353.142 408.473 ] concat
+%I
+308 396 241 Circ
+End
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0992662 -0.13952 0.13952 0.0992662 299.705 500.664 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0814492 -0.114478 0.114478 0.0814492 317.046 498.572 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0992662 -0.13952 -0.13952 -0.0992662 415.392 536.329 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0814492 -0.114478 -0.114478 -0.0814492 411.948 518.888 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.139519 -0.0992662 0.0992662 -0.139519 432.941 560.625 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.114478 -0.0814492 0.0814492 -0.114478 430.849 543.283 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.139519 -0.0992662 -0.0992662 0.139519 468.605 444.937 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.114478 -0.0814492 -0.0814492 0.114478 451.164 448.381 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0291712 -0.168726 0.168726 -0.0291712 354.18 558.495 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.0239353 -0.138442 0.138442 -0.0239353 364.983 544.463 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0291712 -0.168726 -0.168726 0.0291712 461.204 501.302 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.0239353 -0.138442 -0.138442 0.0239353 446.199 491.483 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.168726 0.0291712 -0.0291712 -0.168726 490.773 506.149 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.138442 0.0239353 -0.0239353 -0.138442 476.97 495.228 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.168726 0.0291712 0.0291712 0.168726 433.579 399.126 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.138442 0.0239353 0.0239353 0.138442 423.76 414.131 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0370108 -0.167182 0.167182 0.0370108 321.566 535.543 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0303678 -0.137175 0.137175 0.0303678 336.536 526.547 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0370108 -0.167182 -0.167182 -0.0370108 442.112 522.852 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0303678 -0.137175 -0.137175 -0.0303678 432.205 508.214 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.167182 -0.0370108 0.0370108 -0.167182 467.903 538.651 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.137175 -0.0303678 0.0303678 -0.137175 459.136 523.562 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.167182 -0.0370108 -0.0370108 0.167182 455.212 418.104 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.137175 -0.0303678 -0.0303678 0.137175 440.574 428.012 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0926493 -0.143998 0.143998 -0.0926493 394.597 567.111 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.0760199 -0.118153 0.118153 -0.0760199 398.963 550.325 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0926493 -0.143998 -0.143998 0.0926493 470.551 473.064 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.0760199 -0.118153 -0.118153 0.0760199 452.985 469.808 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.143998 0.0926493 -0.0926493 -0.143998 499.707 466.077 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.118153 0.0760199 -0.0760199 -0.118153 482.684 461.253 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.143998 0.0926493 0.0926493 0.143998 405.542 389.894 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+Begin %I CBSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ -0.118153 0.0760199 0.0760199 0.118153 402.168 407.231 ] concat
+%I 5
+390 331
+390 331
+374 475
+390 499
+406 475
+5 CBSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+none SetP %I p n
+%I t
+[ 0.140496 0 0 0.140496 353.352 408.333 ] concat
+%I
+307 397 124 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+none SetP %I p n
+%I t
+[ 0.140496 0 0 0.140496 353.212 408.473 ] concat
+%I
+308 396 110 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+none SetP %I p n
+%I t
+[ -0.00656849 -0.348026 0.348026 -0.00656849 320.218 559.784 ] concat
+%I
+271 224 40 Circ
+End
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.083211 -0.136808 0.136808 -0.083211 374.438 495.02 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.083211 -0.136808 0.136808 -0.083211 375.188 496.252 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.083211 0.136808 0.136808 -0.083211 358.787 469.391 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.083211 0.136808 0.136808 -0.083211 358.037 468.16 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.136807 0.0832102 -0.0832102 -0.136807 427.391 486.064 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.136807 0.0832102 -0.0832102 -0.136807 428.622 485.315 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.136807 -0.0832102 -0.0832102 -0.136807 401.762 501.716 ] concat
+%I
+146 218 18 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.136807 -0.0832102 -0.0832102 -0.136807 400.532 502.465 ] concat
+%I
+154 218 14 Circ
+End
+
+End %I eop
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0050513 -0.267712 0.267712 -0.0050513 340.707 535.749 ] concat
+%I
+263 213 12 Circ
+End
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 2 0 0 2 -422 -504.25 ] concat
+%I
+288 426 24 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.25 0 0 0.25 48.25 233.75 ] concat
+%I
+423 456 143 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 2.05882 0 0 2.05882 -757.934 -558.007 ] concat
+%I
+443 440 17 Circ
+End
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 1.92337 0 0 1.92337 -697.93 -498.41 ] concat
+%I
+443 440 17 Circ
+End
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0521726 0.0103778 -0.0240576 0.120945 132.058 323.477 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0521726 -0.0103778 -0.0240576 0.120945 183.814 333.772 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.06652 0.0132317 -0.0132317 0.06652 121.716 342.826 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0521726 0.0103778 0.0240576 -0.120945 124.36 362.18 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0521726 -0.0103778 0.0240576 -0.120945 176.115 372.475 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.06652 0.0132317 0.0132317 -0.06652 122.234 340.31 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0103778 -0.0521726 0.120945 0.0240576 129.491 369.859 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0103778 0.0521726 0.120945 0.0240576 139.786 318.104 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0132317 -0.06652 0.06652 0.0132317 148.833 380.239 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0103778 -0.0521726 -0.120945 -0.0240576 168.194 377.558 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0103778 0.0521726 -0.120945 -0.0240576 178.489 325.803 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0132317 -0.06652 -0.06652 -0.0132317 146.374 379.721 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0295534 0.0442298 -0.102533 0.0685101 155.886 314.998 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0295534 -0.0442298 -0.102533 0.0685101 185.203 358.874 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0376806 0.0563929 -0.0563929 0.0376806 134.89 321.387 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0295534 0.0442298 0.102533 -0.0685101 123.076 336.921 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0295534 -0.0442298 0.102533 -0.0685101 152.392 380.797 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0376806 0.0563929 0.0563929 -0.0376806 136.977 319.969 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0442298 -0.0295534 0.0685101 0.102533 121.274 345.98 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0442298 0.0295534 0.0685101 0.102533 165.15 316.663 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0563929 -0.0376806 0.0376806 0.0563929 127.651 366.98 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0442298 -0.0295534 -0.0685101 -0.102533 143.197 378.79 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0442298 0.0295534 -0.0685101 -0.102533 187.073 349.473 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0563929 -0.0376806 -0.0376806 -0.0563929 126.233 364.893 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0442298 0.0295534 -0.0685101 0.102533 143.129 316.868 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0442298 -0.0295534 -0.0685101 0.102533 187.005 346.185 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0563929 0.0376806 -0.0376806 0.0563929 126.139 330.806 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0442298 0.0295534 0.0685101 -0.102533 121.206 349.678 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0442298 -0.0295534 0.0685101 -0.102533 165.082 378.995 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0563929 0.0376806 0.0376806 -0.0563929 127.557 328.663 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0295534 -0.0442298 0.102533 0.0685101 123.007 358.737 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0295534 0.0442298 0.102533 0.0685101 152.324 314.861 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0376806 -0.0563929 0.0563929 0.0376806 136.939 375.731 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0295534 -0.0442298 -0.102533 -0.0685101 155.818 380.66 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0295534 0.0442298 -0.102533 -0.0685101 185.135 336.784 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0376806 -0.0563929 -0.0563929 -0.0376806 134.796 374.313 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0103778 0.0521726 -0.120945 0.0240576 168.388 318.152 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0103778 -0.0521726 -0.120945 0.0240576 178.682 369.907 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0132317 0.06652 -0.06652 0.0132317 146.536 316.007 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0103778 0.0521726 0.120945 -0.0240576 129.685 325.851 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0103778 -0.0521726 0.120945 -0.0240576 139.98 377.606 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0132317 0.06652 0.06652 -0.0132317 149.053 315.489 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0521726 -0.0103778 0.0240575 0.120945 124.554 333.53 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0521726 0.0103778 0.0240575 0.120945 176.309 323.235 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.06652 -0.0132316 0.0132316 0.06652 122.396 355.362 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0521726 -0.0103778 -0.0240575 -0.120945 132.252 372.233 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0521726 0.0103778 -0.0240575 -0.120945 184.007 361.938 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.06652 -0.0132316 -0.0132316 -0.06652 121.935 352.846 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0531947 -9.18768e-10 0 0.123315 127.7 328.27 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0531947 9.18768e-10 0 0.123315 180.469 328.27 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0678232 0 0 0.0678232 121.344 349.282 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0531947 -9.18768e-10 0 -0.123315 127.7 367.73 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0531947 9.18768e-10 0 -0.123315 180.469 367.73 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0678232 0 0 -0.0678232 121.344 346.718 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 2.7563e-09 -0.0531947 0.123315 9.18768e-09 134.231 374.261 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -2.7563e-09 0.0531947 0.123315 9.18768e-09 134.231 321.492 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 5.05322e-09 -0.0678232 0.0678232 5.05322e-09 155.26 380.635 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 2.7563e-09 -0.0531947 -0.123315 -9.18768e-09 173.691 374.261 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -2.7563e-09 0.0531947 -0.123315 -9.18768e-09 173.691 321.492 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 5.05322e-09 -0.0678232 -0.0678232 -5.05322e-09 152.697 380.635 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0376143 0.0376143 -0.0871968 0.0871968 149.415 315.305 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0376143 -0.0376143 -0.0871968 0.0871968 186.729 352.618 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0479583 0.0479583 -0.0479583 0.0479583 130.062 325.629 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0376143 0.0376143 0.0871968 -0.0871968 121.512 343.208 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0376143 -0.0376143 0.0871968 -0.0871968 158.826 380.521 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0479583 0.0479583 0.0479583 -0.0479583 131.856 323.835 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0376143 -0.0376143 0.0871968 0.0871968 121.512 352.444 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0376143 0.0376143 0.0871968 0.0871968 158.826 315.13 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0479582 -0.0479582 0.0479582 0.0479582 131.856 371.804 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0376143 -0.0376143 -0.0871968 -0.0871968 149.415 380.347 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0376143 0.0376143 -0.0871968 -0.0871968 186.729 343.033 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0479582 -0.0479582 -0.0479582 -0.0479582 130.062 369.954 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0491455 0.0203567 -0.0471906 0.113928 137.268 319.627 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0491455 -0.0203567 -0.0471906 0.113928 186.02 339.821 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0626605 0.0259548 -0.0259548 0.0626605 123.348 336.616 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0491455 0.0203567 0.0471906 -0.113928 122.167 356.084 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0491455 -0.0203567 0.0471906 -0.113928 170.919 376.278 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0626605 0.0259548 0.0259548 -0.0626605 124.337 334.26 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0203567 -0.0491455 0.113928 0.0471906 125.702 364.617 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0203567 0.0491455 0.113928 0.0471906 145.896 315.865 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0259548 -0.0626605 0.0626605 0.0259548 142.657 378.532 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0203567 -0.0491455 -0.113928 -0.0471906 162.159 379.718 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0203567 0.0491455 -0.113928 -0.0471906 182.352 330.966 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0259548 -0.0626605 -0.0626605 -0.0259548 140.301 377.6 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0203567 0.0491455 -0.113928 0.0471906 162.292 315.959 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0203567 -0.0491455 -0.113928 0.0471906 182.486 364.712 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0259548 0.0626605 -0.0626605 0.0259548 140.487 318.111 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0203567 0.0491455 0.113928 -0.0471906 125.835 331.06 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0203567 -0.0491455 0.113928 -0.0471906 146.029 379.813 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0259548 0.0626605 0.0626605 -0.0259548 142.786 317.122 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0491455 -0.0203567 0.0471906 0.113928 122.301 339.593 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0491455 0.0203567 0.0471906 0.113928 171.053 319.4 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0626605 -0.0259548 0.0259548 0.0626605 124.467 361.45 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I Pict
+%I b u
+%I cfg u
+%I cbg u
+%I f u
+%I p u
+%I t u
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ 0.0491455 -0.0203567 -0.0471906 -0.113928 137.402 376.051 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+Begin %I BSpl
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+1 SetP
+%I t
+[ -0.0491455 0.0203567 -0.0471906 -0.113928 186.154 355.857 ] concat
+%I 6
+496 416
+445 415
+470 360
+481 299
+490 218
+496 160
+6 BSpl
+End
+
+End %I eop
+
+Begin %I Circ
+%I b 65535
+1 0 0 [] 0 SetB
+%I cfg Black
+0 0 0 SetCFg
+%I cbg White
+1 1 1 SetCBg
+%I p
+0 SetP
+%I t
+[ 0.0626605 -0.0259548 -0.0259548 -0.0626605 123.478 359.094 ] concat
+%I
+483 414 15 Circ
+End
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+End %I eop
+
+%%Trailer
+
+showpage

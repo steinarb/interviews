@@ -1,0 +1,227 @@
+/**/#
+/**/# libInterViews - source files for the InterViews library
+/**/#
+
+#if CompileInMachineDepSubdir && !defined(InMachineDepSubdir)
+#define IHaveMachineDepSubdirs
+
+MakeMachineDepSubdir()
+DependMachineDepSubdir()
+
+#else
+
+CDEBUGFLAGS = LibraryCDebugFlags
+SRCS = $(SRC)//**/*.c $(GEN)/table.c $(GEN)/table2.c
+GENERICS = \
+	$(GEN)/ftable.h \
+	$(GEN)/itable.h \
+	$(GEN)/btable.h \
+	$(GEN)/table.c \
+	$(GEN)/table2.h \
+	$(GEN)/table2.c
+
+XOBJS = \
+	$X-bitmap.o \
+	$X-canvas.o \
+	$X-cursor.o \
+	$X-event.o \
+	$X-inter.o \
+	$X-paint.o \
+	$X-painter.o \
+	$X-raster.o \
+	$X-reqerr.o \
+	$X-scene.o \
+	$X-sensor.o \
+	$X-wmhints.o \
+	$X-world.o \
+	$X-wview.o
+
+#if defined(Use_g_plusplus)
+INITOBJS = \
+	_ctorlist.o \
+	_dtorlist.o \
+	_exit.o \
+	_finish.o \
+	_handler.o \
+	_init.o
+#endif
+
+OBJS = \
+	$(INITOBJS) \
+	adjuster.o \
+	banner.o \
+	bitmap.o \
+	border.o \
+	box.o \
+	button.o \
+	catalog.o \
+	chief.o \
+	connection.o \
+	control.o \
+	cursor.o \
+	deck.o \
+	deputy.o \
+	dialog.o \
+	filebrowser.o \
+	filechooser.o \
+	frame.o \
+	glue.o \
+	interactor.o \
+	menu.o \
+	message.o \
+	paint.o \
+	painter.o \
+	panner.o \
+	perspective.o \
+	propsheet.o \
+	raster.o \
+	regexp.o \
+	resource.o \
+	rubband.o \
+	rubcurve.o \
+	rubgroup.o \
+	rubline.o \
+	rubrect.o \
+	rubverts.o \
+	scene.o \
+	scroller.o \
+	sensor.o \
+	shape.o \
+	space.o \
+	spaceman.o \
+	stream.o \
+	strbrowser.o \
+	strchooser.o \
+	streditor.o \
+	strpool.o \
+	strtable.o \
+	stub.o \
+	subject.o \
+	table.o \
+	table2.o \
+	tagtable.o \
+	textbuffer.o \
+	textdisplay.o \
+	texteditor.o \
+	transformer.o \
+	tray.o \
+	viewport.o \
+	world.o \
+	worldview.o \
+	${XOBJS}
+
+NormalLibraryTarget(InterViews$X,$(OBJS))
+
+InstallLibrary(InterViews$X,$(USRLIBDIR))
+
+DependTarget($(GENERICS))
+
+MakeObjectFromSrc(_ctorlist)
+MakeObjectFromSrc(_dtorlist)
+MakeObjectFromSrc(_exit)
+MakeObjectFromSrc(_finish)
+MakeObjectFromSrc(_handler)
+MakeObjectFromSrc(_init)
+MakeObjectFromSrc(adjuster)
+MakeObjectFromSrc(banner)
+MakeObjectFromSrc(bitmap)
+MakeObjectFromSrc(border)
+MakeObjectFromSrc(box)
+MakeObjectFromSrc(button)
+MakeObjectFromSrc(catalog)
+MakeObjectFromSrc(chief)
+MakeObjectFromSrc(connection)
+MakeObjectFromSrc(control)
+MakeObjectFromSrc(cursor)
+MakeObjectFromSrc(deck)
+MakeObjectFromSrc(deputy)
+MakeObjectFromSrc(dialog)
+MakeObjectFromSrc(filebrowser)
+MakeObjectFromSrc(filechooser)
+MakeObjectFromSrc(frame)
+MakeObjectFromSrc(glue)
+MakeObjectFromSrc(interactor)
+MakeObjectFromSrc(menu)
+MakeObjectFromSrc(message)
+MakeObjectFromSrc(paint)
+MakeObjectFromSrc(painter)
+MakeObjectFromSrc(panner)
+MakeObjectFromSrc(perspective)
+MakeObjectFromSrc(propsheet)
+MakeObjectFromSrc(raster)
+MakeObjectFromSrc(regexp)
+MakeObjectFromSrc(resource)
+MakeObjectFromSrc(rubband)
+MakeObjectFromSrc(rubcurve)
+MakeObjectFromSrc(rubgroup)
+MakeObjectFromSrc(rubline)
+MakeObjectFromSrc(rubrect)
+MakeObjectFromSrc(rubverts)
+MakeObjectFromSrc(scene)
+MakeObjectFromSrc(scroller)
+MakeObjectFromSrc(sensor)
+MakeObjectFromSrc(shape)
+MakeObjectFromSrc(space)
+MakeObjectFromSrc(spaceman)
+MakeObjectFromSrc(stream)
+MakeObjectFromSrc(strbrowser)
+MakeObjectFromSrc(strchooser)
+MakeObjectFromSrc(streditor)
+MakeObjectFromSrc(strpool)
+MakeObjectFromSrc(strtable)
+MakeObjectFromSrc(stub)
+MakeObjectFromSrc(subject)
+MakeObjectFromGen(table)
+MakeObjectFromGen(table2)
+MakeObjectFromSrc(tagtable)
+MakeObjectFromSrc(textbuffer)
+MakeObjectFromSrc(textdisplay)
+MakeObjectFromSrc(texteditor)
+MakeObjectFromSrc(transformer)
+MakeObjectFromSrc(tray)
+MakeObjectFromSrc(viewport)
+MakeObjectFromSrc(world)
+MakeObjectFromSrc(worldview)
+MakeObjectFromSrc($X-bitmap)
+MakeObjectFromSrc($X-canvas)
+MakeObjectFromSrc($X-cursor)
+MakeObjectFromSrc($X-event)
+MakeObjectFromSrc($X-inter)
+MakeObjectFromSrc($X-paint)
+MakeObjectFromSrc($X-painter)
+MakeObjectFromSrc($X-raster)
+MakeObjectFromSrc($X-reqerr)
+MakeObjectFromSrc($X-scene)
+MakeObjectFromSrc($X-sensor)
+MakeObjectFromSrc($X-wmhints)
+MakeObjectFromSrc($X-world)
+MakeObjectFromSrc($X-wview)
+
+MakeGenFromTemplate($(GEN)/btable.h,$(TEMPLATES)/genptrtable2.h,\
+Table=BitmapTable TableKey1="unsigned long" TableKey2="int" \
+TableValue="class Bitmap*")
+
+MakeGenFromTemplate($(GEN)/ftable.h,$(TEMPLATES)/genptrtable.h,\
+Table=FontTable TableKey="class StringId*" TableValue="class FontRep*")
+
+MakeGenFromTemplate($(GEN)/itable.h,$(TEMPLATES)/genptrtable.h,\
+Table=InteractorTable TableKey="void*" TableValue="class Interactor*")
+
+MakeGenFromTemplate($(GEN)/table.c,$(TEMPLATES)/gentable.c,\
+Table=Table TableKey="void*" TableValue="void*" name=InterViews/table)
+
+MakeGenFromTemplate($(GEN)/table2.c,$(TEMPLATES)/gentable2.c,\
+Table=Table2 TableKey1="void*" TableKey2="void*" TableValue="void*" \
+name=table2)
+
+MakeGenFromTemplate($(GEN)/table2.h,$(TEMPLATES)/gentable2.h,\
+Table=Table2 TableKey1="void*" TableKey2="void*" TableValue="void*")
+
+$(GEN)/table2.c:: $(GEN)/table2.h
+$(GEN)/btable.h:: $(GEN)/table2.h
+
+#endif /* if compiling in subdirectory */
+
+#ifndef InMachineDepSubdir
+#define IHaveGenSubdirs
+#endif

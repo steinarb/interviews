@@ -1,0 +1,48 @@
+/**/#
+/**/# CC - C++ compiler driver
+/**/#
+
+/*
+ * C_plusplus_compiler should be defined in IVlocal.def.
+ */
+
+#if !defined(C_plusplus_compiler)
+#define C_plusplus_compiler g_plusplus
+#endif
+
+/*
+ * You can override C_plusplus_lib in IVlocal.def.
+ */
+
+#if !defined(C_plusplus_lib)
+#if defined(Use_g_plusplus)
+#define C_plusplus_lib '"'`pwd`/../../../../installed/lib/$$CPU/libgnulib.a'"'
+#else
+#define C_plusplus_lib '"-lC"'
+#endif
+#endif
+
+COMPILER = C_plusplus_compiler
+
+CC = CcCmd
+DEFS = $(ALLDEFINES) -D$(COMPILER)=1 -DSTDLIB=C_plusplus_lib
+INCLUDES =
+OPTIM = -O
+CFLAGS = $(CDEBUGFLAGS) $(OPTIM) $(DEFS) $(EXTRA_CFLAGS)
+DEPENDCFLAGS = $(DEFS)
+AOUT = CC
+BINDIR = $(LOCALBINDIR)
+
+#if CompileInMachineDepSubdir && !defined(InMachineDepSubdir)
+#define IHaveMachineDepSubdirs
+
+MakeMachineDepSubdir()
+DependMachineDepSubdir()
+BootstrapTarget()
+
+#else
+
+SimpleProgramTarget(CC)
+BootstrapTarget()
+
+#endif /* if compiling in subdirectory */

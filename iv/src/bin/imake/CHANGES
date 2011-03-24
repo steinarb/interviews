@@ -1,0 +1,9 @@
+The following changes have been made to this directory since R3:
+
+     o	the defaults have been fixed so that they work well on System V; this
+	allowed the config template to be simplified as well.
+     o	support for System V.3-based platforms was added; use the compilation
+	symbol USG to select for this support.
+     o  config templates and files have been moved from ./util/imake.includes
+	to ./config (relative to the top of your X source tree).
+

@@ -1,0 +1,24 @@
+/*
+ * SET VERSION NUMBERS BEFORE MAKING MAKEFILES
+ */
+
+#define SystemV           YES
+
+#define OSName            IRIX
+#define OSMajorVersion    3
+#define OSMinorVersion    2
+
+
+/**/# platform:  $XConsortium: generic.cf,v 1.2 89/01/11 14:58:19 jim Exp $
+/**/# operating system:  OSName
+
+/*****************************************************************************
+ *			  Platform-specfic parameters                        *
+ *****************************************************************************/
+
+#define CplusplusCcCmd /usr/sbin/CC
+#define DependCmd /bin/true
+#define ExtraLoadFlags -lrpcsvc -lsun -lbsd
+#define LnCmd ln -s
+#define StandardDefines -I/usr/include/bsd -Dsgi -DSVR3 -DSYSV
+#define UNCOMPRESSPATH /usr/bsd/uncompress

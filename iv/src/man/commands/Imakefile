@@ -1,0 +1,33 @@
+/**/#
+/**/# commands - man pages for programs run by user
+/**/#
+
+all::
+depend::
+install.man:: install
+
+FORMATTED	= commands.PS
+TROFFFLAGS 	= -man
+TROFFSRCS	= \
+	CC.n \
+	alert.n \
+	dclock.n \
+	graphics.n \
+	iclass.n \
+	idraw.n \
+	ifb.n \
+	ifc.n \
+	istat.n \
+	logo.n \
+	mailbox.n \
+	mkclass.n \
+	remind.n \
+	spaceman.n \
+	squares.n \
+	sted.n
+
+TroffSources($(FORMATTED))
+InstallMultipleFlags($(TROFFSRCS),$(MANDIR),$(INSTMANFLAGS))
+#if InstallRelative
+InstallMultipleFlags($(TROFFSRCS),$(RELATIVEMANDIR),$(INSTMANFLAGS))
+#endif

@@ -1,0 +1,32 @@
+/**/#
+/**/# spaceman - allegro object space manager
+/**/#
+
+#if CompileInMachineDepSubdir && !defined(InMachineDepSubdir)
+#define IHaveMachineDepSubdirs
+
+MakeMachineDepSubdir()
+DependMachineDepSubdir()
+
+#else
+
+BINDIR		= $(LOCALBINDIR)
+LOCAL_LIBRARIES	= $(LIBINTERVIEWS)
+
+#ifdef HPArchitecture
+EXTRA_LOAD_FLAGS = -lBSD
+#endif
+
+SRCS		= $(SRC)//**/*.c
+OBJS		= \
+	client.o \
+	client_stub.o \
+	manager.o
+
+ComplexProgramTarget(spaceman)
+
+MakeObjectFromSrc(client)
+MakeObjectFromSrc(client_stub)
+MakeObjectFromSrc(manager)
+
+#endif /* if compiling in subdirectory */

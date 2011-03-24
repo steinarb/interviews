@@ -1,0 +1,41 @@
+/**/#
+/**/# iclass - class browser
+/**/#
+
+#if CompileInMachineDepSubdir && !defined(InMachineDepSubdir)
+#define IHaveMachineDepSubdirs
+
+MakeMachineDepSubdir()
+DependMachineDepSubdir()
+
+#else
+
+LOCAL_LIBRARIES	= $(LIBINTERVIEWS)
+SYS_LIBRARIES	= -l$X -lm
+# CDEBUGFLAGS     = -g
+
+SRCS = $(SRC)//**/*.c
+OBJS = \
+    classbuffer.o\
+    classeditor.o\
+    classinfo.o\
+    compeditor.o\
+    dialogs.o\
+    direct.o\
+    globals.o\
+    iclass.o\
+    main.o
+
+ComplexProgramTarget(iclass)
+
+MakeObjectFromSrc(classbuffer)
+MakeObjectFromSrc(classeditor)
+MakeObjectFromSrc(classinfo)
+MakeObjectFromSrc(compeditor)
+MakeObjectFromSrc(dialogs)
+MakeObjectFromSrc(direct)
+MakeObjectFromSrc(globals)
+MakeObjectFromSrc(iclass)
+MakeObjectFromSrc(main)
+
+#endif /* if compiling in subdirectory */

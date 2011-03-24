@@ -1,0 +1,35 @@
+.TH Table 3I "15 August 1988" "InterViews" "InterViews Reference Manual"
+.SH NAME
+Table \- associative store for object pointers
+.SH SYNOPSIS
+.B #include <InterViews/table.h>
+.SH DESCRIPTION
+A table is an index where the key and data are pointers
+of unspecified type, declared as are \fBvoid*\fP.
+.SH PUBLIC OPERATIONS
+.TP
+.B "Table(int size)"
+Construct a table of the given size.
+The size will be rounded up to the next power of two
+so that indexing the table does not require division
+(just take the bitwise-and of the key and (size-1)).
+.TP
+.B "~Table()"
+Free storage associated with the table.
+.TP
+.B "void Insert(void* key, void* value)"
+Add (\fIkey\fP,\ \fIvalue\fP) pair to the table.
+Insert does not prevent a key
+from being entered in the table more than once.
+.TP
+.B "boolean Find(void*& value, void* key)"
+If \fIkey\fP has been inserted into the table,
+set \fIvalue\fP to the associated value and return true.
+Otherwise, do not modify \fIvalue\fP and return false.
+In the presence of duplicate keys, Find gets
+the most recently inserted value.
+.TP
+.B "void Remove(void* key)"
+Delete \fIkey\fP from the table.
+If \fIkey\fP appears in the table more than once, the most recently
+inserted entry is removed.

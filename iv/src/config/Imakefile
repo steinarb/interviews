@@ -1,0 +1,31 @@
+/**/#
+/**/# config - config files for InterViews build parameters and rules
+/**/#
+
+all::
+depend::
+
+/*
+ * Install config files.
+ */
+
+CONFIG_FILES	= \
+	IVImake.tmpl \
+	IVarch.c \
+	IVlocal.def \
+	IVproj.tmpl \
+	IVrules.def \
+	gcc.def
+
+MakeDirectories(install,$(CONFIGDIR))
+InstallMultipleFlags($(CONFIG_FILES),$(CONFIGDIR),$(INSTDATFLAGS))
+
+#if InstallPlatformCfFiles
+/*
+ * Install platform files too.
+ */
+
+PLATFORM_FILES	= *.bac *.cf
+
+InstallMultipleFlags($(PLATFORM_FILES),$(CONFIGDIR),$(INSTDATFLAGS))
+#endif

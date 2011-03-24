@@ -1,0 +1,57 @@
+.TH Control 3I "15 September 1989" "InterViews" "InterViews Reference Manual"
+.SH NAME
+Control, ControlState \- select and execute an action
+.SH SYNOPSIS
+.B #include <InterViews/control.h>
+.SH DESCRIPTION
+A control is a monoscene that allows an action to be selected and executed.
+The component of a control determines the appearance associated
+with the control.
+A control state is a subject that coordinates a group of related controls.
+The control state contains a pointer to the currently selected control
+(if any).
+.PP
+Controls are useful for grabbing input and moving over
+potentially selectable items.
+Examples of controls include popup menus, pulldown menus, and menu items.
+It is generally not necessary to call functions directly
+on a control.
+.SH PUBLIC OPERATIONS
+.TP
+.B "Control(Interactor*)"
+Construct a new control with the given interactor
+as the component.
+.TP
+.B "~Control"
+Destruct a control.  Because a control is a monoscene,
+deleting it implies deleting its component interactor.
+.TP
+.B "ControlState* State()"
+.ns
+.TP
+.B "void SetState(ControlState*)"
+Get or set the control state associated with a control.
+.TP
+.B "virtual void Handle(Event&)"
+Controls are initially inactive.
+A DownEvent causes a control to become active.
+If an active control receives an EnterEvent,
+it will set the current selection to itself.
+If an active control receives a LeaveEvent,
+it will set the current selection to \fInil\fP.
+.TP
+.B "virtual void Select()"
+Highlight the control and call the protected virtual functions Open and Grab.
+The base class Open does nothing, but subclasses
+may insert a new interactor such as a pulldown menu.
+Grab reads input and only passes through an event if its target
+is an active control.
+.TP
+.B "virtual void Unselect()"
+Call the protected virtual function Close and then unhighlight the control.
+.TP
+.B "virtual void Do()"
+Implement a selected action.
+When a control sees an UpEvent, it calls Do on the current selection.
+.SH SEE ALSO
+Event(3I), Interactor(3I), Menu(3I), Scene(3I)

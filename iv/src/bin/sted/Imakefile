@@ -1,0 +1,22 @@
+/**/#
+/**/# sted - simple text editor
+/**/#
+
+#if CompileInMachineDepSubdir && !defined(InMachineDepSubdir)
+#define IHaveMachineDepSubdirs
+
+MakeMachineDepSubdir()
+DependMachineDepSubdir()
+
+#else
+
+LOCAL_LIBRARIES	= $(LIBINTERVIEWS)
+SYS_LIBRARIES	= -l$X -lm
+
+#if SystemV==YES
+EXTRA_LOAD_FLAGS = -lPW
+#endif
+
+SimpleProgramTarget(sted)
+
+#endif /* if compiling in subdirectory */

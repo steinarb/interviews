@@ -1,0 +1,22 @@
+This directory contains the InterViews 2.6 distribution along with
+g++, the GNU C++ compiler.  You can "make" the entire system from this
+directory, but you may wish to configure paths for your site.  See
+iv/README for specific details and iv/man/cover/notes2.6 for information
+about this release.
+
+If you have any questions or problems, please send them to
+
+	interviews-bugs@interviews.stanford.edu
+
+If you wish to be on the InterViews mailing list, send a request to
+
+	interviews-requests@interviews.stanford.edu
+
+The mailing list alias is
+
+	interviews@interviews.stanford.edu
+
+
+				    Mark Linton
+				    Stanford University
+				    November 29, 1989

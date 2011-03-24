@@ -1,0 +1,35 @@
+/**/#
+/**/# bin - root of the InterViews programs' directory tree
+/**/#
+
+#define IHaveSubdirs
+
+/*
+ * Don't change this order - the order is important when bootstrapping.
+ */
+BOOTSTRAPSUBDIRS = \
+	imake \
+	makedepend \
+	CC \
+	scripts
+
+SUBDIRS	= \
+	alert \
+	dclock \
+	graphics \
+	iclass \
+	idraw \
+	ifb \
+	ifc \
+	istat \
+	logo \
+	mailbox \
+	spaceman \
+	squares \
+	sted
+
+MakeSubdirs($(SUBDIRS))
+DependSubdirs($(SUBDIRS))
+BootstrapSubdirs($(BOOTSTRAPSUBDIRS))
+CleanSubdirs($(BOOTSTRAPSUBDIRS))
+MakefileSubdirs($(BOOTSTRAPSUBDIRS))

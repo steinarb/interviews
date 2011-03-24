@@ -1,0 +1,21 @@
+/**/#
+/**/# X11 - include files for the X Window System
+/**/#
+
+all::
+depend::
+
+/*
+ * Install header files.
+ */
+
+HEADERS		= \
+	Xlib.h \
+	Xutil.h \
+	eventrep.h \
+	painterrep.h \
+	wmhints.h \
+	worldrep.h
+
+MakeDirectories(install,$(INCDIR)/X11)
+InstallMultipleFlags($(HEADERS),$(INCDIR)/X11,$(INSTINCFLAGS))

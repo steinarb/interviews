@@ -1,0 +1,83 @@
+/*
+ * SET VERSION NUMBERS BEFORE MAKING MAKEFILES
+ *
+ * If you change either of the following numbers, you will need to do a 
+ * full build (make World) at the top of the sources....
+ */
+#define SunOSPlatform     YES		/* set to NO if not running SunOS */
+#define OSName            SunOS 4.0.3
+#define OSMajorVersion    4
+#define OSMinorVersion    0
+#define HasSaberC	  YES		/* for machines that have it */
+#define XsunServer Xsun
+#define HasGcc NO			/* very useful for server, though */
+
+#define SystemV           NO
+#define HasPutenv YES
+#define HasBsearch YES
+
+#if OSMajorVersion >= 4
+#define HasSunOSSharedLibraries YES
+#endif
+
+#if OSMajorVersion <= 3
+#define HasVoidSignalReturn NO
+#else
+#define HasVoidSignalReturn YES
+#endif
+
+#ifdef sparc
+#undef sparc
+#define SparcArchitecture
+#endif
+#ifdef sun386
+#undef sun386
+#define i386Architecture
+#endif
+
+#if !HasGcc
+#ifdef mc68000
+#define DefaultCCOptions -f68881 -pipe		/* remove in R4 */
+#else
+#define DefaultCCOptions -pipe			/* remove in R4 */
+#endif
+#endif
+
+#define LibraryCCOptions /* don't want special floating point */
+#define LibraryDefines  /**/
+/* see below for ServerDefines */
+
+
+/**/# platform:  $XConsortium: sun.cf,v 1.32 89/10/11 18:54:52 jim Exp $
+/**/# operating system:  OSName
+
+#if SunOSPlatform
+
+#if OSMajorVersion == 3 && OSMinorVersion <= 2
+#define OptimizedCDebugFlags /* as nothing */
+#endif
+
+#define UseSunWindowsInServer	NO	/* link in SunWindows support? */
+
+#if UseSunWindowsInServer
+#define SunWindowsDefines -DSUN_WINDOWS
+#else
+#define SunWindowsDefines /* as nothing */
+#endif
+
+/* define this as you like for server compilation */
+#if OSMajorVersion >= 4 || defined(SparcArchitecture)
+#define AllocateLocalDefines -DINCLUDE_ALLOCA_H
+#else
+#define AllocateLocalDefines /**/
+#endif
+
+#define ExtensionDefines -DSHAPE -DMITSHM -DMULTIBUFFER -DMITMISC
+
+#define ServerDefines -DXDMCP SunWindowsDefines ExtensionDefines AllocateLocalDefines
+
+#if OSMajorVersion >= 4 && OSMinorVersion >= 0
+#define SetTtyGroup YES
+#endif
+
+#endif /* SunOSPlatform */

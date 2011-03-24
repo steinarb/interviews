@@ -1,0 +1,26 @@
+/**/#
+/**/# logo - InterViews logo
+/**/#
+
+#if CompileInMachineDepSubdir && !defined(InMachineDepSubdir)
+#define IHaveMachineDepSubdirs
+
+MakeMachineDepSubdir()
+DependMachineDepSubdir()
+
+#else
+
+LOCAL_LIBRARIES	= $(LIBINTERVIEWS)
+SYS_LIBRARIES	= -l$X -lm
+
+SRCS		= $(SRC)//**/*.c
+OBJS		= \
+	logo.o\
+	main.o
+
+ComplexProgramTarget(logo)
+
+MakeObjectFromSrc(logo)
+MakeObjectFromSrc(main)
+
+#endif /* if compiling in subdirectory */

@@ -1,0 +1,181 @@
+/*
+ * SET VERSION NUMBERS BEFORE MAKING MAKEFILES
+ */
+
+#define OSMajorVersion         0
+#define OSMinorVersion         0
+
+#ifdef AIXArchitecture
+#define SystemV YES
+#define OSName AIX
+#define ibmbootstrapcflags -Daix
+#define OSDefines /**/
+#define OPERATING_SYSTEM AIX /* directory name under server/ddx/ibm/ */
+#ifdef USE_PCC
+#define CcCmd i386cc
+#define ibmosdefs -DHCVERSION=HCRevision
+#define LibraryDefines /**/
+#else
+#define CcCmd cc -Nd4000 -Nn3000 -DBSD_INCLUDES
+#define LibraryDefines -Hcpp -DUNIXCPP
+#define ibmosdefs -DSYSV -Nd4000 -Nn3000
+#endif /* USE_PCC */
+#else /* else not aix */
+#define SystemV NO
+#define OSName AOS
+#define CcCmd hc
+#define ibmosdefs -DHCVERSION=HCRevision
+#define OSDefines -DBSDrt
+#define OPERATING_SYSTEM BSDrt
+#endif /* AIXArchitecture */
+
+#define HasVoidSignalReturn    NO
+
+#ifdef RtArchitecture
+/*
+ * These define the screens the server will allow
+ * affected:    .../server/ddx/ibm/Makefile
+ *              .../server/ddx/ibm/common/Makefile
+ * Also, be sure to remove .../server/ddx/ibm/common/ibmscreen.o
+ * 
+ *                                        PS2, Rt, ...
+ */
+#define ibmInclude8514  NO /* YES */
+#define ibmIncludeAED   NO /* YES */
+#define ibmIncludeAPA16 YES
+#define ibmIncludeAPA8c NO
+#define ibmIncludeEGA   NO /* YES */
+#define ibmIncludeMPEL  NO /* YES */
+#define ibmIncludeVGA   NO /* YES */
+#define ibmIncludeGEN   NO
+#endif /* RtArchitecture */
+
+#ifdef PS2Architecture
+#define AsCmd /bin.386/i386as
+#define LdCmd /bin.386/i386ld
+#define ExtraLibraries /lib.386/libtcp.a
+#define LnCmd ln			/* no symbolic links */
+#define ibmarchdefs -Di386 -DiAPX386
+/*
+ * These define the screens the server will allow
+ * affected:    .../server/ddx/ibm/Makefile
+ *              .../server/ddx/ibm/common/Makefile
+ * Also, be sure to remove .../server/ddx/ibm/common/ibmscreen.o
+ * 
+ *                                        PS2, Rt, ...
+ */
+#define ibmInclude8514  YES
+#define ibmIncludeAED   NO
+#define ibmIncludeAPA16 NO
+#define ibmIncludeAPA8c NO
+#define ibmIncludeEGA   NO
+#define ibmIncludeMPEL  NO
+#define ibmIncludeVGA   YES
+#define ibmIncludeGEN   NO
+#endif /* PS2Architecture */
+
+/*
+ * These define the screens the server will allow
+ * affected:    .../server/ddx/ibm/Makefile
+ *              .../server/ddx/ibm/common/Makefile
+ * Also, be sure to remove .../server/ddx/ibm/common/ibmscreen.o
+ * 
+ *                                        PS2, Rt, ...
+ */
+#ifndef ibmosdefs
+#define ibmosdefs /**/
+#endif
+#ifndef ibmarchdefs
+#define ibmarchdefs /**/
+#endif
+#ifndef ibmbootstrapcflags
+#define ibmbootstrapcflags /**/
+#endif
+
+#define BootstrapCFlags -Dibm ibmbootstrapcflags
+#define StandardDefines -Dibm ibmosdefs ibmarchdefs
+#define LintOpts -ax -Dibm ibmosdefs ibmarchdefs
+
+/* 
+ * This defines the name of server you want.
+ * affected: .../X11/server/Makefile
+ */
+#define XibmServer Xibm
+/* #define BuildServer NO */
+
+/*****************************************************************************
+ *                        Platform-specfic parameters                        *
+ *****************************************************************************/
+
+	/*
+	 * affected:	.../server/ddx/ibm/common/Makefile
+	 *		.../server/os/4.2bsd/Makefile
+	 * remove:	.../server/ddx/ibm/common/ibminit.o
+	 *		.../server/ddx/ibm/common/ibmio.o
+	 *		.../server/ddx/ibm/common/ibmutils.o
+	 *		.../server/os/4.2bsd/utils.o
+	 */
+
+#define	SpecialMalloc		YES
+/* Need This Also For our IBM Imakefiles */
+#define	ibmSpecialMalloc		YES
+
+ LDCOMBINEFLAGS = -X -r
+            PCC = pcc
+
+#ifndef AIXArchitecture
+/*
+ * It's real useful to know the version of hc we're using, but hc doesn't
+ * identify itself in the pre-processor, so we have to do it by hand.
+ *
+ * To determine which version of hc you have, compile (DON'T link) some simple 
+ * program ("hello world" leaps to mind) and look in the .o (with "nm") for a 
+ * symbol named ".oVhc[0-9].[0-9][a-z]" -- this symbol is included in all 
+ * .o's by hc, and identifies the compiler release.
+ * 
+ * To Calculate HCRevision, multiply the version number by 1000 and add the
+ * index of the release letter.
+ * For example, if nm reports:
+ *	00000000 A .oVhc2.1d
+ * The HCRevision is ((2.1 * 1000)+('d'-'a'+1)) == 21004
+ * Another popular version of hc is:
+ *	00000000 A .oVhc1.4r
+ * Whose HCRevision is ((1.4 * 1000)+('r'-'a'+1)) == 14018
+ *
+ * A good clue that HCRevision is defined incorrectly is the undefined symbol
+ * '_Alloca' at load time.
+ */
+
+#define	HCRevision	21004
+
+/*
+ * hc revision 1.4r won't compile parts of Xt and some clients.
+ */
+#if HCRevision == 14018
+#define BandAidCompiler "rtcchack.bac"
+#undef MacroFile
+#define MacroFile ibm.cf $(IRULESRC)/rtcchack.bac
+#endif
+#endif /* not AIX */
+
+/* 
+ * define this as you like for server compilation 
+ * affected: all makefiles in .../X11/server
+ */
+#define ServerDefines  StandardDefines -DUNIXCPP -DNOSTDHDRS StandardDefines OSDefines ExtensionDefines
+
+
+/* define this as you like for server font support */
+#define FontDefines -DFONT_SNF -DFONT_BDF -DCOMPRESSED_FONTS StandardDefines
+
+/* define the following line for easily debuggable servers, the */
+/* second line for especially speedy servers.			*/
+/* #define ServerCDebugFlags	-O -DDEBUG -DTRACE_X */
+#define	ServerCDebugFlags -O -DATHENA
+
+/* define this as you like for normal library compilation */
+#define LibraryDefines -DUNIXCPP StandardDefines
+
+/**/# platform:  $XConsortium: ibm.cf,v 1.12 89/10/11 18:55:09 jim Exp $
+/**/# operating system:  OSName
+
