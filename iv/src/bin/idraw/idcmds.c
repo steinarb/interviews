@@ -46,7 +46,8 @@
 #include <Unidraw/Commands/edit.h>
 #include <Unidraw/Commands/transforms.h>
 
-#include <InterViews/filechooser.h>
+#undef FileChooser
+#define FileChooser _lib_iv(FileChooser)
 
 #include <stream.h>
 

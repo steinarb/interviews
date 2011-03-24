@@ -29,7 +29,7 @@
 #ifndef iv_tiff_h
 #define iv_tiff_h
 
-#include <InterViews/boolean.h>
+#include <InterViews/enter-scope.h>
 
 #include <InterViews/_enter.h>
 

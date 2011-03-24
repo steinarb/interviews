@@ -21,8 +21,7 @@
  */
 
 /*
- * Button component definitions.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibadjuster.c,v 1.2 91/09/27 14:05:22 tang Exp $
+ * Adjuster component definitions.
  */
 
 #include "ibadjuster.h"
@@ -268,7 +267,14 @@ boolean AdjusterCode::IsA(ClassId id) {
     return ADJUSTER_CODE == id || CodeView::IsA(id);
 }
 
-AdjusterCode::AdjusterCode (AdjusterComp* subj) : CodeView(subj) { }
+AdjusterCode::AdjusterCode (AdjusterComp* subj) : CodeView(subj) {}
+
+void AdjusterCode::Update () {
+    CodeView::Update();
+    InteractorComp* subj = GetIntComp();
+    Graphic* gr = subj->GetGraphic();
+    gr->SetFont(nil);
+}
 
 AdjusterComp* AdjusterCode::GetAdjusterComp () {
     return (AdjusterComp*) GetSubject(); 
@@ -318,23 +324,33 @@ boolean AdjusterCode::Definition (ostream& out) {
 	const char* adjustee = mnamer->GetName();
 
 	if (*adjustee == '\0') {
-	    strcat(_errbuf, mname);
-            strcat(_errbuf, " has undefined adjusting target.\n");
+            if (_err_count < 10) {
+                strcat(_errbuf, mname);
+                strcat(_errbuf, " has undefined adjusting target.\n");
+                _err_count++;
+            }
             return false;
 
         } else if (!Search(mnamer, ctarget)) {
-	    strcat(_errbuf, mname);
-            strcat(
-                _errbuf, "'s adjusting target is not in the same hierarchy.\n"
-            );
+            if (_err_count < 10) {
+                strcat(_errbuf, mname);
+                strcat(
+                    _errbuf, 
+                    "'s adjusting target is not in the same hierarchy.\n"
+                );
+                _err_count++;
+            }
 	    return false;
 
         } else if (ctarget != nil && !icomp->IsRelatableTo(ctarget)) {
-	    strcat(_errbuf, mname);
-            strcat(
-                _errbuf, 
-                "'s adjusting target is not subclassed nor adjustable.\n"
-            );
+            if (_err_count < 10) {
+                strcat(_errbuf, mname);
+                strcat(
+                    _errbuf, 
+                    "'s adjusting target is not subclassed nor adjustable.\n"
+                );
+                _err_count++;
+            }
 	    return false;
         }
 	if (_instancelist->Find((void*) adjustee)) {
@@ -400,7 +416,8 @@ boolean AdjusterCode::CoreConstDecls(ostream& out) {
 }
 
 boolean AdjusterCode::CoreConstInits(ostream& out) {
-    const char* classname =GetIntComp()->GetClassNameVar()->GetBaseClass();
+    const char* classname = GetIntComp()->GetClassNameVar()->GetBaseClass();
+    const char* subclass = GetIntComp()->GetClassNameVar()->GetName();
 
     out << "(\n    const char* name, Interactor* i";
     if ( 
@@ -408,12 +425,12 @@ boolean AdjusterCode::CoreConstInits(ostream& out) {
         strcmp(classname, "Reducer") == 0
     ) {
         out << "\n) : " << classname << "(name, i) {\n";
-        out << "    perspective = new Perspective;\n";
+        out << "    SetClassName(\"" << subclass << "\");\n";
         out << "}\n\n";
 
     } else {
         out << ", int w\n) : " << classname << "(name, i, w) {\n";
-        out << "    perspective = new Perspective;\n";
+        out << "    SetClassName(\"" << subclass << "\");\n";
         out << "}\n\n";
     }
 
@@ -541,7 +558,6 @@ void AdjusterGraphic::draw (Canvas* c, Graphic* gs) {
     update(gs);
     int offx = 0;
     int offy = 0;
-    _p->ClearRect(c, 0, 0, xmax, ymax);
     if (xmax >= _wmap) {
         offx = xmax - _wmap;
     }

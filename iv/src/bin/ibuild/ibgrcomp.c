@@ -36,7 +36,7 @@
 #include <Unidraw/selection.h>
 #include <Unidraw/viewer.h>
 #include <Unidraw/unidraw.h>
-#include <Unidraw/Graphic/graphic.h>
+#include <Unidraw/Graphic/picture.h>
 #include <Unidraw/Tools/tool.h>
 #include <InterViews/transformer.h>
 #include <stream.h>
@@ -46,9 +46,18 @@
 static const char* igrcomps_delim = "%igrcomps_delim";
 /*****************************************************************************/
 
-IGraphicComps::IGraphicComps () {
-    GetClassNameVar()->SetName("Picture");
-    GetClassNameVar()->SetBaseClass("Picture");
+IGraphicComps::IGraphicComps (Graphic* gr) : IComp(gr) {
+    _gclassNameVar->SetName("Picture");
+    _gclassNameVar->SetBaseClass("Picture");
+    _cclassNameVar->SetName("GraphicComps");
+    _cclassNameVar->SetBaseClass("GraphicComps");
+    _vclassNameVar->SetName("GraphicViews");
+    _vclassNameVar->SetBaseClass("GraphicViews");
+    _compid->SetOrigID(GRAPHIC_COMPS);
+
+    if (gr == nil) {
+        SetGraphic(new Picture);
+    }
 }
 
 void IGraphicComps::Instantiate () {
@@ -96,9 +105,13 @@ void IGraphicComps::Interpret (Command* cmd) {
             }
         }
         GraphicComps::Interpret(cmd);
+        for (cb->First(i); !cb->Done(i); cb->Next(i)) {
+            IComp* kid = (IComp*)cb->GetComp(i);
+            kid->Instantiate();
+        }
         Propagate(cmd);
 
-    } else if (cmd->IsA(GETCONFLICT_CMD)) {
+    } else if (cmd->IsA(GETCONFLICT_CMD) || cmd->IsA(IDMAP_CMD)) {
         IComp::Interpret(cmd);
         for (First(i); !Done(i); Next(i)) {
             GetComp(i)->Interpret(cmd);
@@ -122,6 +135,14 @@ void IGraphicComps::Interpret (Command* cmd) {
             Propagate(cmd);
         } else {
             GraphicComps::Interpret(cmd);
+        }
+
+    } else if (cmd->IsA(COMPCHECK_CMD)) {
+        CompCheckCmd* ccmd = (CompCheckCmd*) cmd;
+        Iterator i;
+        IComp::Interpret(cmd);
+        for (First(i); !Done(i) && ccmd->IsOK(); Next(i)) {
+            GetComp(i)->Interpret(cmd);
         }
     } else if (
         !cmd->IsA(SCENE_CMD) && !cmd->IsA(MONOSCENE_CMD) && 
@@ -268,14 +289,17 @@ void IGraphicViews::InitHandles () {
 ClassId GroupCode::GetClassId () { return IGROUP_CODE; }
 
 boolean GroupCode::IsA(ClassId id) {
-    return IGROUP_CODE == id || CodeView::IsA(id);
+    return IGROUP_CODE == id || GraphicCodeView::IsA(id);
 }
 
-GroupCode::GroupCode (IGraphicComps* subj) : CodeView(subj) {}
+GroupCode::GroupCode (IGraphicComps* subj) : GraphicCodeView(subj) {}
 
 IGraphicComps* GroupCode::GetIGraphicComps () {
     return (IGraphicComps*) GetSubject(); 
 }
+
+const char* GroupCode::GetGHeader () { return "picture"; }
+const char* GroupCode::GetCVHeader () { return "grview"; }
 
 boolean GroupCode::Definition (ostream& out) {
     Iterator i;
@@ -283,92 +307,108 @@ boolean GroupCode::Definition (ostream& out) {
 
     IGraphicComps* grcomps = GetIGraphicComps();
     Graphic* picture= grcomps->GetGraphic();
-    SubclassNameVar* snamer = grcomps->GetClassNameVar();
+
+    SubclassNameVar* cnamer = grcomps->GetCClassNameVar();
+    SubclassNameVar* vnamer = grcomps->GetVClassNameVar();
+    SubclassNameVar* gnamer = grcomps->GetGClassNameVar();
     MemberNameVar* mnamer = grcomps->GetMemberNameVar();
+
     const char* mname = mnamer->GetName();
-    const char* subclass = snamer->GetName();
+    const char* cname = cnamer->GetName();
+    const char* vname = vnamer->GetName();
+    const char* gname = gnamer->GetName();
 
-    if (_emitGraphicState) {
-        ok = WriteGraphicDecls(picture, out);
-        ok = ok && Iterate(out);
-
-    } else if (
-        _emitInstanceDecls || _emitForward || 
-        _emitClassHeaders || _emitHeaders
-    ) {
-        ok = CodeView::Definition(out);
-        if (_emitInstanceDecls && _emitGraphicComp && !_emitExport) {
-            out << "    GraphicComps* " << mname << "_comp;\n";
-        }
+    if (_emitInstanceDecls || _emitGraphicState) {
+	ok = ok && GraphicCodeView::Definition(out);
         ok = ok && Iterate(out);
 
     } else if (_emitExpHeader) {
-        if (!snamer->IsSubclass()) {
-            if (
-                _scope && mnamer->GetExport() && 
-                !_namelist->Search("picture")
-            ) {
-                _namelist->Append("picture");
-                out << "#include <Unidraw/Graphic/picture.h> \n";
+        ok = ok && GraphicCodeView::Definition(out);
+        if (_emitGraphicComp) {
+            if (!cnamer->IsSubclass() || !vnamer->IsSubclass()) {
+                if (_scope && mnamer->GetExport()) {
+                    if (!_namelist->Search("grcomp")) {
+                        _namelist->Append("grcomp");
+                        out << "#include <Unidraw/Components/grcomp.h> \n";
+                    } 
+                    if (!_namelist->Search("grview")) {
+                        _namelist->Append("grview");
+                        out << "#include <Unidraw/Components/grview.h> \n";
+                    } 
+                }
             }
-        } else {
-            ok = CodeView::Definition(out);
         }
         ok = ok && Iterate(out);
 
     } else if (_emitCorehHeader) {
-        if (snamer->IsSubclass() && strcmp(subclass, _classname) == 0) {
+        boolean found = false;
+
+        if (gnamer->IsSubclass() && strcmp(gname, _classname) == 0) {
             if (!_namelist->Search("picture")) {
                 _namelist->Append("picture");
                 out << "#include <Unidraw/Graphic/picture.h> \n";
+                found = true;
             }
-        } else {
+        }
+        if (_emitGraphicComp) {
+            if (cnamer->IsSubclass() && strcmp(cname, _classname) == 0) {
+                if (!_namelist->Search("grcomp")) {
+                    _namelist->Append("grcomp");
+                    out << "#include <Unidraw/Components/grcomp.h> \n";
+                    found = true;
+                }
+            }
+            if (vnamer->IsSubclass() && strcmp(vname, _classname) == 0) {
+                if (!_namelist->Search("grview")) {
+                    _namelist->Append("grview");
+                    out << "#include <Unidraw/Components/grview.h> \n";
+                    found = true;
+                }
+            }
+        }
+        if (!found) {
             ok = ok && Iterate(out);
         }
-
     } else if (_emitInstanceInits) {
         out << "    {\n";
-        out << "        " << mname << " = new " << subclass << ";\n";
+        if (_emitGraphicComp) {
+            out << "        " << mname << "_gr";
+        } else {
+            out << "        " << mname;
+        }
+        out << " = new " << gname << ";\n";
         ok = WriteGraphicInits(picture, out);
         if (_emitGraphicComp) {
-            out << "        " << mname;
-            out << "_comp = new GraphicComps(" << mname << ");\n";
+            out << "        " << mname << " = new " << cname << "(";
+            out << mname << "_gr);\n";
         }
         out << "    }\n";
 
         for (First(i); !Done(i); Next(i)) {
-            CodeView* cv = (CodeView*) GetView(i);
+            GraphicCodeView* cv = (GraphicCodeView*) GetView(i);
             ok = ok && cv->Definition(out);
             const char* kmname = cv->GetIComp()->GetMemberNameVar()->GetName();
-
-            if (_emitGraphicComp) {
-                out << "    " << mname << "_comp->Append(";
-                out << kmname << "_comp);\n";
-
-            } else {
-                out << "    " << mname << "->Append(";
-                out << kmname << ");\n";
-            }
+            
+            out << "    " << mname << "->Append(";
+            out << kmname << ");\n";
         }
 
-    } else if (
-        _emitCoreDecls || _emitCoreInits || _emitClassDecls || _emitClassInits
-    ) {
-	ok = ok && CodeView::Definition(out);
+    } else {
+	ok = ok && GraphicCodeView::Definition(out);
         ok = ok && Iterate(out);
     }
     return ok && out.good();
 }
 
-boolean GroupCode::CoreConstDecls(ostream& out) { 
+boolean GroupCode::GCoreConstDecls(ostream& out) { 
     out << "(Graphic* = nil);\n";
     return out.good();
 }
 
-boolean GroupCode::CoreConstInits(ostream& out) {
+boolean GroupCode::GCoreConstInits(ostream& out) {
     IComp* icomp = GetIComp();
-    SubclassNameVar* snamer = icomp->GetClassNameVar();
-    const char* baseclass = snamer->GetBaseClass();
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    const char* baseclass = gnamer->GetBaseClass();
 
     out << "(Graphic* gr) : ";
     out << baseclass << "(gr) {}\n\n";
@@ -376,26 +416,148 @@ boolean GroupCode::CoreConstInits(ostream& out) {
     return out.good();
 }
 
-boolean GroupCode::ConstDecls(ostream& out) {
+boolean GroupCode::GConstDecls(ostream& out) {
     out << "(Graphic* = nil);\n";
+    out << "    virtual Graphic* Copy();\n";
     return out.good();
 }
 
-boolean GroupCode::ConstInits(ostream& out) {
+boolean GroupCode::GConstInits(ostream& out) {
     char coreclass[CHARBUFSIZE];
     GetCoreClassName(coreclass);
+    IComp* icomp = GetIComp();
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    const char* gname = gnamer->GetName();
 
     out << "(Graphic* gr) : ";
+    out << coreclass << "(gr) {}\n\n";
+    out << "Graphic* " << gname << "::Copy () {\n";
+    out << "    return new " << gname << "(this);\n";
+    out << "}\n\n";
+
+    return out.good();
+}
+
+boolean GroupCode::CCoreConstInits(ostream& out) {
+    IComp* icomp = GetIComp();
+    SubclassNameVar* cnamer = icomp->GetCClassNameVar();
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    const char* cname = cnamer->GetName();
+    const char* gname = gnamer->GetName();
+    const char* cbname = cnamer->GetBaseClass();
+    int cid = icomp->GetCIDVar()->GetID();
+
+
+    out << "(" << gname << "* gr) : ";
+    out << cbname << "(gr) {\n";
+    out << "    if (gr == nil) {\n";
+    out << "        gr = new " << gname << ";\n";
+    out << "        SetGraphic(gr);\n";
+    out << "    }\n";
+    out << "}\n\n";
+
+    out << "ClassId " << cname << "_core::GetClassId () { return ";
+    out << cid << ";}\n";
+    out << "boolean " << cname << "_core::IsA (ClassId id) {\n";
+    out << "    return id == " << cid << " || " << cbname << "::IsA(id);\n";
+    out << "}\n\n";
+
+    return out.good();
+}
+
+boolean GroupCode::CConstDecls(ostream& out) {
+    IComp* icomp = GetIComp();
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    const char* gname = gnamer->GetName();
+
+    out << "(" << gname << "* = nil);\n\n";
+    return out.good();
+}
+
+boolean GroupCode::CConstInits(ostream& out) {
+    IComp* icomp = GetIComp();
+    char coreclass[CHARBUFSIZE];
+    GetCoreClassName(coreclass);
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    const char* gname = gnamer->GetName();
+
+    out << "(" << gname << "* gr) : ";
     out << coreclass << "(gr) {}\n\n";
 
     return out.good();
 }
 
-boolean GroupCode::EmitIncludeHeaders(ostream& out) {
-    if (!_namelist->Search("grcomp") && _emitGraphicComp) {
-        _namelist->Append("grcomp");
-        out << "#include <Unidraw/Components/grcomp.h> \n";
+boolean GroupCode::VCoreConstDecls (ostream& out) {
+    boolean ok = GraphicCodeView::VCoreConstDecls(out);
+    IComp* icomp = GetIComp();
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    if (gnamer->IsSubclass() && ok) {
+        out << "    virtual Graphic* GetGraphic();\n";
+    }
+    return ok && out.good();
+}
+
+boolean GroupCode::VCoreConstInits (ostream& out) {
+    boolean ok = GraphicCodeView::VCoreConstInits(out);
+    IComp* icomp = GetIComp();
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    SubclassNameVar* vnamer = icomp->GetVClassNameVar();
+    const char* gname = gnamer->GetName();
+    const char* vname = vnamer->GetName();
+    
+    if (gnamer->IsSubclass() && ok) {
+        out << "Graphic* " << vname << "_core::GetGraphic () {\n";
+        out << "    Graphic* g = GraphicView::GetGraphic();\n\n";
+        out << "    if (g == nil) {\n";
+        out << "        g = new " << gname << ";\n";
+        out << "        Iterator i;\n\n";
+        out << "        for (First(i); !Done(i); Next(i)) {\n";
+        out << "            g->Append(GetView(i)->GetGraphic());\n";
+        out << "        }\n";
+        out << "        SetGraphic(g);\n";
+        out << "    }\n";
+        out << "    return g;\n";
+        out << "}\n\n";
+    }
+    return ok && out.good();
+}
+
+boolean GroupCode::EmitIncludeHeaders (ostream& out) {
+    IComp* icomp = GetIComp();
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    SubclassNameVar* cnamer = icomp->GetCClassNameVar();
+    SubclassNameVar* vnamer = icomp->GetVClassNameVar();
+    
+    const char* gname = gnamer->GetName();
+    const char* gheader = GetGHeader();
+
+    if (!gnamer->IsSubclass() && !_namelist->Search(gheader)) {
+        _namelist->Append(gheader);
+        out << "#include <Unidraw/Graphic/" << gheader << ".h> \n";
+    }
+    if (_emitGraphicComp) {
+        if (!cnamer->IsSubclass()) {
+            if (!_namelist->Search("grcomp")) {
+                _namelist->Append("grcomp");
+                out << "#include <Unidraw/Components/grcomp.h> \n";
+            } 
+        }
+        if (*_classname == '\0' || _scope) {
+            if (!vnamer->IsSubclass() && !_namelist->Search("grview")) {
+                _namelist->Append("grview");
+                out << "#include <Unidraw/Components/grview.h> \n";
+            }
+        } 
+        if (
+            strcmp(vnamer->GetName(), _classname) == 0 && gnamer->IsSubclass()
+        ) {
+            if (!_namelist->Search("iterator")) {
+                _namelist->Append("iterator");
+                out << "#include <Unidraw/iterator.h> \n";
+            }
+        }
     }
     return out.good();
 }
+
 

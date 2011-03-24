@@ -22,7 +22,6 @@
 
 /*
  * PropsEditor - an interface to editing a Props
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibprops.h,v 1.2 91/09/27 14:14:54 tang Exp $
  */
 
 #ifndef ibprops_h

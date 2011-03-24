@@ -1,9 +1,37 @@
 /*
  * For now, just assume cfront 2.0.
- * If you are using cfront 2.1, then use -Dcplusplus_2_1.
+ * If you are using cfront 2.1 or cfront 3.0, then use -Dcplusplus_2_1.
  */
 #undef LanguageCCDefines
 #define LanguageCCDefines -Dcplusplus_2_0
+
+/*
+ * If you are using gcc/g++, then uncomment the include below.
+ */
+/* #include <InterViews/gcc.def> */
+
+/*
+ * Default customization of kits.
+ * Possible flags to define:
+ *	sgi_motif_kit (SMFKit), motif_kit (MFKit),
+ *	openlook_kit (OLKit), bw_kit (MonoKit)
+ */
+#ifndef KitFlags
+#define KitFlags \
+-Dmotif_kit \
+-Dsgi_motif_kit \
+-Dopenlook_kit \
+-Dbw_kit \
+-Ddefault_kit=SMFKit
+#endif
+
+/*
+ * If you are using g++, define BuildRPCClasses to NO.
+ */
+#if defined(SGIArchitecture) || defined(SunArchitecture)
+#undef BuildRPCClasses
+#define BuildRPCClasses YES
+#endif
 
 /*
  * Delete this definition if your /tmp space is less than five megabytes.

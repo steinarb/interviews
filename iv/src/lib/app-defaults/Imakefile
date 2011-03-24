@@ -2,7 +2,7 @@ XCOMM
 XCOMM data files for defining application defaults
 XCOMM
 
-FILES = Doc
+FILES = Doc InterViews Idemo
 DEST = $(LIBALLDIR)/app-defaults
 
 InstallMultipleFlags($(FILES),$(DEST),$(INSTDATFLAGS))

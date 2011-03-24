@@ -29,31 +29,36 @@
 #ifndef ivlook_button_h
 #define ivlook_button_h
 
-#include <InterViews/ptrhandler.h>
-#include <InterViews/monoglyph.h>
+#include <InterViews/input.h>
+#include <InterViews/observe.h>
+
+#include <InterViews/_enter.h>
 
 class Action;
-class Listener;
-class Telltale;
+class TelltaleState;
 
-class Button : public MonoGlyph, public PointerHandler {
+class Button : public ActiveHandler, public Observer {
 public:
-    Button(Action*, Telltale*);
-
-    Action* action() const;
-    Telltale* telltale() const;
-    virtual void drag(Event&);
-    virtual void release(Event&);
-    virtual void commit(Event&);
-protected:
+    Button(Glyph*, Style*, TelltaleState*, Action*);
     virtual ~Button();
+
+    virtual void state(TelltaleState*);
+    virtual TelltaleState* state() const;
+
+    virtual void action(Action*);
+    virtual Action* action() const;
+
+    virtual void enter();
+    virtual void leave();
+    virtual void press(const Event&);
+    virtual void release(const Event&);
+
+    virtual void update(Observable*);
 private:
+    TelltaleState* state_;
     Action* action_;
-    Listener* listener_;
-    Telltale* telltale_;
 };
 
-inline Action* Button::action() const { return action_; }
-inline Telltale* Button::telltale() const { return telltale_; }
+#include <InterViews/_leave.h>
 
 #endif

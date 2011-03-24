@@ -1,6 +1,10 @@
+#undef boolean
+#undef true
+#undef false
+#undef u_char
 #undef CopyString
 #undef Directory
-#undef DirectoryInfo
+#undef DirectoryImpl
 #undef File
 #undef FileInfo
 #undef Host
@@ -10,6 +14,7 @@
 #undef Memory
 #undef NullTerminatedString
 #undef OutputFile
+#undef PtrList
 #undef StdInput
 #undef StdOutput
 #undef String

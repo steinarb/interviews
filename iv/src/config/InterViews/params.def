@@ -2,6 +2,10 @@
  * Define which optional parts of the system should be built by default.
  * You can override these parameters in local.def if needed.
  */
+#ifndef BuildGLContext
+#define BuildGLContext		NO	/* default is no GL glyphs */
+#endif
+
 #ifndef BuildIV_2_6
 #define BuildIV_2_6		YES	/* until we replace the old stuff */
 #endif
@@ -169,7 +173,7 @@
 #endif
 
 #ifndef DependCCFlags
-#define DependCCFlags $(CCDEFINES) $(CCINCLUDES) -I/usr/include/CC
+#define DependCCFlags -DMAKEDEPEND $(CCDEFINES) $(CCINCLUDES) -I/usr/include/CC
 #endif
 
 #ifndef MakeCmd
@@ -305,7 +309,7 @@
 
 #ifndef SharedCCFlags
 #if HasSunOSSharedLibraries
-#define SharedCCFlags -pic
+#define SharedCCFlags -PIC
 #else
 #define SharedCCFlags /**/
 #endif
@@ -377,11 +381,9 @@
 
 #ifndef BackwardCompatibilityCCIncludes
 #ifdef UseInstalled
-#define BackwardCompatibilityCCIncludes \
- -I$(INCDIR)/InterViews/2.6 -I$(INCDIR)/IV-look/2.6
+#define BackwardCompatibilityCCIncludes -I$(INCDIR)/IV-2_6
 #else
-#define BackwardCompatibilityCCIncludes \
- -I$(INCSRC)/InterViews/2.6 -I$(INCSRC)/IV-look/2.6
+#define BackwardCompatibilityCCIncludes -I$(INCSRC)/IV-2_6
 #endif
 #endif
 

@@ -1,8 +1,8 @@
-/* $Header: /usr/people/sam/tiff/libtiff/RCS/tif_fax3.h,v 1.6 91/08/22 17:17:09 sam Exp $ */
+/* $Header: /usr/people/sam/tiff/libtiff/RCS/tif_fax3.h,v 1.8 92/02/10 19:06:37 sam Exp $ */
 
 /*
- * Copyright (c) 1990, 1991 Sam Leffler
- * Copyright (c) 1991 Silicon Graphics, Inc.
+ * Copyright (c) 1990, 1991, 1992 Sam Leffler
+ * Copyright (c) 1991, 1992 Silicon Graphics, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and 
  * its documentation for any purpose is hereby granted without fee, provided
@@ -49,7 +49,11 @@ typedef struct {
 	    G3_1D,			/* basic 1-d mode */
 	    G3_2D			/* optional 2-d mode */
 	} tag;
+#if defined(__STDC__) || defined(__EXTENDED__) || USE_CONST
+	u_char const *bitmap;		/* bit reversal table */
+#else
 	u_char	*bitmap;		/* bit reversal table */
+#endif
 	u_char	*refline;		/* reference line for 2d decoding */
 } Fax3BaseState;
 

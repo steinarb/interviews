@@ -190,6 +190,12 @@ Unidraw::Close calls this operation to avoid clearing histories when a
 component hierarchy is being edited in multiple editors.
 .SH PROTECTED OPERATIONS
 .TP
+.B "virtual void Process()"
+Process is called once in the main loop defined by the Run operation.
+It does nothing by default.  Subclasses may redefine Process to carry
+out any processing that should be done in each pass through the main
+loop.
+.TP
 .B "boolean IsClean(Editor*)"
 This convenience function queries the given editor for a
 ModifStatusVar instance.  If it has one, then it returns its status
@@ -232,8 +238,20 @@ and the command object from the list element.  These are useful in
 conjunction with protected history operations described above.
 .TP
 .B "boolean updated()"
-If this function returns \fItrue\fP, then there are pending Update(s)
-to be performed.  
+.ns
+.TP
+.B "void updated(boolean)"
+The first form of this function returns \fItrue\fP if there are
+pending Update(s) to be performed.  The second form sets this value
+explicitly.
+.TP
+.B "boolean alive()"
+.ns
+.TP
+.B "void alive(boolean)"
+The first form of this function returns \fItrue\fP if the program is
+in the run loop defined by Run.  The second form sets this value
+explicitly.
 .SH SEE ALSO
 Catalog(3U), Creator(3U), Editor(3U), Interactor(3U), Iterator(3U),
 Viewer(3I), UList(3U), World(3I), statevars(3U)

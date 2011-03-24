@@ -30,6 +30,7 @@
 #include "Item.h"
 
 class PagenumberView;
+class PagenumberViewInfo_List;
 
 class PagenumberItem : public Item {
 public:
@@ -49,7 +50,7 @@ protected:
     virtual ~PagenumberItem ();
 
     char* _sample;
-    class PagenumberViewInfo_List* _view;
+    PagenumberViewInfo_List* _view;
 };
 
 #endif

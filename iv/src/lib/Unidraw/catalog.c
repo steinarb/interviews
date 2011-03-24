@@ -50,9 +50,11 @@
 #include <InterViews/bitmap.h>
 #include <InterViews/raster.h>
 #include <InterViews/transformer.h>
-#include <InterViews/world.h>
+#include <IV-2_6/InterViews/world.h>
 
 #include <OS/memory.h>
+
+#include <IV-2_6/_enter.h>
 
 #include <ctype.h>
 #include <osfcn.h>
@@ -60,14 +62,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stream.h>
-#ifndef __GNUG__
 #include <strstream.h>
-#endif
 #ifdef SYSV
-#include <sys/types.h>
+#include <OS/types.h>
 #include <unistd.h>
 #endif
 #include <sys/file.h>
+
+#ifdef __DECCXX
+extern "C" {
+    extern int access(char*, int);
+    extern int unlink(char*);
+}
+#endif
 
 /*****************************************************************************/
 
@@ -765,6 +772,8 @@ static ClassId Narrow (void* obj, ClassId base_id) {
         case TOOL:           return ((Tool*) obj)->GetClassId();
         case STATE_VAR:      return ((StateVar*) obj)->GetClassId();
         case TRANSFER_FUNCT: return ((TransferFunct*) obj)->GetClassId();
+
+	default:	     return UNDEFINED_CLASS;
      }
 }
 
@@ -775,6 +784,8 @@ static ClassId NarrowSubst (void* obj, ClassId base_id, const char*& delim) {
         case TOOL:           return ((Tool*) obj)->GetSubstId(delim);
         case STATE_VAR:      return ((StateVar*) obj)->GetSubstId(delim);
         case TRANSFER_FUNCT: return ((TransferFunct*) obj)->GetSubstId(delim);
+
+	default:	     return UNDEFINED_CLASS;
      }
 }
 
@@ -863,8 +874,15 @@ boolean Catalog::FileRetrieve (const char* name, void*& obj) {
     return ok;
 }
 
-boolean Catalog::Exists (const char* path) { return access(path, F_OK) >= 0; }
-boolean Catalog::Writable (const char* path) { return access(path, W_OK) >= 0;}
+boolean Catalog::Exists (const char* path) {
+    /* cast workaround for DEC C++ prototype bug */
+    return access((char*)path, F_OK) >= 0;
+}
+
+boolean Catalog::Writable (const char* path) {
+    /* cast workaround for DEC C++ prototype bug */
+    return access((char*)path, W_OK) >= 0;
+}
 
 const char* Catalog::GetAttribute (const char* a) {
     return _world->GetAttribute(a);
@@ -1149,12 +1167,9 @@ void Catalog::WriteColor (PSColor* color, ostream& out) {
             out << "1 1 1 ";
 
         } else {
-            int r, g, b;
-            color->Intensities(r, g, b);
-            float fr = float(r) / 0xffff;
-            float fg = float(g) / 0xffff;
-            float fb = float(b) / 0xffff;
-            out << fr << " " << fg << " " << fb << " ";
+            ColorIntensity r, g, b;
+            color->GetIntensities(r, g, b);
+            out << r << " " << g << " " << b << " ";
         }
     }
 }
@@ -1169,7 +1184,7 @@ PSColor* Catalog::ReadColor (istream& in) {
         char lookahead = '~';
         boolean defined = true;
         char name[CHARBUFSIZE];
-        float fr = 0, fg = 0, fb = 0;
+        ColorIntensity r = 0, g = 0, b = 0;
 
         in >> lookahead;
 
@@ -1177,15 +1192,15 @@ PSColor* Catalog::ReadColor (istream& in) {
             defined = false;
         } else {
             in.putback(lookahead);
-            in >> name >> fr >> fg >> fb;
+            in >> name >> r >> g >> b;
         }
 
         if (defined && in.good()) {
-            int r = round(fr * float(0xffff));
-            int g = round(fg * float(0xffff));
-            int b = round(fb * float(0xffff));
+            int ir = round(r * float(0xffff));
+            int ig = round(g * float(0xffff));
+            int ib = round(b * float(0xffff));
             
-            color = FindColor(name, r, g, b);
+            color = FindColor(name, ir, ig, ib);
         }
     }
     return color;
@@ -1593,7 +1608,7 @@ PSPattern* Catalog::ReadPattern (const char* n, int index) {
 	    }
 
 	} else {
-	    istream in(strlen(definition) + 1, definition);
+	    istrstream in(definition, strlen(definition) + 1);
             int data[patternHeight];
 
 	    for (int i = 0; in >> buf && i < patternHeight; i++) {
@@ -1870,7 +1885,8 @@ EditorInfo* Catalog::ReadEditorInfo (istream& in) {
     char info[CHARBUFSIZE];
     char newline;
 
-    while (!in.eof()) {
+    /* extra "&& in.good()" is for libg++ */
+    while (!in.eof() && in.good()) {
         *string = '\0';
         in.get(string, CHARBUFSIZE);
         in.get(newline);

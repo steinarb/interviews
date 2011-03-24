@@ -1,14 +1,12 @@
-$Header: /d/sam/tiff/RCS/HOWTO,v 1.4 91/07/08 14:47:51 sam Exp $
+$Header: /usr/people/sam/tiff/RCS/HOWTO,v 1.8 92/02/21 15:31:47 sam Exp $
 
 How To Obtain This Software (in case all you get is this file)
 
 The software is available for public ftp on
-    sgi.com			graphics/tiff/v2.4.tar.Z
+    sgi.com			graphics/tiff/v3.0.tar.Z
 	(192.48.153.1)
-    ucbvax.berkeley.edu		pub/tiff/v2.4.tar.Z
-	(128.132.130.12)
-    uunet.uu.net		graphics/v2.4.tar.Z
-	(192.48.96.2)
+    ucbvax.berkeley.edu		pub/tiff/v3.0.tar.Z
+	(128.32.130.12)
 
 For example,
     ftp -n sgi.com
@@ -17,13 +15,13 @@ For example,
     ... <type in password>
     cd graphics/tiff
     binary
-    get v2.4.tar.Z
+    get v3.0.tar.Z
 
 The software comes in a compressed tar file.  To extract the
 information:
-    uncompress v2.4.tar.Z	(creates new file v2.4.tar)
-    tar xf v2.4.tar		(extract individual files in current directory)
+    zcat v3.0.tar.Z | tar xf -
+(uncompress and extract individual files in current directory).
 
-There is also a companion compressed tar file, v2.4pics.tar.Z
+There is also a companion compressed tar file, v3.0pics.tar.Z
 that has sample TIFF image files.  These are mostly useful in
 testing the software if/when you port it to an unsupported system.

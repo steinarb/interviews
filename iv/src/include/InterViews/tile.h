@@ -65,4 +65,38 @@ private:
     Requisition requisition_;
 };
 
+class TileFirstAligned : public Layout {
+public:
+    TileFirstAligned(DimensionName);
+    virtual ~TileFirstAligned();
+
+    virtual void request(
+        GlyphIndex count, const Requisition*, Requisition& result
+    );
+    virtual void allocate(
+        const Allocation& given, GlyphIndex count, const Requisition*,
+	Allocation* result
+    );
+private:
+    DimensionName dimension_;
+    Requisition requisition_;
+};
+
+class TileReversedFirstAligned : public Layout {
+public:
+    TileReversedFirstAligned(DimensionName);
+    virtual ~TileReversedFirstAligned();
+
+    virtual void request(
+        GlyphIndex count, const Requisition*, Requisition& result
+    );
+    virtual void allocate(
+        const Allocation& given, GlyphIndex count, const Requisition*,
+	Allocation* result
+    );
+private:
+    DimensionName dimension_;
+    Requisition requisition_;
+};
+
 #endif

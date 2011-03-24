@@ -30,6 +30,8 @@
 #include "DocViewer.h"
 #include "TextView.h"
 
+#include <OS/list.h>
+
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
@@ -52,8 +54,6 @@ public:
     TextView* _view;
 };
 
-#include "list.h"
-
 declareList(TextInfo_List,TextInfo)
 implementList(TextInfo_List,TextInfo)
 
@@ -71,14 +71,14 @@ TextItem::TextItem (
     _text = new TextInfo_List(size_hint);
     _component = nil;
     _view = nil;
-};
+}
 
 TextItem::~TextItem () {
     delete _parameters;
     delete _text;
     if (_component != nil) {
         while (_component->count() > 0) {
-            TextComponentInfo& info = _component->item(0);
+            TextComponentInfo& info = _component->item_ref(0);
             if (info._item != nil) {
                 info._item->unref();
             }
@@ -88,7 +88,7 @@ TextItem::~TextItem () {
     }
     if (_view != nil) {
         while (_view->count() > 0) {
-            TextViewInfo& info = _view->item(0);
+            TextViewInfo& info = _view->item_ref(0);
             _view->remove(0);
         }
         delete _view;
@@ -160,7 +160,7 @@ void TextItem::change (Item* component) {
             if (_view != nil) {
                 long c = _view->count();
                 for (long j = 0; j < c; ++j) {
-                    TextViewInfo& info = _view->item(j);
+                    TextViewInfo& info = _view->item_ref(j);
                     info._view->item_changed(i, 1);
                 }
             }
@@ -182,7 +182,7 @@ void TextItem::detach (TextView* view) {
     if (_view != nil) {
         long count = _view->count();
         for (long i = 0; i < count; ++i) {
-            TextViewInfo& info = _view->item(i);
+            TextViewInfo& info = _view->item_ref(i);
             if (info._view == view) {
                 _view->remove(i);
                 break;
@@ -195,7 +195,7 @@ void TextItem::notify () {
     if (_view != nil) {
         long count = _view->count();
         for (long i = 0; i < count; ++i) {
-            TextViewInfo& info = _view->item(i);
+            TextViewInfo& info = _view->item_ref(i);
             info._view->update();
         }
     }
@@ -210,9 +210,9 @@ Item* TextItem::item (long index) {
     if (index < 0 || index >= _text->count()) {
         return nil;
     } else {
-        TextInfo& info = _text->item(index);
+        TextInfo& info = _text->item_ref(index);
         if (info._item > 0) {
-            return _component->item(info._item)._item;
+            return _component->item_ref(info._item)._item;
         } else {
             return nil;
         }
@@ -223,7 +223,7 @@ long TextItem::item_code (long index) {
     if (index < 0 || index >= _text->count()) {
         return 0;
     } else {
-        return _text->item(index)._code;
+        return _text->item_ref(index)._code;
     }
 }
 
@@ -231,7 +231,7 @@ long TextItem::item_style (long index) {
     if (index < 0 || index >= _text->count()) {
         return _style;
     } else {
-        return _text->item(index)._style;
+        return _text->item_ref(index)._style;
     }
 }
 
@@ -239,7 +239,7 @@ long TextItem::item_source (long index) {
     if (index < 0 || index >= _text->count()) {
         return _source;
     } else {
-        return _text->item(index)._source;
+        return _text->item_ref(index)._source;
     }
 }
 
@@ -249,7 +249,7 @@ long TextItem::insert (
     TextInfo text;
     text._code = (unsigned char)code;
     text._style = (unsigned char)style;
-    text._source = (unsigned char)source;
+    text._source = (unsigned short)source;
     if (item != nil) {
         TextComponentInfo component;
         if (_component == nil) {
@@ -268,7 +268,7 @@ long TextItem::insert (
     if (_view != nil) {
         long count = _view->count();
         for (long i = 0; i < count; ++i) {
-            TextViewInfo& info = _view->item(i);
+            TextViewInfo& info = _view->item_ref(i);
             info._view->item_inserted(index, 1);
         }
     }
@@ -282,14 +282,14 @@ long TextItem::remove (long index, long count) {
     if (_view != nil) {
         long c = _view->count();
         for (long i = 0; i < c; ++i) {
-            TextViewInfo& info = _view->item(i);
+            TextViewInfo& info = _view->item_ref(i);
             info._view->item_removed(index, count);
         }
     }
     for (long i = index; i < index + count; ++i) {
-        TextInfo& text = _text->item(index);
+        TextInfo& text = _text->item_ref(index);
         if (text._item != 0) {
-            TextComponentInfo& component = _component->item(text._item);
+            TextComponentInfo& component = _component->item_ref(text._item);
             if (component._item != nil) {
                 component._item->unref();
                 component._item = nil;
@@ -305,10 +305,10 @@ long TextItem::remove (long index, long count) {
 
 void TextItem::replace (long index, long count, long style) {
     for (long i = index; i < index + count; ++i) {
-        TextInfo& text = _text->item(i);
+        TextInfo& text = _text->item_ref(i);
         text._style = (unsigned char)style;
         if (text._item != 0) {
-            TextComponentInfo& component = _component->item(text._item);
+            TextComponentInfo& component = _component->item_ref(text._item);
             if (component._item != nil) {
                 component._item->style(style);
                 component._item->notify();
@@ -318,7 +318,7 @@ void TextItem::replace (long index, long count, long style) {
     if (_view != nil) {
         long c = _view->count();
         for (long i = 0; i < c; ++i) {
-            TextViewInfo& info = _view->item(i);
+            TextViewInfo& info = _view->item_ref(i);
             info._view->item_replaced(index, count);
         }
     }

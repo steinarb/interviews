@@ -29,6 +29,8 @@
 
 #include <Unidraw/Graphic/verts.h>
 
+#include <IV-2_6/_enter.h>
+
 class Point : public Graphic {
 public:
     Point(Coord x, Coord y, Graphic* gr = nil);
@@ -119,5 +121,7 @@ private:
     PSBrush* _br;
     PSPattern* _pat;
 };
+
+#include <IV-2_6/_leave.h>
 
 #endif

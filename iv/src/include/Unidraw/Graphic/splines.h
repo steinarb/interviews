@@ -29,6 +29,8 @@
 
 #include <Unidraw/Graphic/lines.h>
 
+#include <IV-2_6/_enter.h>
+
 class OpenBSpline : public Vertices {
 public:
     virtual int GetOriginal(const Coord*&, const Coord*&);
@@ -184,5 +186,7 @@ protected:
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
 };
+
+#include <IV-2_6/_leave.h>
 
 #endif

@@ -27,6 +27,8 @@
 #ifndef unidraw_kybd_h
 #define unidraw_kybd_h
 
+#include <Unidraw/enter-scope.h>
+
 /*
  * components
  */

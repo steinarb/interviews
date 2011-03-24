@@ -29,6 +29,8 @@
 
 #include <InterViews/resource.h>
 
+#include <IV-2_6/_enter.h>
+
 #include <string.h>
 
 /*

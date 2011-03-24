@@ -29,15 +29,14 @@
 #ifndef iv_box_h
 #define iv_box_h
 
-#include <InterViews/glyph.h>
+#include <InterViews/polyglyph.h>
 
 #include <InterViews/_enter.h>
 
+class BoxImpl;
 class Layout;
-class BoxComponent_List;
-class BoxAllocation_List;
 
-class Box : public Glyph {
+class Box : public PolyGlyph {
 public:
     Box(Layout* layout, GlyphIndex size);
     Box(
@@ -52,58 +51,13 @@ public:
     virtual void draw(Canvas*, const Allocation&) const;
     virtual void print(Printer*, const Allocation&) const;
     virtual void pick(Canvas*, const Allocation&, int depth, Hit&);
+    virtual void undraw();
 
-    virtual void append(Glyph*);
-    virtual void prepend(Glyph*);
-    virtual void insert(GlyphIndex, Glyph*);
-    virtual void remove(GlyphIndex);
-    virtual void replace(GlyphIndex, Glyph*);
-    virtual void change(GlyphIndex);
+    virtual void modified(GlyphIndex);
 
-    virtual GlyphIndex count() const;
-    virtual Glyph* component(GlyphIndex) const;
     virtual void allotment(GlyphIndex, DimensionName, Allotment&) const;
 private:
-    Layout* layout_;
-
-    boolean requested_;
-    Requisition requisition_;
-    boolean allocated_;
-    Canvas* canvas_;
-    Allocation allocation_;
-    Extension extension_;
-
-    BoxComponent_List* component_info_;
-    BoxAllocation_List* allocation_info_;
-};
-
-class LRBox : public Box {
-public:
-    LRBox(GlyphIndex size);
-    LRBox(
-        Glyph* =nil, Glyph* =nil, Glyph* =nil, Glyph* =nil, Glyph* =nil,
-        Glyph* =nil, Glyph* =nil, Glyph* =nil, Glyph* =nil, Glyph* =nil
-    );
-    virtual ~LRBox();
-};
-
-class TBBox : public Box {
-public:
-    TBBox(GlyphIndex size);
-    TBBox(
-        Glyph* =nil, Glyph* =nil, Glyph* =nil, Glyph* =nil, Glyph* =nil,
-        Glyph* =nil, Glyph* =nil, Glyph* =nil, Glyph* =nil, Glyph* =nil
-    );
-    virtual ~TBBox();
-};
-
-class Overlay : public Box {
-public:
-    Overlay(
-        Glyph* =nil, Glyph* =nil, Glyph* =nil, Glyph* =nil, Glyph* =nil,
-        Glyph* =nil, Glyph* =nil, Glyph* =nil, Glyph* =nil, Glyph* =nil
-    );
-    virtual ~Overlay();
+    BoxImpl* impl_;
 };
 
 #include <InterViews/_leave.h>

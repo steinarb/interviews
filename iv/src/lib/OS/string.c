@@ -39,7 +39,7 @@ extern "C" {
 #endif
     extern long int strtol(const char*, char**, int);
     extern double strtod(const char*, char**);
-};
+}
 
 String::String() {
     data_ = nil;
@@ -185,7 +185,7 @@ String String::substr(int start, int length) const {
 }
 
 void String::set_to_substr(int start, int length) {
-    if (start >= length_ || start < -length_) {
+    if (start > length_ || start < -length_) {
 	/* should raise exception */
 	return;
     }
@@ -201,12 +201,12 @@ void String::set_to_substr(int start, int length) {
 
 boolean String::null_terminated() const { return false; }
 
-void String::set(const char* s) {
+void String::set_value(const char* s) {
     data_ = s;
     length_ = strlen(s);
 }
 
-void String::set(const char* s, int len) {
+void String::set_value(const char* s, int len) {
     data_ = s;
     length_ = len;
 }
@@ -216,7 +216,7 @@ void String::set(const char* s, int len) {
  * of the string before indexing and searches right-to-left.
  */
 
-int String::search(int start, char c) const {
+int String::search(int start, u_char c) const {
     if (start >= length_ || start < -length_) {
 	/* should raise exception */
 	return -1;
@@ -244,7 +244,7 @@ int String::search(int start, char c) const {
 
 boolean String::convert(int& value) const {
     NullTerminatedString s(*this);
-    const char* str = s.data_;
+    const char* str = s.string();
     char* ptr;
     value = (int)strtol(str, &ptr, 0);
     return ptr != str;
@@ -252,7 +252,7 @@ boolean String::convert(int& value) const {
 
 boolean String::convert(long& value) const {
     NullTerminatedString s(*this);
-    const char* str = s.data_;
+    const char* str = s.string();
     char* ptr;
     value = strtol(str, &ptr, 0);
     return ptr != str;
@@ -260,7 +260,7 @@ boolean String::convert(long& value) const {
 
 boolean String::convert(float& value) const {
     NullTerminatedString s(*this);
-    const char* str = s.data_;
+    const char* str = s.string();
     char* ptr;
     value = (float)strtod(str, &ptr);
     return ptr != str;
@@ -268,7 +268,7 @@ boolean String::convert(float& value) const {
 
 boolean String::convert(double& value) const {
     NullTerminatedString s(*this);
-    const char* str = s.data_;
+    const char* str = s.string();
     char* ptr;
     value = strtod(str, &ptr);
     return ptr != str;
@@ -279,15 +279,19 @@ boolean String::convert(double& value) const {
 CopyString::CopyString() : String() { }
 
 CopyString::CopyString(const char* s) : String() {
-    set(s);
+    set_value(s);
 }
 
 CopyString::CopyString(const char* s, int length) : String() {
-    set(s, length);
+    set_value(s, length);
 }
 
 CopyString::CopyString(const String& s) : String() {
-    set(s.string(), s.length());
+    set_value(s.string(), s.length());
+}
+
+CopyString::CopyString(const CopyString& s) : String() {
+    set_value(s.string(), s.length());
 }
 
 CopyString::~CopyString() {
@@ -296,30 +300,30 @@ CopyString::~CopyString() {
 
 String& CopyString::operator =(const String& s) {
     free();
-    set(s.string(), s.length());
+    set_value(s.string(), s.length());
     return *this;
 }
 
 String& CopyString::operator =(const char* s) {
     free();
-    set(s);
+    set_value(s);
     return *this;
 }
 
 boolean CopyString::null_terminated() const { return true; }
 
-void CopyString::set(const char* s) {
-    set(s, strlen(s));
+void CopyString::set_value(const char* s) {
+    set_value(s, strlen(s));
 }
 
 /*
  * Guarantee null-terminated string for compatibility with printf et al.
  */
 
-void CopyString::set(const char* s, int len) {
+void CopyString::set_value(const char* s, int len) {
     char* ns = new char[len + 1];
     ns[len] = '\0';
-    String::set(strncpy(ns, s, len), len);
+    String::set_value(strncpy(ns, s, len), len);
 }
 
 void CopyString::free() {
@@ -339,6 +343,13 @@ NullTerminatedString::NullTerminatedString(const String& s) : String() {
     assign(s);
 }
 
+NullTerminatedString::NullTerminatedString(
+    const NullTerminatedString& s
+) : String() {
+    allocated_ = false;
+    String::set_value(s.string(), s.length());
+}
+
 NullTerminatedString::~NullTerminatedString() {
     free();
 }
@@ -352,7 +363,7 @@ String& NullTerminatedString::operator =(const String& s) {
 String& NullTerminatedString::operator =(const char* s) {
     free();
     allocated_ = false;
-    String::set(s, strlen(s));
+    String::set_value(s, strlen(s));
     return *this;
 }
 
@@ -361,13 +372,13 @@ boolean NullTerminatedString::null_terminated() const { return true; }
 void NullTerminatedString::assign(const String& s) {
     if (s.null_terminated()) {
 	allocated_ = false;
-	String::set(s.string(), s.length());
+	String::set_value(s.string(), s.length());
     } else {
 	allocated_ = true;
 	int len = s.length();
 	char* ns = new char[len + 1];
 	ns[len] = '\0';
-	String::set(strncpy(ns, s.string(), len), len);
+	String::set_value(strncpy(ns, s.string(), len), len);
     }
 }
 

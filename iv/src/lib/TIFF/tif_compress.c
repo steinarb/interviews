@@ -1,10 +1,10 @@
 #ifndef lint
-static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_compress.c,v 1.23 91/08/23 17:09:25 sam Exp $";
+static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_compress.c,v 1.26 92/02/10 19:06:13 sam Exp $";
 #endif
 
 /*
- * Copyright (c) 1988, 1989, 1990, 1991 Sam Leffler
- * Copyright (c) 1991 Silicon Graphics, Inc.
+ * Copyright (c) 1988, 1989, 1990, 1991, 1992 Sam Leffler
+ * Copyright (c) 1991, 1992 Silicon Graphics, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and 
  * its documentation for any purpose is hereby granted without fee, provided
@@ -77,11 +77,12 @@ extern	int TIFFInitJPEG();
 #endif
 #endif
 
-static	struct cscheme {
+struct cscheme {
 	char*	name;
 	int	scheme;
 	int	(*init)();
-} CompressionSchemes[] = {
+};
+static const struct cscheme CompressionSchemes[] = {
     { "Null",		COMPRESSION_NONE,	TIFFInitDumpMode },
 #ifdef LZW_SUPPORT
     { "LZW",		COMPRESSION_LZW,	TIFFInitLZW },
@@ -107,47 +108,105 @@ static	struct cscheme {
 };
 #define	NSCHEMES (sizeof (CompressionSchemes) / sizeof (CompressionSchemes[0]))
 
-static struct cscheme *
+static struct cscheme const *
 findScheme(scheme)
 	int scheme;
 {
-	register struct cscheme *c;
+	register struct cscheme const *c;
 
 	for (c = CompressionSchemes; c < &CompressionSchemes[NSCHEMES]; c++)
 		if (c->scheme == scheme)
 			return (c);
-	return ((struct cscheme *)0);
+	return ((struct cscheme const *)0);
+}
+
+static int
+TIFFNoEncode(tif, method)
+	TIFF *tif;
+	char *method;
+{
+	struct cscheme const *c = findScheme(tif->tif_dir.td_compression);
+	TIFFError(tif->tif_name,
+	    "%s %s encoding is not implemented", c->name, method);
+	return (-1);
 }
 
 int
-TIFFNoEncode(tif, pp, cc, s)
+TIFFNoRowEncode(tif, pp, cc, s)
 	TIFF *tif;
 	u_char *pp;
 	int cc;
 	u_int s;
 {
-	struct cscheme *c = findScheme(tif->tif_dir.td_compression);
-	TIFFError(tif->tif_name, "%s encoding is not implemented", c->name);
-	return (-1);
+	return (TIFFNoEncode(tif, "scanline"));
 }
 
 int
-TIFFNoDecode(tif, pp, cc, s)
+TIFFNoStripEncode(tif, pp, cc, s)
 	TIFF *tif;
 	u_char *pp;
 	int cc;
 	u_int s;
 {
-	struct cscheme *c = findScheme(tif->tif_dir.td_compression);
-	TIFFError(tif->tif_name, "%s decoding is not implemented", c->name);
+	return (TIFFNoEncode(tif, "strip"));
+}
+
+int
+TIFFNoTileEncode(tif, pp, cc, s)
+	TIFF *tif;
+	u_char *pp;
+	int cc;
+	u_int s;
+{
+	return (TIFFNoEncode(tif, "tile"));
+}
+
+int
+TIFFNoDecode(tif, method)
+	TIFF *tif;
+	char *method;
+{
+	struct cscheme const *c = findScheme(tif->tif_dir.td_compression);
+	TIFFError(tif->tif_name,
+	    "%s %s decoding is not implemented", c->name, method);
 	return (-1);
+}
+
+int
+TIFFNoRowDecode(tif, pp, cc, s)
+	TIFF *tif;
+	u_char *pp;
+	int cc;
+	u_int s;
+{
+	return (TIFFNoDecode(tif, "scanline"));
+}
+
+int
+TIFFNoStripDecode(tif, pp, cc, s)
+	TIFF *tif;
+	u_char *pp;
+	int cc;
+	u_int s;
+{
+	return (TIFFNoDecode(tif, "strip"));
+}
+
+int
+TIFFNoTileDecode(tif, pp, cc, s)
+	TIFF *tif;
+	u_char *pp;
+	int cc;
+	u_int s;
+{
+	return (TIFFNoDecode(tif, "tile"));
 }
 
 TIFFSetCompressionScheme(tif, scheme)
 	TIFF *tif;
 	int scheme;
 {
-	struct cscheme *c = findScheme(scheme);
+	struct cscheme const *c = findScheme(scheme);
 
 	if (!c) {
 		TIFFError(tif->tif_name,
@@ -156,14 +215,14 @@ TIFFSetCompressionScheme(tif, scheme)
 		return (0);
 	}
 	tif->tif_predecode = NULL;
-	tif->tif_decoderow = TIFFNoDecode;
-	tif->tif_decodestrip = TIFFNoDecode;
-	tif->tif_decodetile = TIFFNoDecode;
+	tif->tif_decoderow = TIFFNoRowDecode;
+	tif->tif_decodestrip = TIFFNoStripDecode;
+	tif->tif_decodetile = TIFFNoTileDecode;
 	tif->tif_preencode = NULL;
 	tif->tif_postencode = NULL;
-	tif->tif_encoderow = TIFFNoEncode;
-	tif->tif_encodestrip = TIFFNoEncode;
-	tif->tif_encodetile = TIFFNoEncode;
+	tif->tif_encoderow = TIFFNoRowEncode;
+	tif->tif_encodestrip = TIFFNoStripEncode;
+	tif->tif_encodetile = TIFFNoTileEncode;
 	tif->tif_close = NULL;
 	tif->tif_seek = NULL;
 	tif->tif_cleanup = NULL;

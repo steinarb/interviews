@@ -21,8 +21,7 @@
  */
 
 /*
- * EditorComp
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibeditor.h,v 1.2 91/09/27 14:13:49 tang Exp $
+ * EditorComp declaration
  */
 
 #ifndef ibeditor_h
@@ -33,6 +32,9 @@
 
 class MemberNameVar;
 class ButtonStateVar;
+class GroupCode;
+class IGraphicComps;
+class IGraphicViews;
 class InfoDialog;
 class GetConflictCmd;
 
@@ -61,19 +63,19 @@ public:
     MemberNameVar* GetViewerVar();
     MemberNameVar* GetKeyMap();
     MemberNameVar* GetSelection();
-    MemberNameVar* GetCompName();
+    IGraphicComps* GetIGraphicComps();
 protected:
     MemberNameVar* _viewerVar;
     MemberNameVar* _keymap;
     MemberNameVar* _selection;
-    MemberNameVar* _compname;
+    IGraphicComps* _igrcomps;
     ButtonStateVar* _curCtrlVar;
 };
 
 inline MemberNameVar* EditorComp::GetViewerVar() { return _viewerVar; }
 inline MemberNameVar* EditorComp::GetKeyMap() { return _keymap; }
 inline MemberNameVar* EditorComp::GetSelection() { return _selection; }
-inline MemberNameVar* EditorComp::GetCompName() { return _compname; }
+inline IGraphicComps* EditorComp::GetIGraphicComps() { return _igrcomps; }
 inline ButtonStateVar* EditorComp::GetButtonStateVar() { return _curCtrlVar; }
 inline boolean EditorComp::IsRelatable () { return true; }
 inline boolean EditorComp::IsAScene () { return false; }
@@ -91,16 +93,33 @@ public:
 class EditorCode : public MonoSceneClassCode {
 public:
     EditorCode(EditorComp* = nil);
+    virtual ~EditorCode();
 
     virtual boolean Definition(ostream&);
     EditorComp* GetEditorComp();
 
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
+
+    virtual void Update();
 protected:
     virtual boolean CoreConstDecls(ostream&);
     virtual boolean CoreConstInits(ostream&);
     virtual boolean EmitIncludeHeaders(ostream&);
+
+    virtual boolean KeyCoreConstDecls(ostream&);
+    virtual boolean KeyCoreConstInits(ostream&);
+    virtual boolean KeyConstDecls(ostream&);
+    virtual boolean KeyConstInits(ostream&);
+
+    virtual boolean SelCoreConstDecls(ostream&);
+    virtual boolean SelCoreConstInits(ostream&);
+    virtual boolean SelConstDecls(ostream&);
+    virtual boolean SelConstInits(ostream&);
+
+    boolean EmitGroupCode(ostream&);
+protected:
+    GroupCode* _gcode;
 };
 
 #endif

@@ -8,7 +8,7 @@ Use_libInterViews()
 Use_2_6()
 ComplexProgramTarget(mailbox)
 
-MakeObjectFromSrc(mailbox)
+MakeObjectFromSrc(main)
 
 #else
 

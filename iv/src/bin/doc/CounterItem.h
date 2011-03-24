@@ -30,6 +30,7 @@
 #include "Item.h"
 
 class CounterView;
+class CounterViewInfo_List;
 
 class CounterItem : public Item {
 public:
@@ -51,7 +52,7 @@ protected:
     virtual ~CounterItem ();
 
     char* _name;
-    class CounterViewInfo_List* _view;
+    CounterViewInfo_List* _view;
 };
 
 #endif

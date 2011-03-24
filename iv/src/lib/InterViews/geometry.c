@@ -22,25 +22,12 @@
  * OF THIS SOFTWARE.
  */
 
+#include <InterViews/canvas.h>
 #include <InterViews/compositor.h>
 #include <InterViews/geometry.h>
 #include <InterViews/glyph.h>
+#include <InterViews/transformer.h>
 #include <OS/math.h>
-
-static long best_new_sizes[] = {
-    48, 112, 240, 496, 1008, 2032, 4080, 8176,
-    16368, 32752, 65520, 131056, 262128, 524272, 1048560,
-    2097136, 4194288, 8388592, 16777200, 33554416, 67108848
-};
-
-long best_new_count(long count, unsigned int size) {
-    for (int i = 0; i < sizeof(best_new_sizes)/sizeof(int); ++i) {
-        if (count * size < best_new_sizes[i]) {
-            return best_new_sizes[i] / size;
-        }
-    }
-    return count;
-}
 
 Requirement::Requirement(
     Coord natural_lead, Coord max_lead, Coord min_lead,
@@ -119,6 +106,8 @@ void Requisition::require(DimensionName n, const Requirement& r) {
     }
 }
 
+static Requirement* empty_requirement;
+
 Requirement& Requisition::requirement(DimensionName n) {
     switch (n) {
     case Dimension_X:
@@ -126,6 +115,10 @@ Requirement& Requisition::requirement(DimensionName n) {
     case Dimension_Y:
         return y_;
     }
+    if (empty_requirement == nil) {
+	empty_requirement = new Requirement;
+    }
+    return *empty_requirement;
 }
 
 const Requirement& Requisition::requirement(DimensionName n) const {
@@ -135,6 +128,10 @@ const Requirement& Requisition::requirement(DimensionName n) const {
     case Dimension_Y:
         return y_;
     }
+    if (empty_requirement == nil) {
+	empty_requirement = new Requirement;
+    }
+    return *empty_requirement;
 }
 
 boolean Allotment::equals(const Allotment& a, float epsilon) const {
@@ -144,9 +141,8 @@ boolean Allotment::equals(const Allotment& a, float epsilon) const {
         return false;
     } else if (!Math::equal(alignment_, a.alignment_, epsilon)) {
         return false;
-    } else {
-        return true;
     }
+    return true;
 }
 
 /* hack to persuade cfront to inline both subobject constructors */
@@ -208,32 +204,74 @@ Extension::Extension(const Extension& ext) {
     y_end_ = ext.y_end_;
 }
 
-void Extension::extent(DimensionName n, Coord begin, Coord end) {
-    switch (n) {
-    case Dimension_X:
-	x_begin_ = begin;
-	x_end_ = end;
-        break;
-    case Dimension_Y:
-	y_begin_ = begin;
-	y_end_ = end;
-        break;
+void Extension::operator =(const Extension& ext) {
+    x_begin_ = ext.x_begin_;
+    x_end_ = ext.x_end_;
+    y_begin_ = ext.y_begin_;
+    y_end_ = ext.y_end_;
+}
+
+void Extension::transform_xy(
+    Canvas* c, Coord& left, Coord& bottom, Coord& right, Coord& top
+) {
+    if (c != nil) {
+	const Transformer& t = c->transformer();
+	if (!t.identity()) {
+	    Coord x1, y1, x2, y2, x3, y3, x4, y4;
+	    t.transform(left, bottom, x1, y1);
+	    t.transform(left, top, x2, y2);
+	    t.transform(right, top, x3, y3);
+	    t.transform(right, bottom, x4, y4);
+	    left = Math::min(x1, x2, x3, x4);
+	    bottom = Math::min(y1, y2, y3, y4);
+	    right = Math::max(x1, x2, x3, x4);
+	    top = Math::max(y1, y2, y3, y4);
+	}
     }
 }
 
-void Extension::get_extent(DimensionName n, Coord& begin, Coord& end) const {
-    switch (n) {
-    case Dimension_X:
-	begin = x_begin_;
-	end = x_end_;
-	break;
-    case Dimension_Y:
-	begin = y_begin_;
-	end = y_end_;
-        break;
-    default:
-	begin = 0;
-	end = 0;
-	break;
-    }
+void Extension::set(Canvas* c, const Allocation& a) {
+    set_xy(c, a.left(), a.bottom(), a.right(), a.top());
+}
+
+void Extension::set_xy(Canvas* c, Coord l, Coord b, Coord r, Coord t) {
+    Coord left = l;
+    Coord bottom = b;
+    Coord right = r;
+    Coord top = t;
+    transform_xy(c, left, bottom, right, top);
+    x_begin_ = left;
+    x_end_ = right;
+    y_begin_ = bottom;
+    y_end_ = top;
+}
+
+void Extension::clear() {
+    x_begin_ = fil;
+    x_end_ = -fil;
+    y_begin_ = fil;
+    y_end_ = -fil;
+}
+
+void Extension::merge(const Extension& ext) {
+    x_begin_ = Math::min(x_begin_, ext.x_begin_);
+    x_end_ = Math::max(x_end_, ext.x_end_);
+    y_begin_ = Math::min(y_begin_, ext.y_begin_);
+    y_end_ = Math::max(y_end_, ext.y_end_);
+}
+
+void Extension::merge(Canvas* c, const Allocation& a) {
+    merge_xy(c, a.left(), a.bottom(), a.right(), a.top());
+}
+
+void Extension::merge_xy(Canvas* c, Coord l, Coord b, Coord r, Coord t) {
+    Coord left = l;
+    Coord bottom = b;
+    Coord right = r;
+    Coord top = t;
+    transform_xy(c, left, bottom, right, top);
+    x_begin_ = Math::min(x_begin_, left);
+    x_end_ = Math::max(x_end_, right);
+    y_begin_ = Math::min(y_begin_, bottom);
+    y_end_ = Math::max(y_end_, top);
 }

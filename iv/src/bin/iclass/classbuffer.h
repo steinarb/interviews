@@ -29,7 +29,12 @@
 
 #include <InterViews/defs.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+
+class Classes;
 class ClassInfo;
+class TextBuffer;
 
 class ClassBuffer {
 public:
@@ -52,13 +57,13 @@ private:
     void SearchDir(const char* path);
     void SearchDirs(const char* path);
     void SearchFile(const char* path, struct stat&);
-    void SearchTextBuffer(class TextBuffer*, const char* path);
+    void SearchTextBuffer(TextBuffer*, const char* path);
 
     char* FindClassDecl(TextBuffer*, int&);
     char* ParentName(TextBuffer*, int&);
     char* Identifier(TextBuffer*, int&);
 private:
-    class Classes* _classes;
+    Classes* _classes;
     boolean _recursive, _verbose, _CPlusPlusFiles;
 };
 

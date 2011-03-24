@@ -20,6 +20,10 @@
  * WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+/*
+ *  PanelCtrl component declaration
+ */
+
 #ifndef ibpanelctrl_h
 #define ibpanelctrl_h
 
@@ -28,7 +32,7 @@
 
 class ButtonStateVar;
 class MemberNameVar;
-class TrackNameVar;
+class IDVar;
 class ITextComp;
 class IView;
 class InfoDialog;
@@ -59,19 +63,19 @@ public:
     virtual ButtonStateVar* GetButtonStateVar();
 
     ITextComp* GetKeyLabel();
-    TrackNameVar* GetToolName();
+    MemberNameVar* GetToolName();
     MemberNameVar* GetEditorVar();
     PanelCtrlGraphic* GetPanelCtrlGraphic();
 protected:
     ITextComp* _keylabel;
-    TrackNameVar* _toolname;
+    MemberNameVar* _toolname;
     MemberNameVar* _edVar;
     ButtonStateVar* _curCtrlVar;
 };
 
 inline boolean PanelCtrlComp::IsRelatable () { return true; }
 inline ITextComp* PanelCtrlComp::GetKeyLabel() { return _keylabel; }
-inline TrackNameVar* PanelCtrlComp::GetToolName() { return _toolname; }
+inline MemberNameVar* PanelCtrlComp::GetToolName() { return _toolname; }
 inline MemberNameVar* PanelCtrlComp::GetEditorVar() { return _edVar; }
 inline ButtonStateVar* PanelCtrlComp::GetButtonStateVar() {
     return _curCtrlVar; 
@@ -123,6 +127,7 @@ class PanelCtrlCode : public GrBlockCode {
 public:
     PanelCtrlCode(PanelCtrlComp* = nil);
 
+    virtual void Update();
     virtual boolean Definition(ostream&);
     PanelCtrlComp* GetPanelCtrlComp();
 
@@ -134,6 +139,13 @@ protected:
     virtual boolean ConstDecls(ostream&);
     virtual boolean ConstInits(ostream&);
     virtual boolean EmitIncludeHeaders(ostream&);
+    virtual boolean EmitCommonHeaders(const char*, ostream&);
+
+    virtual boolean ToolCoreConstDecls(ostream&);
+    virtual boolean ToolCoreConstInits(ostream&);
+    virtual boolean ToolConstDecls(ostream&);
+    virtual boolean ToolConstInits(ostream&);
+
     void HashKeyCode(char*);
     boolean SingleKid();
 };

@@ -27,6 +27,8 @@
 #ifndef unidraw_transfn_h
 #define unidraw_transfn_h
 
+#include <Unidraw/enter-scope.h>
+
 class Connector;
 class Path;
 class StateVar;

@@ -22,12 +22,14 @@
 
 /*
  * User interface builder keycode equivalents.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibkybd.h,v 1.2 91/09/27 14:14:24 tang Exp $
  */
 
 #ifndef ibkybd_h
 #define ibkybd_h
 
+extern const char* KLBL_PMOVE, *CODE_PMOVE;
+extern const char* KLBL_PSCALE, *CODE_PSCALE;
+extern const char* KLBL_PROTATE, *CODE_PROTATE;
 extern const char* KLBL_ABOUT, *CODE_ABOUT;
 extern const char* KLBL_CHECKBOX, *CODE_CHECKBOX;
 extern const char* KLBL_EXAMINE, *CODE_EXAMINE;

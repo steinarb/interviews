@@ -44,6 +44,7 @@ public:
 
     virtual void allocate(Canvas*, const Allocation&, Extension&);
     virtual void draw(Canvas*, const Allocation&) const;
+    virtual void undraw();
 private:
     Canvas* canvas_;
     const Color* overlay_;

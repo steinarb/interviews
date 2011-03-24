@@ -44,6 +44,8 @@
 
 #include <stream.h>
 
+#include <IV-2_6/_enter.h>
+
 /*****************************************************************************/
 
 class _CSData : public Data {

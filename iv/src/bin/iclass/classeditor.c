@@ -139,6 +139,7 @@ boolean ClassEditor::HandleDownEvent (Event& e) {
 boolean ClassEditor::HandleChar (char c) {
     boolean done = false;
     int lines = display->LineNumber(0) - display->LineNumber(ymax) + 1;
+    int i;
 
     switch (c) {
     case FirstLine:
@@ -190,7 +191,7 @@ boolean ClassEditor::HandleChar (char c) {
         break;
 
     default:
-        for (int i = 0; _done[i] != '\0'; ++i) {
+        for (i = 0; _done[i] != '\0'; ++i) {
             if (c == _done[i]) {
                 _state->SetValue(c);
                 done = true;

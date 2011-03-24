@@ -29,7 +29,9 @@
 #include <Unidraw/Graphic/lines.h>
 #include <Unidraw/Graphic/util.h>
 
-#include <InterViews/painter.h>
+#include <IV-2_6/InterViews/painter.h>
+
+#include <IV-2_6/_enter.h>
 
 /*****************************************************************************/
 

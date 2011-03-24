@@ -77,11 +77,13 @@ public:
     const Font* font_;
 };
 
+class PrinterInfoList;
+
 class PrinterRep {
 public:
     ostream* out_;
     int page_;
-    class PrinterInfoList* info_;
+    PrinterInfoList* info_;
 
     float x_;
     float y_;
@@ -91,8 +93,8 @@ public:
     int text_spaces_;
 };
 
-declareList(PrinterInfoList,PrinterInfo);
-implementList(PrinterInfoList,PrinterInfo);
+declareList(PrinterInfoList,PrinterInfo)
+implementList(PrinterInfoList,PrinterInfo)
 
 static void do_color(ostream& out, const Color* color) {
     float r, g, b;
@@ -142,6 +144,10 @@ Printer::~Printer() {
     delete rep_;
 }
 
+PixelCoord Printer::to_pixels(Coord p) const { return p; }
+Coord Printer::to_coord(PixelCoord p) const { return p; }
+Coord Printer::to_pixels_coord(Coord p) const { return p; }
+
 void Printer::resize(Coord left, Coord bottom, Coord right, Coord top) {
     PrinterRep* p = rep_;
     ostream& out = *p->out_;
@@ -186,7 +192,7 @@ void Printer::page(const char* label) {
     }
     *p->out_ << "%%Page: " << label << " " << p->page_ << "\n";
     *p->out_ << -(p->x_) << " " << -(p->y_) << " translate\n";
-    PrinterInfo& info = p->info_->item(p->info_->count() - 1);
+    PrinterInfo& info = p->info_->item_ref(p->info_->count() - 1);
     info.font_ = nil;
     info.color_ = nil;
     info.brush_ = nil;
@@ -198,7 +204,7 @@ void Printer::push_transform() {
     PrinterRep* p = rep_;
     flush();
     long depth = p->info_->count();
-    PrinterInfo info = p->info_->item(depth - 1);
+    PrinterInfo& info = p->info_->item_ref(depth - 1);
     p->info_->insert(depth, info);
     *p->out_ << "gsave\n";
 }
@@ -232,7 +238,7 @@ void Printer::push_clipping() {
     PrinterRep* p = rep_;
     flush();
     long depth = p->info_->count();
-    PrinterInfo info = p->info_->item(depth - 1);
+    PrinterInfo& info = p->info_->item_ref(depth - 1);
     p->info_->insert(depth, info);
     *p->out_ << "gsave\n";
 }
@@ -282,7 +288,7 @@ void Printer::stroke(const Color* color, const Brush* brush) {
     PrinterRep* p = rep_;
     ostream& out = *p->out_;
     flush();
-    PrinterInfo& info = p->info_->item(p->info_->count() - 1);
+    PrinterInfo& info = p->info_->item_ref(p->info_->count() - 1);
     if (info.color_ != color) {
         do_color(out, color);
         info.color_ = color;
@@ -298,7 +304,7 @@ void Printer::fill(const Color* color) {
     PrinterRep* p = rep_;
     ostream& out = *p->out_;
     flush();
-    PrinterInfo& info = p->info_->item(p->info_->count() - 1);
+    PrinterInfo& info = p->info_->item_ref(p->info_->count() - 1);
     if (info.color_ != color) {
         do_color(out, color);
         info.color_ = color;
@@ -309,7 +315,7 @@ void Printer::fill(const Color* color) {
 void Printer::clip() {
     ostream& out = *rep_->out_;
     flush();
-    out << "gsave eoclip grestore\n";
+    out << "eoclip\n";
 }
 
 void Printer::character(
@@ -317,7 +323,7 @@ void Printer::character(
 ) {
     PrinterRep* p = rep_;
     ostream& out = *p->out_;
-    PrinterInfo& info = p->info_->item(p->info_->count() - 1);
+    PrinterInfo& info = p->info_->item_ref(p->info_->count() - 1);
     if (info.color_ != color) {
         flush();
         do_color(out, color);
@@ -342,12 +348,16 @@ void Printer::character(
     if (c == '\\' || c == ')' || c == '(') {
         out << "\\" << char(c);
     } else if (c > 127) {
+#ifdef __GNUC__
+	out.form("\\%03o", c);
+#else
 	out << "\\";
         int old_width = out.width(3);
         char old_fill = out.fill('0');
         out << oct << c << dec;
         out.width(old_width);
         out.fill(old_fill);
+#endif
     } else {
         out << char(c);
     }
@@ -378,7 +388,7 @@ void Printer::stencil(
     PrinterRep* p = rep_;
     ostream& out = *p->out_;
     flush();
-    PrinterInfo& info = p->info_->item(p->info_->count() - 1);
+    PrinterInfo& info = p->info_->item_ref(p->info_->count() - 1);
     if (info.color_ != color) {
         do_color(out, color);
         info.color_ = color;
@@ -397,22 +407,30 @@ void Printer::stencil(
     out << width << " " << height << " true\n";
     out << "[" << width << " 0 0 " << height << " 0 0]\n";
     out << "{currentfile picstr readhexstring pop} imagemask\n";
+#ifndef __GNUC__
     int old_width = out.width(1);
     out << hex;
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < bytes; ++x) {
+#endif
+    for (int iy = 0; iy < height; ++iy) {
+        for (int ix = 0; ix < bytes; ++ix) {
             int byte = 0;
             for (int bit = 0; bit < 8; ++bit) {
-                if (mask->peek(x*8 + bit, y)) {
+                if (mask->peek(ix*8 + bit, iy)) {
                     byte |= 0x80 >> bit;
                 }
             }
+#ifdef __GNUC__
+	    out.form("%02x", byte);
+#else
             out << ((byte>>4) & 0x0f) <<  (byte & 0x0f);
+#endif
         }
         out << "\n";
     }
+#ifndef __GNUC__
     out << dec;
     out.width(old_width);
+#endif
     out << "grestore\n";
 }
 
@@ -433,18 +451,26 @@ void Printer::image(const Raster* raster, Coord x, Coord y) {
     out << width << " " << height << " 8\n";
     out << "[" << width << " 0 0 " << height << " 0 0]\n";
     out << "{currentfile picstr readhexstring pop} image\n";
+#ifndef __GNUC__
     int old_width = out.width(1);
     out << hex;
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
+#endif
+    for (int iy = 0; iy < height; ++iy) {
+        for (int ix = 0; ix < width; ++ix) {
             float r, g, b, alpha;
-            raster->peek(x, y, r, g, b, alpha);
+            raster->peek(ix, iy, r, g, b, alpha);
             int byte = int(0xff * (r + g + b) / 3);
+#ifdef __GNUC__
+	    out.form("%02x", byte);
+#else
             out << ((byte>>4) & 0x0f) <<  (byte & 0x0f);
+#endif
         }
         out << "\n";
     }
+#ifndef __GNUC__
     out << dec;
     out.width(old_width);
+#endif
     out << "grestore\n";
 }

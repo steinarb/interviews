@@ -31,6 +31,32 @@
 
 #include <InterViews/monoglyph.h>
 
+class BevelFrame : public MonoGlyph {
+public:
+    BevelFrame(
+	Glyph*, Coord, float xalign = 0.0, float yalign = 0.0,
+	boolean hmargin = true, boolean vmargin = true
+    );
+    virtual ~BevelFrame();
+
+    virtual void request(Requisition&) const;
+    virtual void allocate(Canvas*, const Allocation&, Extension&);
+    virtual void draw(Canvas*, const Allocation&) const;
+    virtual void print(Printer*, const Allocation&) const;
+    virtual void pick(Canvas*, const Allocation&, int depth, Hit&);
+
+    virtual void draw_frame(Canvas*, const Allocation&, Coord thickness) const;
+private:
+    Coord thickness_;
+    float xalign_;
+    float yalign_;
+    boolean hmargin_ : 1;
+    boolean vmargin_ : 1;
+
+    Coord thickness(Canvas*) const;
+    void allocate_body(Glyph*, Coord, Allocation&) const;
+};
+
 class Color;
 
 typedef void (*Beveler)(
@@ -38,17 +64,17 @@ typedef void (*Beveler)(
     Coord thickness, Coord left, Coord bottom, Coord right, Coord top
 );
 
-class Bevel : public MonoGlyph {
+class Bevel : public BevelFrame {
 public:
     Bevel(
 	Glyph*, Beveler,
 	const Color* light, const Color* medium, const Color* dark,
-	Coord thickness
+	Coord thickness, float xalign = 0.0, float yalign = 0.0,
+	boolean hmargin = true, boolean vmargin = true
     );
     virtual ~Bevel();
 
-    virtual void allocate(Canvas*, const Allocation&, Extension&);
-    virtual void draw(Canvas*, const Allocation&) const;
+    virtual void draw_frame(Canvas*, const Allocation&, Coord thickness) const;
 
     static void rect(
 	Canvas*, const Color* light, const Color* medium, const Color* dark,
@@ -70,12 +96,18 @@ public:
 	Canvas*, const Color* light, const Color* medium, const Color* dark,
 	Coord thickness, Coord left, Coord bottom, Coord right, Coord top
     );
+    static void diamond(
+	Canvas*, const Color* light, const Color* medium, const Color* dark,
+	Coord thickness, Coord left, Coord bottom, Coord right, Coord top
+    );
 private:
     Beveler beveler_;
     const Color* light_;
     const Color* medium_;
     const Color* dark_;
-    Coord thickness_;
+
+    Coord thickness(Canvas*) const;
+    void allocate_body(Glyph*, Coord, Allocation&) const;
 };
 
 #endif

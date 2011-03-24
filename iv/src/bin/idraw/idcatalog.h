@@ -30,6 +30,8 @@
 
 #include <Unidraw/catalog.h>
 
+class GraphicComp;
+
 class IdrawCatalog : public Catalog{
 public:
     IdrawCatalog(const char*, Creator*);
@@ -58,7 +60,7 @@ private:
     void PSReadTransformer(istream&, Graphic*);
     void PSReadPoints(istream&, const Coord*&, const Coord*&, int&);
 
-    void PSReadChildren(istream&, class GraphicComp*);
+    void PSReadChildren(istream&, GraphicComp*);
     void PSReadTextData(istream&, char*, int);
 
     GraphicComp* ReadPostScript(istream&);

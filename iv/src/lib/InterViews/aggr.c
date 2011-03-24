@@ -41,8 +41,8 @@ public:
     Extension extension_;
 };
 
-declareList(AggregateInfo_List,AggregateInfo);
-implementList(AggregateInfo_List,AggregateInfo);
+declareList(AggregateInfo_List,AggregateInfo)
+implementList(AggregateInfo_List,AggregateInfo)
 
 AggregateInfo::AggregateInfo() {
     glyph_ = nil;
@@ -55,7 +55,7 @@ Aggregate::Aggregate(GlyphIndex size) : Glyph() {
 Aggregate::~Aggregate() {
     GlyphIndex count = info_->count();
     for (GlyphIndex i = 0; i < count; ++i) {
-        AggregateInfo& info = info_->item(i);
+        AggregateInfo& info = info_->item_ref(i);
 	Resource::unref(info.glyph_);
     }
     delete info_;
@@ -67,17 +67,17 @@ GlyphIndex Aggregate::count() const {
 }
 
 Glyph* Aggregate::component(GlyphIndex index) const {
-    return info_->item(index).glyph_;
+    return info_->item_ref(index).glyph_;
 }
 
 void Aggregate::allotment(
     GlyphIndex index, DimensionName res, Allotment& a
 ) const {
-    a = info_->item(index).allocation_.allotment(res);
+    a = info_->item_ref(index).allocation_.allotment(res);
 }
 
 void Aggregate::allot(GlyphIndex i, DimensionName res, const Allotment& al) {
-    Allocation& a = info_->item(i).allocation_;
+    Allocation& a = info_->item_ref(i).allocation_;
     a.allot(res, al);
 }
 
@@ -105,13 +105,13 @@ void Aggregate::insert(GlyphIndex index, Glyph* glyph) {
 }
 
 void Aggregate::remove(GlyphIndex index) {
-    AggregateInfo& info = info_->item(index);
+    AggregateInfo& info = info_->item_ref(index);
     Resource::unref(info.glyph_);
     info_->remove(index);
 }
 
 void Aggregate::replace(GlyphIndex index, Glyph* glyph) {
-    AggregateInfo& info = info_->item(index);
+    AggregateInfo& info = info_->item_ref(index);
     Resource::ref(glyph);
     Resource::unref(info.glyph_);
     info.glyph_ = glyph;
@@ -120,13 +120,13 @@ void Aggregate::replace(GlyphIndex index, Glyph* glyph) {
 void Aggregate::allocate(Canvas* canvas, const Allocation&, Extension& ext) {
     GlyphIndex count = info_->count();
     for (GlyphIndex index = 0; index < count; ++index) {
-        AggregateInfo& info = info_->item(index);
+        AggregateInfo& info = info_->item_ref(index);
         if (info.glyph_ != nil) {
             Allocation& a = info.allocation_;
             Extension& b = info.extension_;
-            b.xy_extents(fil, -fil, fil, -fil);
+	    b.clear();
             info.glyph_->allocate(canvas, a, b);
-            ext.extend(b);
+            ext.merge(b);
         }
     }
 }
@@ -134,14 +134,11 @@ void Aggregate::allocate(Canvas* canvas, const Allocation&, Extension& ext) {
 void Aggregate::draw(Canvas* canvas, const Allocation&) const {
     GlyphIndex count = info_->count();
     for (GlyphIndex index = 0; index < count; ++index) {
-        AggregateInfo& info = info_->item(index);
+        AggregateInfo& info = info_->item_ref(index);
         if (info.glyph_ != nil) {
             Allocation& a = info.allocation_;
             Extension& b = info.extension_;
-            boolean damaged = canvas->damaged(
-                b.left(), b.bottom(), b.right(), b.top()
-            );
-            if (damaged) {
+            if (canvas->damaged(info.extension_)) {
                 info.glyph_->draw(canvas, a);
             }
         }
@@ -151,14 +148,10 @@ void Aggregate::draw(Canvas* canvas, const Allocation&) const {
 void Aggregate::print(Printer* p, const Allocation&) const {
     GlyphIndex count = info_->count();
     for (GlyphIndex index = 0; index < count; ++index) {
-        AggregateInfo& info = info_->item(index);
+        AggregateInfo& info = info_->item_ref(index);
         if (info.glyph_ != nil) {
             Allocation& a = info.allocation_;
-            Extension& b = info.extension_;
-            boolean damaged = p->damaged(
-                b.left(), b.bottom(), b.right(), b.top()
-            );
-            if (damaged) {
+            if (p->damaged(info.extension_)) {
                 info.glyph_->print(p, a);
             }
         }
@@ -170,7 +163,7 @@ void Aggregate::pick(Canvas* c, const Allocation&, int depth, Hit& h) {
     Coord y = h.bottom();
     GlyphIndex count = info_->count();
     for (GlyphIndex index = 0; index < count; ++index) {
-        AggregateInfo& info = info_->item(index);
+        AggregateInfo& info = info_->item_ref(index);
         if (info.glyph_ != nil) {
             Extension& b = info.extension_;
             Allocation& a = info.allocation_;

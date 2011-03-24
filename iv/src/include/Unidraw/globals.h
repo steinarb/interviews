@@ -27,7 +27,10 @@
 #ifndef unidraw_globals_h
 #define unidraw_globals_h
 
-#include <InterViews/defs.h>
+#include <IV-2_6/InterViews/defs.h>
+#include <Unidraw/enter-scope.h>
+
+#include <IV-2_6/_enter.h>
 
 class CSolver;
 class Graphic;
@@ -116,5 +119,7 @@ extern void GetAlignmentPoint(Graphic*, Alignment, float&, float&);
 extern void Ref(Resource*);         /* calls Reference if resource is nonnil */
 
 extern char* strnew(const char*);   /* return a copy of the given string */
+
+#include <IV-2_6/_leave.h>
 
 #endif

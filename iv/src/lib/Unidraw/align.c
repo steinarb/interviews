@@ -46,6 +46,8 @@
 
 #include <stream.h>
 
+#include <IV-2_6/_enter.h>
+
 /*****************************************************************************/
 
 ClassId AlignCmd::GetClassId () { return ALIGN_CMD; }

@@ -26,10 +26,10 @@
  * Banner implementation.
  */
 
-#include <IV-look/2.6/InterViews/banner.h>
 #include <InterViews/font.h>
-#include <InterViews/2.6/InterViews/painter.h>
-#include <InterViews/2.6/InterViews/shape.h>
+#include <IV-2_6/InterViews/banner.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/shape.h>
 #include <OS/math.h>
 
 static const int pad = 2*pixels;	/* space around banner text */

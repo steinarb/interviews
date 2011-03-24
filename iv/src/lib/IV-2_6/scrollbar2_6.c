@@ -26,13 +26,13 @@
  * ScrollBar -- general scrolling interface
  */
 
-#include <IV-look/2.6/InterViews/adjuster.h>
-#include <IV-look/2.6/InterViews/border.h>
-#include <IV-look/2.6/InterViews/scrollbar.h>
-#include <IV-look/2.6/InterViews/scroller.h>
-#include <InterViews/2.6/InterViews/box.h>
+#include <IV-2_6/InterViews/adjuster.h>
+#include <IV-2_6/InterViews/border.h>
+#include <IV-2_6/InterViews/scrollbar.h>
+#include <IV-2_6/InterViews/scroller.h>
+#include <IV-2_6/InterViews/box.h>
 
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/_enter.h>
 
 /* half-second autorepeat delay on movers */
 static const int DELAY = 5;

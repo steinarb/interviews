@@ -26,9 +26,8 @@
 
 #include <Unidraw/uarray.h>
 
-#include <InterViews/defs.h>
-
 #include <OS/memory.h>
+#include <OS/math.h>
 
 /*****************************************************************************/
 
@@ -53,7 +52,7 @@ void UArray::Check (int index) {
 }
 
 void UArray::Insert (void* v, int index) {
-    const void** spot;
+    void** spot;
     index = (index < 0) ? _count : index;
 
     if (index < _count) {
@@ -72,7 +71,7 @@ void UArray::Insert (void* v, int index) {
 void UArray::Remove (int index) {
     if (0 <= index && index < _count) {
         --_count;
-        const void** spot = &_buf[index];
+        void** spot = &_buf[index];
         Memory::copy(spot+1, spot, (_count - index)*sizeof(void*));
     }
 }
@@ -88,6 +87,6 @@ int UArray::Index (void* v) {
 
 void*& UArray::operator[] (int index) {
     Check(index);
-    _count = max(_count, index+1);
+    _count = Math::max(_count, index+1);
     return _buf[index];
 }

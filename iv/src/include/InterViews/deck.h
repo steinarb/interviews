@@ -25,37 +25,31 @@
 #ifndef iv_deck_h
 #define iv_deck_h
 
-#include <InterViews/glyph.h>
+#include <InterViews/polyglyph.h>
 
 #include <InterViews/_enter.h>
 
-class Deck : public Glyph {
+class Deck : public PolyGlyph {
 public:
-    Deck();
+    Deck(GlyphIndex size = 0);
     virtual ~Deck();
 
     GlyphIndex card() const;
     void flip_to(GlyphIndex);
-
-    virtual void append(Glyph*);
-    virtual void prepend(Glyph*);
-    virtual void insert(GlyphIndex, Glyph*);
-    virtual void remove(GlyphIndex);
-    virtual void replace(GlyphIndex, Glyph*);
-
-    virtual GlyphIndex count() const;
-    virtual Glyph* component(GlyphIndex) const;
 
     virtual void request(Requisition&) const;
     virtual void allocate(Canvas*, const Allocation&, Extension&);
     virtual void draw(Canvas*, const Allocation&) const;
     virtual void print(Printer*, const Allocation&) const;
     virtual void pick(Canvas*, const Allocation&, int depth, Hit&);
+    virtual void undraw();
 
+    virtual void modified(GlyphIndex);
     virtual void allotment(GlyphIndex, DimensionName, Allotment&) const;
 private:
     GlyphIndex card_;
-    class DeckInfo_List* info_;
+    boolean changed_;
+    Requisition requisition_;
     Allocation allocation_;
 };
 

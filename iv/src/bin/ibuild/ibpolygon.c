@@ -37,8 +37,14 @@ static const char* polycomp_delim = "%polycomp_delim";
 /*****************************************************************************/
 
 IPolygonComp::IPolygonComp (SF_Polygon* graphic) {
-    GetClassNameVar()->SetName("SF_Polygon");
-    GetClassNameVar()->SetBaseClass("SF_Polygon");
+    _gclassNameVar->SetName("SF_Polygon");
+    _gclassNameVar->SetBaseClass("SF_Polygon");
+    _cclassNameVar->SetName("PolygonComp");
+    _cclassNameVar->SetBaseClass("PolygonComp");
+    _vclassNameVar->SetName("PolygonView");
+    _vclassNameVar->SetBaseClass("PolygonView");
+    _compid->SetOrigID(POLYGON_COMP);
+
     if (!_release || graphic != nil) {
         _target = new PolygonComp(graphic);
         if (graphic != nil) {
@@ -63,13 +69,13 @@ boolean IPolygonComp::IsA (ClassId id) {
 ClassId PolygonCode::GetClassId () { return IPOLYGON_CODE; }
 
 boolean PolygonCode::IsA(ClassId id) {
-    return IPOLYGON_CODE == id || CodeView::IsA(id);
+    return IPOLYGON_CODE == id || GraphicCodeView::IsA(id);
 }
 
-PolygonCode::PolygonCode (IPolygonComp* subj) : CodeView(subj) {}
+PolygonCode::PolygonCode (IPolygonComp* subj) : GraphicCodeView(subj) {}
 
 void PolygonCode::Update () {
-    CodeView::Update();
+    GraphicCodeView::Update();
     GetIPolygonComp()->Bequeath();
 }
 
@@ -77,52 +83,29 @@ IPolygonComp* PolygonCode::GetIPolygonComp () {
     return (IPolygonComp*) GetSubject(); 
 }
 
+const char* PolygonCode::GetGHeader () { return "polygons"; }
+const char* PolygonCode::GetCVHeader () { return "polygon"; }
+
 boolean PolygonCode::Definition (ostream& out) {
     boolean ok = true;
 
     IPolygonComp* polygoncomp = GetIPolygonComp();
     PolygonComp* target = (PolygonComp*) polygoncomp->GetTarget();
     SF_Polygon* polygongr= target->GetPolygon();
-    SubclassNameVar* snamer = polygoncomp->GetClassNameVar();
+
+    SubclassNameVar* cnamer = polygoncomp->GetCClassNameVar();
+    SubclassNameVar* gnamer = polygoncomp->GetGClassNameVar();
     MemberNameVar* mnamer = polygoncomp->GetMemberNameVar();
+
     const char* mname = mnamer->GetName();
-    const char* subclass = snamer->GetName();
+    const char* cname = cnamer->GetName();
+    const char* gname = gnamer->GetName();
 
-    if (_emitGraphicState) {
-        ok = WriteGraphicDecls(polygongr, out);
-
-    } else if (
-        _emitInstanceDecls || _emitForward || 
-        _emitClassHeaders || _emitHeaders
-    ) {
-        ok = CodeView::Definition(out);
-        if (_emitInstanceDecls && _emitGraphicComp && !_emitExport) {
-            out << "    PolygonComp* " << mname << "_comp;\n";
-        }
-
-    } else if (_emitExpHeader) {
-        if (!snamer->IsSubclass()) {
-            if (
-                _scope && mnamer->GetExport() && 
-                !_namelist->Search("polygons")
-            ) {
-                _namelist->Append("polygons");
-                out << "#include <Unidraw/Graphic/polygons.h> \n";
-            }
-        } else {
-            ok = CodeView::Definition(out);
-        }
-
-    } else if (_emitCorehHeader) {
-        if (snamer->IsSubclass() && strcmp(subclass, _classname) == 0) {
-            if (!_namelist->Search("polygons")) {
-                _namelist->Append("polygons");
-                out << "#include <Unidraw/Graphic/polygons.h> \n";
-            }
-        }
+    if (_emitInstanceDecls || _emitGraphicState) {
+	ok = ok && GraphicCodeView::Definition(out);
 
     } else if (_emitInstanceInits) {
-        Coord *x, *y;
+        const Coord *x, *y;
         int count;
 
         count = polygongr->GetOriginal(x, y);
@@ -137,34 +120,36 @@ boolean PolygonCode::Definition (ostream& out) {
             out << "        polyy[" << i << "] = ";
             out << y[i] << ";\n";
         }
-        out << "        " << mname;
-        out << " = new " << subclass << "(";
+        if (_emitGraphicComp) {
+            out << "        " << mname << "_gr";
+        } else {
+            out << "        " << mname;
+        }
+        out << " = new " << gname << "(";
         out << "polyx, polyy, " << count;
         out << ");\n";
         ok = WriteGraphicInits(polygongr, out);
         if (_emitGraphicComp) {
-            out << "        " << mname << "_comp = new PolygonComp(";
-            out << mname << ");\n";
+            out << "        " << mname << " = new " << cname << "(";
+            out << mname << "_gr);\n";
         }
         out << "    }\n";
 
-    } else if (
-        _emitCoreDecls || _emitCoreInits || _emitClassDecls || _emitClassInits
-    ) {
-	ok = ok && CodeView::Definition(out);
+    } else {
+	ok = ok && GraphicCodeView::Definition(out);
     }
     return ok && out.good();
 }
 
-boolean PolygonCode::CoreConstDecls(ostream& out) { 
+boolean PolygonCode::GCoreConstDecls(ostream& out) { 
     out << "(Coord* x, Coord* y, int count, Graphic* = nil);\n";
     return out.good();
 }
 
-boolean PolygonCode::CoreConstInits(ostream& out) {
+boolean PolygonCode::GCoreConstInits(ostream& out) {
     IComp* icomp = GetIComp();
-    SubclassNameVar* snamer = icomp->GetClassNameVar();
-    const char* baseclass = snamer->GetBaseClass();
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    const char* baseclass = gnamer->GetBaseClass();
 
     out <<"(\n    Coord* x, Coord* y, int count, Graphic* gr\n) : ";
     out << baseclass << "(x, y, count, gr) {}\n\n";
@@ -172,35 +157,25 @@ boolean PolygonCode::CoreConstInits(ostream& out) {
     return out.good();
 }
 
-boolean PolygonCode::ConstDecls(ostream& out) {
+boolean PolygonCode::GConstDecls(ostream& out) {
     out << "(Coord* x, Coord* y, int count, Graphic* = nil);\n";
+    out << "    virtual Graphic* Copy();\n";
     return out.good();
 }
 
-boolean PolygonCode::ConstInits(ostream& out) {
+boolean PolygonCode::GConstInits(ostream& out) {
     char coreclass[CHARBUFSIZE];
     GetCoreClassName(coreclass);
+    IComp* icomp = GetIComp();
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    const char* gname = gnamer->GetName();
 
     out <<"(\n    Coord* x, Coord* y, int count, Graphic* gr\n) : ";
     out << coreclass << "(x, y, count, gr) {}\n\n";
+    out << "Graphic* " << gname << "::Copy () {\n";
+    out << "    return new " << gname << "(_x, _y, _count, this);\n";
+    out << "}\n\n";
 
-    return out.good();
-}
-
-boolean PolygonCode::EmitIncludeHeaders(ostream& out) {
-    SubclassNameVar* snamer = GetIComp()->GetClassNameVar();
-
-    if (!snamer->IsSubclass() && !_namelist->Search("polygons")) {
-        _namelist->Append("polygons");
-        out << "#include <Unidraw/Graphic/polygons.h> \n";
-    }
-    if (
-        strcmp(snamer->GetName(), _classname) != 0 && 
-        !_namelist->Search("polygon") && _emitGraphicComp
-    ) {
-        _namelist->Append("polygon");
-        out << "#include <Unidraw/Components/polygon.h> \n";
-    }
     return out.good();
 }
 

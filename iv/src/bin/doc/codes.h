@@ -51,6 +51,7 @@ const int smallvspace = 0223;
 const int thinspace = 0224;
 const int negthinspace = 0225;
 const int hfill = 0226;
+const int hleader = 0227;
 
 /*
  * Adobe encodings of some TeX characters

@@ -8,7 +8,7 @@
 
 #include "Clock.h"
 #include "Dial.h"
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/_enter.h>
 
 Clock::Clock(const char* name) : Clock_core(name) {
     _time = 0;

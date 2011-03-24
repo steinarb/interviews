@@ -35,6 +35,8 @@
 
 #include <InterViews/transformer.h>
 
+#include <IV-2_6/_enter.h>
+
 /*****************************************************************************/
 
 static const int SLOTS = 1000;
@@ -126,6 +128,7 @@ void GVUpdater::UpdateStructure () {
     DamageViews(&table);
 }
 
+ClassId GVUpdater::ViewCategory () { return COMPONENT_VIEW; }
 void GVUpdater::AddDamage (Graphic* g) { _gv->AddDamage(g); }
 void GVUpdater::IncurDamage (Graphic* g) { _gv->IncurDamage(g); }
 void GVUpdater::Unselect (GraphicView* view) { _gv->Unselect(view); }
@@ -201,7 +204,7 @@ void GVUpdater::InitViews (GVU_HashTable* table) {
         GVU_HashElem* info = table->Find(subj);
 
         if (info->Undefined()) {
-            GraphicView* view = (GraphicView*) subj->Create(COMPONENT_VIEW);
+            GraphicView* view = (GraphicView*) subj->Create(ViewCategory());
             subj->Attach(view);
             Append(view);
             view->Update();

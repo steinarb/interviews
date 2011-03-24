@@ -22,7 +22,6 @@
 
 /*
  * FBrowser component definitions.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibfbrowser.c,v 1.2 91/09/27 14:10:24 tang Exp $
  */
 
 #include "ibclasses.h"
@@ -124,11 +123,11 @@ InfoDialog* FBrowserView::GetInfoDialog () {
 /*****************************************************************************/
 
 boolean FBrowserCode::IsA (ClassId id) {
-    return FBROWSER_CODE == id || CodeView::IsA(id);
+    return FBROWSER_CODE == id || ButtonCode::IsA(id);
 }
 
 ClassId FBrowserCode::GetClassId () { return FBROWSER_CODE; }
-FBrowserCode::FBrowserCode (FBrowserComp* subj) : CodeView(subj) { }
+FBrowserCode::FBrowserCode (FBrowserComp* subj) : ButtonCode(subj) { }
 
 FBrowserComp* FBrowserCode::GetFBrowserComp () {
     return (FBrowserComp*) GetSubject();
@@ -136,59 +135,62 @@ FBrowserComp* FBrowserCode::GetFBrowserComp () {
 
 boolean FBrowserCode::Definition (ostream& out) {
     boolean ok = true;
+    InteractorComp* icomp = GetIntComp();
+    MemberNameVar* mnamer = icomp->GetMemberNameVar();
+    SubclassNameVar* snamer = icomp->GetClassNameVar();
+    ButtonStateVar* bsVar = icomp->GetButtonStateVar();
     if (
-	_emitProperty || _emitBSDecls ||
+	_emitProperty || _emitBSDecls || _emitForward ||
 	_emitBSInits || _emitInstanceDecls || _emitHeaders ||
 	_emitFunctionDecls || _emitFunctionInits || _emitClassHeaders
     ) {
-        return CodeView::Definition(out);
+        ok = ok && ButtonCode::Definition(out);
 
-    } else if (_emitForward) {
-        if (_scope) {
-            ok = ok && CodeView::Definition(out);
-            ButtonStateVar* bsVar = GetFBrowserComp()->GetButtonStateVar();
-            if (
-                bsVar->GetExport() &&
-                !_bsdeclslist->Search("ButtonState")
-            ) {
-                _bsdeclslist->Append("ButtonState");
-                out << "class ButtonState;\n";
-            }
-        }
     } else if (_emitExpHeader) {
-	InteractorComp* icomp = GetIntComp();
-	MemberNameVar* mnamer = icomp->GetMemberNameVar();
-        SubclassNameVar* snamer = icomp->GetClassNameVar();
-        if (!snamer->IsSubclass()) {
-            if (
-                _scope && mnamer->GetExport() &&
-                !_namelist->Search("filebrowser")
-            ) {
-                _namelist->Append("filebrowser");
-                out << "#include <InterViews/filebrowser.h>\n";
+        if (!snamer->IsSubclass() || !bsVar->IsSubclass()) {
+            if (_scope) {
+                if (
+                    mnamer->GetExport() && !_namelist->Search("filebrowser") &&
+                    !snamer->IsSubclass()
+                ) {
+                    _namelist->Append("filebrowser");
+                    out << "#include <InterViews/filebrowser.h>\n";
+                }
+                if (
+                    bsVar->GetExport() && !_namelist->Search("button") &&
+                    !bsVar->IsSubclass()
+                ) {
+                    _namelist->Append("button");
+                    out << "#include <InterViews/button.h>\n";
+                }
             }
-            ButtonStateVar* bvar = icomp->GetButtonStateVar();
-            if (_scope && bvar->GetExport() && !_namelist->Search("button")) {
-                _namelist->Append("button");
-                out << "#include <InterViews/button.h>\n";
-            }
-        } else {
             ok = ok && CodeView::Definition(out);
+        } else {
+            ok = ok && ButtonCode::Definition(out);
         }
 
     } else if (_emitCorehHeader) {
-	InteractorComp* icomp = GetIntComp();
-        SubclassNameVar* snamer = icomp->GetClassNameVar();
         const char* subclass = snamer->GetName();
+        const char* bsclass = bsVar->GetSubclassName();
+        const char* fwname = GetFirewall();
         if (snamer->IsSubclass() && strcmp(subclass, _classname) == 0) {
             if (!_namelist->Search("filebrowser")) {
                 _namelist->Append("filebrowser");
                 out << "#include <InterViews/filebrowser.h>\n";
             }
         }
+        if (bsVar->IsSubclass() && strcmp(bsclass, _classname) == 0) {
+            if (!_namelist->Search("button")) {
+                _namelist->Append("button");
+                out << "#include <InterViews/button.h>\n";
+            }
+            if (fwname != nil && !_namelist->Search(fwname)) {
+                _namelist->Append(fwname);
+                out << "#include \"" << fwname << "-core.h\"\n";
+            }
+        }
     } else if (_emitInstanceInits) {
-        InteractorComp* icomp = GetIntComp();
-        const char* mname = icomp->GetMemberNameVar()->GetName();
+        const char* mname = mnamer->GetName();
 
         if (!_instancelist->Find((void*) mname)) {
             _instancelist->Append(new UList((void*)mname));
@@ -227,13 +229,14 @@ boolean FBrowserCode::Definition (ostream& out) {
             if (*textfilter != '\0') {
                 out << "    " << mname << "->SetTextFilter(";
                 out << "\"" << textfilter << "\"" << ");\n";
+                out << "    " << mname << "->Update();\n";
             }
         }
 
     } else if (
         _emitCoreDecls || _emitCoreInits || _emitClassDecls || _emitClassInits
     ) {
-	ok = ok && CodeView::Definition(out);
+	ok = ok && ButtonCode::Definition(out);
         
     } else if (_emitMain) {
 	ok = ok && CodeView::Definition(out);
@@ -251,10 +254,13 @@ boolean FBrowserCode::CoreConstInits(ostream& out) {
     InteractorComp* icomp = GetIntComp();
     SubclassNameVar* snamer = icomp->GetClassNameVar();
     const char* baseclass = snamer->GetBaseClass();
+    const char* subclass = snamer->GetName();
 
     out << "(\n    const char* name, ButtonState* bs,";
     out << "const char* dir, int r, int c, boolean u\n) : " << baseclass;
-    out << "(name, bs, dir, r, c, u) {}\n\n";
+    out << "(name, bs, dir, r, c, u) {\n";
+    out << "    SetClassName(\"" << subclass << "\");\n";
+    out << "}\n\n";
     return out.good();
 }
 
@@ -275,12 +281,13 @@ boolean FBrowserCode::ConstInits(ostream& out) {
 
 boolean FBrowserCode::EmitIncludeHeaders(ostream& out) {
     SubclassNameVar* snamer = GetIntComp()->GetClassNameVar();
+    ButtonStateVar* bsVar = GetIntComp()->GetButtonStateVar();
 
     if (!snamer->IsSubclass() && !_namelist->Search("filebrowser")) {
         _namelist->Append("filebrowser");
         out << "#include <InterViews/filebrowser.h> \n";
     }
-    if (!_namelist->Search("button")) {
+    if (!bsVar->IsSubclass() && !_namelist->Search("button")) {
         _namelist->Append("button");
         out << "#include <InterViews/button.h> \n";
     }

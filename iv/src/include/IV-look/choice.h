@@ -29,42 +29,35 @@
  * ChoiceItem - telltale with different look for each state
  */
 
-#include <IV-look/telltale.h>
+#include <InterViews/telltale.h>
+
+class Deck;
 
 class ChoiceItem : public Telltale {
 public:
-    ChoiceItem();
-    ChoiceItem(Glyph* normal, Glyph* pressed);
+    ChoiceItem(TelltaleState*);
+    ChoiceItem(TelltaleState*, Glyph* normal, Glyph* pressed);
+    ChoiceItem(
+	TelltaleState*,
+	Glyph* disabled,
+	Glyph* enabled, Glyph* visible, Glyph* visible_active, Glyph* active,
+	Glyph* chosen, Glyph* visible_chosen, Glyph* active_chosen,
+	Glyph* visible_active_chosen, Glyph* disabled_chosen
+    );
+
     virtual ~ChoiceItem();
 
-    enum {
-	is_enabled = 0x1, is_inside = 0x2, is_pressed = 0x4, is_chosen = 0x8
-    };
+    virtual void look(
+	const TelltaleFlags include, const TelltaleFlags exclude, Glyph*
+    );
+    virtual Glyph* look(const TelltaleFlags) const;
 
-    unsigned int numlooks() const;
-    boolean contains_looks(unsigned int set, unsigned int subset) const;
-
-    virtual void look(unsigned int bitset, Glyph*);
-    virtual Glyph* look(unsigned int bitset) const;
-
-    virtual void highlight(boolean);
-    virtual void choose(boolean);
-    virtual void enable(boolean);
+    virtual void update(Observable*);
 private:
-    class Deck* deck_;
-    unsigned int index_;
+    Deck* deck_;
+    GlyphIndex index_[TelltaleState::max_flags];
 
     void init();
-    void update(unsigned int flag, boolean b);
 };
-
-/*
- * This function needs to be changed is the set of possible looks changes
- * (enum above).
- */
-
-inline unsigned int ChoiceItem::numlooks() const {
-    return is_enabled + is_inside + is_pressed + is_chosen;
-}
 
 #endif

@@ -29,6 +29,8 @@
 
 #include <Unidraw/Components/vertices.h>
 
+#include <IV-2_6/_enter.h>
+
 class Line;
 class SF_MultiLine;
 
@@ -112,5 +114,7 @@ public:
 protected:
     virtual const char* Name();
 };
+
+#include <IV-2_6/_leave.h>
 
 #endif

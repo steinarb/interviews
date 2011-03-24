@@ -26,12 +26,13 @@
  * FileBrowser implementation.
  */
 
-#include <IV-look/2.6/InterViews/filebrowser.h>
-#include <InterViews/2.6/InterViews/perspective.h>
 #include <InterViews/regexp.h>
+#include <IV-2_6/InterViews/filebrowser.h>
+#include <IV-2_6/InterViews/perspective.h>
 #include <OS/directory.h>
 #include <OS/memory.h>
-#include <osfcn.h>
+#include <OS/string.h>
+#include <OS/types.h>
 #include <pwd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,6 +41,16 @@
 #endif
 #include <sys/param.h>
 #include <sys/stat.h>
+
+/* no standard place for this */
+extern "C" {
+    extern uid_t getuid();
+#ifdef __DECCXX
+    extern struct passwd* getpwuid(uid_t);
+#endif
+}
+
+#include <IV-2_6/_enter.h>
 
 static const unsigned int max_filename_length = 256;
 
@@ -76,10 +87,10 @@ int FBDirectory::Count() {
 }
 
 const char* FBDirectory::File(unsigned int i) {
-    return dir == nil ? nil : dir->name(i);
+    return dir == nil ? nil : dir->name(i)->string();
 }
 
-static inline char* strdup(const char* s) {
+static inline char* fb_strdup(const char* s) {
     char* dup = new char[strlen(s) + 1];
     strcpy(dup, s);
     return dup;
@@ -114,16 +125,19 @@ boolean FBDirectory::LoadDirectory(const char* name) {
 }
 
 int FBDirectory::Index(const char* name) {
-    return dir == nil ? -1 : dir->index(name);
+    if (dir == nil) {
+	return -1;
+    }
+    return dir->index(name);
 }
 
 boolean FBDirectory::Reset(const char* path) {
-    DirectoryInfo* i = Directory::open(path);
-    if (i == nil) {
+    Directory* d = Directory::open(path);
+    if (d == nil) {
 	return false;
     }
     delete dir;
-    dir = new Directory(i);
+    dir = d;
     return true;
 }
 
@@ -133,8 +147,9 @@ boolean FBDirectory::IsADirectory(const char* path) {
 }
 
 const char* FBDirectory::Home(const char* name) {
+    /* cast to workaround DEC C++ prototype bug */
     struct passwd* pw =
-        (name == nil) ? getpwuid(getuid()) : getpwnam(name);
+        (name == nil) ? getpwuid(getuid()) : getpwnam((char*)name);
     return (pw == nil) ? nil : pw->pw_dir;
 }
 
@@ -248,7 +263,9 @@ const char* FBDirectory::ElimDotDot(const char* path) {
     char* dest = newpath;
 
     for (src = path; src < &path[strlen(path)]; ++src) {
-        if (DotDotSlash(src) && CollapsedDotDotSlash(newpath, dest)) {
+        if (DotDotSlash(src) &&
+	    CollapsedDotDotSlash(newpath, (const char*&)dest)
+	) {
             src += 2;
         } else {
             *dest++ = *src;
@@ -312,7 +329,7 @@ FileBrowser::FileBrowser(
 
 void FileBrowser::Init(const char* d) {
     dir = new FBDirectory(d);
-    lastpath = strdup(ValidDirectories(Normalize(d)));
+    lastpath = fb_strdup(ValidDirectories(Normalize(d)));
     regexp = nil;
     directory_regexp = nil;
     mode = 0;
@@ -346,7 +363,7 @@ boolean FileBrowser::SetDirectory(const char* path) {
     const char* normpath = Normalize(path);
 
     if (strcmp(normpath, lastpath) != 0) {
-        char* newnormpath = strdup(normpath);
+        char* newnormpath = fb_strdup(normpath);
         successful = dir->LoadDirectory(newnormpath);
 
         if (successful) {
@@ -369,7 +386,7 @@ const char* FileBrowser::Normalize(const char* path) {
 }
 
 const char* FileBrowser::Path(int index) {
-    const char* s = String(index);
+    const char* s = StringBrowser::String(index);
 
     return (s == nil ) ? nil : Normalize(Concat(lastpath, s));
 }

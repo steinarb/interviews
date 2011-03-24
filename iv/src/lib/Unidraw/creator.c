@@ -69,6 +69,8 @@
 #include <Unidraw/Tools/select.h>
 #include <Unidraw/Tools/stretch.h>
 
+#include <IV-2_6/_enter.h>
+
 /*****************************************************************************/
 
 Creator::Creator () { }

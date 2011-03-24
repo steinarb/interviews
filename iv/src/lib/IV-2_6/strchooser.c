@@ -26,14 +26,16 @@
  * StringChooser implementation.
  */
 
-#include <IV-look/2.6/InterViews/button.h>
-#include <IV-look/2.6/InterViews/strbrowser.h>
-#include <IV-look/2.6/InterViews/strchooser.h>
-#include <IV-look/2.6/InterViews/streditor.h>
 #include <InterViews/event.h>
-#include <InterViews/sensor.h>
-#include <InterViews/world.h>
+#include <IV-2_6/InterViews/button.h>
+#include <IV-2_6/InterViews/strbrowser.h>
+#include <IV-2_6/InterViews/strchooser.h>
+#include <IV-2_6/InterViews/streditor.h>
+#include <IV-2_6/InterViews/sensor.h>
+#include <IV-2_6/InterViews/world.h>
 #include <string.h>
+
+#include <IV-2_6/_enter.h>
 
 StringChooser::StringChooser(
     ButtonState* bs, int r, int c, const char* s, Alignment a

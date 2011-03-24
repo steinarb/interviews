@@ -27,10 +27,15 @@
 #ifndef unidraw_dialogs_h
 #define unidraw_dialogs_h
 
-#include <InterViews/dialog.h>
-#include <InterViews/filechooser.h>
+#include <IV-2_6/InterViews/dialog.h>
+#include <IV-2_6/InterViews/filechooser.h>
+#include <Unidraw/enter-scope.h>
+
+#include <IV-2_6/_enter.h>
 
 class MarginFrame;
+class MatchEditor;
+class PrintBS;
 
 class BasicDialog : public Dialog {
 public:
@@ -110,7 +115,7 @@ protected:
 private:
     Interactor* Interior();
 private:
-    class PrintBS* _dest;
+    PrintBS* _dest;
     char* _last_print_cmd;
     char* _last_file_name;
     int _to_printer;
@@ -128,8 +133,10 @@ public:
 private:
     Interactor* Interior();
 private:
-    class MatchEditor* _medit;
+    MatchEditor* _medit;
     ButtonState* _units;
 };
+
+#include <IV-2_6/_leave.h>
 
 #endif

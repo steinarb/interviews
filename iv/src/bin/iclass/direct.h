@@ -29,6 +29,8 @@
 
 #include <InterViews/boolean.h>
 
+class DirectoryRep;
+
 class Directory {       
 public:
     Directory(const char* name);
@@ -54,7 +56,7 @@ private:
 
     boolean Reset(char*);
 private:
-    class DirectoryRep* rep_;
+    DirectoryRep* rep_;
 };
 
 #endif

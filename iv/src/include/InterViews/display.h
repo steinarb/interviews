@@ -29,7 +29,6 @@
 #ifndef iv_display_h
 #define iv_display_h
 
-#include <InterViews/boolean.h>
 #include <InterViews/coord.h>
 
 #include <InterViews/_enter.h>
@@ -37,8 +36,10 @@
 class Event;
 class DisplayRep;
 class Handler;
+class SelectionManager;
 class String;
 class Style;
+class Window;
 
 class Display {
 protected:
@@ -53,13 +54,13 @@ public:
     virtual int fd() const;
     virtual Coord width() const;
     virtual Coord height() const;
-    virtual unsigned int pwidth() const;
-    virtual unsigned int pheight() const;
+    virtual PixelCoord pwidth() const;
+    virtual PixelCoord pheight() const;
     virtual Coord a_width() const;
     virtual Coord a_height() const;
 
-    int to_pixels(Coord) const;
-    Coord to_coord(int) const;
+    PixelCoord to_pixels(Coord) const;
+    Coord to_coord(PixelCoord) const;
 
     virtual boolean defaults(String&) const;
     virtual void style(Style*);
@@ -75,8 +76,8 @@ public:
     virtual void put(const Event&);
     virtual boolean closed();
 
-    virtual void grab(Handler*);
-    virtual void ungrab(Handler*);
+    virtual void grab(Window*, Handler*);
+    virtual void ungrab(Handler*, boolean all = false);
     virtual Handler* grabber() const;
     virtual boolean is_grabbing(Handler*) const;
 
@@ -86,17 +87,24 @@ public:
     virtual void set_pointer_feedback(int thresh, int scale);
     virtual void move_pointer(Coord x, Coord y);
 
+    virtual SelectionManager* primary_selection();
+    virtual SelectionManager* secondary_selection();
+    virtual SelectionManager* clipboard_selection();
+    virtual SelectionManager* find_selection(const char*);
+    virtual SelectionManager* find_selection(const String&);
+
     DisplayRep* rep() const;
 private:
     DisplayRep* rep_;
     Coord pixel_;
+    Coord point_;
 };
 
-inline int Display::to_pixels(Coord c) const {
-    return int( c / pixel_ + ((c > 0) ? 0.5 : -0.5) );
+inline PixelCoord Display::to_pixels(Coord c) const {
+    return PixelCoord( c * point_ + ((c > 0) ? 0.5 : -0.5) );
 }
 
-inline Coord Display::to_coord(int p) const { return Coord(p) * pixel_; }
+inline Coord Display::to_coord(PixelCoord p) const { return Coord(p)*pixel_; }
 
 inline DisplayRep* Display::rep() const { return rep_; }
 

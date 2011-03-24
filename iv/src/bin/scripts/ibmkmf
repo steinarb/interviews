@@ -4,12 +4,14 @@
 # 
 
 if ($1 == "-m") then
-    set name = $2
-    set dest = `basename $2`
+    set ccsuffix = $2
+    set name = $3
+    set dest = `basename $3`
     set imakefile = $name-imake
     set makefile = $name-make
     set aout = $name.exe
 
+    shift argv
     shift argv
     shift argv
 
@@ -25,17 +27,17 @@ if ($1 == "-m") then
     echo "    -f $imakefile -s $makefile -DUseInstalled -DTurnOptimizingOn=0" \
 	 >> $imakefile
     echo " " >> $imakefile
+    echo "CCSUFFIX = $ccsuffix" >> $imakefile
+    echo " " >> $imakefile
 
     echo "SRCS = \" >> $imakefile
     foreach i ($argv)
 	echo "    $i."'$(CCSUFFIX) \' >> $imakefile
-	echo "    $i-core."'$(CCSUFFIX) \' >> $imakefile
     end
     echo "    $name-main."'$(CCSUFFIX)' >> $imakefile
     echo "OBJS = \" >> $imakefile
     foreach i ($argv)
 	echo "    $i.o \" >> $imakefile
-	echo "    $i-core.o \" >> $imakefile
     end
     echo "    $name-main.o" >> $imakefile
     echo "AOUT = $aout" >> $imakefile
@@ -49,7 +51,6 @@ if ($1 == "-m") then
     echo "MakeObjectRule($name-main,$name-main,NullParameter)" >> $imakefile
     foreach i ($argv)
 	echo "MakeObjectRule($i,$i,NullParameter)" >> $imakefile
-	echo "MakeObjectRule($i-core,$i-core,NullParameter)" >> $imakefile
     end
 
 else

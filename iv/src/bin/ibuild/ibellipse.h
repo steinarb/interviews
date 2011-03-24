@@ -40,7 +40,7 @@ public:
     virtual boolean IsA(ClassId);
 };
 
-class EllipseCode : public CodeView {
+class EllipseCode : public GraphicCodeView {
 public:
     EllipseCode(IEllipseComp* = nil);
 
@@ -51,11 +51,13 @@ public:
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
 protected:
-    virtual boolean CoreConstDecls(ostream&);
-    virtual boolean CoreConstInits(ostream&);
-    virtual boolean ConstDecls(ostream&);
-    virtual boolean ConstInits(ostream&);
-    virtual boolean EmitIncludeHeaders(ostream&);
+    virtual boolean GCoreConstDecls(ostream&);
+    virtual boolean GCoreConstInits(ostream&);
+    virtual boolean GConstDecls(ostream&);
+    virtual boolean GConstInits(ostream&);
+
+    virtual const char* GetGHeader();
+    virtual const char* GetCVHeader();
 };
 
 #endif

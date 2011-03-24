@@ -32,17 +32,18 @@
 #include <InterViews/event.h>
 #include <InterViews/font.h>
 #include <InterViews/handler.h>
-#include <InterViews/sensor.h>
 #include <InterViews/style.h>
-#include <InterViews/world.h>
-#include <InterViews/2.6/InterViews/interactor.h>
-#include <InterViews/2.6/InterViews/iwindow.h>
-#include <InterViews/2.6/InterViews/painter.h>
-#include <InterViews/2.6/InterViews/scene.h>
-#include <InterViews/2.6/InterViews/shape.h>
+#include <IV-2_6/InterViews/ihandler.h>
+#include <IV-2_6/InterViews/interactor.h>
+#include <IV-2_6/InterViews/iwindow.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/scene.h>
+#include <IV-2_6/InterViews/sensor.h>
+#include <IV-2_6/InterViews/shape.h>
+#include <IV-2_6/InterViews/world.h>
 #include <OS/string.h>
 
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/_enter.h>
 
 Interactor::Interactor() {
     Init();
@@ -73,6 +74,8 @@ void Interactor::Init() {
     managed_window = nil;
     cursor_ = nil;
     canvas_type_ = CanvasInputOutput;
+    handler_ = new InteractorHandler(this);
+    Resource::ref(handler_);
     ref();
 }
 
@@ -82,19 +85,12 @@ Interactor::~Interactor() {
     delete window;
     delete shape;
     Resource::unref(style);
+    Resource::unref(handler_);
 }
 
 World* Interactor::GetWorld() const { return world; }
 void Interactor::Flush() { GetWorld()->Flush(); }
 void Interactor::Sync() { GetWorld()->Sync(); }
-
-void Interactor::Poll(Event& e) {
-    World::current()->poll(e);
-    IntCoord x, y;
-    GetPosition(x, y);
-    e.x -= x;
-    e.y -= y;
-}
 
 /*
  * The implementation of Check must closely match the implementation
@@ -143,15 +139,23 @@ InteractorHelper* InteractorHelper::instance(Handler* h) {
     return instance_;
 }
 
-void InteractorHelper::Handle(Event& e) { handler_->event(e); }
+void InteractorHelper::Handle(Event& e) {
+    Handler* h = handler_;
+    Resource::ref(h);
+    h->event(e);
+    Resource::unref(h);
+}
 
 void Interactor::Read(Event& e) {
     e.display(world->display());
     e.target = nil;
+    Handler* h = nil;
     while (!world->done()) {
 	e.read();
-	Handler* h = e.handler();
+	h = e.handler();
+	Resource::ref(h);
 	if (e.target != nil) {
+	    Resource::unref(h);
 	    break;
 	}
 	if (h != nil && !e.is_grabbing(h)) {
@@ -159,6 +163,7 @@ void Interactor::Read(Event& e) {
 	    e.target = InteractorHelper::instance(h);
 	    break;
 	}
+	Resource::unref(h);
     }
 }
 
@@ -286,7 +291,8 @@ void Interactor::Config(Scene* s) {
 	    parent->Remove(this);
 	}
 	parent = s;
-	world = s->world;
+	/* cast to workaround DEC C++ compiler bug */
+	world = ((Interactor*)s)->world;
 	DoConfig(false);
     }
 }
@@ -297,11 +303,8 @@ void Interactor::Config(World* w) {
 	parent = nil;
     }
     world = w;
-    delete output;
-    output = new Painter;
-    Resource::ref(output);
-    output->SetFont(w->font());
-    output->SetColors(w->foreground(), w->background());
+    Resource::unref(output);
+    output = nil;
     DoConfig(false);
 }
 
@@ -322,7 +325,8 @@ void Interactor::Config(World* w) {
 void Interactor::DoConfig(boolean parentReversed) {
     boolean reversed = parentReversed;
     if (parent != nil) {
-	output = parent->output;
+	/* cast to workaround DEC C++ compiler bug */
+	output = ((Interactor*)parent)->output;
     }
     DefaultConfig(reversed);
     Resource::ref(output);
@@ -355,12 +359,29 @@ void Interactor::DefaultConfig(boolean& reversed) {
     if (parent == nil) {
 	world->display()->style()->append(style);
     } else {
-	parent->style->append(style);
+	/* cast to workaround DEC C++ compiler bug */
+	((Interactor*)parent)->style->append(style);
     }
 
-    const Font* f = style->font();
-    const Color* fg = style->foreground();
-    const Color* bg = style->background();
+    const Font* f = nil;
+    const Color* fg = nil;
+    const Color* bg = nil;
+    Display* d = world->display();
+
+    String v;
+    if (style->find_attribute("font", v) || style->find_attribute("Font", v)) {
+	f = Font::lookup(v);
+    }
+    if (style->find_attribute("foreground", v) ||
+	style->find_attribute("Foreground", v)
+    ) {
+	fg = Color::lookup(d, v);
+    }
+    if (style->find_attribute("background", v) ||
+	style->find_attribute("Background", v)
+    ) {
+	bg = Color::lookup(d, v);
+    }
     if (reversed) {
 	const Color* c = fg;
 	fg = bg;
@@ -385,13 +406,16 @@ void Interactor::DefaultConfig(boolean& reversed) {
 	}
     }
 
-    if (!swap_colors && f == output->GetFont() &&
+    if (output == nil) {
+	output = new Painter;
+    } else if (!swap_colors && f == output->GetFont() &&
 	fg == output->GetFgColor() && bg == output->GetBgColor()
     ) {
 	return;
+    } else {
+	output = new Painter(output);
     }
 
-    output = new Painter(output);
     if (f != nil) {
 	output->SetFont(f);
     }
@@ -425,7 +449,13 @@ const char* Interactor::GetAttribute(const char* name) const {
  */
 
 boolean Interactor::AttributeIsSet(const char* name) const {
-    return style->value_is_on(name);
+    String v;
+    return (
+	style->value_is_on(name) || (
+	    style->parent() == nil && !style->find_attribute(name, v) &&
+	    World::current()->display()->style()->value_is_on(name)
+	)
+    );
 }
 
 /*
@@ -515,7 +545,7 @@ void Interactor::Reshape(Shape& ns) {
 
 void Interactor::SetClassName(const char* s) {
     if (s != nil) {
-	style->prefix(String(s));
+	style->alias(String(s));
     }
     classname = s;
 }
@@ -541,28 +571,14 @@ void Interactor::SetCursor(Cursor* c) {
 Cursor* Interactor::GetCursor() const { return cursor_; }
 Canvas* Interactor::GetCanvas() const { return canvas; }
 
+/*
+ * Set the type of canvas for save under, backing store, etc.
+ * This operation has no effect until the next time the canvas
+ * is explicitly mapped.
+ */
+
 void Interactor::SetCanvasType(CanvasType ct) {
     canvas_type_ = ct;
-    if (canvas != nil) {
-	switch (ct) {
-	case CanvasShapeOnly:
-	case CanvasInputOnly:
-	case CanvasInputOutput:
-	    window->save_under(false);
-	    window->save_contents(false);
-	    break;
-	case CanvasSaveUnder:
-	    window->save_under(true);
-	    break;
-	case CanvasSaveContents:
-	    window->save_contents(true);
-	    break;
-	case CanvasSaveBoth:
-	    window->save_under(true);
-	    window->save_contents(true);
-	    break;
-	}
-    }
 }
 
 CanvasType Interactor::GetCanvasType() const { return canvas_type_; }

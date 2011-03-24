@@ -26,15 +26,15 @@
  * A frame surrounds another interactor, providing borders, title banners, etc.
  */
 
-#include <IV-look/2.6/InterViews/banner.h>
-#include <IV-look/2.6/InterViews/border.h>
-#include <IV-look/2.6/InterViews/frame.h>
 #include <InterViews/canvas.h>
 #include <InterViews/pattern.h>
-#include <InterViews/sensor.h>
-#include <InterViews/2.6/InterViews/box.h>
-#include <InterViews/2.6/InterViews/painter.h>
-#include <InterViews/2.6/InterViews/shape.h>
+#include <IV-2_6/InterViews/banner.h>
+#include <IV-2_6/InterViews/border.h>
+#include <IV-2_6/InterViews/frame.h>
+#include <IV-2_6/InterViews/box.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/sensor.h>
+#include <IV-2_6/InterViews/shape.h>
 
 Frame::Frame(Interactor* i, int w) {
     Init(i, w, w, w, w);

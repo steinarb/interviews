@@ -29,27 +29,30 @@
 #ifndef iv_resource_h
 #define iv_resource_h
 
-#include <InterViews/boolean.h>
+#include <InterViews/enter-scope.h>
 
 class Resource {
 public:
     Resource();
     virtual ~Resource();
 
-    void ref() const;
-    void unref() const;
+    virtual void ref() const;
+    virtual void unref() const;
+    virtual void unref_deferred() const;
+    virtual void cleanup();
 
     /* nops for nil pointers */
     static void ref(const Resource*);
     static void unref(const Resource*);
+    static void unref_deferred(const Resource*);
 
     /* postpone unref deletes */
     static boolean defer(boolean);
     static void flush();
 
     /* for backward compatibility */
-    void Reference() const { ref(); }
-    void Unreference() const { unref(); }
+    virtual void Reference() const { ref(); }
+    virtual void Unreference() const { unref(); }
 private:
     unsigned refcount_;
 private:

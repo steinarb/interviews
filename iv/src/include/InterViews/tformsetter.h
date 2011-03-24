@@ -30,17 +30,40 @@
 
 class TransformSetter : public MonoGlyph {
 public:
+    TransformSetter(Glyph*);
     TransformSetter(Glyph*, const Transformer&);
     virtual ~TransformSetter();
+
+    virtual const Transformer& transformer() const;
+    virtual Transformer& transformer();
+    virtual void transformer(const Transformer&);
 
     virtual void request(Requisition&) const;
     virtual void allocate(Canvas*, const Allocation&, Extension&);
     virtual void draw(Canvas*, const Allocation&) const;
     virtual void print(Printer*, const Allocation&) const;
     virtual void pick(Canvas*, const Allocation&, int depth, Hit&);
+protected:
+    virtual void transform(
+	Transformer&, const Allocation&, const Allocation& natural
+    ) const;
 private:
     Transformer transformer_;
-    Allocation allocation_;
+    Allocation natural_allocation_;
+
+    void push_transform(
+	Canvas*, const Allocation&, const Allocation& natural
+    ) const;
+};
+
+class TransformFitter : public TransformSetter {
+public:
+    TransformFitter(Glyph*);
+    virtual ~TransformFitter();
+protected:
+    virtual void transform(
+	Transformer&, const Allocation&, const Allocation& natural
+    ) const;
 };
 
 #endif

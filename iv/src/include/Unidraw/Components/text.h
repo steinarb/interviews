@@ -31,7 +31,9 @@
 #include <Unidraw/Components/grview.h>
 #include <Unidraw/Components/psview.h>
 
-#include <Unidraw/Graphic/label.h>
+#include <Unidraw/Graphic/ulabel.h>
+
+#include <IV-2_6/_enter.h>
 
 class TextGraphic;
 class TextManip;
@@ -71,7 +73,7 @@ protected:
     virtual boolean TextChanged();
 };
 
-class TextGraphic : public Label {
+class TextGraphic : public ULabel {
 public:
     TextGraphic(const char*, int h, Graphic* = nil);
     TextGraphic(const char*, Graphic*);
@@ -108,5 +110,7 @@ public:
 protected:
     const char* Filter(const char*, int);
 };
+
+#include <IV-2_6/_leave.h>
 
 #endif

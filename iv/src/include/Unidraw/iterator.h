@@ -27,7 +27,10 @@
 #ifndef unidraw_iterator_h
 #define unidraw_iterator_h
 
-#include <InterViews/defs.h>
+#include <InterViews/enter-scope.h>
+#include <Unidraw/enter-scope.h>
+
+#include <InterViews/_enter.h>
 
 class Iterator {
 public:
@@ -39,5 +42,7 @@ public:
 protected:
     void* _value;
 };
+
+#include <InterViews/_leave.h>
 
 #endif

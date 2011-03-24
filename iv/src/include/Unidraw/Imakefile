@@ -12,3 +12,6 @@ SUBDIRS	= \
 
 InstallMultipleFlags($(HEADERS),$(DEST),$(INSTINCFLAGS))
 MakeInSubdirs($(SUBDIRS))
+
+gendefs:
+	./_gendefs

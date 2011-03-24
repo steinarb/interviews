@@ -35,6 +35,8 @@
 
 #include <netinet/in.h>
 
+#ifndef __lucid
+
 #ifndef ntohl
 
 /*
@@ -48,6 +50,8 @@ extern "C" {
     unsigned short ntohs(unsigned short);
     unsigned short htons(unsigned short);
 }
+
+#endif
 
 #endif
 

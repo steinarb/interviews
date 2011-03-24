@@ -22,7 +22,6 @@
 
 /*
  * User interface builder-specific manipulators.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibmanips.h,v 1.2 91/09/27 14:14:32 tang Exp $
  */
 
 #ifndef ibmanips_h
@@ -101,7 +100,6 @@ public:
     virtual Viewer* GetViewer();
     virtual Tool* GetTool();
 
-    void SetComp(InteractorComp*);
     void GetSrcDest(InteractorComp*&, InteractorComp*&);
 
     boolean CreatePopupMenu(Event&, RelateMenu*&);

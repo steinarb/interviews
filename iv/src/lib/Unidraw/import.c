@@ -37,14 +37,18 @@
 #include <Unidraw/Components/stencilcomp.h>
 
 #include <Unidraw/Graphic/rasterrect.h>
-#include <Unidraw/Graphic/stencil.h>
+#include <Unidraw/Graphic/ustencil.h>
 
+#include <IV-look/dialogs.h>
 #include <InterViews/bitmap.h>
-#include <InterViews/filechooser.h>
 #include <InterViews/raster.h>
+#include <InterViews/session.h>
+#include <InterViews/style.h>
 #include <InterViews/tiff.h>
+#include <InterViews/window.h>
 
 #include <TIFF/format.h>
+#include <OS/string.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -92,8 +96,7 @@ static FILE* CheckCompression(
 
 static const char* ReadCreator (const char* filename) {
     char* buf = nil;
-    /* cast to work around bug in prototype on some systems */
-    FILE* file = fopen((char*)filename, "r");
+    FILE* file = fopen(filename, "r");
     
     if (file != nil) {
         boolean compressed;
@@ -181,8 +184,11 @@ boolean ImportCmd::IsA (ClassId id) {
 
 ImportCmd::ImportCmd (ControlInfo* c, FileChooser* f) : Command(c) { Init(f); }
 ImportCmd::ImportCmd (Editor* ed, FileChooser* f) : Command(ed) { Init(f); }
-ImportCmd::~ImportCmd () { delete _dialog; }
-void ImportCmd::Init (FileChooser* f) { _dialog = f; }
+ImportCmd::~ImportCmd () { Resource::unref(chooser_); }
+void ImportCmd::Init (FileChooser* f) {
+    chooser_ = f;
+    Resource::ref(chooser_);
+}
 
 Command* ImportCmd::Copy () {
     ImportCmd* copy = new ImportCmd(CopyControlInfo());
@@ -192,12 +198,12 @@ Command* ImportCmd::Copy () {
 
 void ImportCmd::Execute () {
     GraphicComp* comp = PostDialog();
-    
+
     if (comp != nil) {
-        PasteCmd* paste_cmd = new PasteCmd(GetEditor(), new Clipboard(comp));
-        paste_cmd->Execute();
-        paste_cmd->Log();
-        GetEditor()->GetViewer()->Align(comp, Center);
+	PasteCmd* paste_cmd = new PasteCmd(GetEditor(), new Clipboard(comp));
+	paste_cmd->Execute();
+	paste_cmd->Log();
+	GetEditor()->GetViewer()->Align(comp, /* Center */ 4);
     }
 }
 
@@ -206,34 +212,34 @@ boolean ImportCmd::Reversible () { return false; }
 GraphicComp* ImportCmd::PostDialog () {
     boolean imported = false;
     GraphicComp* comp = nil;
-
-    if (_dialog == nil) {
-        _dialog = new FileChooser(
-            "", "Import graphic from file:", ".", 10, 24, " Import "
-        );
-    }
-
     Editor* ed = GetEditor();
 
-    for (;;) {
-        _dialog->Update();
-        ed->InsertDialog(_dialog);
-        boolean accepted = _dialog->Accept();
-        ed->RemoveDialog(_dialog);
-
-        if (!accepted) {
-            break;
-        }
-
-        comp = Import(_dialog->Choice());
-
-        if (comp != nil) {
-            break;
-        } else {
-            _dialog->SetTitle("Import failed!");
-        }
+    Style* style;
+    boolean reset_caption = false;
+    if (chooser_ == nil) {
+	style = new Style(Session::instance()->style());
+	style->attribute("subcaption", "Import graphic from file:");
+	style->attribute("open", "Import");
+	chooser_ = DialogKit::instance()->file_chooser(".", style);
+	Resource::ref(chooser_);
+    } else {
+	style = chooser_->style();
     }
-    _dialog->SetTitle("");
+    while (chooser_->post_for(ed->GetWindow())) {
+	const String* str = chooser_->selected();
+	if (str != nil) {
+	    NullTerminatedString ns(*str);
+	    comp = Import(ns.string());
+	    if (comp != nil) {
+		break;
+	    }
+	    style->attribute("caption", "Import failed!");
+	    reset_caption = true;
+	}
+    }
+    if (reset_caption) {
+	style->attribute("caption", "");
+    }
     return comp;
 }
 
@@ -283,8 +289,7 @@ GraphicComp* ImportCmd::TIFF_Image (const char* filename) {
 
 GraphicComp* ImportCmd::PGM_Image (const char* filename) {
     GraphicComp* comp = nil;
-    /* cast to work around bug in prototype on some systems */
-    FILE* file = fopen((char*)filename, "r");
+    FILE* file = fopen(filename, "r");
 
     if (file != nil) {
         char line[1000];
@@ -319,8 +324,7 @@ GraphicComp* ImportCmd::PGM_Image (const char* filename) {
 
 GraphicComp* ImportCmd::PPM_Image (const char* filename) {
     GraphicComp* comp = nil;
-    /* cast to workaround bug in prototype on some systems */
-    FILE* file = fopen((char*)filename, "r");
+    FILE* file = fopen(filename, "r");
     boolean compressed;
     file = CheckCompression(file, filename, compressed);
 
@@ -369,15 +373,14 @@ GraphicComp* ImportCmd::PPM_Image (const char* filename) {
 
 GraphicComp* ImportCmd::XBitmap_Image (const char* filename) {
     GraphicComp* comp = nil;
-    /* cast to work around bug in prototype on some systems */
-    FILE* file = fopen((char*)filename, "r");
+    FILE* file = fopen(filename, "r");
 
     if (file != nil) {
         Bitmap* bm = Bitmap::open(filename);
 
         if (bm != nil) {
             comp = new StencilComp(
-	   	new Stencil(bm, bm, stdgraphic), filename
+	   	new UStencil(bm, bm, stdgraphic), filename
 	    );
         }
     }

@@ -29,6 +29,7 @@
 #include "ibclasses.h"
 #include "ibvars.h"
 #include <Unidraw/Graphic/polygons.h>
+#include <Unidraw/Tools/tool.h>
 #include <stream.h>
 #include <string.h>
 
@@ -37,8 +38,14 @@ static const char* rectcomp_delim = "%rectcomp_delim";
 /*****************************************************************************/
 
 IRectComp::IRectComp (SF_Rect* graphic) {
-    GetClassNameVar()->SetName("SF_Rect");
-    GetClassNameVar()->SetBaseClass("SF_Rect");
+    _gclassNameVar->SetName("SF_Rect");
+    _gclassNameVar->SetBaseClass("SF_Rect");
+    _cclassNameVar->SetName("RectComp");
+    _cclassNameVar->SetBaseClass("RectComp");
+    _vclassNameVar->SetName("RectView");
+    _vclassNameVar->SetBaseClass("RectView");
+    _compid->SetOrigID(RECT_COMP);
+
     if (!_release || graphic != nil) {
         _target = new RectComp(graphic);
         if (graphic != nil) {
@@ -60,16 +67,30 @@ boolean IRectComp::IsA (ClassId id) {
 
 /*****************************************************************************/
 
+IRectView::IRectView (IRectComp* subj) : IView(subj) {}
+
+Manipulator* IRectView::CreateManipulator (
+    Viewer* v, Event& e, Transformer* rel, Tool* tool
+) {
+    Manipulator* m = nil;
+    if (!tool->IsA(RESHAPE_TOOL)) {
+        m = IView::CreateManipulator(v, e, rel, tool);
+    }
+    return m;
+}
+
+/*****************************************************************************/
+
 ClassId RectCode::GetClassId () { return IRECT_CODE; }
 
 boolean RectCode::IsA(ClassId id) {
-    return IRECT_CODE == id || CodeView::IsA(id);
+    return IRECT_CODE == id || GraphicCodeView::IsA(id);
 }
 
-RectCode::RectCode (IRectComp* subj) : CodeView(subj) {}
+RectCode::RectCode (IRectComp* subj) : GraphicCodeView(subj) {}
 
 void RectCode::Update () {
-    CodeView::Update();
+    GraphicCodeView::Update();
     GetIRectComp()->Bequeath();
 }
 
@@ -77,81 +98,61 @@ IRectComp* RectCode::GetIRectComp () {
     return (IRectComp*) GetSubject(); 
 }
 
+const char* RectCode::GetGHeader () { return "polygons"; }
+const char* RectCode::GetCVHeader () { return "rect"; }
+
 boolean RectCode::Definition (ostream& out) {
     boolean ok = true;
 
     IRectComp* rectcomp = GetIRectComp();
     RectComp* target = (RectComp*) rectcomp->GetTarget();
     SF_Rect* rectgr= target->GetRect();
-    SubclassNameVar* snamer = rectcomp->GetClassNameVar();
+
+    SubclassNameVar* cnamer = rectcomp->GetCClassNameVar();
+    SubclassNameVar* gnamer = rectcomp->GetGClassNameVar();
     MemberNameVar* mnamer = rectcomp->GetMemberNameVar();
+
     const char* mname = mnamer->GetName();
-    const char* subclass = snamer->GetName();
+    const char* cname = cnamer->GetName();
+    const char* gname = gnamer->GetName();
 
-    if (_emitGraphicState) {
-        ok = WriteGraphicDecls(rectgr, out);
-
-    } else if (
-        _emitInstanceDecls || _emitForward || 
-        _emitClassHeaders || _emitHeaders
-    ) {
-        ok = CodeView::Definition(out);
-        if (_emitInstanceDecls && _emitGraphicComp && !_emitExport) {
-            out << "    RectComp* " << mname << "_comp;\n";
-        }
-
-    } else if (_emitExpHeader) {
-        if (!snamer->IsSubclass()) {
-            if (
-                _scope && mnamer->GetExport() && 
-                !_namelist->Search("polygons")
-            ) {
-                _namelist->Append("polygons");
-                out << "#include <Unidraw/Graphic/polygons.h> \n";
-            }
-        } else {
-            ok = CodeView::Definition(out);
-        }
-
-    } else if (_emitCorehHeader) {
-        if (snamer->IsSubclass() && strcmp(subclass, _classname) == 0) {
-            if (!_namelist->Search("polygons")) {
-                _namelist->Append("polygons");
-                out << "#include <Unidraw/Graphic/polygons.h> \n";
-            }
-        }
+    if (_emitInstanceDecls || _emitGraphicState) {
+	ok = ok && GraphicCodeView::Definition(out);
 
     } else if (_emitInstanceInits) {
         Coord x0, y0, x1, y1;
         rectgr->GetOriginal(x0, y0, x1, y1);
 
         out << "    {\n";
-        out << "        " << mname << " = new " << subclass << "(";
+        if (_emitGraphicComp) {
+            out << "        " << mname << "_gr";
+        } else {
+            out << "        " << mname;
+        }
+        out << " = new " << gname << "(";
         out << x0 << ", " << y0 << ", " << x1 << ", " << y1 << ");\n";
         ok = WriteGraphicInits(rectgr, out);
         if (_emitGraphicComp) {
-            out << "        " << mname << "_comp = new RectComp(";
-            out << mname << ");\n";
+            out << "        " << mname << " = new " << cname << "(";
+            out << mname << "_gr);\n";
         }
         out << "    }\n";
 
-    } else if (
-        _emitCoreDecls || _emitCoreInits || _emitClassDecls || _emitClassInits
-    ) {
-	ok = ok && CodeView::Definition(out);
+    } else {
+	ok = ok && GraphicCodeView::Definition(out);
     }
     return ok && out.good();
 }
 
-boolean RectCode::CoreConstDecls(ostream& out) { 
+boolean RectCode::GCoreConstDecls(ostream& out) { 
     out << "(Coord x0, Coord y0, Coord x1, Coord y1, Graphic* = nil);\n";
     return out.good();
 }
 
-boolean RectCode::CoreConstInits(ostream& out) {
+boolean RectCode::GCoreConstInits(ostream& out) {
     IComp* icomp = GetIComp();
-    SubclassNameVar* snamer = icomp->GetClassNameVar();
-    const char* baseclass = snamer->GetBaseClass();
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    const char* baseclass = gnamer->GetBaseClass();
 
     out <<"(\n    Coord x0, Coord y0, Coord x1, Coord y1, Graphic* gr\n) : ";
     out << baseclass << "(x0, y0, x1, y1, gr) {}\n\n";
@@ -159,35 +160,26 @@ boolean RectCode::CoreConstInits(ostream& out) {
     return out.good();
 }
 
-boolean RectCode::ConstDecls(ostream& out) {
+boolean RectCode::GConstDecls(ostream& out) {
     out << "(Coord x0, Coord y0, Coord x1, Coord y1, Graphic* = nil);\n";
+    out << "    virtual Graphic* Copy();\n";
     return out.good();
 }
 
-boolean RectCode::ConstInits(ostream& out) {
+boolean RectCode::GConstInits(ostream& out) {
     char coreclass[CHARBUFSIZE];
     GetCoreClassName(coreclass);
+    IComp* icomp = GetIComp();
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    const char* gname = gnamer->GetName();
 
     out <<"(\n    Coord x0, Coord y0, Coord x1, Coord y1, Graphic* gr\n) : ";
     out << coreclass << "(x0, y0, x1, y1, gr) {}\n\n";
+    out << "Graphic* " << gname << "::Copy () {\n";
+    out << "    return new " << gname << "(_x0, _y0, _x1, _y1, this);\n";
+    out << "}\n\n";
 
     return out.good();
 }
 
-boolean RectCode::EmitIncludeHeaders(ostream& out) {
-    SubclassNameVar* snamer = GetIComp()->GetClassNameVar();
-
-    if (!snamer->IsSubclass() && !_namelist->Search("polygons")) {
-        _namelist->Append("polygons");
-        out << "#include <Unidraw/Graphic/polygons.h> \n";
-    }
-    if (
-        strcmp(snamer->GetName(), _classname) != 0 && 
-        !_namelist->Search("rect") && _emitGraphicComp
-    ) {
-        _namelist->Append("rect");
-        out << "#include <Unidraw/Components/rect.h> \n";
-    }
-    return out.good();
-}
 

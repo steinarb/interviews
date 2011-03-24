@@ -30,8 +30,8 @@
 #include <Dispatch/iocallback.h>
 #include <Dispatch/dispatcher.h>
 
-declare(IOCallback,InsertMarker)
-implement(IOCallback,InsertMarker)
+declareIOCallback(InsertMarker)
+implementIOCallback(InsertMarker)
 
 InsertMarker::InsertMarker(
     Glyph* body, const Color* overlay, const Color* underlay, long flash
@@ -41,7 +41,7 @@ InsertMarker::InsertMarker(
     underlay_ = underlay;
     Resource::ref(underlay_);
     flash_ = flash;
-    flasher_ = new IOCallback(InsertMarker)(this, InsertMarker::flash);
+    flasher_ = new IOCallback(InsertMarker)(this, &InsertMarker::flash);
     marked_ = false;
     on_ = true;
     width_ = 0;
@@ -107,11 +107,9 @@ void InsertMarker::mark(
 
 void InsertMarker::allocate(Canvas* c, const Allocation& a, Extension& ext) {
     MonoGlyph::allocate(c, a, ext);
-    Extension e;
-    e.xy_extents(
-        a.left() - width_/2, a.right() + width_/2, a.bottom(), a.top()
+    ext.merge_xy(
+	c, a.left() - width_/2, a.right() + width_/2, a.bottom(), a.top()
     );
-    ext.extend(e);
     canvas_ = c;
 }
 
@@ -127,4 +125,9 @@ void InsertMarker::draw(Canvas* c, const Allocation& allocation) const {
             do_draw(c, overlay_, x_, y_, width_, height_);
         }
     }
+}
+
+void InsertMarker::undraw() {
+    MonoGlyph::undraw();
+    canvas_ = nil;
 }

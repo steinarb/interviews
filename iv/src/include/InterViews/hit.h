@@ -29,7 +29,6 @@
 #ifndef iv_hit_h
 #define iv_hit_h
 
-#include <InterViews/boolean.h>
 #include <InterViews/coord.h>
 #include <InterViews/glyph.h>
 
@@ -75,6 +74,9 @@ public:
     virtual Handler* handler() const;
 private:
     HitImpl* impl_;
+    char free_store_[4000];
+
+    void init();
 };
 
 #include <InterViews/_leave.h>

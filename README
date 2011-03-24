@@ -1,12 +1,13 @@
 
-		README for InterViews 3.0
+		README for InterViews 3.1
 
 
-The iv subdirectory in this directory contains the InterViews 3.0
-distribution from Stanford University.  You should read the release
-notes in iv/src/man/refman/refman.PS for information about differences
-between 2.6 and 3.0.  You should read the rest of this file for
-information about how to build, install, and use InterViews.
+The iv subdirectory in this directory contains the InterViews 3.1
+distribution from Stanford University and Silicon Graphics.
+You should read the release notes in iv/src/man/refman/refman.PS
+for information about differences between 3.0 and 3.1.  You should
+read the rest of this file for information about how to build,
+install, and use InterViews.
 
 If you have a bug report, please send it to
 
@@ -35,14 +36,10 @@ both since whatever you post in one will appear in the other too.
 
 
 You should have gotten a C++ compiler which accepts revision 2.0 or
-later of the language.  Some of the compilers which can compile
-InterViews are AT&T C++ 2.0, AT&T C++ 2.1, and Sun C++ 2.0.  One of
-the compilers which cannot compile InterViews is g++ 1.39.
-
-You should have installed the X11R4 or X11R5 distribution from MIT.
-If you use a vendor's X11 product, the product should be based on R4
-or later and the product should include imake, makedepend, and the
-config files.
+later of the language.  You should have installed the X11R4 or
+X11R5 distribution from MIT.  If you use a vendor's X11 product,
+the product should be based on R4 or later and the product
+should include imake, makedepend, and the config files.
 
 If imake and makedepend are not in the same place where the other X11
 binaries are or anywhere else on your system, you can get the sources
@@ -57,7 +54,7 @@ InterViews.
 
 
 You should check that you have about 50Mb of free space before you
-unpack the 3.0 tar file.  If you have SunOS shared libraries, you can
+unpack the 3.1 tar file.  If you have SunOS shared libraries, you can
 get by with about 35Mb.  The InterViews source tree itself occupies
 only 8Mb, but saying "make World" will add 17Mb to iv and saying "make
 install" will add another 18Mb.
@@ -146,7 +143,9 @@ will not work correctly.
 
 You may want to redirect the output of "make World" to a file and
 inspect it later since the build will take more than two hours to
-complete on a 10-MIPS workstation (DECstation 3100 or SPARCstation 1).
+complete on a system with the performance of a DECstation 3100 or
+SPARCstation 1.
+
 Once the build concludes, you can find errors in the output quickly by
 searching for the character ':' (unfortunately, this will not work
 very well if your C++ compiler driver prints verbose output showing
@@ -208,9 +207,9 @@ libraries when building your application.
 
 
 The easiest way to write an Imakefile is to start with a copy of a
-similar Imakefile and modify it.  If you use only 3.0 classes, you can
-copy alert's Imakefile.  If you use both 3.0 and 2.6 classes, you can
-copy doc's Imakefile.  If you use only 2.6 classes, you can copy ifb's
+similar Imakefile and modify it.  If you use only 3.1 classes, you can
+copy alert's Imakefile.  If you use both 3.1 and 2.6 classes, you can
+copy doc's Imakefile.  If you use only 2.6 classes, you can copy dclock's
 Imakefile.  If you use the Unidraw library, you can copy idraw's
 Imakefile.  Reading the config files to understand how the rules are
 defined will also help if you need to do anything complicated.
@@ -234,16 +233,15 @@ macros also add -lXext -lX11 -lm to CCLDLIBS for you.
 If your application uses classes from the "old" InterViews 2.6,
 Unidraw, or graphic libraries, you should use the macro Use_2_6() as
 well as one of the macros Use_libInterViews(), Use_libUnidraw(), or
-Use_libgraphic().  Many 3.0 classes have the same names as 2.6 classes
-so the shorter names are reserved for the 3.0 classes and the 2.6
+Use_libgraphic().  Many 3.1 classes have the same names as 2.6 classes
+so the shorter names are reserved for the 3.1 classes and the 2.6
 classes' names are prefixed with "iv2_6_".  The macro Use_2_6() allows
 you to use the classes' shorter 2.6 names instead of their real names
 and their shorter include paths (<InterViews/*.h>) instead of their
-real include paths (<InterViews/2.6/InterViews/*.h> or
-<IV-look/2.6/InterViews/*.h>).  If you want to use both 3.0 and 2.6
-classes in the same application, you will have to omit Use_2_6() and
-use the 2.6 classes' real names and include paths.  The application
-"doc" is an example of code which uses both 3.0 and 2.6 classes.
+real include paths (<IV-2_6/InterViews/*.h>.  If you want to use
+both 3.1 and 2.6 classes in the same application, you will
+need to omit Use_2_6() and use the 2.6 classes' real names and
+include paths.
 
 You can use the macro ComplexProgramTarget(dest) to build a program.
 The parameter specifies the name you want the program to have after

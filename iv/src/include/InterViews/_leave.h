@@ -27,7 +27,9 @@
 #ifdef iv2_6_compatible
 #undef iv__current_h
 #define iv__2_6_h
-#include <InterViews/2.6/_names.h>
+#ifndef MAKEDEPEND
+#include <IV-2_6/_names.h>
+#endif
 #endif
 
 #endif

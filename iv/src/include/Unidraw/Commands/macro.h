@@ -31,7 +31,7 @@
 
 class UList;
 
-class MacroCmd: public Command {
+class MacroCmd : public Command {
 public:
     MacroCmd(ControlInfo*);
     MacroCmd(
@@ -50,15 +50,15 @@ public:
     virtual void Last(Iterator&);
     virtual void Next(Iterator&);
     virtual void Prev(Iterator&);
-    virtual boolean Done(Iterator);
+    virtual boolean Done(Iterator&);
 
-    virtual Command* GetCommand(Iterator);
+    virtual Command* GetCommand(Iterator&);
     virtual void SetCommand(Command*, Iterator&);
 
     void Append(Command*, Command* = nil, Command* = nil, Command* = nil);
     void Prepend(Command*, Command* = nil, Command* = nil, Command* = nil);
-    void InsertBefore(Iterator, Command*);
-    void InsertAfter(Iterator, Command*);
+    void InsertBefore(Iterator&, Command*);
+    void InsertAfter(Iterator&, Command*);
     void Remove(Command*);
     void Remove(Iterator&);
 
@@ -69,7 +69,7 @@ public:
     virtual boolean IsA(ClassId);
 protected:
     Command* Cmd(UList*);
-    UList* Elem(Iterator);
+    UList* Elem(Iterator&);
 protected:
     UList* _cmds;
 };

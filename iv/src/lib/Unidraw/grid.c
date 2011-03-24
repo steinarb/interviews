@@ -30,10 +30,12 @@
 #include <Unidraw/Graphic/graphic.h>
 
 #include <InterViews/canvas.h>
-#include <InterViews/painter.h>
+#include <IV-2_6/InterViews/painter.h>
 #include <InterViews/transformer.h>
 
 #include <OS/math.h>
+
+#include <IV-2_6/_enter.h>
 
 /*****************************************************************************/
 

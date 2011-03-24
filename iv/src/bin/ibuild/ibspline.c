@@ -36,8 +36,14 @@ static const char* spcomp_delim = "%spcomp_delim";
 /*****************************************************************************/
 
 ISplineComp::ISplineComp (SFH_OpenBSpline* g) {
-    GetClassNameVar()->SetName("SFH_OpenBSpline");
-    GetClassNameVar()->SetBaseClass("SFH_OpenBSpline");
+    _gclassNameVar->SetName("SFH_OpenBSpline");
+    _gclassNameVar->SetBaseClass("SFH_OpenBSpline");
+    _cclassNameVar->SetName("SplineComp");
+    _cclassNameVar->SetBaseClass("SplineComp");
+    _vclassNameVar->SetName("SplineView");
+    _vclassNameVar->SetBaseClass("SplineView");
+    _compid->SetOrigID(SPLINE_COMP);
+
     if (!_release || g != nil) {
         _target = new SplineComp(g);
         if (g != nil) {
@@ -62,15 +68,15 @@ boolean ISplineComp::IsA (ClassId id) {
 ClassId SplineCode::GetClassId () { return ISPLINE_CODE; }
 
 boolean SplineCode::IsA(ClassId id) {
-    return ISPLINE_CODE == id || CodeView::IsA(id);
+    return ISPLINE_CODE == id || GraphicCodeView::IsA(id);
 }
 
 SplineCode::SplineCode (
     ISplineComp* subj
-) : CodeView(subj) {}
+) : GraphicCodeView(subj) {}
 
 void SplineCode::Update () {
-    CodeView::Update();
+    GraphicCodeView::Update();
     GetISplineComp()->Bequeath();
 }
 
@@ -78,52 +84,29 @@ ISplineComp* SplineCode::GetISplineComp () {
     return (ISplineComp*) GetSubject(); 
 }
 
+const char* SplineCode::GetGHeader () { return "splines"; }
+const char* SplineCode::GetCVHeader () { return "spline"; }
+
 boolean SplineCode::Definition (ostream& out) {
     boolean ok = true;
 
     ISplineComp* splinecomp = GetISplineComp();
     SplineComp* target = (SplineComp*) splinecomp->GetTarget();
     SFH_OpenBSpline* splinegr= target->GetSpline();
-    SubclassNameVar* snamer = splinecomp->GetClassNameVar();
+
+    SubclassNameVar* cnamer = splinecomp->GetCClassNameVar();
+    SubclassNameVar* gnamer = splinecomp->GetGClassNameVar();
     MemberNameVar* mnamer = splinecomp->GetMemberNameVar();
+
     const char* mname = mnamer->GetName();
-    const char* subclass = snamer->GetName();
+    const char* cname = cnamer->GetName();
+    const char* gname = gnamer->GetName();
 
-    if (_emitGraphicState) {
-        ok = WriteGraphicDecls(splinegr, out);
-
-    } else if (
-        _emitInstanceDecls || _emitForward || 
-        _emitClassHeaders || _emitHeaders
-    ) {
-        ok = CodeView::Definition(out);
-        if (_emitInstanceDecls && _emitGraphicComp && !_emitExport) {
-            out << "    SplineComp* " << mname << "_comp;\n";
-        }
-
-    } else if (_emitExpHeader) {
-        if (!snamer->IsSubclass()) {
-            if (
-                _scope && mnamer->GetExport() && 
-                !_namelist->Search("splines")
-            ) {
-                _namelist->Append("splines");
-                out << "#include <Unidraw/Graphic/splines.h> \n";
-            }
-        } else {
-            ok = CodeView::Definition(out);
-        }
-
-    } else if (_emitCorehHeader) {
-        if (snamer->IsSubclass() && strcmp(subclass, _classname) == 0) {
-            if (!_namelist->Search("splines")) {
-                _namelist->Append("splines");
-                out << "#include <Unidraw/Graphic/splines.h> \n";
-            }
-        }
+    if (_emitInstanceDecls || _emitGraphicState) {
+	ok = ok && GraphicCodeView::Definition(out);
 
     } else if (_emitInstanceInits) {
-        Coord *x, *y;
+        const Coord *x, *y;
         int count;
 
         count = splinegr->GetOriginal(x, y);
@@ -138,25 +121,26 @@ boolean SplineCode::Definition (ostream& out) {
             out << "        sy[" << i << "] = ";
             out << y[i] << ";\n";
         }
-        out << "        " << mname;
-        out << " = new " << subclass << "(";
+        if (_emitGraphicComp) {
+            out << "        " << mname << "_gr";
+        } else {
+            out << "        " << mname;
+        }
+        out << " = new " << gname << "(";
         out << "sx, sy, " << count <<");\n";
         ok = WriteGraphicInits(splinegr, out);
         if (_emitGraphicComp) {
-            out << "        " << mname << "_comp = new SplineComp(";
-            out << mname << ");\n";
+            out << "        " << mname << " = new " << cname << "(";
+            out << mname << "_gr);\n";
         }
         out << "    }\n";
-
-    } else if (
-        _emitCoreDecls || _emitCoreInits || _emitClassDecls || _emitClassInits
-    ) {
-	ok = ok && CodeView::Definition(out);
-    }
+    } else {
+	ok = ok && GraphicCodeView::Definition(out);
+    }        
     return ok && out.good();
 }
 
-boolean SplineCode::CoreConstDecls(ostream& out) { 
+boolean SplineCode::GCoreConstDecls(ostream& out) { 
     out << "(\n";
     out << "        Coord* x, Coord* y, int count, ";
     out << "Graphic* gr = nil\n";
@@ -164,10 +148,10 @@ boolean SplineCode::CoreConstDecls(ostream& out) {
     return out.good();
 }
 
-boolean SplineCode::CoreConstInits(ostream& out) {
+boolean SplineCode::GCoreConstInits(ostream& out) {
     IComp* icomp = GetIComp();
-    SubclassNameVar* snamer = icomp->GetClassNameVar();
-    const char* baseclass = snamer->GetBaseClass();
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    const char* baseclass = gnamer->GetBaseClass();
 
     out << "(\n    Coord* x, Coord* y, int count, ";
     out << "Graphic* gr\n) : ";
@@ -176,39 +160,26 @@ boolean SplineCode::CoreConstInits(ostream& out) {
     return out.good();
 }
 
-boolean SplineCode::ConstDecls(ostream& out) {
-    out << "(\n";
-    out << "        Coord* x, Coord* y, int count, ";
-    out << "Graphic* gr = nil\n";
-    out << "    );\n";
+boolean SplineCode::GConstDecls(ostream& out) {
+    out << "(Coord* x, Coord* y, int count, Graphic* = nil);\n";
+    out << "    virtual Graphic* Copy();\n";
     return out.good();
 }
 
-boolean SplineCode::ConstInits(ostream& out) {
+boolean SplineCode::GConstInits(ostream& out) {
     char coreclass[CHARBUFSIZE];
     GetCoreClassName(coreclass);
+    IComp* icomp = GetIComp();
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    const char* gname = gnamer->GetName();
 
     out << "(\n    Coord* x, Coord* y, int count, ";
     out << "Graphic* gr\n) : ";
     out << coreclass << "(x, y, count, gr) {}\n\n";
+    out << "Graphic* " << gname << "::Copy () {\n";
+    out << "    return new " << gname << "(_x, _y, count, this);\n";
+    out << "}\n\n";
 
-    return out.good();
-}
-
-boolean SplineCode::EmitIncludeHeaders(ostream& out) {
-    SubclassNameVar* snamer = GetIComp()->GetClassNameVar();
-
-    if (!snamer->IsSubclass() && !_namelist->Search("splines")) {
-        _namelist->Append("splines");
-        out << "#include <Unidraw/Graphic/splines.h> \n";
-    }
-    if (
-        strcmp(snamer->GetName(), _classname) != 0 && 
-        !_namelist->Search("spline") && _emitGraphicComp
-    ) {
-        _namelist->Append("spline");
-        out << "#include <Unidraw/Components/spline.h> \n";
-    }
     return out.good();
 }
 
@@ -217,8 +188,14 @@ static const char* cspcomp_delim = "%cspcomp_delim";
 /*****************************************************************************/
 
 IClosedSplineComp::IClosedSplineComp (SFH_ClosedBSpline* graphic) {
-    GetClassNameVar()->SetName("SFH_ClosedBSpline");
-    GetClassNameVar()->SetBaseClass("SFH_ClosedBSpline");
+    _gclassNameVar->SetName("SFH_ClosedBSpline");
+    _gclassNameVar->SetBaseClass("SFH_ClosedBSpline");
+    _cclassNameVar->SetName("ClosedSplineComp");
+    _cclassNameVar->SetBaseClass("ClosedSplineComp");
+    _vclassNameVar->SetName("ClosedSplineView");
+    _vclassNameVar->SetBaseClass("ClosedSplineView");
+    _compid->SetOrigID(CLOSEDSPLINE_COMP);
+
     if (!_release || graphic != nil) {
         _target = new ClosedSplineComp(graphic);
         if (graphic != nil) {
@@ -235,7 +212,7 @@ ClassId IClosedSplineComp::GetSubstId(const char*& delim) {
 ClassId IClosedSplineComp::GetClassId () { return ICLOSEDSPLINE_COMP; }
 
 boolean IClosedSplineComp::IsA (ClassId id) {
-    return ICLOSEDSPLINE_COMP == id || IComp::IsA(id);
+    return ICLOSEDSPLINE_COMP == id || ISplineComp::IsA(id);
 }
 
 /*****************************************************************************/
@@ -243,15 +220,15 @@ boolean IClosedSplineComp::IsA (ClassId id) {
 ClassId ClosedSplineCode::GetClassId () { return ICLOSEDSPLINE_CODE; }
 
 boolean ClosedSplineCode::IsA(ClassId id) {
-    return ICLOSEDSPLINE_CODE == id || CodeView::IsA(id);
+    return ICLOSEDSPLINE_CODE == id || SplineCode::IsA(id);
 }
 
 ClosedSplineCode::ClosedSplineCode (
     IClosedSplineComp* subj
-) : CodeView(subj) {}
+) : SplineCode(subj) {}
 
 void ClosedSplineCode::Update () {
-    CodeView::Update();
+    SplineCode::Update();
     GetIClosedSplineComp()->Bequeath();
 }
 
@@ -265,49 +242,20 @@ boolean ClosedSplineCode::Definition (ostream& out) {
     IClosedSplineComp* csplinecomp = GetIClosedSplineComp();
     ClosedSplineComp* target = (ClosedSplineComp*) csplinecomp->GetTarget();
     SFH_ClosedBSpline* closedsplinegr= target->GetClosedSpline();
-    SubclassNameVar* snamer = csplinecomp->GetClassNameVar();
+
+    SubclassNameVar* cnamer = csplinecomp->GetCClassNameVar();
+    SubclassNameVar* gnamer = csplinecomp->GetGClassNameVar();
     MemberNameVar* mnamer = csplinecomp->GetMemberNameVar();
+
     const char* mname = mnamer->GetName();
-    const char* subclass = snamer->GetName();
+    const char* cname = cnamer->GetName();
+    const char* gname = gnamer->GetName();
 
-    if (_emitGraphicState) {
-        ok = WriteGraphicDecls(closedsplinegr, out);
-
-    } else if (
-        _emitInstanceDecls || _emitForward || 
-        _emitClassHeaders || _emitHeaders
-    ) {
-        ok = CodeView::Definition(out);
-        if (_emitInstanceDecls && _emitGraphicComp && !_emitExport) {
-            out << "    ClosedSplineComp* " << mname << "_comp;\n";
-        }
-
-    } else if (_emitExpHeader) {
-        if (!snamer->IsSubclass()) {
-            if (
-                _scope && mnamer->GetExport() && 
-                !_namelist->Search("splines")
-            ) {
-                _namelist->Append("splines");
-                out << "#include <Unidraw/Graphic/splines.h> \n";
-            }
-        } else {
-            ok = CodeView::Definition(out);
-        }
-
-    } else if (_emitCorehHeader) {
-        if (snamer->IsSubclass() && strcmp(subclass, _classname) == 0) {
-            if (!_namelist->Search("splines")) {
-                _namelist->Append("splines");
-                out << "#include <Unidraw/Graphic/splines.h> \n";
-                if (_emitGraphicComp) {
-                    out << "#include <Unidraw/Components/spline.h> \n";
-                }
-            }
-        }
+    if (_emitInstanceDecls || _emitGraphicState) {
+	ok = ok && GraphicCodeView::Definition(out);
 
     } else if (_emitInstanceInits) {
-        Coord *x, *y;
+        const Coord *x, *y;
         int count;
 
         count = closedsplinegr->GetOriginal(x, y);
@@ -322,34 +270,36 @@ boolean ClosedSplineCode::Definition (ostream& out) {
             out << "        cbsy[" << i << "] = ";
             out << y[i] << ";\n";
         }
-        out << "        " << mname;
-        out << " = new " << subclass << "(";
+        if (_emitGraphicComp) {
+            out << "        " << mname << "_gr";
+        } else {
+            out << "        " << mname;
+        }
+        out << " = new " << gname << "(";
         out << "cbsx, cbsy, " << count;
         out << ");\n";
         ok = WriteGraphicInits(closedsplinegr, out);
         if (_emitGraphicComp) {
-            out << "        " << mname << "_comp = new ClosedSplineComp(";
-            out << mname << ");\n";
+            out << "        " << mname << " = new " << cname << "(";
+            out << mname << "_gr);\n";
         }
         out << "    }\n";
 
-    } else if (
-        _emitCoreDecls || _emitCoreInits || _emitClassDecls || _emitClassInits
-    ) {
-	ok = ok && CodeView::Definition(out);
+    } else {
+	ok = ok && SplineCode::Definition(out);
     }
     return ok && out.good();
 }
 
-boolean ClosedSplineCode::CoreConstDecls(ostream& out) { 
+boolean ClosedSplineCode::GCoreConstDecls(ostream& out) { 
     out << "(Coord* x, Coord* y, int count, Graphic* = nil);\n";
     return out.good();
 }
 
-boolean ClosedSplineCode::CoreConstInits(ostream& out) {
+boolean ClosedSplineCode::GCoreConstInits(ostream& out) {
     IComp* icomp = GetIComp();
-    SubclassNameVar* snamer = icomp->GetClassNameVar();
-    const char* baseclass = snamer->GetBaseClass();
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    const char* baseclass = gnamer->GetBaseClass();
 
     out <<"(\n    Coord* x, Coord* y, int count, Graphic* gr\n) : ";
     out << baseclass << "(x, y, count, gr) {}\n\n";
@@ -357,26 +307,25 @@ boolean ClosedSplineCode::CoreConstInits(ostream& out) {
     return out.good();
 }
 
-boolean ClosedSplineCode::ConstDecls(ostream& out) {
+boolean ClosedSplineCode::GConstDecls(ostream& out) {
     out << "(Coord* x, Coord* y, int count, Graphic* = nil);\n";
+    out << "    virtual Graphic* Copy();\n";
     return out.good();
 }
 
-boolean ClosedSplineCode::ConstInits(ostream& out) {
+boolean ClosedSplineCode::GConstInits(ostream& out) {
     char coreclass[CHARBUFSIZE];
     GetCoreClassName(coreclass);
+    IComp* icomp = GetIComp();
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    const char* gname = gnamer->GetName();
 
     out <<"(\n    Coord* x, Coord* y, int count, Graphic* gr\n) : ";
     out << coreclass << "(x, y, count, gr) {}\n\n";
+    out << "Graphic* " << gname << "::Copy () {\n";
+    out << "    return new " << gname << "(_x, _y, count, this);\n";
+    out << "}\n\n";
 
-    return out.good();
-}
-
-boolean ClosedSplineCode::EmitIncludeHeaders(ostream& out) {
-    if (!_namelist->Search("splines")) {
-        _namelist->Append("splines");
-        out << "#include <Unidraw/Graphic/splines.h> \n";
-    }
     return out.good();
 }
 

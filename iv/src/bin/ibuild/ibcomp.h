@@ -21,8 +21,7 @@
  */
 
 /*
- * Shared Interactor component declarations.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibcomp.h,v 1.2 91/09/27 14:13:21 tang Exp $
+ * Graphical component declarations.
  */
 
 #ifndef ibcomp_h
@@ -30,7 +29,9 @@
 
 #include <Unidraw/Components/grcomp.h>
 #include <Unidraw/Components/grview.h>
+#include <Unidraw/Components/psview.h>
 
+class IDVar;
 class InfoDialog;
 class Graphic;
 class GraphicComp;
@@ -48,6 +49,12 @@ public:
     virtual ~IComp();
 
     SubclassNameVar* GetClassNameVar();
+
+    SubclassNameVar* GetCClassNameVar();
+    SubclassNameVar* GetGClassNameVar();
+    SubclassNameVar* GetVClassNameVar();
+    IDVar* GetCIDVar();
+
     MemberNameVar* GetMemberNameVar();
 
     virtual StateVar* GetState(const char*);
@@ -58,6 +65,7 @@ public:
     void Propagate(Command*);
     void Unpropagate(Command*);
 
+    virtual IComp& operator = (IComp&);
     virtual void Read(istream&);
     virtual void Write(ostream&);
     virtual void Instantiate();
@@ -65,29 +73,40 @@ public:
     virtual ClassId GetSubstId(const char*& delim);
     virtual boolean IsA(ClassId);
     virtual GraphicComp* GetTarget();
+    virtual void SetTarget(GraphicComp*);
 
+    boolean IsAComponent();
     GrBlockComp* GetGrBlockComp();
 
     static void SetRelease(boolean);
 protected:
     IComp(Graphic* = nil);
-    void ReadStateVars(istream&);
-    void WriteStateVars(ostream&);
+    virtual void ReadStateVars(istream&);
+    virtual void WriteStateVars(ostream&);
 protected:
-    SubclassNameVar* _classNameVar;
+    SubclassNameVar* _gclassNameVar;
+    SubclassNameVar* _cclassNameVar;
+    SubclassNameVar* _vclassNameVar;
+    IDVar* _compid;
     MemberNameVar* _memberVar;
     GraphicComp* _target;
     static boolean _release;
 };
 
 inline void IComp::SetRelease (boolean release) { _release = release; }
-inline SubclassNameVar* IComp::GetClassNameVar () {
-    return _classNameVar; 
-}
 inline MemberNameVar* IComp::GetMemberNameVar () {
     return _memberVar; 
 }
-
+inline SubclassNameVar* IComp::GetCClassNameVar () {
+    return _cclassNameVar;
+}
+inline SubclassNameVar* IComp::GetGClassNameVar () {
+    return _gclassNameVar;
+}
+inline SubclassNameVar* IComp::GetVClassNameVar () {
+    return _vclassNameVar;
+}
+inline IDVar* IComp::GetCIDVar () { return _compid; }
 
 class IView : public GraphicViews {
 public:
@@ -113,6 +132,18 @@ public:
     virtual void Interpret(Command*);
 
     IComp* GetIComp();
+};
+
+class IPSView : public PostScriptViews {
+public:
+    IPSView(GraphicComps* = nil);
+    virtual boolean Emit(ostream&);
+    virtual boolean Definition(ostream&);
+    virtual ClassId GetClassId();
+    virtual boolean IsA(ClassId);
+    virtual void Update();
+protected:
+    ExternView* _kidps;
 };
 
 #endif

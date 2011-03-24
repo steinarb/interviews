@@ -1,10 +1,10 @@
 #ifndef lint
-static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_fax3.c,v 1.51 91/08/22 18:17:45 sam Exp $";
+static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_fax3.c,v 1.60 92/02/10 19:06:36 sam Exp $";
 #endif
 
 /*
- * Copyright (c) 1990, 1991 Sam Leffler
- * Copyright (c) 1991 Silicon Graphics, Inc.
+ * Copyright (c) 1990, 1991, 1992 Sam Leffler
+ * Copyright (c) 1991, 1992 Silicon Graphics, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and 
  * its documentation for any purpose is hereby granted without fee, provided
@@ -37,6 +37,7 @@ static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_fax3.c,v 1.
 #include "tif_fax3.h"
 #define	G3CODES
 #include "t4.h"
+#define	G3STATES
 #include "g3states.h"
 
 typedef struct {
@@ -63,12 +64,12 @@ static	Fax3Close(TIFF *);
 static	Fax3Cleanup(TIFF *);
 static	void *Fax3SetupState(TIFF *, int);
 static	void fillspan(char *, int, int);
-static	int findspan(u_char **, int, int, u_char *);
-static	int finddiff(u_char *, int, int);
+static	int findspan(u_char **, int, int, u_char const *);
+static	int finddiff(u_char *, int, int, int);
 static	void skiptoeol(TIFF *, int);
 static	void putbits(TIFF *, u_int, u_int);
-static	void putcode(TIFF *, tableentry *);
-static	void putspan(TIFF *, int, tableentry *);
+static	void putcode(TIFF *, tableentry const *);
+static	void putspan(TIFF *, int, tableentry const *);
 extern	int TIFFFlushData1(TIFF *);
 #else
 static	int Fax3PreEncode(), Fax3Encode(), Fax3PostEncode();
@@ -206,14 +207,13 @@ nextbit(tif)
 }
 
 static void
-invert(cp, n)
+bset(cp, n, v)
 	register unsigned char *cp;
 	register int n;
+	register int v;
 {
-	while (n-- > 0) {
-		*cp = ~*cp;
-		cp++;
-	}
+	while (n-- > 0)
+		*cp++ = v;
 }
 
 /*
@@ -230,20 +230,34 @@ Fax3SetupState(tif, space)
 	TIFFDirectory *td = &tif->tif_dir;
 	Fax3BaseState *sp;
 	int cc = space;
+	long rowbytes, rowpixels;
 
 	if (td->td_bitspersample != 1) {
 		TIFFError(tif->tif_name,
 		    "Bits/sample must be 1 for Group 3/4 encoding/decoding");
 		return (0);
 	}
+	/*
+	 * Calculate the scanline/tile widths.
+	 */
+	if (isTiled(tif)) {
+		rowbytes = TIFFTileRowSize(tif);
+		rowpixels = tif->tif_dir.td_tilewidth;
+	} else {
+		rowbytes = TIFFScanlineSize(tif);
+		rowpixels = tif->tif_dir.td_imagewidth;
+	}
 	if (is2DEncoding(tif) || td->td_compression == COMPRESSION_CCITTFAX4)
-		cc += tif->tif_scanlinesize;
+		cc += rowbytes+1;
 	tif->tif_data = malloc(cc);
 	if (tif->tif_data == NULL) {
-		TIFFError(tif->tif_name, "No space for Fax3 state block");
+		TIFFError("Fax3SetupState",
+		    "%s: No space for Fax3 state block", tif->tif_name);
 		return (0);
 	}
 	sp = (Fax3BaseState *)tif->tif_data;
+	sp->rowbytes = rowbytes;
+	sp->rowpixels = rowpixels;
 	sp->bitmap = (tif->tif_fillorder != td->td_fillorder ? 
 	    TIFFBitRevTable : TIFFNoBitRevTable);
 	sp->white = (td->td_photometric == PHOTOMETRIC_MINISBLACK);
@@ -253,24 +267,17 @@ Fax3SetupState(tif, space)
 		 * buffer for the ``reference line''; the
 		 * scanline against which delta encoding
 		 * is referenced.  The reference line must
-		 * be initialized to be ``white.''
+		 * be initialized to be ``white'' (done elsewhere).
 		 */
-		sp->refline = (u_char *)tif->tif_data + space;
-		bzero(sp->refline, tif->tif_scanlinesize);
-		if (sp->white == 1)
-			invert(sp->refline, tif->tif_scanlinesize);
+		sp->refline = (u_char *)tif->tif_data + space + 1;
+		/*
+		 * Initialize pixel just to the left of the
+		 * reference line to white.  This extra pixel
+		 * simplifies the edge-condition logic.
+		 */
+		sp->refline[-1] = sp->white ? 0xff : 0x00;
 	} else
 		sp->refline = 0;
-	/*
-	 * Calculate the scanline/tile widths.
-	 */
-	if (isTiled(tif)) {
-		sp->rowbytes = TIFFTileRowSize(tif);
-		sp->rowpixels = tif->tif_dir.td_tilewidth;
-	} else {
-		sp->rowbytes = TIFFScanlineSize(tif);
-		sp->rowpixels = tif->tif_dir.td_imagewidth;
-	}
 	return (sp);
 }
 
@@ -291,6 +298,8 @@ Fax3PreDecode(tif)
 	sp->b.bit = 0;			/* force initial read */
 	sp->b.data = 0;
 	sp->b.tag = G3_1D;
+	if (sp->b.refline)
+		bset(sp->b.refline, sp->b.rowbytes, sp->b.white ? 0xff : 0x00);
 	/*
 	 * If image has EOL codes, they precede each line
 	 * of data.  We skip over the first one here so that
@@ -315,7 +324,7 @@ fillspan(cp, x, count)
 	register char *cp;
 	register int x, count;
 {
-	static unsigned char masks[] =
+	static const unsigned char masks[] =
 	    { 0, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff };
 
 	if (count <= 0)
@@ -484,14 +493,14 @@ Fax3Decode1DRow(tif, buf, npels)
 			 * only works if we have a G3 image
 			 * with EOL markers.
 			 */
-			TIFFError(tif->tif_name,
+			TIFFError(module,
 			   "%s: Bad code word at scanline %d (x %d)",
-			   module, tif->tif_row, x);
+			   tif->tif_name, tif->tif_row, x);
 			goto done;
 		case G3CODE_EOL:	/* premature end-of-line code */
-			TIFFWarning(tif->tif_name,
+			TIFFWarning(module,
 			    "%s: Premature EOL at scanline %d (x %d)",
-			    module, tif->tif_row, x);
+			    tif->tif_name, tif->tif_row, x);
 			return (1);	/* try to resynchronize... */
 		}
 		if (x+runlen > npels)
@@ -562,9 +571,8 @@ Fax3Decode2DRow(tif, buf, npels)
 {
 #define	PIXEL(buf,ix)	((((buf)[(ix)>>3]) >> (7-((ix)&7))) & 1)
 	Fax3DecodeState *sp = (Fax3DecodeState *)tif->tif_data;
-	int a0 = 0;
-	int b1 = 0;
-	int b2 = 0;
+	int a0 = -1;
+	int b1, b2;
 	int run1, run2;		/* for horizontal mode */
 	short mode;
 	short color = sp->b.white;
@@ -586,20 +594,15 @@ Fax3Decode2DRow(tif, buf, npels)
 		case MODE_NULL:
 			break;
 		case MODE_PASS:
-#ifdef notdef
-			if (a0 || PIXEL(sp->b.refline, 0) == color) {
-#else
-			if (a0 || color || !PIXEL(sp->b.refline, 0)) {
-#endif
-				b1 = finddiff(sp->b.refline, a0, npels);
-				if (color == PIXEL(sp->b.refline, b1))
-					b1 = finddiff(sp->b.refline, b1, npels);
-			} else
-				b1 = 0;
-			b2 = finddiff(sp->b.refline, b1, npels);
-			if (color)
+			b2 = finddiff(sp->b.refline, a0, npels, !color);
+			b1 = finddiff(sp->b.refline, b2, npels, color);
+			b2 = finddiff(sp->b.refline, b1, npels, !color);
+			if (color) {
+				if (a0 < 0)
+					a0 = 0;
 				fillspan((char *)buf, a0, b2 - a0);
-			a0 += b2 - a0;
+			}
+			a0 = b2;
 			break;
 		case MODE_HORIZ:
 			if (color == sp->b.white) {
@@ -615,6 +618,8 @@ Fax3Decode2DRow(tif, buf, npels)
 			 * with since we do 2 fills.  This explains the
 			 * somewhat obscure logic below.
 			 */
+			if (a0 < 0)
+				a0 = 0;
 			if (a0 + run1 > npels)
 				run1 = npels - a0;
 			if (color)
@@ -633,23 +638,24 @@ Fax3Decode2DRow(tif, buf, npels)
 		case MODE_VERT_VL1:
 		case MODE_VERT_VL2:
 		case MODE_VERT_VL3:
-			if (a0 || color || !PIXEL(sp->b.refline, 0)) {
-				b1 = finddiff(sp->b.refline, a0, npels);
-				if (color == PIXEL(sp->b.refline, b1))
-					b1 = finddiff(sp->b.refline, b1, npels);
-			} else
-				b1 = 0;
+			b2 = finddiff(sp->b.refline, a0, npels, !color);
+			b1 = finddiff(sp->b.refline, b2, npels, color);
 			b1 += mode - MODE_VERT_V0;
-			if (color)
+			if (color) {
+				if (a0 < 0)
+					a0 = 0;
 				fillspan((char *)buf, a0, b1 - a0);
+			}
 			color = !color;
-			a0 += b1 - a0;
+			a0 = b1;
 			break;
 	        case MODE_UNCOMP:
 			/*
 			 * Uncompressed mode: select from the
 			 * special set of code words.
 			 */
+			if (a0 < 0)
+				a0 = 0;
 			do {
 				mode = decode_uncomp_code(tif);
 				switch (mode) {
@@ -690,22 +696,22 @@ Fax3Decode2DRow(tif, buf, npels)
 			break;
 	        case MODE_ERROR_1:
 			if ((tif->tif_options & FAX3_NOEOL) == 0) {
-				TIFFWarning(tif->tif_name,
+				TIFFWarning(module,
 				    "%s: Premature EOL at scanline %d (x %d)",
-				    module, tif->tif_row, a0);
+				    tif->tif_name, tif->tif_row, a0);
 				skiptoeol(tif, 7);	/* seen 7 0's already */
 				return (1);		/* try to synchronize */
 			}
 			/* fall thru... */
 	        case MODE_ERROR:
-			TIFFError(tif->tif_name,
+			TIFFError(module,
 			    "%s: Bad 2D code word at scanline %d",
-			    module, tif->tif_row);
+			    tif->tif_name, tif->tif_row);
 			goto bad;
 	        default:
-			TIFFError(tif->tif_name,
+			TIFFError(module,
 			    "%s: Panic, bad decoding state at scanline %d",
-			    module, tif->tif_row);
+			    tif->tif_name, tif->tif_row);
 			return (0);
 		}
 	} while (a0 < npels);
@@ -736,7 +742,7 @@ putbits(tif, bits, length)
 	u_int bits, length;
 {
 	Fax3BaseState *sp = (Fax3BaseState *)tif->tif_data;
-	static int mask[9] =
+	static const int mask[9] =
 	    { 0x00, 0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff };
 
 	while (length > sp->bit) {
@@ -756,7 +762,7 @@ putbits(tif, bits, length)
 static void
 putcode(tif, te)
 	TIFF *tif;
-	tableentry *te;
+	tableentry const *te;
 {
 	putbits(tif, te->code, te->length);
 }
@@ -771,15 +777,15 @@ static void
 putspan(tif, span, tab)
 	TIFF *tif;
 	int span;
-	tableentry *tab;
+	tableentry const *tab;
 {
 	while (span >= 2624) {
-		tableentry *te = &tab[63 + (2560>>6)];
+		tableentry const *te = &tab[63 + (2560>>6)];
 		putcode(tif, te);
 		span -= te->runlen;
 	}
 	if (span >= 64) {
-		tableentry *te = &tab[63 + (span>>6)];
+		tableentry const *te = &tab[63 + (span>>6)];
 		assert(te->runlen == 64*(span>>6));
 		putcode(tif, te);
 		span -= te->runlen;
@@ -792,14 +798,6 @@ putspan(tif, span, tab)
  * logic for byte-aligning encoded scanlines is handled
  * here.  We also handle writing the tag bit for the next
  * scanline when doing 2d encoding.
- *
- * Note that when doing 2d encoding, we byte-align
- * the combination of the EOL+tag bits.  It is unclear
- * (to me) from the documentation whether this is the
- * correct behaviour, or whether the EOL should be
- * aligned and the tag bit should be the first bit in
- * the next byte.  I've implemented what seems to make
- * the most sense.
  */
 void
 Fax3PutEOL(tif)
@@ -809,12 +807,11 @@ Fax3PutEOL(tif)
 
 	if (tif->tif_dir.td_group3options & GROUP3OPT_FILLBITS) {
 		/*
-		 * Force bit alignment so EOL (+tag bit) will
-		 * terminate on a byte boundary.  That is, force
-		 * the bit alignment to 16-12 = 4 (or 16-13 = 3 for
-		 * 2d encoding) before putting out the EOL code.
+		 * Force bit alignment so EOL will terminate on
+		 * a byte boundary.  That is, force the bit alignment
+		 * to 16-12 = 4 before putting out the EOL code.
 		 */
-		int align = 8 - (is2DEncoding(tif) ? 3 : 4);
+		int align = 8 - 4;
 		if (align != sp->bit) {
 			if (align > sp->bit)
 				align = sp->bit + (8 - align);
@@ -828,7 +825,7 @@ Fax3PutEOL(tif)
 		putbits(tif, sp->tag == G3_1D, 1);
 }
 
-static u_char zeroruns[256] = {
+static const u_char zeroruns[256] = {
     8, 7, 6, 6, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4,	/* 0x00 - 0x0f */
     3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,	/* 0x10 - 0x1f */
     2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,	/* 0x20 - 0x2f */
@@ -846,7 +843,7 @@ static u_char zeroruns[256] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	/* 0xe0 - 0xef */
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	/* 0xf0 - 0xff */
 };
-static u_char oneruns[256] = {
+static const u_char oneruns[256] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	/* 0x00 - 0x0f */
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	/* 0x10 - 0x1f */
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	/* 0x20 - 0x2f */
@@ -889,6 +886,13 @@ Fax3PreEncode(tif)
 	sp->b.bit = 8;
 	sp->b.data = 0;
 	sp->b.tag = G3_1D;
+	/*
+	 * This is necessary for Group 4; otherwise it isn't
+	 * needed because the first scanline of each strip ends
+	 * up being copied into the refline.
+	 */
+	if (sp->b.refline)
+		bset(sp->b.refline, sp->b.rowbytes, sp->b.white ? 0xff : 0x00);
 	if (is2DEncoding(tif)) {
 		float res = tif->tif_dir.td_yresolution;
 		/*
@@ -939,11 +943,11 @@ Fax3Encode1DRow(tif, bp, bits)
 	return (1);
 }
 
-static tableentry horizcode =
+static const tableentry horizcode =
     { 3, 0x1 };		/* 001 */
-static tableentry passcode =
+static const tableentry passcode =
     { 4, 0x1 };		/* 0001 */
-static tableentry vcodes[7] = {
+static const tableentry vcodes[7] = {
     { 7, 0x03 },	/* 0000 011 */
     { 6, 0x03 },	/* 0000 11 */
     { 3, 0x03 },	/* 011 */
@@ -966,17 +970,16 @@ Fax3Encode2DRow(tif, bp, rp, bits)
 #define	PIXEL(buf,ix)	((((buf)[(ix)>>3]) >> (7-((ix)&7))) & 1)
 	short white = ((Fax3BaseState *)tif->tif_data)->white;
 	int a0 = 0;
-	int a1 = (PIXEL(bp, 0) != white ? 0 : finddiff(bp, 0, bits));
-	int a2 = 0;
-	int b1 = (PIXEL(rp, 0) != white ? 0 : finddiff(rp, 0, bits));
-	int b2 = 0;
+	int a1 = (PIXEL(bp, 0) != white ? 0 : finddiff(bp, 0, bits, white));
+	int b1 = (PIXEL(rp, 0) != white ? 0 : finddiff(rp, 0, bits, white));
+	int a2, b2;
 
 	for (;;) {
-		b2 = finddiff(rp, b1, bits);
+		b2 = finddiff(rp, b1, bits, PIXEL(rp,b1));
 		if (b2 >= a1) {
 			int d = b1 - a1;
 			if (!(-3 <= d && d <= 3)) {	/* horizontal mode */
-				a2 = finddiff(bp, a1, bits);
+				a2 = finddiff(bp, a1, bits, PIXEL(bp,a1));
 				putcode(tif, &horizcode);
 				if (a0+a1 == 0 || PIXEL(bp, a0) == white) {
 					putspan(tif, a1-a0, TIFFFaxWhiteCodes);
@@ -996,10 +999,9 @@ Fax3Encode2DRow(tif, bp, rp, bits)
 		}
 		if (a0 >= bits)
 			break;
-		a1 = finddiff(bp, a0, bits);
-		b1 = finddiff(rp, a0, bits);
-		if (PIXEL(rp, b1) == PIXEL(bp, a0))
-			b1 = finddiff(rp, b1, bits);
+		a1 = finddiff(bp, a0, bits, PIXEL(bp,a0));
+		b1 = finddiff(rp, a0, bits, !PIXEL(bp,a0));
+		b1 = finddiff(rp, b1, bits, PIXEL(bp,a0));
 	}
 	return (1);
 #undef PIXEL
@@ -1093,7 +1095,7 @@ static int
 findspan(bpp, bs, be, tab)
 	u_char **bpp;
 	int bs, be;
-	register u_char *tab;
+	register u_char const *tab;
 {
 	register u_char *bp = *bpp;
 	register int bits = be - bs;
@@ -1106,6 +1108,8 @@ findspan(bpp, bs, be, tab)
 		span = tab[(*bp << n) & 0xff];
 		if (span > 8-n)		/* table value too generous */
 			span = 8-n;
+		if (span > bits)	/* constrain span to bit range */
+			span = bits;
 		if (n+span < 8)		/* doesn't extend to edge of byte */
 			goto done;
 		bits -= span;
@@ -1137,15 +1141,15 @@ done:
 
 /*
  * Return the offset of the next bit in the range
- * [bs..be] that is different from bs.  The end,
- * be, is returned if no such bit exists.
+ * [bs..be] that is different from the specified
+ * color.  The end, be, is returned if no such bit
+ * exists.
  */
 static int
-finddiff(cp, bs, be)
+finddiff(cp, bs, be, color)
 	u_char *cp;
-	int bs, be;
+	int bs, be, color;
 {
 	cp += bs >> 3;			/* adjust byte offset */
-	return (bs + findspan(&cp, bs, be,
-	    (*cp & (0x80 >> (bs&7))) ? oneruns : zeroruns));
+	return (bs + findspan(&cp, bs, be, color ? oneruns : zeroruns));
 }

@@ -31,6 +31,8 @@
 #include <Unidraw/unidraw.h>
 #include <Unidraw/Commands/brushcmd.h>
 
+#include <IV-2_6/_enter.h>
+
 /*****************************************************************************/
 
 ClassId BrushCmd::GetClassId () { return BRUSH_CMD; }

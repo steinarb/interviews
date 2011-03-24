@@ -27,7 +27,10 @@
 #ifndef unidraw_clipboard_h
 #define unidraw_clipboard_h
 
-#include <InterViews/defs.h>
+#include <InterViews/enter-scope.h>
+#include <Unidraw/enter-scope.h>
+
+#include <InterViews/_enter.h>
 
 class GraphicComp;
 class Iterator;
@@ -72,5 +75,6 @@ protected:
     UList* _comps;
 };
 
-#endif
+#include <InterViews/_leave.h>
 
+#endif

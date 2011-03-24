@@ -36,6 +36,7 @@ class Component;
 class Editor;
 class Event;
 class Iterator;
+class HistoryMap;
 class OptionDesc;
 class PropertyData;
 class UList;
@@ -80,6 +81,8 @@ public:
     void ClearHistory(Component* = nil);
     void ClearHistory(Editor*);
 protected:
+    virtual void Process();
+
     boolean IsClean(Editor*);
     void Mark(Editor*);
     void Sweep();
@@ -90,7 +93,11 @@ protected:
 
     UList* elem(Iterator);
     Command* command(UList*);
+    boolean alive();
     boolean updated();
+
+    void alive(boolean);
+    void updated(boolean);
 private:
     void Init(Catalog*, World*);
     void InitAttributes();
@@ -107,12 +114,15 @@ private:
     boolean _alive;
     boolean _updated;
 
-    class HistoryMap* _histories;
+    HistoryMap* _histories;
     int _histlen;
 };
 
 inline Catalog* Unidraw::GetCatalog () { return _catalog; }
 inline World* Unidraw::GetWorld () { return _world; }
+inline boolean Unidraw::alive () { return _alive; }
 inline boolean Unidraw::updated () { return _updated; }
+inline void Unidraw::alive (boolean a) { _alive = a; }
+inline void Unidraw::updated (boolean u) { _updated = u; }
 
 #endif

@@ -27,6 +27,8 @@
 #include <Unidraw/Graphic/util.h>
 #include <Unidraw/Graphic/verts.h>
 
+#include <IV-2_6/_enter.h>
+
 /*****************************************************************************/
 
 Vertices::Vertices (Graphic* gr) : Graphic(gr) { _extent = nil; }

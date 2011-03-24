@@ -26,9 +26,9 @@
  * CompletionEditor - StringEditor with completion
  */
 
-#include <IV-look/2.6/InterViews/compeditor.h>
-#include <InterViews/world.h>
-#include <InterViews/2.6/InterViews/textbuffer.h>
+#include <IV-2_6/InterViews/compeditor.h>
+#include <IV-2_6/InterViews/textbuffer.h>
+#include <IV-2_6/InterViews/world.h>
 #include <OS/math.h>
 #include <string.h>
 

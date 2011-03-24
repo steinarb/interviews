@@ -33,6 +33,8 @@
 
 #include <InterViews/event.h>
 
+#include <IV-2_6/_enter.h>
+
 /*****************************************************************************/
 
 ConnectTool::ConnectTool (ControlInfo* m) : Tool(m) { }

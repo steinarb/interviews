@@ -26,8 +26,8 @@
  * Rubberbanding curves.
  */
 
-#include <InterViews/2.6/InterViews/painter.h>
-#include <InterViews/2.6/InterViews/rubcurve.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/rubcurve.h>
 #include <OS/math.h>
 #include <OS/memory.h>
 #include <math.h>
@@ -590,7 +590,7 @@ float RotatingLineList::OriginalAngle() {
 
 float RotatingLineList::CurrentAngle() {
     return Angle(centerx, centery, trackx, tracky);
-};
+}
 
 void RotatingLineList::Track(IntCoord x, IntCoord y) {
     if (x != trackx || y != tracky) {

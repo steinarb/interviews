@@ -27,7 +27,9 @@
 
 #include <OS/os.h>
 
+#undef boolean
 #undef String
+#undef u_char
 
 #include <OS/_defines.h>
 
@@ -35,13 +37,20 @@
 #define nil 0
 #endif
 
-#ifndef iv_boolean_h
-#define iv_boolean_h
+#ifndef os_boolean
+#define os_boolean
 
 typedef unsigned boolean;
 
 static const unsigned false = 0;
 static const unsigned true = 1;
+
+#endif
+
+#ifndef os_u_char
+#define os_u_char
+
+typedef unsigned char u_char;
 
 #endif
 

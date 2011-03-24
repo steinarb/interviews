@@ -31,6 +31,8 @@
 #include <Unidraw/Components/psview.h>
 #include <Unidraw/Graphic/graphic.h>
 
+#include <IV-2_6/_enter.h>
+
 class PadGraphic;
 
 class PadComp : public Connector {
@@ -109,5 +111,7 @@ public:
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
 };
+
+#include <IV-2_6/_leave.h>
 
 #endif

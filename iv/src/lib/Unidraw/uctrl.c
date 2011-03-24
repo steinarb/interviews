@@ -32,8 +32,9 @@
 #include <Unidraw/Components/grview.h>
 #include <Unidraw/Graphic/picture.h>
 
-#include <InterViews/button.h>
-#include <InterViews/iwindow.h>
+#include <IV-2_6/InterViews/button.h>
+
+#include <IV-2_6/_enter.h>
 
 /*****************************************************************************/
 

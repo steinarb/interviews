@@ -32,6 +32,7 @@
 #include <Unidraw/unidraw.h>
 #include <Unidraw/catalog.h>
 #include <Unidraw/Graphic/rasterrect.h>
+#include <stdio.h>
 #include <stream.h>
 #include <string.h>
 
@@ -40,8 +41,14 @@ static const char* rastercomp_delim = "%rastercomp_delim";
 /*****************************************************************************/
 
 IRasterComp::IRasterComp (RasterRect* graphic) {
-    GetClassNameVar()->SetName("RasterRect");
-    GetClassNameVar()->SetBaseClass("RasterRect");
+    _gclassNameVar->SetName("RasterRect");
+    _gclassNameVar->SetBaseClass("RasterRect");
+    _cclassNameVar->SetName("RasterComp");
+    _cclassNameVar->SetBaseClass("RasterComp");
+    _vclassNameVar->SetName("RasterView");
+    _vclassNameVar->SetBaseClass("RasterView");
+    _compid->SetOrigID(RASTER_COMP);
+
     if (!_release || graphic != nil) {
         _target = new RasterComp(graphic);
         if (graphic != nil) {
@@ -66,15 +73,17 @@ boolean IRasterComp::IsA (ClassId id) {
 ClassId RasterCode::GetClassId () { return IRASTER_CODE; }
 
 boolean RasterCode::IsA(ClassId id) {
-    return IRASTER_CODE == id || CodeView::IsA(id);
+    return IRASTER_CODE == id || GraphicCodeView::IsA(id);
 }
 
 RasterCode::RasterCode (
     IRasterComp* subj
-) : CodeView(subj) {}
+) : GraphicCodeView(subj) {
+    _unidraw = true;
+}
 
 void RasterCode::Update () {
-    CodeView::Update();
+    GraphicCodeView::Update();
     GetIRasterComp()->Bequeath();
 }
 
@@ -82,55 +91,42 @@ IRasterComp* RasterCode::GetIRasterComp () {
     return (IRasterComp*) GetSubject(); 
 }
 
+const char* RasterCode::GetGHeader () { return "rasterrect"; }
+const char* RasterCode::GetCVHeader () { return "raster"; }
+
 boolean RasterCode::Definition (ostream& out) {
     boolean ok = true;
 
-    IRasterComp* ircomp = GetIRasterComp();
-    RasterComp* target = (RasterComp*) ircomp->GetTarget();
+    const char* sfile;
+    IRasterComp* rastercomp = GetIRasterComp();
+    RasterComp* target = (RasterComp*) rastercomp->GetTarget();
     RasterRect* raster = target->GetRasterRect();
-    SubclassNameVar* snamer = ircomp->GetClassNameVar();
-    MemberNameVar* mnamer = ircomp->GetMemberNameVar();
+
+    SubclassNameVar* cnamer = rastercomp->GetCClassNameVar();
+    SubclassNameVar* gnamer = rastercomp->GetGClassNameVar();
+    MemberNameVar* mnamer = rastercomp->GetMemberNameVar();
+
     const char* mname = mnamer->GetName();
-    const char* subclass = snamer->GetName();
+    const char* cname = cnamer->GetName();
+    const char* gname = gnamer->GetName();
 
-    if (_emitGraphicState) {
-        ok = WriteGraphicDecls(raster, out);
-
-    } else if (
-        _emitInstanceDecls || _emitForward || 
-        _emitClassHeaders || _emitHeaders
-    ) {
-        ok = CodeView::Definition(out);
-
-    } else if (_emitExpHeader) {
-        if (!snamer->IsSubclass()) {
-            if (
-                _scope && mnamer->GetExport() && 
-                !_namelist->Search("rasterrect")
-            ) {
-                _namelist->Append("rasterrect");
-                out << "#include <Unidraw/Graphic/rasterrect.h> \n";
-            }
-        } else {
-            ok = CodeView::Definition(out);
-        }
-
-    } else if (_emitCorehHeader) {
-        if (snamer->IsSubclass() && strcmp(subclass, _classname) == 0) {
-            if (!_namelist->Search("rasterrect")) {
-                _namelist->Append("rasterrect");
-                out << "#include <Unidraw/Graphic/rasterrect.h> \n";
-            }
-        }
+    if (_emitInstanceDecls || _emitGraphicState) {
+	ok = ok && GraphicCodeView::Definition(out);
 
     } else if (_emitInstanceInits) {
+        static int raster_id;
+
         char substName[CHARBUFSIZE];
-        const char* sfile = target->GetFileName();
+        sfile = target->GetFileName();
         Catalog* catalog = unidraw->GetCatalog();
 
+        if (sfile == nil) {
+            sprintf(substName, "raster%d.ps", raster_id++);
+            sfile = substName;
+        }
         if (!catalog->Exists(sfile)) {
             char orig[CHARBUFSIZE];
-            const char* name = catalog->GetName(ircomp->GetRoot());
+            const char* name = catalog->GetName(rastercomp->GetRoot());
             char* dir = GetDirName(name);
             char* index = strrchr(sfile, '/');
             if (index == nil) {
@@ -146,47 +142,100 @@ boolean RasterCode::Definition (ostream& out) {
             }
         }
         out << "    {\n";
-        out << "        GraphicComp* " << mname << "_comp = ";
-        out << "ImportCmd::Import(\"" << sfile << "\");\n";
-        out << "        " << mname << " = (" << subclass << "*) " << mname;
-        out << "_comp->GetGraphic();\n";
+        out << "        RasterComp* " << mname << "_comp = (RasterComp*) ";
+        out << "ImportCmd::Import(\"" << sfile << "\");\n"; 
+        out << "        Raster* " << mname << "_raster = ";
+        out << mname << "_comp->GetRasterRect()->GetOriginal();\n";
+        if (_emitGraphicComp) {
+           out << "        " << mname << "_gr";
+        } else {
+            out << "        " << mname;
+        }
+        out << " = new " << gname << "(" << mname << "_raster, ";
+        out << mname << "_comp->GetGraphic());\n";
+        out << "        delete " << mname << "_comp;\n";
+
         ok = WriteGraphicInits(raster, out);
         if (_emitGraphicComp) {
-            out << "        " << mname << "_comp = new RasterComp(";
-            out << mname << ");\n";
-            out << "        " << mname << "_comp->Update();\n";
+            out << "        " << mname << " = new " << cname << "(";
+            out << mname << "_gr, \"" << sfile << "\");\n";
+            out << "        " << mname << "->Update();\n";
         }
         out << "    }\n";
 
-    } else if (
-        _emitCoreDecls || _emitCoreInits || _emitClassDecls || _emitClassInits
-    ) {
-	ok = true;
+    } else if (_emitExpHeader) {
+        ok = ok && GraphicCodeView::Definition(out);
+
+        if (strcmp(gname, _classname) == 0) {
+            if (!_namelist->Search("raster")) {
+                _namelist->Append("raster");
+                out << "#include <InterViews/raster.h> \n";
+            }
+        }
+    } else {
+        ok = ok && GraphicCodeView::Definition(out);
     }
     return ok && out.good();
 }
 
-boolean RasterCode::EmitIncludeHeaders(ostream& out) {
-    SubclassNameVar* snamer = GetIComp()->GetClassNameVar();
+boolean RasterCode::GCoreConstDecls(ostream& out) { 
+    out << "(Raster*, Graphic* gr = nil);\n";
+    return out.good();
+}
 
-    if (!snamer->IsSubclass() && !_namelist->Search("rasterrect")) {
-        _namelist->Append("rasterrect");
-        out << "#include <Unidraw/Graphic/rasterrect.h> \n";
-    }
+boolean RasterCode::GCoreConstInits(ostream& out) {
+    IComp* icomp = GetIComp();
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    const char* baseclass = gnamer->GetBaseClass();
+
+    out << "(\n    Raster* raster, Graphic* gr\n) : ";
+    out << baseclass << "(raster, gr) {}\n\n";
+
+    return out.good();
+}
+
+boolean RasterCode::GConstDecls(ostream& out) {
+    out << "(Raster*, Graphic* gr = nil);\n";
+    out << "    virtual Graphic* Copy();\n";
+    return out.good();
+}
+
+boolean RasterCode::GConstInits(ostream& out) {
+    char coreclass[CHARBUFSIZE];
+    GetCoreClassName(coreclass);
+    IComp* icomp = GetIComp();
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    const char* gname = gnamer->GetName();
+
+    out << "(\n    Raster* raster, Graphic* gr\n) : ";
+    out << coreclass << "(raster, gr) {}\n\n";
+    out << "Graphic* " << gname << "::Copy () {\n";
+    out << "    return new " << gname;
+    out << "(new Raster(*GetOriginal()), this);\n";
+    out << "}\n\n";
+
+    return out.good();
+}
+
+boolean RasterCode::EmitIncludeHeaders(ostream& out) {
+    GraphicCodeView::EmitIncludeHeaders(out);
+
+    SubclassNameVar* gnamer = GetIComp()->GetGClassNameVar();
+    SubclassNameVar* cnamer = GetIComp()->GetCClassNameVar();
+    SubclassNameVar* vnamer = GetIComp()->GetVClassNameVar();
     if (
-        strcmp(snamer->GetName(), _classname) != 0 && 
-        !_namelist->Search("import")
+        strcmp(gnamer->GetName(), _classname) != 0 && 
+        strcmp(cnamer->GetName(), _classname) != 0 && 
+        strcmp(vnamer->GetName(), _classname) != 0
     ) {
-        _namelist->Append("import");
-        out << "#include <Unidraw/Components/grcomp.h> \n";
-        out << "#include <Unidraw/Commands/import.h> \n";
-    }
-    if (
-        strcmp(snamer->GetName(), _classname) != 0 && 
-        !_namelist->Search("rastercomp") && _emitGraphicComp
-    ) {
-        _namelist->Append("rastercomp");
-        out << "#include <Unidraw/Components/rastercomp.h> \n";
+        if (!_namelist->Search("import")) {
+            _namelist->Append("import");
+            out << "#include <Unidraw/Commands/import.h> \n";
+        }
+        if (!_namelist->Search("rastercomp")) {
+            _namelist->Append("rastercomp");
+            out << "#include <Unidraw/Components/rastercomp.h> \n";
+        }
     }
     return out.good();
 }

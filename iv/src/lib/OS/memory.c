@@ -23,22 +23,37 @@
  */
 
 #include <OS/memory.h>
-
+#if defined(sun) && OSMajorVersion >= 5
+#include <memory.h>
+#else
 /* would that these lived in a standard place ... */
 extern "C" {
     extern void bcopy(const void*, void*, int);
     extern int bcmp(const void*, const void*, int);
     extern void bzero(void*, int);
 }
+#endif
 
 void Memory::copy(const void* from, void* to, unsigned int nbytes) {
+#if defined(sun) && OSMajorVersion >= 5
+    memcpy(to, from, nbytes);
+#else
     bcopy(from, to, nbytes);
+#endif
 }
 
 int Memory::compare(const void* b1, const void* b2, unsigned int nbytes) {
+#if defined(sun) && OSMajorVersion >= 5
+    return memcmp(b1, b2, nbytes) != 0;
+#else
     return bcmp(b1, b2, nbytes);
+#endif
 }
 
 void Memory::zero(void* b, unsigned int nbytes) {
+#if defined(sun) && OSMajorVersion >= 5
+    memset(b, 0, nbytes);
+#else
     bzero(b, nbytes);
+#endif
 }

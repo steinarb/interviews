@@ -33,6 +33,8 @@
 #include <InterViews/enter-scope.h>
 #include <IV-X11/Xlib.h>
 
-declareTable(WindowTable,XWindow,class Window*);
+class Window;
+
+declareTable(WindowTable,XWindow,Window*)
 
 #endif

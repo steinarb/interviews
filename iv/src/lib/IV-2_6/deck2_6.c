@@ -26,10 +26,10 @@
  * Deck - a Scene for stacking Interactors
  */
 
-#include <InterViews/2.6/InterViews/deck.h>
-#include <InterViews/2.6/InterViews/perspective.h>
-#include <InterViews/2.6/InterViews/glue.h>
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/InterViews/deck.h>
+#include <IV-2_6/InterViews/perspective.h>
+#include <IV-2_6/InterViews/glue.h>
+#include <IV-2_6/_enter.h>
 #include <OS/math.h>
 
 class Card {

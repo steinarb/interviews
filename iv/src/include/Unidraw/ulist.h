@@ -27,7 +27,10 @@
 #ifndef unidraw_ulist_h
 #define unidraw_ulist_h
 
-#include <InterViews/defs.h>
+#include <InterViews/enter-scope.h>
+#include <Unidraw/enter-scope.h>
+
+#include <InterViews/_enter.h>
 
 class UList {
 public:
@@ -61,5 +64,7 @@ inline UList* UList::End () { return this; }
 inline UList* UList::Next () { return _next; }
 inline UList* UList::Prev () { return _prev; }
 inline void* UList::operator() () { return _object; }
+
+#include <InterViews/_leave.h>
 
 #endif

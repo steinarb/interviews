@@ -28,17 +28,16 @@
 #include <Dispatch/dp.h>
 #include <Dispatch/_defines.h>
 
-#ifndef nil
-#define nil 0
-#endif
+#ifndef os__scope_h
 
-#ifndef iv_boolean_h
-#define iv_boolean_h
+#include <OS/enter-scope.h>
+#include <OS/leave-scope.h>
 
-typedef unsigned boolean;
-
-static const unsigned false = 0;
-static const unsigned true = 1;
+#define String _lib_os(String)
+#define boolean _lib_os(boolean)
+#define true _lib_os(true)
+#define false _lib_os(false)
+#define u_char _lib_os(u_char)
 
 #endif
 

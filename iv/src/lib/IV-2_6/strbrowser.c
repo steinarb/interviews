@@ -26,22 +26,23 @@
  * StringBrowser implementation.
  */
 
-#include <IV-look/2.6/InterViews/button.h>
-#include <IV-look/2.6/InterViews/strbrowser.h>
 #include <InterViews/bitmap.h>
 #include <InterViews/cursor.h>
 #include <InterViews/font.h>
-#include <InterViews/sensor.h>
-#include <InterViews/2.6/InterViews/painter.h>
-#include <InterViews/2.6/InterViews/perspective.h>
-#include <InterViews/2.6/InterViews/shape.h>
-#include <InterViews/2.6/InterViews/textdisplay.h>
 #include <InterViews/Bitmaps/hand.bm>
 #include <InterViews/Bitmaps/handMask.bm>
 #include <InterViews/Bitmaps/dfast.bm>
 #include <InterViews/Bitmaps/dfastMask.bm>
 #include <InterViews/Bitmaps/ufast.bm>
 #include <InterViews/Bitmaps/ufastMask.bm>
+#include <IV-2_6/InterViews/button.h>
+#include <IV-2_6/InterViews/strbrowser.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/perspective.h>
+#include <IV-2_6/InterViews/sensor.h>
+#include <IV-2_6/InterViews/shape.h>
+#include <IV-2_6/InterViews/textdisplay.h>
+#include <OS/math.h>
 #include <OS/memory.h>
 #include <math.h>
 #include <stdlib.h>
@@ -114,7 +115,7 @@ StringBrowser::~StringBrowser () {
     Resource::unref(perspective);
 }
 
-static void BufCheck (const char**& buf, int& bufsize, int count, int index) {
+static void BufCheck (char**& buf, int& bufsize, int count, int index) {
     char** newbuf;
 
     if (index >= bufsize) {
@@ -127,9 +128,9 @@ static void BufCheck (const char**& buf, int& bufsize, int count, int index) {
 }
 
 static void BufInsert (
-    const char* s, int index, const char**& buf, int& bufsize, int& count
+    const char* s, int index, char**& buf, int& bufsize, int& count
 ) {
-    const char** spot;
+    char** spot;
     index = (index < 0) ? count : index;
 
     if (index < count) {
@@ -141,21 +142,21 @@ static void BufInsert (
         BufCheck(buf, bufsize, count, index);
         spot = &buf[index];
     }
-    *spot = s;
+    *spot = (char*)s;
     ++count;
 }
 
-static void BufRemove (int index, const char** buf, int& count) {
+static void BufRemove (int index, char** buf, int& count) {
     if (index < --count) {
-        const char** spot = &buf[index];
+        char** spot = &buf[index];
         Memory::copy(spot+1, spot, (count - index)*sizeof(char*));
     }
 }
 
 static int BufFind (
     int index, 
-    const char** srcbuf, int srccount, 
-    const char** dstbuf, int dstcount
+    char** srcbuf, int srccount, 
+    char** dstbuf, int dstcount
 ) {
     if (0 <= index && index < srccount) {
         const char* s = srcbuf[index];
@@ -190,6 +191,26 @@ void StringBrowser::Insert (const char* s, int index) {
         display->InsertLinesAfter(index-1, 1);
     }
     display->ReplaceText(index, s, strlen(s));
+}
+
+void StringBrowser::Replace (const char* s, int index) {
+    if (index < strcount) {
+	display->Draw(output, canvas);
+	register Perspective* p = perspective;
+
+	char* old_string = String(index);
+	delete old_string;
+	char* copy = new char[strlen(s)+1];
+	strcpy(copy, s);
+	strbuf[index] = copy;
+
+	if (output != nil) {
+	    p->width = Math::max(p->width, output->GetFont()->Width(s));
+	}
+	p->Update();
+
+	display->ReplaceText(index, s, strlen(s));
+    }
 }
 
 void StringBrowser::Remove (int index) {
@@ -325,6 +346,7 @@ void StringBrowser::Handle (Event& e) {
 
 boolean StringBrowser::HandleChar (char c) {
     int index = Selection();
+    int i;
 
     switch (c) {
     case SBFirstString:
@@ -362,12 +384,12 @@ boolean StringBrowser::HandleChar (char c) {
         break;
     case SBSelectTopString:
         UnselectAll();
-        index = Locate(0, ymax);
+        index = Math::max(0, Locate(0, ymax));
         Select(index);
         break;
     case SBSelectBottomString:
         UnselectAll();
-        index = Locate(0, 0);
+        index = Math::min(Locate(0, 0), strcount-1);
         Select(index);
         break;
     case SBPageDown:
@@ -383,7 +405,7 @@ boolean StringBrowser::HandleChar (char c) {
         ScrollBy(-(ymax+1) / lineheight / 2);
         break;
     default:
-        for (int i = 0; done[i] != '\0'; ++i) {
+        for (i = 0; done[i] != '\0'; i++) {
             if (c == done[i]) {
                 subject->SetValue(c);
                 return true;
@@ -408,27 +430,28 @@ static Cursor* dnCursor;
 
 void StringBrowser::Reconfig () {
     if (handCursor == nil) {
-        Bitmap hand(
-            hand_bits, hand_width, hand_height, hand_x_hot, hand_y_hot
-        );
-        Bitmap handmask(hand_mask_bits, hand_mask_width, hand_mask_height);
-        Bitmap up(
-            ufast_bits, ufast_width, ufast_height, ufast_x_hot, ufast_y_hot
-        );
-        Bitmap upmask(ufast_mask_bits, ufast_mask_width, ufast_mask_height);
-        Bitmap dn(
-            dfast_bits, dfast_width, dfast_height, dfast_x_hot, dfast_y_hot
-        );
-        Bitmap dnmask(dfast_mask_bits, dfast_mask_width, dfast_mask_height);
-
         handCursor = new Cursor(
-            &hand, &handmask, output->GetFgColor(), output->GetBgColor()
+	    new Bitmap(
+		hand_bits, hand_width, hand_height, hand_x_hot, hand_y_hot
+	    ),
+	    new Bitmap(hand_mask_bits, hand_mask_width, hand_mask_height),
+	    output->GetFgColor(), output->GetBgColor()
         );
+
         upCursor = new Cursor(
-            &up, &upmask, output->GetFgColor(), output->GetBgColor()
+	    new Bitmap(
+		ufast_bits, ufast_width, ufast_height, ufast_x_hot, ufast_y_hot
+	    ),
+	    new Bitmap(ufast_mask_bits, ufast_mask_width, ufast_mask_height),
+            output->GetFgColor(), output->GetBgColor()
         );
+
         dnCursor = new Cursor(
-            &dn, &dnmask, output->GetFgColor(), output->GetBgColor()
+	    new Bitmap(
+		dfast_bits, dfast_width, dfast_height, dfast_x_hot, dfast_y_hot
+	    ),
+	    new Bitmap(dfast_mask_bits, dfast_mask_width, dfast_mask_height),
+            output->GetFgColor(), output->GetBgColor()
         );
     }
 
@@ -501,11 +524,12 @@ void StringBrowser::Select (int dot, int mark) {
 }
 
 void StringBrowser::SelectAll () {
+    selcount = 0;
     for (int i = 0; i < strcount; ++i) {
-        BufInsert(strbuf[i], selcount, selbuf, selbufsize, selcount);
+        BufInsert(strbuf[i], i, selbuf, selbufsize, selcount);
     }
     display->Draw(output, canvas);
-    display->Style(0, 0, strcount, 0, highlight);
+    display->Style(0, 0, strcount, -1, highlight);
 }
 
 void StringBrowser::Unselect (int dot, int mark) {

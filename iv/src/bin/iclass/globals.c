@@ -54,7 +54,7 @@ void BufCheck (const void**& buf, int& bufsize, int count, int index) {
         newbuf = new void*[bufsize];
         Memory::copy(buf, newbuf, length);
         delete buf;
-        buf = newbuf;
+        buf = (const void**)newbuf;
     }
 }
 

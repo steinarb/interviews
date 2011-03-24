@@ -32,13 +32,13 @@
 #include <InterViews/display.h>
 #include <InterViews/font.h>
 #include <InterViews/style.h>
-#include <InterViews/session.h>
 #include <IV-X11/Xlib.h>
 #include <IV-X11/xbitmap.h>
 #include <IV-X11/xcolor.h>
 #include <IV-X11/xcursor.h>
 #include <IV-X11/xdisplay.h>
 #include <IV-X11/xfont.h>
+#include <IV-X11/xwindow.h>
 #include <OS/string.h>
 #include <X11/cursorfont.h>
 
@@ -95,17 +95,7 @@ Cursor::Cursor(
     short xoff, short yoff, const int* p, const int* m,
     const Color* fg, const Color * bg
 ) {
-    CursorRep* c = new CursorRep;
-    rep_ = c;
-    c->xcursor_ = 0;
-    c->x_ = xoff;
-    c->y_ = yoff;
-    c->pat_ = p;
-    c->mask_ = m;
-    c->fg_ = fg;
-    c->bg_ = bg;
-    Resource::ref(fg);
-    Resource::ref(bg);
+    rep_ = new CursorRepData(xoff, yoff, p, m, fg, bg);
 }
 
 /*
@@ -115,19 +105,7 @@ Cursor::Cursor(
 Cursor::Cursor(
     const Bitmap* pat, const Bitmap* mask, const Color* fg, const Color* bg
 ) {
-    CursorRep* c = new CursorRep;
-    rep_ = c;
-    BitmapRep* b = pat->rep();
-    Display* d = b->display_;
-    c->make_colors(d);
-    c->xcursor_ = XCreatePixmapCursor(
-	d->rep()->display_,
-	b->pixmap_, mask->rep()->pixmap_,
-	&fg->rep(d)->xcolor_, &bg->rep(d)->xcolor_,
-	d->to_pixels(-b->left_), d->to_pixels(b->height_ - 1 + b->bottom_)
-    );
-    Resource::ref(fg);
-    Resource::ref(bg);
+    rep_ = new CursorRepBitmap(pat, mask, fg, bg);
 }
 
 /*
@@ -137,19 +115,7 @@ Cursor::Cursor(
 Cursor::Cursor(
     const Font* font, int pat, int mask, const Color* fg, const Color* bg
 ) {
-    CursorRep* c = new CursorRep;
-    rep_ = c;
-    Display* d = Session::instance()->default_display();
-    XFontStruct* i = font->rep(d)->font_;
-    Resource::ref(fg);
-    Resource::ref(bg);
-    c->fg_ = fg;
-    c->bg_ = bg;
-    c->make_colors(d);
-    c->xcursor_ = XCreateGlyphCursor(
-        d->rep()->display_, i->fid, i->fid, pat, mask,
-	&fg->rep(d)->xcolor_, &bg->rep(d)->xcolor_
-    );
+    rep_ = new CursorRepFont(font, pat, mask, fg, bg);
 }
 
 /*
@@ -157,27 +123,100 @@ Cursor::Cursor(
  */
 
 Cursor::Cursor(int n, const Color* fg, const Color* bg) {
-    CursorRep* c = new CursorRep;
-    rep_ = c;
-    c->xcursor_ = 0;
-    c->x_ = (short)n;
-    c->pat_ = nil;
-    c->mask_ = nil;
-    c->fg_ = fg;
-    c->bg_ = bg;
-    Resource::ref(fg);
-    Resource::ref(bg);
+    rep_ = new CursorRepXFont(n, fg, bg);
 }
 
 Cursor::~Cursor() {
-    CursorRep* c = rep_;
-    XCursor xc = c->xcursor_;
-    if (xc != 0) {
-	XFreeCursor(c->display_->rep()->display_, xc);
+    delete rep_;
+}
+
+/* class CursorRep */
+
+CursorRep::CursorRep(const Color* fg, const Color* bg) {
+    Resource::ref(fg);
+    fg_ = fg;
+    Resource::ref(bg);
+    bg_ = bg;
+    display_ = nil;
+    xcursor_ = 0;
+}
+
+CursorRep::~CursorRep() {
+    if (xcursor_ != 0) {
+	XFreeCursor(display_->rep()->display_, xcursor_);
     }
-    Resource::unref(c->fg_);
-    Resource::unref(c->bg_);
-    delete c;
+    Resource::unref(fg_);
+    Resource::unref(bg_);
+}
+
+XCursor CursorRep::xid(Display* d, WindowVisual* wv) {
+    if (display_ != d) {
+	if (xcursor_ != 0) {
+	    XFreeCursor(display_->rep()->display_, xcursor_);
+	}
+	Style* s = d->style();
+	if (fg_ == nil) {
+	    fg_ = make_color(
+		d, s, "pointerColor", "foreground", "Foreground",
+		"#000000"
+	    );
+	}
+	if (bg_ == nil) {
+	    bg_ = make_color(
+		d, s, "pointerColorBackground", "background", "Background",
+		"#ffffff"
+	    );
+	}
+	make_xcursor(d, wv);
+	display_ = d;
+    }
+    return xcursor_;
+}
+
+const Color* CursorRep::make_color(
+    Display* d, Style* s,
+    const char* str1, const char* str2, const char* str3,
+    const char* default_value
+) {
+    const Color* c = nil;
+    String v;
+    if (s->find_attribute(str1, v) || s->find_attribute(str2, v) ||
+	s->find_attribute(str3, v)
+    ) {
+	c = Color::lookup(d, v);
+    }
+    if (c == nil) {
+	c = Color::lookup(d, default_value);
+    }
+    Resource::ref(c);
+    return c;
+}
+
+/* class CursorRepData */
+
+CursorRepData::CursorRepData(
+    short x_hot, short y_hot, const int* pat, const int* mask,
+    const Color* fg, const Color* bg
+) : CursorRep(fg, bg) {
+    x_ = x_hot;
+    y_ = y_hot;
+    pat_ = pat;
+    mask_ = mask;
+}
+
+CursorRepData::~CursorRepData() { }
+
+void CursorRepData::make_xcursor(Display* d, WindowVisual* wv) {
+    XDisplay* dpy = d->rep()->display_;
+    XWindow root = d->rep()->root_;
+    Pixmap p = make_cursor_pixmap(dpy, root, pat_);
+    Pixmap m = make_cursor_pixmap(dpy, root, mask_);
+    xcursor_ = XCreatePixmapCursor(
+	dpy, p, m, &fg_->rep(wv)->xcolor_, &bg_->rep(wv)->xcolor_,
+	x_, cursorHeight - 1 - y_
+    );
+    XFreePixmap(dpy, p);
+    XFreePixmap(dpy, m);
 }
 
 /*
@@ -185,7 +224,7 @@ Cursor::~Cursor() {
  * fill patterns, which are 32x32.
  */
 
-static Pixmap MakeCursorPixmap(
+Pixmap CursorRepData::make_cursor_pixmap(
     XDisplay* dpy, XWindow root, const int* scanline
 ) {
     Pixmap dst = XCreatePixmap(dpy, root, cursorWidth, cursorHeight, 1);
@@ -211,58 +250,69 @@ static Pixmap MakeCursorPixmap(
     return dst;
 }
 
-XCursor CursorRep::xid(Display* d) const {
-    if (xcursor_ == 0) {
-	CursorRep* c = (CursorRep*)this;
-	c->make_colors(d);
-	c->make_xcursor(d);
-	c->display_ = d;
-    }
-    return xcursor_;
+/* class CursorRepBitmap */
+
+CursorRepBitmap::CursorRepBitmap(
+    const Bitmap* pat, const Bitmap* mask, const Color* fg, const Color* bg
+) : CursorRep(fg, bg) {
+    Resource::ref(pat);
+    pat_ = pat;
+    Resource::ref(mask);
+    mask_ = mask;
 }
 
-void CursorRep::make_colors(Display* d) {
-    String v;
-    if (fg_ == nil) {
-	Style* s = d->style();
-	if (s->find_attribute("pointerColor", v)) {
-	    fg_ = Color::lookup(d, v);
-	}
-	if (fg_ == nil) {
-	    fg_ = s->foreground();
-	}
-	Resource::ref(fg_);
-    }
-    if (bg_ == nil) {
-	Style* s = d->style();
-	if (s->find_attribute("pointerColorBackground", v)) {
-	    bg_ = Color::lookup(d, v);
-	}
-	if (bg_ == nil) {
-	    bg_ = s->background();
-	}
-	Resource::ref(bg_);
-    }
+CursorRepBitmap::~CursorRepBitmap() {
+    Resource::unref(pat_);
+    Resource::unref(mask_);
 }
 
-void CursorRep::make_xcursor(Display* d) {
+void CursorRepBitmap::make_xcursor(Display* d, WindowVisual* wv) {
+    BitmapRep* b = pat_->rep();
+    xcursor_ = XCreatePixmapCursor(
+	d->rep()->display_,
+	b->pixmap_, mask_->rep()->pixmap_,
+	&fg_->rep(wv)->xcolor_, &bg_->rep(wv)->xcolor_,
+	d->to_pixels(-b->left_), d->to_pixels(b->height_ - 1 + b->bottom_)
+    );
+}
+
+/* class CursorRepFont */
+
+CursorRepFont::CursorRepFont(
+    const Font* font, int pat, int mask, const Color* fg, const Color* bg
+) : CursorRep(fg, bg) {
+    Resource::ref(font);
+    font_ = font;
+    pat_ = pat;
+    mask_ = mask;
+}
+
+CursorRepFont::~CursorRepFont() {
+    Resource::unref(font_);
+}
+
+void CursorRepFont::make_xcursor(Display* d, WindowVisual* wv) {
+    XFontStruct* i = font_->rep(d)->font_;
+    xcursor_ = XCreateGlyphCursor(
+        d->rep()->display_, i->fid, i->fid, pat_, mask_,
+	&fg_->rep(wv)->xcolor_, &bg_->rep(wv)->xcolor_
+    );
+}
+
+/* class CursorRepXFont */
+
+CursorRepXFont::CursorRepXFont(
+    int code, const Color* fg, const Color* bg
+) : CursorRep(fg, bg) {
+    code_ = code;
+}
+
+CursorRepXFont::~CursorRepXFont() { }
+
+void CursorRepXFont::make_xcursor(Display* d, WindowVisual* wv) {
     XDisplay* dpy = d->rep()->display_;
-    if (pat_ != nil && mask_ != nil) {
-	XWindow root = d->rep()->root_;
-	Pixmap p = MakeCursorPixmap(dpy, root, pat_);
-	Pixmap m = MakeCursorPixmap(dpy, root, mask_);
-	xcursor_ = XCreatePixmapCursor(
-	    dpy, p, m,
-	    &fg_->rep(d)->xcolor_, &bg_->rep(d)->xcolor_,
-	    x_, cursorHeight - 1 - y_
-	);
-	XFreePixmap(dpy, p);
-	XFreePixmap(dpy, m);
-    } else {
-	/* x contains cursorfont index */
-	xcursor_ = XCreateFontCursor(dpy, x_);
-	XRecolorCursor(
-	    dpy, xcursor_, &fg_->rep(d)->xcolor_, &bg_->rep(d)->xcolor_
-	);
-    }
+    xcursor_ = XCreateFontCursor(dpy, code_);
+    XRecolorCursor(
+	dpy, xcursor_, &fg_->rep(wv)->xcolor_, &bg_->rep(wv)->xcolor_
+    );
 }

@@ -22,11 +22,13 @@
 
 /*
  * User interface builder keycode values.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibkybd.c,v 1.2 91/09/27 14:10:51 tang Exp $
  */
 
 #include "ibkybd.h"
 
+const char* KLBL_PMOVE          = "^M",  *CODE_PMOVE                = "\015";
+const char* KLBL_PSCALE         = "^J",  *CODE_PSCALE               = "\012";
+const char* KLBL_PROTATE        = "^K",  *CODE_PROTATE              = "\013";
 const char* KLBL_ABOUT          = "$",   *CODE_ABOUT                 = "$";
 const char* KLBL_CHECKBOX       = "",   *CODE_CHECKBOX               = "3";
 const char* KLBL_EXAMINE        = "i",  *CODE_EXAMINE                = "i";
@@ -81,7 +83,7 @@ const char* KLBL_SHAPER         = "S",  *CODE_SHAPER                 = "S";
 const char* KLBL_VIEWPARENT     = "^",  *CODE_VIEWPARENT             = "^";
 const char* KLBL_VIEWROOT       = "*",  *CODE_VIEWROOT               = "*";
 const char* KLBL_STRBROWSER     = "",   *CODE_STRBROWSER             = "|";
-const char* KLBL_NARROW         = "g",  *CODE_NARROW                 = "g";
+const char* KLBL_NARROW         = "p",  *CODE_NARROW                 = "p";
 const char* KLBL_TAB            = "\t", *CODE_TAB                    = "\011";
 const char* KLBL_EDCOMP         = "E",  *CODE_EDCOMP                 = "E";
 const char* KLBL_IBVIEWER       = "",   *CODE_IBVIEWER               = "\128";

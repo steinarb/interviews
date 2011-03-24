@@ -22,10 +22,11 @@
 
 /*
  * Implementation of user interface builder-specific state variables.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibvars.c,v 1.2 91/09/27 14:12:18 tang Exp $
  */
 
 #include "ibclasses.h"
+#include "ibcreator.h"
+#include "ibglobals.h"
 #include "ibinteractor.h"
 #include "ibvars.h"
 
@@ -38,9 +39,10 @@
 
 #include <OS/string.h>
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <stream.h>
 #include <string.h>
-#include <stdlib.h>
 
 /*****************************************************************************/
 
@@ -169,6 +171,147 @@ void IBNameVar::Write (ostream& out) {
 }
 
 /*****************************************************************************/
+class IDMapElem : public UMapElem {
+public:
+    IDMapElem(IDVar*, SubclassNameVar*);
+    virtual void* id();
+    virtual void* tag();
+private:
+    IDVar* _id;
+    SubclassNameVar* _tag;
+};
+
+IDMapElem::IDMapElem(IDVar* id, SubclassNameVar* tag) {
+    _id = id;
+    _tag = tag;
+}
+
+void* IDMapElem::id () { return _id; }
+void* IDMapElem::tag () { return _tag; }
+
+/*****************************************************************************/
+IDMap::IDMap () {}
+
+void IDMap::Add (MemberSharedName* msnamer) {
+    Add(msnamer->GetIDVar(), msnamer->GetSubclass());
+}
+
+void IDMap::Add (IDVar* id, SubclassNameVar* tag) {
+    UMapElem* idelem = FindId(id);
+    if (idelem == nil) {
+        IDMapElem* idelem = new IDMapElem(id, tag);
+        Register(idelem);
+    }
+}
+
+void IDMap::Delete (IDVar* id) {
+    UMapElem* idelem = FindId(id);
+    Unregister(idelem);
+    delete idelem;
+}
+
+int IDMap::FindID (SubclassNameVar* tag) {
+    const char* subclass = tag->GetName();
+    const char* baseclass = tag->GetBaseClass();
+    return FindID(subclass, baseclass);
+}
+
+int IDMap::FindID (const char* subclass, const char* baseclass) {
+    int ok = 0;
+    for (int i = 0; i < _elems.Count(); ++i) {
+        IDMapElem* idelem = (IDMapElem*) Elem(i);
+        SubclassNameVar* target = (SubclassNameVar*) idelem->tag();
+        if (strcmp(target->GetName(), subclass) == 0) {
+            if (strcmp(target->GetBaseClass(), baseclass) == 0) {
+                IDVar* idvar = (IDVar*) idelem->id();
+                ok = idvar->GetID();
+            } else {
+                ok = -1;
+            }
+            break;
+        }
+    }
+    return ok;
+}
+
+void IDMap::Update (IDVar* id) {
+    UMapElem* idelem = FindId(id);
+    if (idelem != nil) {
+        SubclassNameVar* tag = (SubclassNameVar*) idelem->tag();
+        const char* subclass = tag->GetName();
+        const char* baseclass = tag->GetBaseClass();
+        for (int i = 0; i < _elems.Count(); ++i) {
+            IDMapElem* idelem = (IDMapElem*) Elem(i);
+            SubclassNameVar* target = (SubclassNameVar*) idelem->tag();
+            if (
+                target != tag && 
+                strcmp(target->GetName(), subclass) == 0 && 
+                strcmp(target->GetBaseClass(), baseclass) == 0
+            ) {
+                IDVar* idvar = (IDVar*) idelem->id();
+                idvar->SetName(id->GetName());
+            }
+        }
+    }
+}
+
+/*****************************************************************************/
+int IDVar::_IDSerial = 3999;
+IDMap* IDVar::_idmap = new IDMap;
+/*****************************************************************************/
+
+IDVar::IDVar (int id, int origid) {
+    SetID(id);
+    SetOrigID(origid);
+}
+
+void IDVar::CreateMap () {
+    delete _idmap;
+    _idmap = new IDMap;
+}
+
+IDVar::~IDVar () {}
+
+int IDVar::GetID () {
+    const char* name = GetName();
+    if (name != nil) {
+        return atoi(name);
+    }
+    return -1;
+}
+
+void IDVar::SetID (int id) {
+    char idbuf[CHARBUFSIZE];
+    sprintf(idbuf, "%d", id);
+    SetName(idbuf);
+}
+
+void IDVar::GenNewName () {}
+
+void IDVar::Update () {
+    _idmap->Update(this);
+}
+
+StateVar& IDVar::operator = (StateVar& var) {
+    IBNameVar::operator = (var);
+    Update();
+    return *this;
+}
+
+StateVar* IDVar::Copy () { return new IDVar(GetID(), GetOrigID()); }
+
+ClassId IDVar::GetClassId () { return ID_VAR; }
+
+boolean IDVar::IsA (ClassId id) {
+    return ID_VAR == id || IBNameVar::IsA(id);
+}
+
+void IDVar::Read(istream& in) {
+    IBNameVar::Read(in);
+    _IDSerial = max(_IDSerial, GetID());
+}
+
+/*****************************************************************************/
 
 int InstanceNameVar::_iSerial;
 
@@ -196,29 +339,63 @@ boolean InstanceNameVar::IsA (ClassId id) {
 void InstanceNameVar::Read (istream& in) {
     IBNameVar::Read(in);
     if (GetMachGen()) {
-        char* number = strrchr(GetName(), '_') + 1;
-        _iSerial = (_iSerial > atoi(number)) ? _iSerial : atoi(number) +1;
+        char* number = strrchr(GetName(), '_');
+        if (number != nil) {
+            number += 1;
+            _iSerial = (_iSerial > atoi(number)) ? _iSerial : atoi(number) +1;
+        }
     }
 }
 
 /*****************************************************************************/
 SharedName::SharedName (
     const char* name, boolean machgen
-) : IBNameVar(name, machgen) {}
+) : IBNameVar(name, machgen) { _refcount = 0; }
 
+SharedName::~SharedName () {}
+
+void SharedName::ref () const {
+    SharedName* s = (SharedName*) this;
+    s->_refcount += 1;
+}
+
+void SharedName::unref () const {
+    SharedName* s = (SharedName*) this;
+    if (s->_refcount != 0) {
+        s->_refcount -= 1;
+        if (s->_refcount == 0) {
+            delete s;
+        }
+    }
+}
 /*****************************************************************************/
 
 MemberSharedName::MemberSharedName (
     const char* name, boolean export, boolean machgen
 ) : SharedName(name, machgen) {
     _export = export;
+    _subclass = new SubclassNameVar("", false, false);
+    _subclass->ref();
+    _idVar = nil;
 }
 
+MemberSharedName::~MemberSharedName () {
+    if (_subclass != nil) _subclass->unref();
+    delete _idVar;
+}
+
+void MemberSharedName::SetSubclass(SubclassNameVar* sub) {
+    if (sub != nil) sub->ref();
+    if (_subclass != nil) _subclass->unref();
+    _subclass = sub;
+}
 
 StateVar* MemberSharedName::Copy () {
     MemberSharedName* copy = new MemberSharedName(
         GetName(), GetExport(), GetMachGen()
     );
+    copy->SetSubclass(_subclass);
+    copy->SetIDVar(_idVar);
     return copy;
 }
 
@@ -234,22 +411,58 @@ StateVar& MemberSharedName::operator = (StateVar& var) {
     if (var.IsA(MEMBERSHAREDNAME)) {
         MemberSharedName* mvar = (MemberSharedName*) &var;
         _export = mvar->GetExport();
+        SetSubclass(mvar->GetSubclass());
+        SetIDVar(mvar->GetIDVar());
     }
     return *this;
 }
 
+void MemberSharedName::SetName(const char* name) {
+    char* fname = FilterName(name);
+    SharedName::SetName(fname);
+    delete fname;
+}
+
+void MemberSharedName::SetIDVar (IDVar* idvar ) {
+    if (idvar != nil) {
+        if (_idVar == nil) {
+            _idVar = (IDVar*) idvar->Copy();
+        } else {
+            *_idVar = *idvar;
+        }
+    } 
+}
+
 void MemberSharedName::Read (istream& in) {
+    Catalog* catalog = unidraw->GetCatalog();
     IBNameVar::Read(in);
     in >> _export;
-    if (GetMachGen()) {
-        char* number = strrchr(GetName(), '_') + 1;
-        _mSerial = (_mSerial > atoi(number)) ? _mSerial : atoi(number) + 1;
+    float version = catalog->FileVersion();
+    if (version > 1.05 || !IBCreator::GetLock()) {
+        if (_subclass != nil) _subclass->unref();
+        _subclass = (SubclassNameVar*) catalog->ReadStateVar(in);
+        if (_subclass != nil) _subclass->ref();
+        delete _idVar;
+        _idVar = (IDVar*) catalog->ReadStateVar(in);
     }
+    
+    if (GetMachGen()) {
+        char* number = strrchr(GetName(), '_');
+        if (number != nil) {
+            number += 1;
+            _mSerial = (_mSerial > atoi(number)) ? _mSerial : atoi(number) + 1;
+        }
+    }
+    char* fname = FilterName(GetName());
+    SetName(fname);
+    delete fname;
 }
 
 void MemberSharedName::Write (ostream& out) {
     IBNameVar::Write(out);
     out << " " << _export << " "; 
+    unidraw->GetCatalog()->WriteStateVar(_subclass, out);
+    unidraw->GetCatalog()->WriteStateVar(_idVar, out);
 }
 
 /*****************************************************************************/
@@ -331,10 +544,16 @@ int ButtonSharedName::_bsSerial;
 /*****************************************************************************/
 
 ButtonSharedName::ButtonSharedName(
-    const char* name, const char* func, boolean machgen
+    const char* name, const char* func, boolean machgen, const char* baseclass
 ) : SharedName(name, machgen) {
     _initial = 0;
     _export = true;
+    if (baseclass == nil) {
+        _subclass = new SubclassNameVar("ButtonState", false, false);
+    } else {
+        _subclass = new SubclassNameVar(baseclass, false, false);
+    }
+    _subclass->ref();
     if (func != nil) {
 	_func = strnew(func);
     } else {
@@ -344,6 +563,7 @@ ButtonSharedName::ButtonSharedName(
 
 ButtonSharedName::~ButtonSharedName () {
     delete _func;
+    if (_subclass != nil) _subclass->unref();
 }
 
 void ButtonSharedName::SetFuncName(const char* func) {
@@ -353,12 +573,19 @@ void ButtonSharedName::SetFuncName(const char* func) {
     }
 }
 
+void ButtonSharedName::SetSubclass(SubclassNameVar* sub) {
+    if (sub != nil) sub->ref();
+    if (_subclass != nil) _subclass->unref();
+    _subclass = sub;
+}
+
 StateVar* ButtonSharedName::Copy () {
     ButtonSharedName* copy = new ButtonSharedName(
 	GetName(), _func, GetMachGen()
     );
     copy->SetInitial(_initial);
     copy->SetExport(_export);
+    *copy->GetSubclass() = *_subclass;
     return copy;
 }
 
@@ -366,10 +593,11 @@ StateVar& ButtonSharedName::operator = (StateVar& var) {
     IBNameVar::operator=(var); 
 
     if (var.IsA(BUTTONSHAREDNAME)) {
-        ButtonSharedName* name = (ButtonSharedName*) &var;
-	_initial = name->GetInitial();
-	_export = name->GetExport();
-	SetFuncName(name->GetFuncName());
+        ButtonSharedName* bsname = (ButtonSharedName*) &var;
+	_initial = bsname->GetInitial();
+	_export = bsname->GetExport();
+        *_subclass = *bsname->GetSubclass();
+	SetFuncName(bsname->GetFuncName());
     }
     return *this;
 }
@@ -382,16 +610,24 @@ boolean ButtonSharedName::IsA (ClassId id) {
 }
 
 void ButtonSharedName::Read (istream& in) {
+    Catalog* catalog = unidraw->GetCatalog();
+    float version = catalog->FileVersion();
+
     IBNameVar::Read(in);
     in >> _initial >> _export;
     _func = unidraw->GetCatalog()->ReadString(in);
+    if (version >= 1.05 || !IBCreator::GetLock()) {
+        if (_subclass != nil) _subclass->unref();
+        _subclass = (SubclassNameVar*) catalog->ReadStateVar(in);
+        if (_subclass != nil) _subclass->ref();
+    }
 }
-
 
 void ButtonSharedName::Write (ostream& out) {
     IBNameVar::Write(out);
     out << " " << _initial << " " << _export; 
     unidraw->GetCatalog()->WriteString(_func, out);
+    unidraw->GetCatalog()->WriteStateVar(_subclass, out);
 }
 
 /*****************************************************************************/
@@ -606,7 +842,7 @@ int SubclassNameVar::_subclassSerial;
 
 SubclassNameVar::SubclassNameVar (
     const char* baseclass, boolean machgen, boolean abstract
-) : IBNameVar(baseclass, machgen) {
+) : SharedName(baseclass, machgen) {
     _baseClass = nil;
     if (baseclass != nil) {
         SetBaseClass(baseclass);
@@ -761,4 +997,3 @@ void BooleanStateVar::Write (ostream& out) {
     StateVar::Write(out);
     out << _bstate << " ";
 }
-

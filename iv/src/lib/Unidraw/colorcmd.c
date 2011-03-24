@@ -31,6 +31,8 @@
 #include <Unidraw/unidraw.h>
 #include <Unidraw/Commands/colorcmd.h>
 
+#include <IV-2_6/_enter.h>
+
 /*****************************************************************************/
 
 ClassId ColorCmd::GetClassId () { return COLOR_CMD; }

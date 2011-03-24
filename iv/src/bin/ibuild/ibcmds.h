@@ -22,7 +22,6 @@
 
 /*
  * User interface builder-specific commands.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibcmds.h,v 1.2 91/09/27 14:13:10 tang Exp $
  */
 
 #ifndef ibcmds_h
@@ -34,6 +33,7 @@
 #include <Unidraw/Commands/colorcmd.h>
 #include <Unidraw/Commands/edit.h>
 #include <Unidraw/Commands/font.h>
+#include <Unidraw/Commands/import.h>
 #include <Unidraw/Commands/patcmd.h>
 #include <Unidraw/Commands/struct.h>
 
@@ -45,19 +45,116 @@ class GraphicComp;
 class GraphicView;
 class GrBlockComp;
 class IBShape;
+class IComp;
 class InfoData;
 class InfoDialog;
 class InstallRemoveDialog;
+class InstanceNameVar;
 class InteractorComp;
 class InteractorView;
-class MonoSceneComp;
-class OptionDialog;
-class SaveCompAsCmd;
-class SceneComp;
-class UList;
-class SubclassNameVar;
-class InstanceNameVar;
 class MemberNameVar;
+class MonoSceneComp;
+class MonoSceneClass;
+class MoveDialog;
+class OptionDialog;
+class RotateDialog;
+class SaveCompAsCmd;
+class ScaleDialog;
+class SceneComp;
+class StateVar;
+class SubclassNameVar;
+class UList;
+
+class IDMapCmd : public Command {
+public:
+    IDMapCmd(Editor*);
+    virtual void Execute();
+    
+    virtual ClassId GetClassId();
+    virtual boolean IsA(ClassId);
+};
+
+class IBImportCmd : public ImportCmd {
+public:
+    IBImportCmd(ControlInfo*);
+    IBImportCmd(Editor* = nil);
+
+    virtual void Execute();
+    virtual Command* Copy();
+    virtual ClassId GetClassId();
+    virtual boolean IsA(ClassId);
+};
+
+class PreciseMoveCmd : public Command {
+public:
+    PreciseMoveCmd(ControlInfo*);
+    PreciseMoveCmd(Editor* = nil);
+    virtual ~PreciseMoveCmd();
+
+    virtual void Execute();
+    virtual boolean Reversible();
+
+    virtual Command* Copy();
+    virtual ClassId GetClassId();
+    virtual boolean IsA(ClassId);
+private:
+    MoveDialog* _dialog;
+};
+
+class PreciseScaleCmd : public Command {
+public:
+    PreciseScaleCmd(ControlInfo*);
+    PreciseScaleCmd(Editor* = nil);
+    virtual ~PreciseScaleCmd();
+
+    virtual void Execute();
+    virtual boolean Reversible();
+
+    virtual Command* Copy();
+    virtual ClassId GetClassId();
+    virtual boolean IsA(ClassId);
+private:
+    ScaleDialog* _dialog;
+};
+
+class PreciseRotateCmd : public Command {
+public:
+    PreciseRotateCmd(ControlInfo*);
+    PreciseRotateCmd(Editor* = nil);
+    virtual ~PreciseRotateCmd();
+
+    virtual void Execute();
+    virtual boolean Reversible();
+
+    virtual Command* Copy();
+    virtual ClassId GetClassId();
+    virtual boolean IsA(ClassId);
+private:
+    RotateDialog* _dialog;
+};
+
+class GetClonesCmd : public Command {
+public:
+    GetClonesCmd(MonoSceneClass*);
+    virtual ~GetClonesCmd();
+
+    MonoSceneClass* GetOriginal();
+    UList* GetCloneList();
+
+    virtual void Execute();
+    virtual boolean Reversible();
+
+    virtual Command* Copy();
+    virtual ClassId GetClassId();
+    virtual boolean IsA(ClassId);
+private:
+    MonoSceneClass* _orig;
+    UList* _clone;
+};
+
+inline MonoSceneClass* GetClonesCmd::GetOriginal () { return _orig; }
+inline UList* GetClonesCmd::GetCloneList () { return _clone; }
+inline boolean GetClonesCmd::Reversible () { return false; }
 
 class GetFirewallCmd : public Command {
 public:
@@ -151,6 +248,7 @@ inline void GetConflictCmd::SetCTarget (InteractorComp* ctarget) {
 class GetNameVarsCmd : public Command {
 public:
     GetNameVarsCmd(GraphicComp*);
+    virtual ~GetNameVarsCmd();
 
     SubclassNameVar* GetClassNameVar();
     MemberNameVar* GetMemberNameVar();
@@ -159,6 +257,9 @@ public:
     void SetClassNameVar(SubclassNameVar*);
     void SetMemberNameVar(MemberNameVar*);
     void SetInstanceNameVar(InstanceNameVar*);
+
+    void AppendExtras(StateVar*);
+    UList* GetExtras();
 
     virtual void Execute();
     virtual boolean Reversible();
@@ -171,6 +272,7 @@ private:
     SubclassNameVar* _subclass;
     MemberNameVar* _member;
     InstanceNameVar* _instance;
+    UList* _extras;
 };
 
 inline SubclassNameVar* GetNameVarsCmd::GetClassNameVar (){ return _subclass; }
@@ -187,6 +289,7 @@ inline void GetNameVarsCmd::SetMemberNameVar(MemberNameVar* m) {
 inline void GetNameVarsCmd::SetInstanceNameVar(InstanceNameVar* i) {
     _instance = i;
 }
+inline UList* GetNameVarsCmd::GetExtras () { return _extras; }
 inline boolean GetNameVarsCmd::Reversible () { return false; }
 
 class ScanCmd : public Command {
@@ -497,6 +600,8 @@ private:
 
     boolean GenMakeFile(const char*, CodeView*);
     boolean GenIMakeFile(const char*, CodeView*);
+    boolean GenCreatorh(const char*, CodeView*);
+    boolean GenCreatorc(const char*, CodeView*);
     boolean GenDothFile(const char*, CodeView*);
     boolean GenDotcFile(const char*, CodeView*);
     boolean GenPropFile(const char*, CodeView*);
@@ -516,9 +621,12 @@ private:
     OptionDialog* _option;
     UList* _dialogList;
     char _errbuf[CHARBUFSIZE*10];
+    char _dotc[8];
 };
 
-class ExeCmd : public ViewCompCmd {
+class ExeDialog;
+
+class ExeCmd : public Command {
 public:
     ExeCmd(ControlInfo*);
     ExeCmd(Editor* = nil);
@@ -529,6 +637,8 @@ public:
     virtual Command* Copy();
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
+private:
+    ExeDialog* _dialog;
 };
 
 class NewToolCmd : public Command {
@@ -592,6 +702,17 @@ private:
 inline const char* EditCmd::GetOldText() { return _oldtext; }
 inline const char* EditCmd::GetNewText() { return _newtext; }
 
+class IBViewCompCmd : public ViewCompCmd {
+public:
+    IBViewCompCmd(ControlInfo*, FileChooser* = nil);
+    virtual void Execute();
+    static boolean Executing();
+private:
+    static boolean _executing;
+};
+
+inline boolean IBViewCompCmd::Executing () { return _executing; }
+
 class ReorderCmd : public Command {
 public:
     ReorderCmd(ControlInfo*);
@@ -614,6 +735,38 @@ private:
 
 inline Command* ReorderCmd::GetLogCmd () { return _log; }
 inline boolean ReorderCmd::Reversible () { return true; }
+
+class CompCheckCmd : public Command {
+public:
+    CompCheckCmd(IComp*, const char* c, const char* v, const char* g);
+    virtual ~CompCheckCmd();
+
+    void Check(boolean);
+    boolean IsOK();
+    const char* GetCName();
+    const char* GetVName();
+    const char* GetGName();
+    IComp* GetTarget();
+    
+    virtual boolean Reversible();
+    virtual void Execute();
+
+    virtual Command* Copy();
+    virtual ClassId GetClassId();
+    virtual boolean IsA(ClassId);
+private:
+    boolean _ok;
+    IComp* _target;
+    char* _c, *_v, *_g;
+};
+
+inline void CompCheckCmd::Check (boolean ok) { _ok = ok; }
+inline boolean CompCheckCmd::IsOK () { return _ok; }
+inline IComp* CompCheckCmd::GetTarget () { return _target; }
+inline boolean CompCheckCmd::Reversible () { return false; }
+inline const char* CompCheckCmd::GetCName () { return _c; }
+inline const char* CompCheckCmd::GetVName () { return _v; }
+inline const char* CompCheckCmd::GetGName () { return _g; }
 
 #endif
 

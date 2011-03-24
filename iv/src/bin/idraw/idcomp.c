@@ -86,11 +86,11 @@ void PSIdraw::Creator (ostream& out) {
 }
 
 void PSIdraw::Prologue (ostream& out) {
-    PostScriptView::Prologue(out);
-
     out << "%%BeginIdrawPrologue\n";
     ArrowHeader(out);
     out << "%%EndIdrawPrologue\n\n";
+
+    PostScriptView::Prologue(out);
 }
 
 void PSIdraw::GridSpacing (ostream& out) {

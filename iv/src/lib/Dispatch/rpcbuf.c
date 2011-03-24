@@ -24,15 +24,18 @@
 
 #include <Dispatch/rpcbuf.h>
 #include <OS/memory.h>
+#include <OS/types.h>	/* must come before <netinet/in.h> on some systems */
 #include <arpa/inet.h>
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
+#ifndef __DECCXX
 #include <osfcn.h>
-#include <sys/types.h>	/* must come before <netinet/in.h> on some systems */
+#endif
 #include "netinet_in.h"
 #include <stdlib.h>
+#include <stdio.h>
 #include <sys/socket.h>
 
 // I need a pointer to an iostreamb so I can insert and extract values
@@ -160,7 +163,12 @@ rpcbuf* rpcbuf::connect(const char* host, int port) {
     const unsigned long INVALIDADDR = (unsigned long) -1;
     unsigned long hostinetaddr = INVALIDADDR;
     if (isascii(host[0]) && isdigit(host[0])) {
+#ifdef AIXV3
+	/* cast work-around for AIX */
+	hostinetaddr = inet_addr((const int*)host);
+#else
 	hostinetaddr = inet_addr(host);
+#endif
 	name.sin_addr.s_addr = hostinetaddr;
     }
     if (hostinetaddr == INVALIDADDR) {
@@ -358,20 +366,31 @@ void rpcbuf::finish_request() {
     setr(nil);
 }
 
-// Read the length of a still unread request without moving the get
-// pointer and return 0 if the get area holds the rest of the request.
-// Otherwise, return EOF.  Thus the caller avoids extracting a request
-// until it's completely buffered.  The caller must call select() to
-// wait for new input and call rpcbuf::underflow() to enqueue it until
-// the complete request is buffered.
+// Calculate the width of the length field (_actualWidth) and check
+// that all of the length field is in the buffer.  If so, extract the
+// length, move the get pointer back to the beginning of the request,
+// and return 0 if all of the request is in the buffer.  Otherwise,
+// return EOF.  By checking for EOF, the caller avoids extracting a
+// request before it's completely buffered.  The caller must call
+// select() to wait for new input and call rpcbuf::underflow() to
+// enqueue it until the complete request is buffered.
 
 int rpcbuf::read_request() {
     if (!_mystream) {
 	return EOF;
     }
 
+    if (!_actualWidth) {
+	char* orig = pptr();
+	const int length = 0;
+	mystream().width(FIELDWIDTH);
+	mystream() << length;
+	_actualWidth = pptr() - orig;
+	pbump(orig - pptr());
+    }
+
     int navail = in_avail();
-    if (navail <= 0) {
+    if (navail < _actualWidth) {
 	return EOF;
     }
 
@@ -382,17 +401,19 @@ int rpcbuf::read_request() {
 
     if (length <= 0) {
 	error("rpcbuf::read_request: zero or negative length");
-	close();
 	return EOF;
     }
 
     if (length > ebuf() - eback() && !expand_g(length * 2)) {
 	error("rpcbuf::read_request: out of memory");
-	close();
 	return EOF;
     }
 
-    return (length <= navail) ? 0 : EOF;
+    if (navail < length) {
+	return EOF;
+    } else {
+	return 0;
+    }
 }
 
 // Finish the current RPC request if there's nothing to append to it,
@@ -418,12 +439,12 @@ int rpcbuf::overflow(int c) {
     int nwrite = (rptr() >= pbase()) ? rptr() - pbase() : out_waiting();
     int count = 0;
     while (count < nwrite) {
-	int sent = write(_fd, pbase() + count, nwrite - count);
-	if (sent < 0) {
+	int nsent = write(_fd, pbase() + count, nwrite - count);
+	if (nsent < 0) {
 	    sys_error("rpcbuf::overflow: write");
 	    return EOF;
 	}
-	count += sent;
+	count += nsent;
     }
     if (rptr() > pbase()) {
 	Memory::copy(rptr(), pbase(), pptr() - rptr());

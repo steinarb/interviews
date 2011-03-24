@@ -36,7 +36,11 @@
 #include <Unidraw/Components/grview.h>
 #include <Unidraw/Components/psview.h>
 
-#include <InterViews/filechooser.h>
+#include <IV-look/dialogs.h>
+#include <InterViews/session.h>
+#include <InterViews/style.h>
+#include <InterViews/window.h>
+#include <OS/string.h>
 
 #include <osfcn.h>
 #include <stdio.h>
@@ -111,17 +115,17 @@ boolean NewCompCmd::IsA (ClassId id) {
 }
 
 NewCompCmd::NewCompCmd (ControlInfo* c, Component* p) : Command(c) { 
-    _prototype = p; 
+    prototype_ = p; 
 }
 
 NewCompCmd::NewCompCmd (Editor* ed, Component* p) : Command(ed) { 
-    _prototype = p; 
+    prototype_ = p; 
 }
 
-NewCompCmd::~NewCompCmd () { delete _prototype; }
+NewCompCmd::~NewCompCmd () { delete prototype_; }
 
 Command* NewCompCmd::Copy () {
-    Command* copy = new NewCompCmd(CopyControlInfo(), _prototype->Copy());
+    Command* copy = new NewCompCmd(CopyControlInfo(), prototype_->Copy());
     InitCopy(copy);
     return copy;
 }
@@ -129,7 +133,7 @@ Command* NewCompCmd::Copy () {
 void NewCompCmd::Execute () {
     Editor* ed = GetEditor();
     Component* orig = ed->GetComponent();
-    Component* comp = _prototype->Copy();
+    Component* comp = prototype_->Copy();
     CompNameVar* compNameVar = (CompNameVar*) ed->GetState("CompNameVar");
     ModifStatusVar* modifVar = (ModifStatusVar*)ed->GetState("ModifStatusVar");
 
@@ -153,12 +157,12 @@ boolean NewCompCmd::Reversible () { return false; }
 
 void NewCompCmd::Read (istream& in) {
     Command::Read(in);
-    _prototype = unidraw->GetCatalog()->ReadComponent(in);
+    prototype_ = unidraw->GetCatalog()->ReadComponent(in);
 }
 
 void NewCompCmd::Write (ostream& out) {
     Command::Write(out); 
-    unidraw->GetCatalog()->WriteComponent(_prototype, out);
+    unidraw->GetCatalog()->WriteComponent(prototype_, out);
 }
 
 /*****************************************************************************/
@@ -242,14 +246,18 @@ boolean ViewCompCmd::IsA (ClassId id) {
 }
 
 ViewCompCmd::ViewCompCmd (ControlInfo* c, FileChooser* fc) : Command(c) {
-    _dialog = fc;
+    chooser_ = fc;
+    Resource::ref(chooser_);
 }
 
 ViewCompCmd::ViewCompCmd (Editor* ed, FileChooser* fc) : Command(ed) {
-    _dialog = fc;
+    chooser_ = fc;
+    Resource::ref(chooser_);
 }
 
-ViewCompCmd::~ViewCompCmd () { delete _dialog; }
+ViewCompCmd::~ViewCompCmd () {
+    Resource::unref(chooser_);
+}
 
 Command* ViewCompCmd::Copy () {
     Command* copy = new ViewCompCmd(CopyControlInfo());
@@ -259,36 +267,37 @@ Command* ViewCompCmd::Copy () {
 
 void ViewCompCmd::Execute () {
     Editor* ed = GetEditor();
-    ModifStatusVar* modif = (ModifStatusVar*) ed->GetState("ModifStatusVar");
 
     if (OnlyOneEditorOf(ed->GetComponent()) && !ReadyToClose(ed)) {
         return;
     }
 
-    if (_dialog == nil) {
-        char buf[CHARBUFSIZE];
-        const char* domain = unidraw->GetCatalog()->GetAttribute("domain");
-        domain = (domain == nil) ? "component" : domain;
-        sprintf(buf, "Select a %s to open:", domain);
-            
-        _dialog = new FileChooser("", buf, ".", 10, 24, "  OK  ");
+    Style* style;
+    boolean reset_caption = false;
+    if (chooser_ == nil) {
+	style = new Style(Session::instance()->style());
+	chooser_ = DialogKit::instance()->file_chooser(".", style);
+	Resource::ref(chooser_);
+	char buf[CHARBUFSIZE];
+	const char* domain = unidraw->GetCatalog()->GetAttribute("domain");
+	domain = (domain == nil) ? "component" : domain;
+	sprintf(buf, "Select a %s to open:", domain);
+	style->attribute("caption", "");
+	style->attribute("subcaption", buf);
+    } else {
+	style = chooser_->style();
     }
-
-    for (;;) {
-        _dialog->Update();
-        ed->InsertDialog(_dialog);
-        boolean accepted = _dialog->Accept();
-        ed->RemoveDialog(_dialog);
-
-        if (!accepted) {
-            break;
-        }
-        const char* name = _dialog->Choice();
+    while (chooser_->post_for(ed->GetWindow())) {
+        const String* s = chooser_->selected();
+	NullTerminatedString ns(*s);
+	const char* name = ns.string();
         Catalog* catalog = unidraw->GetCatalog();
         GraphicComp* comp;
 
         if (catalog->Retrieve(name, (Component*&) comp)) {
-            ed = GetEditor();
+	    ModifStatusVar* modif = (ModifStatusVar*) ed->GetState(
+		"ModifStatusVar"
+	    );
             Component* orig = ed->GetComponent();
             ed->SetComponent(comp);
             unidraw->Update();
@@ -303,13 +312,15 @@ void ViewCompCmd::Execute () {
                 Component* root = orig->GetRoot();
                 delete root;
             }
-            break;
-
+	    break;
         } else {
-            _dialog->SetTitle("Open failed!");
+	    style->attribute("caption", "Open failed!");
+	    reset_caption = true;
         }
     }
-    _dialog->SetTitle("");
+    if (reset_caption) {
+	style->attribute("caption", "");
+    }
 }
 
 boolean ViewCompCmd::Reversible () { return false; }
@@ -359,10 +370,12 @@ void SaveCompCmd::Execute () {
             domain = (domain == nil) ? "component" : domain;
             sprintf(subtitle, "Save this %s as:", domain);
 
-            FileChooser* fc = new FileChooser(
-                title, subtitle, ".", 10, 24, "  OK  "
-            );
-            SaveCompAsCmd saveCompAs(ed, fc);
+	    Style* s = new Style(Session::instance()->style());
+	    s->attribute("caption", title);
+	    s->attribute("subcaption", subtitle);
+	    s->attribute("open", "Save");
+	    /* BUG: style s is never used!!!! */
+            SaveCompAsCmd saveCompAs(ed);
             saveCompAs.Execute();
         }
     }
@@ -379,14 +392,18 @@ boolean SaveCompAsCmd::IsA (ClassId id) {
 }
 
 SaveCompAsCmd::SaveCompAsCmd (ControlInfo* c, FileChooser* fc) : Command(c) {
-    _dialog = fc;
+    chooser_ = fc;
+    Resource::ref(chooser_);
 }
 
 SaveCompAsCmd::SaveCompAsCmd (Editor* ed, FileChooser* fc) : Command(ed) {
-    _dialog = fc;
+    chooser_ = fc;
+    Resource::ref(chooser_);
 }
 
-SaveCompAsCmd::~SaveCompAsCmd () { delete _dialog; }
+SaveCompAsCmd::~SaveCompAsCmd () {
+    Resource::unref(chooser_);
+}
 
 Command* SaveCompAsCmd::Copy () {
     Command* copy = new SaveCompAsCmd(CopyControlInfo());
@@ -397,25 +414,23 @@ Command* SaveCompAsCmd::Copy () {
 void SaveCompAsCmd::Execute () {
     Editor* ed = GetEditor();
 
-    if (_dialog == nil) {
-        char buf[CHARBUFSIZE];
-        const char* domain = unidraw->GetCatalog()->GetAttribute("domain");
-        domain = (domain == nil) ? "component" : domain;
-        sprintf(buf, "Save this %s as:", domain);
+    char buf[CHARBUFSIZE];
+    const char* domain = unidraw->GetCatalog()->GetAttribute("domain");
+    domain = (domain == nil) ? "component" : domain;
+    sprintf(buf, "Save this %s as:", domain);
 
-        _dialog = new FileChooser("", buf, ".", 10, 24, "  OK  ");
+    boolean reset_caption = false;
+    Style* style = new Style(Session::instance()->style());
+    style->attribute("subcaption", buf);
+    style->attribute("open", "Save");
+    if (chooser_ == nil) {
+	chooser_ = DialogKit::instance()->file_chooser(".", style);
+	Resource::ref(chooser_);
     }
-
-    for (;;) {
-        _dialog->Update();
-        ed->InsertDialog(_dialog);
-        boolean accepted = _dialog->Accept();
-        ed->RemoveDialog(_dialog);
-
-        if (!accepted) {
-            break;
-        }
-        const char* name = _dialog->Choice();
+    while (chooser_->post_for(ed->GetWindow())) {
+	const String* str = chooser_->selected();
+	NullTerminatedString ns(*str);
+        const char* name = ns.string();
         Catalog* catalog = unidraw->GetCatalog();
         boolean ok = true;
 
@@ -430,7 +445,7 @@ void SaveCompAsCmd::Execute () {
             if (confirmation == 'n') {
                 ok = false;
             } else if (confirmation != 'y') {
-                break;
+		break;
             }
         }
         if (ok) {
@@ -439,8 +454,9 @@ void SaveCompAsCmd::Execute () {
             Component* comp = ed->GetComponent();
 
             if (catalog->Exists(name) && !catalog->Writable(name)) {
-                _dialog->SetTitle("Couldn't save! (File not writable.)");
-
+		style->attribute(
+		    "caption", "Couldn't save! (File not writable.)"
+		);
             } else {
                 if (oldname == nil) {
                     comp = comp->GetRoot();
@@ -456,17 +472,19 @@ void SaveCompAsCmd::Execute () {
                     if (mv != nil) mv->SetModifStatus(false);
                     unidraw->ClearHistory(comp);
                     UpdateCompNameVars();
-                    break;
-
+		    break;
                 } else {
                     if (mv != nil) mv->Notify();
                     UpdateCompNameVars();
-                    _dialog->SetTitle("Couldn't save!");
+		    style->attribute("caption", "Couldn't save!");
+		    reset_caption = true;
                 }
             } 
         }
     }
-    _dialog->SetTitle("");
+    if (reset_caption) {
+	style->attribute("caption", "");
+    }
 }
 
 boolean SaveCompAsCmd::Reversible () { return false; }

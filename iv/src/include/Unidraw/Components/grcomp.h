@@ -30,6 +30,8 @@
 
 #include <Unidraw/Components/component.h>
 
+#include <IV-2_6/_enter.h>
+
 class Bitmap;
 class Clipboard;
 class Connector;
@@ -113,6 +115,7 @@ protected:
 class GraphicComps : public GraphicComp {
 public:
     GraphicComps();
+    GraphicComps(Graphic*);
     virtual ~GraphicComps();
 
     virtual void Interpret(Command*);
@@ -143,7 +146,6 @@ public:
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
 protected:
-    GraphicComps(Graphic*);
     GraphicComp* Comp(UList*);
     UList* Elem(Iterator);
 
@@ -158,5 +160,7 @@ protected:
 protected:
     UList* _comps;
 };
+
+#include <IV-2_6/_leave.h>
 
 #endif

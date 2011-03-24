@@ -28,7 +28,10 @@
 #ifndef unidraw_grid_h
 #define unidraw_grid_h
 
-#include <InterViews/defs.h>
+#include <InterViews/enter-scope.h>
+#include <Unidraw/enter-scope.h>
+
+#include <IV-2_6/_enter.h>
 
 class Graphic;
 
@@ -47,5 +50,7 @@ protected:
 protected:
     Graphic* _graphic;
 };
+
+#include <IV-2_6/_leave.h>
 
 #endif

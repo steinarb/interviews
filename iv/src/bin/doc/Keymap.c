@@ -31,8 +31,8 @@
 #include "ItemView.h"
 
 #include <InterViews/event.h>
-#include <InterViews/world.h>
-
+#include <IV-2_6/InterViews/world.h>
+#include <OS/list.h>
 #include <string.h>
 
 class DocKeymapInfo {
@@ -40,8 +40,6 @@ public:
     long _key;
     char* _command;
 };
-
-#include "list.h"
 
 declareList(DocKeymapInfo_List,DocKeymapInfo)
 implementList(DocKeymapInfo_List,DocKeymapInfo)
@@ -92,7 +90,7 @@ DocKeymap::DocKeymap (DocumentViewer* viewer, const char* name) {
 
 DocKeymap::~DocKeymap () {
     while (_info->count() > 0) {
-        DocKeymapInfo& info = _info->item(0);
+        DocKeymapInfo& info = _info->item_ref(0);
         delete info._command;
         _info->remove(0);
     }
@@ -113,7 +111,7 @@ boolean DocKeymap::map (Event& e) {
             key += 256;
         }
         for (long i = 0; i < count; ++i) {
-            DocKeymapInfo& info = _info->item(i);
+            DocKeymapInfo& info = _info->item_ref(i);
             if (info._key == key) {
                 boolean pending_repair;
                 if (view != nil) {

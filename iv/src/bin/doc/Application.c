@@ -32,16 +32,18 @@
 
 #include "properties.h"
 
+#include <InterViews/display.h>
 #include <InterViews/event.h>
-#include <InterViews/world.h>
+#include <InterViews/session.h>
+#include <InterViews/style.h>
+#include <OS/list.h>
+#include <OS/string.h>
+#include <OS/types.h>
 
 #include <fstream.h>
 #include <strstream.h>
 #include <string.h>
-#ifndef __GNUC__
 #include <stdlib.h>
-#endif
-#include <sys/types.h>
 #include <sys/stat.h>
 
 static int DEFAULT_SIZE_HINT = 1000;
@@ -55,8 +57,6 @@ public:
     char* _icon_name;
 };
 
-#include "list.h"
-
 declareList(ApplicationViewerInfo_List,ApplicationViewerInfo)
 implementList(ApplicationViewerInfo_List,ApplicationViewerInfo)
 
@@ -65,7 +65,7 @@ static int viewer_info(
 ) {
     long count = viewers->count();
     for (long i = 0; i < count; ++i) {
-        ApplicationViewerInfo& info = viewers->item(i);
+        ApplicationViewerInfo& info = viewers->item_ref(i);
         if (info._viewer == viewer) {
             return i;
         }
@@ -74,7 +74,7 @@ static int viewer_info(
 }
 
 Application::Application () {
-    _world = World::current();
+    _session = Session::instance();
     _viewer = new ApplicationViewerInfo_List;
 }
 
@@ -82,54 +82,55 @@ Application::~Application () {
     delete _viewer;
 }
 
-void Application::run () {
-    Event e;
-    while (_viewer->count() > 0) {
-        _world->read(e);
-        e.handle();
-    }
-}
-
 const char* Application::choose (
     DocumentViewer* viewer, const char* prompt, const char* filter
 ) {
-    ApplicationViewerInfo& info = _viewer->item(viewer_info(viewer, _viewer));
-    info._viewer->raise();
+    ApplicationViewerInfo& info = _viewer->item_ref(
+	viewer_info(viewer, _viewer)
+    );
+    raise_for_post(info);
     return info._dialogs->choose(info._viewer, prompt, filter);
 }
 
 const char* Application::ask (
     DocumentViewer* viewer, const char* prompt, const char* initial
 ) {
-    ApplicationViewerInfo& info = _viewer->item(viewer_info(viewer, _viewer));
-    info._viewer->raise();
+    ApplicationViewerInfo& info = _viewer->item_ref(
+	viewer_info(viewer, _viewer)
+    );
+    raise_for_post(info);
     return info._dialogs->ask(info._viewer, prompt, initial);
 }
 
 int Application::confirm (DocumentViewer* viewer, const char* prompt) {
-    ApplicationViewerInfo& info = _viewer->item(viewer_info(viewer, _viewer));
-    info._viewer->raise();
+    ApplicationViewerInfo& info = _viewer->item_ref(
+	viewer_info(viewer, _viewer)
+    );
+    raise_for_post(info);
     return info._dialogs->confirm(info._viewer, prompt);
 }
 
 void Application::report (DocumentViewer* viewer, const char* prompt) {
-    ApplicationViewerInfo& info = _viewer->item(viewer_info(viewer, _viewer));
-    info._viewer->raise();
+    ApplicationViewerInfo& info = _viewer->item_ref(
+	viewer_info(viewer, _viewer)
+    );
+    raise_for_post(info);
     info._dialogs->report(info._viewer, prompt);
 }
 
 void Application::complain (DocumentViewer* viewer, const char* prompt) {
-    const char* complaint = _world->property_value(COMPLAINT_MODE);
-    if (complaint == nil) {
-        _world->RingBell(10);
-    } else if (strcmp(complaint, "report") == 0) {
-        report(viewer, prompt);
-    } else if (strcmp(complaint, "bell") == 0) {
-        _world->RingBell(10);
-    } else if (strcmp(complaint, "ignore") == 0) {
-        ;
-    } else {
-        _world->RingBell(10);
+    boolean ring = true;
+    String complaint_mode;
+    if (_session->style()->find_attribute(COMPLAINT_MODE, complaint_mode)) {
+	if (complaint_mode == "report") {
+	    report(viewer, prompt);
+	    ring = false;
+	} else if (complaint_mode == "ignore") {
+	    ring = false;
+	}
+    }
+    if (ring) {
+	_session->default_display()->ring_bell(10);
     }
 }
 
@@ -146,7 +147,7 @@ void Application::open (DocumentViewer* viewer) {
         info._icon_name = nil;
         _viewer->append(info);
     }
-    ApplicationViewerInfo& info = _viewer->item(index);
+    ApplicationViewerInfo& info = _viewer->item_ref(index);
     const char* name = viewer->document()->name();
     if (info._window_name == nil || strcmp(info._window_name, name) != 0) {
         delete info._window_name;
@@ -160,8 +161,13 @@ void Application::open (DocumentViewer* viewer) {
                 icon_name = name;
             }
             info._icon_name = strcpy(new char[strlen(name) + 1], name);
-            info._viewer->name(info._window_name);
-            info._viewer->icon_name(info._icon_name);
+	    Style* s = info._viewer->style();
+	    if (s == nil) {
+		s = new Style(Session::instance()->style());
+		info._viewer->style(s);
+	    }
+	    s->attribute("name", info._window_name);
+	    s->attribute("iconName", info._icon_name);
         } else {
             info._window_name = nil;
             info._icon_name = nil;
@@ -172,18 +178,23 @@ void Application::open (DocumentViewer* viewer) {
 void Application::close (DocumentViewer* viewer) {
     int index = viewer_info(viewer, _viewer);
     if (index >= 0) {
-        ApplicationViewerInfo& info = _viewer->item(index);
+        ApplicationViewerInfo& info = _viewer->item_ref(index);
         info._viewer->unmap();
         info._viewer->unref();
         delete info._dialogs;
         delete info._window_name;
         delete info._icon_name;
         _viewer->remove(index);
+	if (_viewer->count() == 0) {
+	    _session->quit();
+	}
     }
 }
 
 Document* Application::read (const char* file_name) {
     Document* document = nil;
+    String doc_version;
+    _session->style()->find_attribute(VERSION, doc_version);
     struct stat filestats;
     if (strlen(file_name) > 0 && stat(file_name, &filestats) == 0) {
         ifstream in(file_name);
@@ -195,8 +206,8 @@ Document* Application::read (const char* file_name) {
         if (
             version == nil
             || (
-                strncmp(version, MAGIC, l) == 0
-                && strcmp(version + l, _world->property_value(VERSION))==0
+                strncmp(version, MAGIC, l) == 0 &&
+		doc_version == (version + l)
             )
         ) {
             document = new Document(this, int(filestats.st_size));
@@ -204,12 +215,16 @@ Document* Application::read (const char* file_name) {
         }
     } else {
         document = new Document(this, DEFAULT_SIZE_HINT);
+	NullTerminatedString doc_version_0(doc_version);
         strstream empty;
         empty << MAGIC;
-        empty << _world->property_value(VERSION);
+        empty << doc_version_0.string();
         empty << "\n";
         empty << "\\documentstyle{";
-        empty << _world->property_value(DEFAULT_STYLE);
+	String default_style;
+	_session->style()->find_attribute(DEFAULT_STYLE, default_style);
+	NullTerminatedString default_style_0(default_style);
+        empty << default_style_0.string();
         empty << "}\n";
         empty.seekg(0);
         document->read(empty);
@@ -222,9 +237,12 @@ Document* Application::read (const char* file_name) {
 }
 
 void Application::write (Document* document, const char* name) {
+    String doc_version;
+    _session->style()->find_attribute(VERSION, doc_version);
+    NullTerminatedString doc_version_0(doc_version);
     ofstream out(name);
     out << MAGIC;
-    out << _world->property_value(VERSION);
+    out << doc_version_0.string();
     out << "\n";
     document->write(out);
     document->touch(false);
@@ -273,7 +291,7 @@ boolean Application::command (const char* command) {
         if (strcmp(keyword, "quit") == 0) {
             long count = _viewer->count();
             for (long i = count-1; i >= 0; --i) {
-                ApplicationViewerInfo& info = _viewer->item(i);
+                ApplicationViewerInfo& info = _viewer->item_ref(i);
                 info._viewer->ref();
                 info._viewer->command("viewer close");
                 info._viewer->unref();
@@ -282,4 +300,10 @@ boolean Application::command (const char* command) {
         }
     }
     return false;
+}
+
+void Application::raise_for_post(ApplicationViewerInfo& info) {
+    if (_session->style()->value_is_on(AUTORAISE_ON_POST)) {
+        info._viewer->raise();
+    }
 }

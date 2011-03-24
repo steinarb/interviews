@@ -1,5 +1,5 @@
 #include "Plotter.h"
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/_enter.h>
 
 Plotter::Plotter(
     const char* name, Graphic* gr

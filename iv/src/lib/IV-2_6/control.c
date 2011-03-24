@@ -26,9 +26,9 @@
  * Implementation of control classes
  */
 
-#include <IV-look/2.6/InterViews/control.h>
-#include <InterViews/2.6/InterViews/message.h>
-#include <InterViews/sensor.h>
+#include <IV-2_6/InterViews/control.h>
+#include <IV-2_6/InterViews/message.h>
+#include <IV-2_6/InterViews/sensor.h>
 
 /** class Control **/
 

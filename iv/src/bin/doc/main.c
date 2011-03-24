@@ -26,7 +26,9 @@
 
 #include "properties.h"
 
-#include <InterViews/world.h>
+#include <InterViews/session.h>
+#include <InterViews/style.h>
+#include <OS/string.h>
 
 #include <stdio.h>
 
@@ -54,8 +56,14 @@ const char* DEFAULT_TABULAR_KEYMAP = "default_tabular_keymap";
 const char* DEFAULT_ENCODED_KEYMAP = "default_encoded_keymap";
 const char* DEFAULT_VERBATIM_KEYMAP = "default_verbatim_keymap";
 const char* COMPLAINT_MODE = "complaint_mode";
+const char* USER_INTERFACE_STYLE = "user_interface_style";
+const char* AUTORAISE_ON_POST = "autoraise_on_post";
+const char* PAGE_BACKGROUND_COLOR = "page_background_color";
 
 static PropertyData props[] = {
+    { "*page_background_color", "white" },
+    { "*autoraise_on_post", "off" },
+    { "*user_interface_style", "default" },
     { "*active_highlight_color", "" },
     { "*default_style", "article" },
     { "*document_file_extension", "doc" },
@@ -117,11 +125,19 @@ static OptionDesc options[] = {
 };
 
 int main (int argc, char** argv) {
-    World* world = new World("Doc", argc, argv, options, props);
+    Session* session = new Session("Doc", argc, argv, options, props);
+    Style* style = session->style();
     Application* application = new Application();
 
-    const char* doc_path = world->property_value(DOCUMENT_PATH);
-    const char* doc_ext = world->property_value(DOCUMENT_FILE_EXTENSION);
+    String doc_path_string;
+    style->find_attribute(DOCUMENT_PATH, doc_path_string);
+    NullTerminatedString doc_path_ntstring(doc_path_string);
+    const char* doc_path = doc_path_ntstring.string();
+
+    String doc_ext_string;
+    style->find_attribute(DOCUMENT_FILE_EXTENSION, doc_ext_string);
+    NullTerminatedString doc_ext_ntstring(doc_ext_string);
+    const char* doc_ext = doc_ext_ntstring.string();
 
     if (argc > 1) {
         char name[256];
@@ -147,9 +163,5 @@ int main (int argc, char** argv) {
         application->open(new DocumentViewer(application, document));
     }
 
-    application->run();
-
-    delete application;
-    delete world;
-    return 0;
+    return session->run();
 }

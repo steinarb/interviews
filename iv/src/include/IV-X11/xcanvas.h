@@ -52,9 +52,9 @@ public:
     Coord width_;
     Coord curx_;
     Coord cury_;
-    int index_;
-    int spaces_;
     char* text_;
+    char* cur_text_;
+    int spaces_;
     XTextItem* items_;
 };
 
@@ -62,9 +62,9 @@ class PathRenderInfo {
 public:
     Coord curx_;
     Coord cury_;
-    int index_;
-    int size_;
     XPoint* point_;
+    XPoint* cur_point_;
+    XPoint* end_point_;
 };
 
 class CanvasRep {
@@ -74,11 +74,12 @@ public:
     XDrawable xdrawable_;
     Coord width_;
     Coord height_;
-    unsigned int pwidth_;
-    unsigned int pheight_;
+    PixelCoord pwidth_;
+    PixelCoord pheight_;
 
     boolean damaged_ : 1;
     boolean on_damage_list_ : 1;
+    boolean repairing_ : 1;
     CanvasDamage damage_;
 
     XDrawable drawbuffer_;
@@ -100,6 +101,8 @@ public:
     XFontStruct* xfont_;
     boolean text_twobyte_;
     boolean text_reencode_;
+    boolean font_is_scaled_;
+    boolean transformed_;
     TransformerStack* transformers_;
     ClippingStack* clippers_;
 

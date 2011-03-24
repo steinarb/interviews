@@ -26,8 +26,8 @@
  * Rubberbanding lines.
  */
 
-#include <InterViews/2.6/InterViews/rubline.h>
-#include <InterViews/2.6/InterViews/painter.h>
+#include <IV-2_6/InterViews/rubline.h>
+#include <IV-2_6/InterViews/painter.h>
 #include <OS/math.h>
 #include <math.h>
 #include <stdlib.h>

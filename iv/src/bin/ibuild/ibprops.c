@@ -22,7 +22,6 @@
 
 /*
  * Implementation of Props and PropsEditor.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibprops.c,v 1.2 91/09/27 14:11:22 tang Exp $
  */
 
 #include "ibprops.h"

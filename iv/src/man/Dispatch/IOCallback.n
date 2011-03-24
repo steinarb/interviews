@@ -12,10 +12,10 @@ on a file descriptor, or handle a timer's expiration can reside in any
 arbitrary class rather than in the iohandler.
 .SH MACROS
 .TP
-.B "IOCallbackdeclare(T)"
+.B "declareIOCallback(T)"
 Declare an iocallback type for the given class type T.
 .TP
-.B "IOCallbackimplement(T)"
+.B "implementIOCallback(T)"
 Emit code at this point to implement the iocallback's member
 functions.
 .TP

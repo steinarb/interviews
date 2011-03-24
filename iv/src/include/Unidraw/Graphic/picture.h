@@ -29,6 +29,8 @@
 
 #include <Unidraw/Graphic/graphic.h>
 
+#include <IV-2_6/_enter.h>
+
 class Picture : public FullGraphic {
 public:
     Picture(Graphic* gr = nil);
@@ -83,5 +85,7 @@ protected:
 private:
     Extent* _extent;
 };
+
+#include <IV-2_6/_leave.h>
 
 #endif

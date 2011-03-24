@@ -23,7 +23,6 @@
 /*
  * CodeView base class for generating a C++ external representation
  * and subclasses for interactor components.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibcode.h,v 1.2 91/09/27 14:13:14 tang Exp $
  */
 
 #ifndef ibcode_h
@@ -39,7 +38,7 @@ class UList;
 class MemberNameVar;
 
 
-declareList(CharStringList,char*);
+declarePtrList(CharStringList,char)
 
 class StringList {
 public:
@@ -54,7 +53,6 @@ private:
 
 class CodeView : public PreorderView {
 public:
-    CodeView(GraphicComp* = nil);
     virtual ~CodeView();
 
     virtual boolean Definition(ostream&);
@@ -71,6 +69,8 @@ public:
     boolean GenMainFile(const char*, ostream&);
     boolean GenCorehFile(const char*, ostream&);
     boolean GenCorecFile(const char*, ostream&);
+    boolean GenCreatorh(const char*, ostream&);
+    boolean GenCreatorc(const char*, ostream&);
 
     virtual ExternView* GetView(Iterator);
     virtual void SetView(ExternView*, Iterator&);
@@ -83,7 +83,13 @@ public:
 
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
+
+    boolean IsUnidraw();
+    boolean IsSubUnidraw();
 protected:
+    CodeView(GraphicComp* = nil);
+
+    boolean Align(Alignment, ostream&);
     boolean Search(MemberNameVar*, InteractorComp*&);
     boolean Scan(ClassId);
 
@@ -100,6 +106,10 @@ protected:
     void CleanUp();
 
     boolean AllKidsDefined();
+
+    boolean CentralEmitter(ostream&, boolean&, const char*);
+    boolean CentralEmitter(CodeView*, ostream&, boolean&, const char*);
+
     boolean EmitCorehHeader(ostream&);
     boolean EmitExpHeader(ostream&);
 
@@ -115,6 +125,10 @@ protected:
     boolean EmitFunctionInits(CodeView*, ostream&);
     boolean EmitClassDecls(ostream&);
 
+    boolean EmitCreatorHeader(ostream&);
+    boolean EmitCreatorSubj(ostream&);
+    boolean EmitCreatorView(ostream&);
+
     boolean EmitClassInits(ostream&);
     boolean EmitClassHeaders(ostream&);
     boolean EmitHeaders(ostream&);
@@ -126,16 +140,33 @@ protected:
     boolean EmitSlider(ostream&);
     boolean Iterate(ostream&);
 
+    boolean CheckToEmitHeader(ostream&, const char*);
+    boolean CheckToEmitClassHeader(ostream&, const char*);
+
+    boolean DeclsTemplate(ostream&, const char*, const char*);
     void GetCoreClassName(char*);
 
     virtual boolean CoreConstDecls(ostream&);
     virtual boolean CoreConstInits(ostream&);
     virtual boolean ConstDecls(ostream&);
     virtual boolean ConstInits(ostream&);
+
+    virtual boolean BSCoreConstDecls(ostream&);
+    virtual boolean BSCoreConstInits(ostream&);
+    virtual boolean BSConstDecls(ostream&);
+    virtual boolean BSConstInits(ostream&);
+
+    virtual boolean CSCoreConstDecls(ostream&);
+    virtual boolean CSCoreConstInits(ostream&);
+    virtual boolean CSConstDecls(ostream&);
+    virtual boolean CSConstInits(ostream&);
+
     virtual boolean EmitIncludeHeaders(ostream&);
 
     boolean WriteGraphicDecls(Graphic*, ostream&);
     boolean WriteGraphicInits(Graphic*, ostream&);
+
+    const char* GetFirewall();
 protected:
     boolean _lock;
     UList* _views;
@@ -145,6 +176,9 @@ protected:
     static boolean _emitBSInits;
     static boolean _emitExpHeader;
     static boolean _emitCorehHeader;
+    static boolean _emitCreatorHeader;
+    static boolean _emitCreatorSubj;
+    static boolean _emitCreatorView;
 
     static boolean _emitInstanceDecls;
     static boolean _emitInstanceInits;
@@ -177,14 +211,53 @@ protected:
     static StringList* _fontlist;
     static StringList* _patternlist;
 
-    static char _errbuf[CHARBUFSIZE*10];
     static const char* _classname;
+    static boolean _unidraw;
+    static boolean _subunidraw;
+
+    static char _errbuf[CHARBUFSIZE*10];
+    static int _err_count;
 };
+
+inline boolean CodeView::IsUnidraw () { return _unidraw; }
+inline boolean CodeView::IsSubUnidraw () { return _subunidraw; }
 
 class RootCodeView : public CodeView {
 public:
     RootCodeView(GraphicComp* = nil);
     virtual ~RootCodeView();
+};
+
+class GraphicCodeView : public CodeView {
+public:
+    virtual ClassId GetClassId();
+    virtual boolean IsA(ClassId);
+
+    virtual boolean Definition(ostream&);
+
+    virtual void Update();
+    IComp* GetIComp();
+protected:
+    virtual boolean CCoreConstDecls(ostream&);
+    virtual boolean CCoreConstInits(ostream&);
+    virtual boolean CConstDecls(ostream&);
+    virtual boolean CConstInits(ostream&);
+
+    virtual boolean VCoreConstDecls(ostream&);
+    virtual boolean VCoreConstInits(ostream&);
+    virtual boolean VConstDecls(ostream&);
+    virtual boolean VConstInits(ostream&);
+
+    virtual boolean GCoreConstDecls(ostream&);
+    virtual boolean GCoreConstInits(ostream&);
+    virtual boolean GConstDecls(ostream&);
+    virtual boolean GConstInits(ostream&);
+
+    virtual const char* GetGHeader();
+    virtual const char* GetCVHeader();
+    virtual boolean EmitIncludeHeaders(ostream&);
+
+    GraphicCodeView(IComp* = nil);
 };
 
 #endif

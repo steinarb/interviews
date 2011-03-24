@@ -35,7 +35,7 @@
 #include "properties.h"
 
 #include <InterViews/event.h>
-#include <InterViews/world.h>
+#include <IV-2_6/InterViews/world.h>
 #include <OS/math.h>
 #include <ctype.h>
 #include <string.h>
@@ -543,6 +543,22 @@ boolean TextView::command (const char* command) {
         }
         if (keyword == nil) {
             cancelled = true;
+        } else if (strcmp(keyword, "verbatim") == 0) {
+            const char* file = _viewer->application()->choose(
+                _viewer, "Insert text from file:", nil
+            );
+            if (file == nil) {
+                cancelled = true;
+            } else {
+                scratch << "\\begin{verbatim}\n";
+                if (strlen(file) == 0) {
+                    scratch << "<verbatim text>\n";
+                } else {
+                    ifstream in(file);
+                    scratch << in.rdbuf();
+                }
+                scratch << "\\end{verbatim}%\n";
+            }
         } else if (strcmp(keyword, "import") == 0) {
             const char* file = _viewer->application()->choose(
                 _viewer, "Import text from file:", nil

@@ -30,6 +30,8 @@
 
 #include <Unidraw/Components/compview.h>
 
+#include <IV-2_6/_enter.h>
+
 class ConnectorView;
 class Event;
 class Manipulator;
@@ -149,5 +151,7 @@ protected:
 protected:
     UList* _views;
 };
+
+#include <IV-2_6/_leave.h>
 
 #endif

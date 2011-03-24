@@ -30,25 +30,23 @@
 #include "Document.h"
 #include "DocViewer.h"
 #include "InsertMarker.h"
-#include "PageButton.h"
 #include "TextItem.h"
 
 #include "codes.h"
+#include "doc-composition.h"
+#include "doc-listener.h"
+#include "doc-target.h"
 #include "properties.h"
 
 #include <InterViews/arraycomp.h>
 #include <InterViews/background.h>
-#include <InterViews/composition.h>
-#include <InterViews/discretion.h>
 #include <InterViews/hit.h>
-#include <InterViews/listener.h>
+#include <InterViews/layout.h>
 #include <InterViews/lrmarker.h>
 #include <InterViews/patch.h>
 #include <InterViews/simplecomp.h>
-#include <InterViews/strut.h>
-#include <InterViews/target.h>
 #include <InterViews/texcomp.h>
-#include <InterViews/world.h>
+#include <IV-2_6/InterViews/world.h>
 #include <OS/math.h>
 #include <stdio.h>
 #include <string.h>
@@ -67,19 +65,21 @@ PagingView::PagingView (
     }
     _column_count = long(document->document_metric("columns"));
 
+    const LayoutKit& layout = *LayoutKit::instance();
+
     _columns = new LRComposition(
         pages,
         new ArrayCompositor(2 * _column_count),
-        new HStrut(textwidth, 0, 0, 0, 0),
+        layout.hstrut(textwidth, 0, 0, 0, 0),
         textwidth, 20
     );
     _lines = new TBComposition(
         _columns,
         new TeXCompositor(int(document->document_metric("pagepenalty"))),
-        new Discretionary(
+        layout.discretionary(
             0,
-            new VStrut(0, textheight, gutter, 0, 0),
-            new VStrut(0, textheight, 0, 0, 0), nil, nil
+            layout.vstrut(0, textheight, gutter, 0, 0),
+            layout.vstrut(0, textheight, 0, 0, 0), nil, nil
         ),
         textheight, _text->item_count() / 30
     );
@@ -96,8 +96,8 @@ PagingView::PagingView (
 
     Glyph* g = _text_patch;
     _select_marker = new LRMarker*[_column_count];
-    Color* ol;
-    Color* ul;
+    const Color* ol;
+    const Color* ul;
     _viewer->highlight_colors(SELECT_HIGHLIGHT_COLOR, ol, ul);
     for (long c = 0; c < _column_count; ++c) {
         _select_marker[c] = new LRMarker(g, ol, ul);
@@ -162,7 +162,7 @@ void PagingView::item_replaced (long index, long count) {
         if (item == nil) {
             g = document->character(_text->item_code(i), _text->item_style(i));
         } else {
-            g = new Target(item->view(this, _viewer), TargetCharacterHit);
+            g = new DocTarget(item->view(this, _viewer));
         }
         g->ref();
         _characters->replace(i, nil);
@@ -180,7 +180,7 @@ void PagingView::item_inserted (long index, long count) {
         if (item == nil) {
             g = document->character(_text->item_code(i), _text->item_style(i));
         } else {
-            g = new Target(item->view(this, _viewer), TargetCharacterHit);
+            g = new DocTarget(item->view(this, _viewer));
         }
         _characters->insert(i, g);
     }

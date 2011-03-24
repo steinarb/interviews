@@ -38,7 +38,7 @@ void set_child_process_group() { setpgrp(); }
 
 #ifdef ultrix
 
-#include <sys/types.h>
+#include <OS/types.h>
 
 extern "C" {
     extern int setpgrp(int, int);
@@ -51,7 +51,7 @@ void set_child_process_group() { setpgrp(0, getpid()); }
 
 extern "C" {
     extern int setpgrp(int, int);
-};
+}
 
 void set_child_process_group() { setpgrp(0, 0); }
 

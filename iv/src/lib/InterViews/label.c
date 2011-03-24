@@ -39,6 +39,7 @@ Label::Label(const String& s, const Font* f, const Color* c) : Glyph() {
     Resource::ref(font_);
     color_ = c;
     Resource::ref(color_);
+    compute_metrics();
 }
 
 Label::Label(const char* text, const Font* f, const Color* c) : Glyph() {
@@ -47,6 +48,7 @@ Label::Label(const char* text, const Font* f, const Color* c) : Glyph() {
     Resource::ref(font_);
     color_ = c;
     Resource::ref(color_);
+    compute_metrics();
 }
 
 Label::Label(
@@ -57,59 +59,68 @@ Label::Label(
     Resource::ref(font_);
     color_ = c;
     Resource::ref(color_);
+    compute_metrics();
 }
 
 Label::~Label() {
     delete text_;
     Resource::unref(font_);
     Resource::unref(color_);
+    delete char_widths_;
+}
+
+void Label::compute_metrics() {
+    const Font* f = font_;
+    const char* str = text_->string();
+    int len = text_->length();
+    FontBoundingBox b;
+    f->string_bbox(str, len, b);
+    ascent_ = b.font_ascent();
+    descent_ = b.font_descent();
+    left_ = b.left_bearing();
+    right_ = b.right_bearing();
+    width_ = b.width();
+    char_widths_ = new Coord[len];
+    for (int i = 0; i < len; i++) {
+	char_widths_[i] = f->width(((u_char*)str)[i]);
+    }
 }
 
 void Label::request(Requisition& requisition) const {
-    const Font* f = font_;
-    Coord width = f->width(text_->string(), text_->length());
-    Coord ascent = f->ascent();
-    Coord descent = f->descent();
-    Coord height = ascent + descent;
-    float alignment = (height == 0) ? 0 : descent / height;
-    Requirement rx(width, 0, 0, 0);
+    Coord height = ascent_ + descent_;
+    float alignment = (height == 0) ? 0 : descent_ / height;
+    Requirement rx(width_, 0, 0, 0);
     Requirement ry(height, 0, 0, alignment);
     requisition.require(Dimension_X, rx);
     requisition.require(Dimension_Y, ry);
 }
 
-void Label::allocate(Canvas*, const Allocation& a, Extension& ext) {
-    const Font* f = font_;
-    const char* str = text_->string();
-    int len = text_->length();
+void Label::allocate(Canvas* c, const Allocation& a, Extension& ext) {
     Coord x = a.x();
     Coord y = a.y();
-    ext.xy_extents(
-	x - f->left_bearing(str, len), x + f->right_bearing(str, len),
-	y - f->descent(str, len), y + f->ascent(str, len)
-    );
+    ext.set_xy(c, x - left_, y - descent_, x + right_, y + ascent_);
 }
 
-void Label::draw(Canvas* canvas, const Allocation& a) const {
-    if (canvas != nil) {
-        Coord x = a.x();
-        Coord y = a.y();
-        const Font* f = font_;
-        const Color* c = color_;
-	const char* p = text_->string();
-        const char* q = &p[text_->length()];
-        for (; p < q; p++) {
-            Coord width = f->width(*p);
-            canvas->character(f, *p, width, c, x, y);
-            x += width;
-        }
+void Label::draw(Canvas* c, const Allocation& a) const {
+    Coord x = a.x();
+    Coord y = a.y();
+    const Font* f = font_;
+    const Color* color = color_;
+    const char* p = text_->string();
+    const char* q = &p[text_->length()];
+    Coord* cw = &char_widths_[0];
+    for (; p < q; p++, cw++) {
+	Coord width = *cw;
+	c->character(f, *p, width, color, x, y);
+	x += width;
     }
 }
 
 void Label::pick(Canvas*, const Allocation& a, int depth, Hit& h) {
     Coord x = h.left();
-    Coord y = h.bottom();
-    if (x >= a.left() && x < a.right() && y >= a.bottom() && y < a.top()) {
+    if (h.right() >= a.left() && x < a.right() &&
+	h.top() >= a.bottom() && h.bottom() < a.top()
+    ) {
         int index = font_->index(
 	    text_->string(), text_->length(), x - a.x(), true
 	);

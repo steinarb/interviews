@@ -3,7 +3,7 @@
 #include <Unidraw/Components/grcomp.h> 
 #include "Pie.h"
 #include <stdio.h>
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/_enter.h>
 
 Pie::Pie(const char* name) : Pie_core(name) {
     _accum = 0.0;

@@ -44,3 +44,6 @@ extern const char* DEFAULT_TABULAR_KEYMAP;
 extern const char* DEFAULT_ENCODED_KEYMAP;
 extern const char* DEFAULT_VERBATIM_KEYMAP;
 extern const char* COMPLAINT_MODE;
+extern const char* USER_INTERFACE_STYLE;
+extern const char* AUTORAISE_ON_POST;
+extern const char* PAGE_BACKGROUND_COLOR;

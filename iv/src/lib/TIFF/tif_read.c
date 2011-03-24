@@ -1,10 +1,10 @@
 #ifndef lint
-static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_read.c,v 1.38 91/08/19 14:40:46 sam Exp $";
+static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_read.c,v 1.43 92/02/10 19:06:41 sam Exp $";
 #endif
 
 /*
- * Copyright (c) 1988, 1989, 1990, 1991 Sam Leffler
- * Copyright (c) 1991 Silicon Graphics, Inc.
+ * Copyright (c) 1988, 1989, 1990, 1991, 1992 Sam Leffler
+ * Copyright (c) 1991, 1992 Silicon Graphics, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and 
  * its documentation for any purpose is hereby granted without fee, provided
@@ -142,6 +142,7 @@ TIFFReadEncodedStrip(tif, strip, buf, size)
 	u_int size;
 {
 	TIFFDirectory *td = &tif->tif_dir;
+	u_int stripsize = TIFFStripSize(tif);
 
 	if (!TIFFCheckRead(tif, 0))
 		return (-1);
@@ -150,10 +151,14 @@ TIFFReadEncodedStrip(tif, strip, buf, size)
 		    strip, td->td_nstrips);
 		return (-1);
 	}
+	/*
+	 * Calculate the strip size according to the number of
+	 * rows in the strip (check for truncated last strip).
+	 */
 	if (size == (u_int)-1)
-		size = td->td_rowsperstrip * tif->tif_scanlinesize;
-	else if (size > td->td_rowsperstrip * tif->tif_scanlinesize)
-		size = td->td_rowsperstrip * tif->tif_scanlinesize;
+		size = stripsize;
+	else if (size > stripsize)
+		size = stripsize;
 	return (TIFFFillStrip(tif, strip) && 
     (*tif->tif_decodestrip)(tif, buf, size, strip / td->td_stripsperimage) ?
 	    size : -1);
@@ -180,9 +185,7 @@ TIFFReadRawStrip(tif, strip, buf, size)
 		return (-1);
 	}
 	bytecount = td->td_stripbytecount[strip];
-	if (size == (u_int)-1)
-		size = bytecount;
-	else if (bytecount > size)
+	if (size != (u_int)-1 && size < bytecount)
 		bytecount = size;
 	return (TIFFReadRawStrip1(tif, strip, buf, bytecount, module));
 }
@@ -256,6 +259,12 @@ TIFFFillStrip(tif, strip)
 			free(tif->tif_rawdata);
 		tif->tif_flags &= ~TIFF_MYBUFFER;
 		if (td->td_stripoffset[strip] + bytecount > tif->tif_size) {
+			/*
+			 * This error message might seem strange, but it's
+			 * what would happen if a read were done instead.
+			 */
+			TIFFError(module, "%s: Read error on strip %d",
+			    tif->tif_name, strip);
 			tif->tif_curstrip = -1;		/* unknown state */
 			return (0);
 		}
@@ -373,9 +382,7 @@ TIFFReadRawTile(tif, tile, buf, size)
 		return (-1);
 	}
 	bytecount = td->td_stripbytecount[tile];
-	if (size == (u_int)-1)
-		size = bytecount;
-	else if (bytecount > size)
+	if (size != (u_int)-1 && size < bytecount)
 		bytecount = size;
 	return (TIFFReadRawTile1(tif, tile, buf, bytecount, module));
 }

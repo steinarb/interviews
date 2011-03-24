@@ -31,6 +31,8 @@
 #include <Unidraw/Components/grview.h>
 #include <Unidraw/Components/psview.h>
 
+#include <IV-2_6/_enter.h>
+
 class Connector;
 class Line;
 
@@ -109,5 +111,7 @@ public:
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
 };
+
+#include <IV-2_6/_leave.h>
 
 #endif

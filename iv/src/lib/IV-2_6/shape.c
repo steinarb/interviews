@@ -26,7 +26,7 @@
  * Shape constructors
  */
 
-#include <InterViews/2.6/InterViews/shape.h>
+#include <IV-2_6/InterViews/shape.h>
 
 Shape::Shape () {
     SetUndefined();

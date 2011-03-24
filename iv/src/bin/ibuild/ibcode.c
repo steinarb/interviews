@@ -22,7 +22,6 @@
 
 /*
  * Implementation of CodeView and subclasses.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibcode.c,v 1.2 91/09/27 14:07:29 tang Exp $
  */
 
 #include "ibclasses.h"
@@ -40,10 +39,8 @@
 #include <Unidraw/Components/grcomp.h>
 #include <Unidraw/Graphic/graphic.h>
 #include <Unidraw/Graphic/pspaint.h>
-
 #include <InterViews/shape.h>
 #include <InterViews/transformer.h>
-
 #include <osfcn.h>
 #include <stdlib.h>
 #include <stream.h>
@@ -55,7 +52,9 @@ char* FilterName (const char* name) {
     char* copy = strnew(name);
     char* tmp = copy;
     
-    for(tmp = strpbrk(tmp, ".*-#"); tmp != nil; tmp = strpbrk(++tmp, ".*-#")){
+    for(
+        tmp = strpbrk(tmp, " .*-#"); tmp != nil; tmp = strpbrk(++tmp, " .*-#")
+    ){
         *tmp = '_';
     }
     return copy;
@@ -63,7 +62,7 @@ char* FilterName (const char* name) {
 
 /*****************************************************************************/
 
-implementList(CharStringList,char*);
+implementPtrList(CharStringList,char)
 
 StringList::StringList () { }
 
@@ -125,6 +124,11 @@ RootCodeView::RootCodeView (GraphicComp* subj) : CodeView(subj) {
     _scope = false;
     _emitGraphicState = false;
     _emitGraphicComp = false;
+    _emitCreatorHeader = false;
+    _emitCreatorSubj = false;
+    _emitCreatorView = false;
+    _unidraw = false;
+    _subunidraw = false;
 
     _instancelist = new UList;
     _functionlist = new StringList;
@@ -140,6 +144,7 @@ RootCodeView::RootCodeView (GraphicComp* subj) : CodeView(subj) {
 
     _classname = nil;
     *_errbuf = '\0';
+    _err_count = 0;
 }
 
 RootCodeView::~RootCodeView () {
@@ -194,6 +199,11 @@ boolean CodeView::_emitMain;
 boolean CodeView::_scope;
 boolean CodeView::_emitGraphicState;
 boolean CodeView::_emitGraphicComp;
+boolean CodeView::_emitCreatorHeader;
+boolean CodeView::_emitCreatorSubj;
+boolean CodeView::_emitCreatorView;
+boolean CodeView::_unidraw;
+boolean CodeView::_subunidraw;
 
 UList* CodeView::_instancelist;
 StringList* CodeView::_functionlist;
@@ -208,6 +218,7 @@ StringList* CodeView::_fontlist;
 StringList* CodeView::_patternlist;
 
 char CodeView::_errbuf[CHARBUFSIZE*10];
+int CodeView::_err_count;
 const char* CodeView::_classname;
 
 CodeView::CodeView (GraphicComp* subj) : PreorderView(subj) {
@@ -304,20 +315,20 @@ boolean CodeView::Definition(ostream& out) {
             out << "    ";
             if (copy != '\0') {
                 *index = copy;
-            }
-            text = index + 1;
-
-            if ((index = strchr(text, '\n')) != nil) {
-                *index = '\0';
-                out << "\"" << text << "\" },\n";
-                *index = '\n';
                 text = index + 1;
-            } else if (*text == '\0') {
-                out << "\"\" },\n";
-                break;
-            } else {
-                out << "\"" << text << "\" },\n";
-                break;
+                
+                if ((index = strchr(text, '\n')) != nil) {
+                    *index = '\0';
+                    out << "\"" << text << "\" },\n";
+                    *index = '\n';
+                    text = index + 1;
+                } else if (*text == '\0') {
+                    out << "\"\" },\n";
+                    break;
+                } else {
+                    out << "\"" << text << "\" },\n";
+                    break;
+                }
             }
         }
         delete props;
@@ -326,53 +337,65 @@ boolean CodeView::Definition(ostream& out) {
         InteractorComp* intcomp = GetIntComp();
 	ButtonStateVar* bsVar = intcomp->GetButtonStateVar();
 	const char* name = bsVar->GetName();
+        const char* subclass = bsVar->GetSubclassName();
 
 	if (_emitExport) {
 	    if (bsVar->GetExport() && !_bsdeclslist->Search(name)) {
                 _bsdeclslist->Append(name);
-                out << "    ButtonState* " << name << ";\n";
+                out << "    " << subclass << "* " << name << ";\n";
 	    }
 
 	} else {
-            if (!bsVar->GetExport() && !_bsdeclslist->Search(name)) {
+            if (
+                (!bsVar->GetExport() || _emitMain) && 
+                !_bsdeclslist->Search(name)
+            ) {
                 _bsdeclslist->Append(name);
-                out << "    ButtonState* " << name << ";\n";
+                out << "    " << subclass << "* " << name << ";\n";
             }
 	}
 
     } else if (_emitBSInits) {
 	char ButtonClass[CHARBUFSIZE];
-	char coreclass[CHARBUFSIZE];
-
-        GetCoreClassName(coreclass);
-	strcpy(ButtonClass, coreclass);
-        strcat(ButtonClass, "_Button");
 
         InteractorComp* intcomp = GetIntComp();
 	ButtonStateVar* bsVar = intcomp->GetButtonStateVar();
 	const char* bsname = bsVar->GetName();
 	const char* proc = bsVar->GetFuncName();
         boolean export = bsVar->GetExport();
+        const char* subclass = bsVar->GetSubclassName();
+
+        if (!bsVar->IsSubclass() && !_emitMain) {
+            strcpy(ButtonClass, coreclass);
+            strcat(ButtonClass, "_Button");
+        } else {
+            strcpy(ButtonClass, subclass);
+        }
 
 	if (!_bsinitslist->Search(bsname)) {
 	    _bsinitslist->Append(bsname);
-            if (_emitMain) {
-                out << "    ButtonState* " << bsname;
-                out << " = new ButtonState(";
-                out << bsVar->GetInitial() << ");\n";
+
+            if (export && !_emitMain) {
+                out << "    " << bsname;
             } else {
-                if (export) {
-                    out << "    " << bsname;
+                out << "    " << ButtonClass << "* " << bsname;
+            }
+            out << " = new " << ButtonClass << "(";
+            out << bsVar->GetInitial() << ");\n";
+
+            if (!_emitMain && proc != nil && *proc != '\0') {
+                if (!export || bsVar->IsSubclass()) {
+                    out << "    " << bsname << "->SetCoreClass(this);\n";
+                    out <<"    "<< bsname<<"->SetCoreFunc("<< "&" << coreclass;
+                    out << "::" << proc << ");\n";
                 } else {
-                    out << "    " << ButtonClass << "* " << bsname;
-                }
-                out << " = new " << ButtonClass;
-                out << "(" << bsVar->GetInitial() << ", this";
-                if (proc != nil && *proc != '\0') {
-                    out << ", " << "&" << coreclass << "::" << proc << ");\n";
-                } else {
-                    out << ", nil);\n";
-                }
+                    out << "    ((" << ButtonClass << "*)" << bsname;
+                    out << ")->SetCoreClass(this);\n";
+                    out << "    ((" << ButtonClass << "*)" << bsname;
+                    out <<")->SetCoreFunc("<< "&" << coreclass;
+                    out << "::" << proc << ");\n";
+                } 
+
             }
         }
     } else if (_emitInstanceDecls) {
@@ -407,12 +430,9 @@ boolean CodeView::Definition(ostream& out) {
         }
 
     } else if (_emitFunctionInits) {
-	char coreclass[CHARBUFSIZE];
-
         InteractorComp* intcomp = GetIntComp();
 	ButtonStateVar* bvar = intcomp->GetButtonStateVar();
         const char* proc = bvar->GetFuncName();
-	GetCoreClassName(coreclass);
 
         if (*proc != '\0' && !_functionlist->Search(proc)) {
             _functionlist->Append(proc);
@@ -425,32 +445,27 @@ boolean CodeView::Definition(ostream& out) {
         }
 
     } else if (_emitExpHeader) {
-        Iterator i;
-        InteractorComp* intcomp = GetIntComp();
-        if (intcomp != nil && intcomp->IsANewScope()) {
-            if (strcmp(subclass, _classname) == 0) {
-                _scope = true;
-                ok = ok && Iterate(out);
-                if (!_namelist->Search(subclass)) {
-                    _namelist->Append(subclass);
-                    out << "#include \"" << subclass << ".h\"\n";
+        if (snamer->IsSubclass()) {
+            InteractorComp* intcomp = GetIntComp();
+            if (intcomp != nil && intcomp->IsANewScope()) {
+                if (strcmp(subclass, _classname) == 0) {
+                    _scope = true;
+                    ok = ok && Iterate(out);
+                    ok = ok && CheckToEmitHeader(out, subclass);
+                    _scope = false;
+                } else if (_scope) {
+                    if (mnamer->GetExport()) {
+                        ok = ok && CheckToEmitHeader(out, subclass);
+                    }
+                } else {
+                    ok = ok && Iterate(out);
                 }
-                _scope = false;
-            } else if (_scope) {
-                if (mnamer->GetExport() && !_namelist->Search(subclass)) {
-                    _namelist->Append(subclass);
-                    out << "#include \"" << subclass << ".h\"\n";
-                }
-            } else {
-                ok = ok && Iterate(out);
+            } else if (
+                strcmp(subclass, _classname) == 0 || 
+                _scope && mnamer->GetExport()
+            ) {
+                ok = ok && CheckToEmitHeader(out, subclass);
             }
-        } else if (
-            (strcmp(subclass, _classname) == 0 || 
-             _scope && mnamer->GetExport()) && 
-             !_namelist->Search(subclass)
-        ) {
-            _namelist->Append(subclass);
-            out << "#include \"" << subclass << ".h\"\n";
         }
     } else if (_emitCoreDecls || _emitCoreInits) {
         if (
@@ -459,12 +474,8 @@ boolean CodeView::Definition(ostream& out) {
         ) {
 	    _globallist->Append(_classname);
             if (_emitCoreDecls) {
-                out << "class " << coreclass;
-                out << " : public " << baseclass << " {\n";
-                out << "public:\n";
-                out << "    " << coreclass;
+                ok = ok && DeclsTemplate(out, coreclass, baseclass);
                 ok = ok && CoreConstDecls(out);
-
                 out << "};\n\n";
                 
             } else {
@@ -480,10 +491,7 @@ boolean CodeView::Definition(ostream& out) {
             !_globallist->Search(_classname)
         ) {
 	    _globallist->Append(_classname);
-            out << "class " << subclass;
-            out << " : public " << coreclass << " {\n";
-            out << "public:\n";
-            out << "    " << subclass;
+            ok = ok && DeclsTemplate(out, subclass, coreclass);
             ok = ok && ConstDecls(out);
             out << "};\n\n";
         }
@@ -507,27 +515,18 @@ boolean CodeView::Definition(ostream& out) {
         }
     } else if (_emitClassHeaders) {
         if (snamer->IsSubclass()) {
-            if (*_classname == '\0' || _scope) {
-                if (!_namelist->Search("perspective")) {
-                    _namelist->Append("perspective");
-                    out << "#include <InterViews/perspective.h> \n";
+            if (*_classname == '\0') {
+                if (!_scope) {
+                    ok = ok && CheckToEmitClassHeader(out, subclass);
+                    InteractorComp* icomp = GetIntComp();
+                    if (icomp != nil && icomp->IsANewScope()) {
+                        _scope = true;
+                    }
                 }
-                if (!_namelist->Search(subclass)) {
-                    _namelist->Append(subclass);
-                    out << "#include \"" << subclass << ".h\"\n";
-                }
-            } else if (strcmp(subclass, _classname) == 0) {
-                if (!_namelist->Search("perspective")) {
-                    _namelist->Append("perspective");
-                    out << "#include <InterViews/perspective.h> \n";
-                }
-                if (!_namelist->Search(subclass)) {
-                    _namelist->Append(subclass);
-                    out << "#include \"" << subclass << ".h\"\n";
-                }
+            } else if (_scope || strcmp(subclass, _classname) == 0) {
+                ok = ok && CheckToEmitClassHeader(out, subclass);
             }
         }
-        
     } else if (_emitMain) {
         CleanUp();
         out << "static Interactor* " << iname << "() {\n";
@@ -536,6 +535,16 @@ boolean CodeView::Definition(ostream& out) {
         out << "    return " << mname << ";\n};\n\n";
     }
     return out.good() && ok;
+}
+
+boolean CodeView::DeclsTemplate(
+    ostream& out, const char* subclass, const char* baseclass
+) {
+    out << "class " << subclass;
+    out << " : public " << baseclass << " {\n";
+    out << "public:\n";
+    out << "    " << subclass;
+    return out.good();
 }
 
 void CodeView::CleanUp () {
@@ -560,6 +569,8 @@ void CodeView::CleanUp () {
     _colorlist = new StringList;
     _fontlist = new StringList;
     _patternlist = new StringList;
+
+    _scope = false;
 }
     
 static int CalcBitmap (float graylevel) {
@@ -615,11 +626,8 @@ boolean CodeView::WriteGraphicDecls(Graphic* gr, ostream& out) {
                 out << "    PSColor* " << fname << " = new PSColor(";
                 out << "1, 1, 1, \"" << fname << "\");\n";
             } else {
-                int r, g, b;
-                fgcolor->Intensities(r, g, b);
-                float fr = float(r) / 0xffff;
-                float fg = float(g) / 0xffff;
-                float fb = float(b) / 0xffff;
+                float fr, fg, fb;
+                fgcolor->intensities(fr, fg, fb);
                 out << "    PSColor* " << fname << " = new PSColor(";
                 out << fr << ", " << fg << ", " << fb << ", \"";
                 out << fname << "\");\n";
@@ -639,11 +647,8 @@ boolean CodeView::WriteGraphicDecls(Graphic* gr, ostream& out) {
                 out << "    PSColor* " << fname << " = new PSColor(";
                 out << "1, 1, 1, \"" << fname << "\");\n";
             } else {
-                int r, g, b;
-                bgcolor->Intensities(r, g, b);
-                float fr = float(r) / 0xffff;
-                float fg = float(g) / 0xffff;
-                float fb = float(b) / 0xffff;
+                float fr, fg, fb;
+                bgcolor->intensities(fr, fg, fb);
                 out << "    PSColor* " << fname << " = new PSColor(";
                 out << fr << ", " << fg << ", " << fb << ", \"";
                 out << fname << "\");\n";
@@ -735,6 +740,7 @@ boolean CodeView::WriteGraphicDecls(Graphic* gr, ostream& out) {
 }
 
 boolean CodeView::WriteGraphicInits(Graphic* gr, ostream& out) {
+    char mname[CHARBUFSIZE];
     int fillbg = gr->BgFilled();
     PSColor* fgcolor = gr->GetFgColor();
     PSColor* bgcolor = gr->GetBgColor();
@@ -742,7 +748,11 @@ boolean CodeView::WriteGraphicInits(Graphic* gr, ostream& out) {
     PSBrush* brush = gr->GetBrush();
     PSFont* font = gr->GetFont();
     Transformer* tr = gr->GetTransformer();
-    const char* mname = GetIComp()->GetMemberNameVar()->GetName();
+    const char* mname_orig = GetIComp()->GetMemberNameVar()->GetName();
+    strcpy(mname, mname_orig);
+    if (_emitGraphicComp) {
+        strcat(mname, "_gr");
+    }
 
     if (fillbg >= 0) {
         out << "        " << mname << "->FillBg(" << fillbg << ");\n";
@@ -840,10 +850,58 @@ boolean CodeView::WriteGraphicInits(Graphic* gr, ostream& out) {
     return out.good();
 }
 
+const char* CodeView::GetFirewall () {
+    const char* fwname = nil;
+    GetFirewallCmd firewallCmd(GetIntComp());
+    firewallCmd.Execute();
+    InteractorComp* firewall = firewallCmd.GetFirewall();
+    if (firewall != nil) {
+        if (firewall->IsANewScope()) {
+            fwname = firewall->GetClassNameVar()->GetName();
+        }
+    }
+    return fwname;
+}
+
 ClassId CodeView::GetClassId () { return CODE_VIEW; }
 
 boolean CodeView::IsA (ClassId id) {
     return CODE_VIEW == id || PreorderView::IsA(id);
+}
+
+boolean CodeView::Align(Alignment a, ostream& out) {
+    if (a == TopLeft) {
+        out << "TopLeft";
+    } else if (a == TopCenter) {
+        out << "TopCenter";
+    } else if (a == TopRight) {
+        out << "TopRight";
+    } else if (a == CenterLeft) {
+        out << "CenterLeft";
+    } else if (a == Center) {
+        out << "Center";
+    } else if (a == CenterRight) {
+        out << "CenterRight";
+    } else if (a == BottomLeft) {
+        out << "BottomLeft";
+    } else if (a == BottomCenter) {
+        out << "BottomCenter";
+    } else if (a == BottomRight) {
+        out << "BottomRight";
+    } else if (a == Left) {
+        out << "Left";
+    } else if (a == Right) {
+        out << "Right";
+    } else if (a == Top) {
+        out << "Top";
+    } else if (a == Bottom) {
+        out << "Bottom";
+    } else if (a == HorizCenter) {
+        out << "HorizCenter";
+    } else if (a == VertCenter) {
+        out << "VertCenter";
+    }
+    return out.good();
 }
 
 boolean CodeView::Search (MemberNameVar* mnamer, InteractorComp*& ctarget) {
@@ -869,11 +927,22 @@ void CodeView::GetClassList(UList* ulist) {
     GetNameVarsCmd nameVarsCmd(grcomp);
     nameVarsCmd.Execute();
     SubclassNameVar* classname = nameVarsCmd.GetClassNameVar();
+    UList* cl = nameVarsCmd.GetExtras();
     
     if (classname->IsSubclass()) {
         const char* cname = classname->GetName();
         if (!ISearch(ulist, cname)) {
             ulist->Append(new UList(classname));
+        }
+    }
+    for(UList* l = cl->First(); l != cl->End(); l = l->Next()) {
+        StateVar* svar = (StateVar*) (*l)();
+        if (svar->IsA(SUBCLASSNAME_VAR)) {
+            SubclassNameVar* sclass = (SubclassNameVar*) svar;
+            const char* sname = sclass->GetName();
+            if (sclass->IsSubclass() && !ISearch(ulist, sname)) {
+                ulist->Append(new UList(sclass));
+            }
         }
     }
     for (First(i); !Done(i); Next(i)) {
@@ -902,27 +971,25 @@ boolean CodeView::GenDothFile (const char* orig, ostream& out) {
     out << "#endif\n";
     delete filtered;
     ok = ok && out.good();
-    if (!ok) {
+    if (!ok && _err_count < 10) {
         strcat(_errbuf, orig);
         strcat(_errbuf, ".h code generation failed.\n");
+        _err_count++;
     }
     return ok && out.good();
 }
 
 
 boolean CodeView::GenCorecFile (const char* orig, ostream& out) {
-
+    boolean ok = true;
     CleanUp();
     _classname = orig;
     delete _globallist;
     _globallist = new StringList;
 
-    out << "#include <InterViews/canvas.h> \n";
-    out << "#include <InterViews/painter.h> \n";
-    out << "#include <InterViews/sensor.h> \n";
-    boolean ok = EmitHeaders(out);
+    ok = ok && EmitHeaders(out);
     ok = ok && EmitClassHeaders(out);
-    out << "#include <InterViews/2.6/_enter.h>\n\n";
+    out << "#include <IV-2_6/_enter.h>\n\n";
     out << "\n";
     if (Scan(BUTTON_COMP) || Scan(DIALOG_CLASS)) {
         ok = ok && EmitButtonState(out);
@@ -941,9 +1008,10 @@ boolean CodeView::GenCorecFile (const char* orig, ostream& out) {
     }
     ok = ok && EmitCoreInits(out);
 
-    if (!ok) {
+    if (!ok && _err_count < 10) {
 	strcat(_errbuf, orig);
         strcat(_errbuf, "-core.c code generation failed.\n");
+        _err_count++;
     }
     return ok;
 }
@@ -967,21 +1035,76 @@ boolean CodeView::GenCorehFile (const char* orig, ostream& out) {
     out << "#endif\n";
     delete filtered;
     ok = ok && out.good();
-    if (!ok) {
+    if (!ok && _err_count < 10) {
 	strcat(_errbuf, orig);
         strcat(_errbuf, "-core.h code generation failed.\n");
+        _err_count++;
     }
     return ok && out.good();
 }
 
-boolean CodeView::EmitClassDecls (ostream& out) {
-    _emitClassDecls = true;
+boolean CodeView::CentralEmitter(ostream& out, boolean& flag, const char* err){
+    Iterator i;
+    flag = true;
     CleanUp();
-    boolean ok = Iterate(out);
-    _emitClassDecls = false;
-    if (!ok) {
-        strcat(_errbuf, "Class declaration failed.\n");
+    boolean ok = true;
+    for(First(i); !Done(i); Next(i)) {
+        CodeView* kid = (CodeView*) GetView(i);
+        ok = kid->Definition(out) && ok;
+        CleanUp();
     }
+    flag = false;
+    if (!ok && _err_count < 10) {
+        strcat(_errbuf, err);
+        strcat(_errbuf, "\n");
+        _err_count++;
+    }
+    return ok;
+}
+
+boolean CodeView::CentralEmitter(
+    CodeView* kid, ostream& out, boolean& flag, const char* err
+){
+    boolean ok = true;
+    if (kid != nil) {
+        flag = true;
+        CleanUp();
+        ok = ok && kid->Definition(out);
+        flag = false;
+        if (!ok && _err_count < 10) {
+            strcat(_errbuf, err);
+            strcat(_errbuf, "\n");
+            _err_count++;
+        }
+    }
+    return ok;
+}
+
+boolean CodeView::EmitCreatorHeader (ostream& out) {
+    boolean ok = CentralEmitter(
+        out, _emitCreatorHeader, "Header generation in creator failed."
+    );
+    return ok;
+}
+
+boolean CodeView::EmitCreatorSubj (ostream& out) {
+    boolean ok = CentralEmitter(
+        out, _emitCreatorSubj, "Subject creator failed."
+    );
+    return ok;
+}
+
+boolean CodeView::EmitCreatorView (ostream& out) {
+    boolean ok = CentralEmitter(
+        out, _emitCreatorView, "View creator failed."
+    );
+    return ok;
+}
+
+boolean CodeView::EmitClassDecls (ostream& out) {
+    boolean ok = CentralEmitter(
+        out, _emitClassDecls, "class declarationr failed."
+    );
     return ok;
 }
 
@@ -993,37 +1116,32 @@ boolean CodeView::GenDotcFile (const char* orig, ostream& out) {
     _globallist = new StringList;
 
     boolean ok = EmitExpHeader(out);
-    out << "#include <InterViews/2.6/_enter.h>\n\n";
+    out << "#include <IV-2_6/_enter.h>\n\n";
 
     ok = ok && EmitClassInits(out);
 
-    if (!ok) {
+    if (!ok && _err_count < 10) {
 	strcat(_errbuf, orig);
         strcat(_errbuf, ".c code generation failed.\n");
+        _err_count++;
     }
     return ok;
 }
 
 boolean CodeView::EmitClassInits (ostream& out) {
-    _emitClassInits = true;
-    CleanUp();
-    boolean ok = Iterate(out);
-    _emitClassInits = false;
-
-    if (!ok) {
-        strcat(_errbuf, "Class initialization failed.\n");
-    }
+    boolean ok = CentralEmitter(
+        out, _emitClassInits, "Class initialization failed."
+    );
     return ok;
 }
 
 boolean CodeView::EmitForwardDecls(ostream& out) {
-    _emitForward = true;
-    CleanUp();
-    boolean ok = Iterate(out);
+    boolean ok = CentralEmitter(
+        out, _emitForward, "Forward declaration failed."
+    );
     out << "\n";
-    _emitForward = false;
 
-    return ok;
+    return ok && out.good();
 }
 
 boolean CodeView::EmitSlider(ostream& out) {
@@ -1050,9 +1168,6 @@ boolean CodeView::EmitSlider(ostream& out) {
     out << "    shape->height = (int) (aspect * width);\n";
     out << "    shape->Rigid();\n";
     out << "}\n\n";
-    if (!out.good()) {
-        strcat(_errbuf, "Slider generation failed.\n");
-    }
     return out.good();
 }
 
@@ -1099,9 +1214,6 @@ boolean CodeView::EmitGlue(ostream& out) {
     out << "    canvas->SetBackground(output->GetBgColor());\n";
     out << "}\n\n";
 
-    if (!out.good()) {
-        strcat(_errbuf, "IBGlue generation failed.\n");
-    }
     return out.good();
 }
 
@@ -1142,9 +1254,6 @@ boolean CodeView::EmitShaper(ostream& out) {
     out << "    shape->hshrink = _hshr;\n";
     out << "    shape->vshrink = _vshr;\n";
     out << "}\n\n";
-   if (!out.good()) {
-        strcat(_errbuf, "Shaper generation failed.\n");
-    }
     return out.good();
 }
 
@@ -1163,10 +1272,11 @@ boolean CodeView::EmitMenu(ostream& out) {
     out << "#define " << coreclass << "_func\n";
     out << "typedef void (" << coreclass << "::*" << Func << ")();\n";
     out << "#endif\n\n";
+
     out << "class " << MenuClass << " : public MenuItem {\n";
     out << "public:\n";
     out << "    " << MenuClass;
-    out << "(const char*,  const char*, Alignment);\n";
+    out << "(const char*, Interactor*);\n";
     out << "    virtual void Do();\n";
     out << "    void SetCoreClass(" << coreclass << "*);\n";
     out << "    void SetCoreFunc(" << Func << ");\n";
@@ -1176,11 +1286,10 @@ boolean CodeView::EmitMenu(ostream& out) {
     out << "};\n\n";
 
     out << MenuClass << "::" << MenuClass << "(\n";
-    out << "    const char* instance, const char* str, Alignment al\n";
-    out << ") : MenuItem(str, al) {\n";
+    out << "    const char* instance, Interactor* i\n";
+    out << ") : MenuItem(instance, i) {\n";
     out << "    _func = nil;\n";
     out << "    _coreclass = nil;\n";
-    out << "    SetInstance(instance);\n";
     out << "}\n\n";
     
     out << "void " << MenuClass << "::SetCoreClass(" << coreclass;
@@ -1198,43 +1307,53 @@ boolean CodeView::EmitMenu(ostream& out) {
     out << "        (_coreclass->*_func)();\n";
     out << "    }\n";
     out << "}\n\n";
-    if (!out.good()) {
-        strcat(_errbuf, "Menu generation failed.\n");
-    }
     return out.good();
 }
 
 boolean CodeView::EmitButtonState(ostream& out) {
-    char BFunc[CHARBUFSIZE];
+    char Func[CHARBUFSIZE];
     char ButtonClass[CHARBUFSIZE];
     char coreclass[CHARBUFSIZE];
     
     GetCoreClassName(coreclass);
-    strcpy(BFunc, coreclass);
-    strcat(BFunc, "_BFunc");
+    strcpy(Func, coreclass);
+    strcat(Func, "_Func");
     strcpy(ButtonClass, coreclass);
     strcat(ButtonClass, "_Button");
     
-    out << "typedef void (" << coreclass<< "::*" << BFunc << ")();\n\n";
+    out << "#ifndef " << coreclass << "_func\n";
+    out << "#define " << coreclass << "_func\n";
+    out << "typedef void (" << coreclass << "::*" << Func << ")();\n";
+    out << "#endif\n\n";
+
     out << "class " << ButtonClass << " : public ButtonState {\n";
     out << "public:\n";
-    out << "    " << ButtonClass;
-    out << "(\n\tint, " << coreclass << "* = nil, ";
-    out << BFunc << " = nil\n    );\n";
+    out << "    " << ButtonClass << "(int, " << coreclass;
+    out << "* = nil, " << Func << " = nil);\n";
     out << "    virtual void Notify();\n";
+    out << "    void SetCoreClass(" << coreclass << "*);\n";
+    out << "    void SetCoreFunc(" << Func << ");\n";
     out << "private:\n";
-    out << "    " << BFunc << " _func;\n";
+    out << "    " << Func << " _func;\n";
     out << "    " << coreclass << "* _coreclass;\n";
     out << "};\n\n";
     out << ButtonClass << "::" << ButtonClass << "(\n";
-    out << "    int i, ";
-    out << coreclass << "* coreclass, " << BFunc;
-    out << " f\n";
+    out << "    int i, " << coreclass << "* coreclass, " << Func << " func\n";
     out << ") : ButtonState(i) {\n";
-    out << "    _func = f;\n";
     out << "    _coreclass = coreclass;\n";
+    out << "    _func = func;\n";
     out << "}\n\n";
     
+    out << "void " << ButtonClass << "::SetCoreClass(" << coreclass;
+    out << "* core) {\n";
+    out << "    _coreclass = core;\n";
+    out << "}\n\n";
+
+    out << "void " << ButtonClass << "::SetCoreFunc(" << Func;
+    out << " func) {\n";
+    out << "    _func = func;\n";
+    out << "}\n\n";
+
     out << "void " << ButtonClass << "::Notify() {\n";
     out << "    ButtonState::Notify();\n";
     out << "    if (_func != nil) {\n";
@@ -1242,9 +1361,6 @@ boolean CodeView::EmitButtonState(ostream& out) {
     out << "    }\n";
     out << "}\n\n";
 
-    if (!out.good()) {
-        strcat(_errbuf, "ButtonState generation failed.\n");
-    }
     return out.good();
 }
 
@@ -1257,24 +1373,16 @@ boolean CodeView::GenPropFile (const char* orig, ostream& out) {
 boolean CodeView::EmitIncludeHeaders(ostream&) { return true; }
 
 boolean CodeView::EmitHeaders(ostream& out) {
-    CleanUp();
-    _emitHeaders = true;
-    boolean ok = Iterate(out);
-    _emitHeaders = false;
-    if (!ok) {
-        strcat(_errbuf, "Header file generation failed.\n");
-    }
+    boolean ok = CentralEmitter(
+        out, _emitHeaders, "Header file generation failed."
+    );
     return ok;
 }
 
 boolean CodeView::EmitClassHeaders(ostream& out) {
-    CleanUp();
-    _emitClassHeaders = true;
-    boolean ok = Iterate(out);
-    _emitClassHeaders = false;
-    if (!ok) {
-        strcat(_errbuf, "Class header file generation failed.\n");
-    }
+    boolean ok = CentralEmitter(
+        out, _emitClassHeaders, "Class header file generation failed."
+    );
     return ok;
 }
 
@@ -1288,6 +1396,26 @@ boolean CodeView::Iterate (ostream& out) {
     return ok;
 }
     
+boolean CodeView::CheckToEmitHeader(ostream& out, const char* subclass) {
+    if (!_namelist->Search(subclass)) {
+        _namelist->Append(subclass);
+        out << "#include \"" << subclass << ".h\" \n";
+    }
+    return out.good();
+}
+
+boolean CodeView::CheckToEmitClassHeader(ostream& out, const char* subclass) {
+    boolean ok = true;
+    if (strcmp(subclass, _classname) == 0) {
+        char coreclass[CHARBUFSIZE];
+        sprintf(coreclass, "%s-core", _classname);
+        ok = ok && CheckToEmitHeader(out, coreclass);
+    } else {
+        ok = ok && CheckToEmitHeader(out, subclass);
+    }
+    return ok;
+}
+
 boolean CodeView::GenMainFile (const char* orig, ostream& out) {
     Iterator i;
     boolean ok = true;
@@ -1295,18 +1423,25 @@ boolean CodeView::GenMainFile (const char* orig, ostream& out) {
 
     _classname = "";
     CleanUp();
-    out << "#include <Unidraw/catalog.h> \n";
-    out << "#include <Unidraw/unidraw.h> \n";
-    out << "#include <Unidraw/creator.h> \n";
+    if (IsUnidraw()) {
+        out << "#include <Unidraw/catalog.h> \n";
+        out << "#include <Unidraw/unidraw.h> \n";
+        out << "#include <Unidraw/creator.h> \n";
+    }
 
     out << "#include <InterViews/canvas.h> \n";
     out << "#include <InterViews/painter.h> \n";
-    out << "#include <InterViews/sensor.h> \n";
+    out << "#include <InterViews/perspective.h> \n";
     out << "#include <InterViews/world.h> \n";
+    if (IsUnidraw()) {
+        if (IsSubUnidraw()) {
+            out << "#include \"" << orig << "-creator.h\" \n";
+        }
+    }
 
     ok = ok && EmitHeaders(out);
     ok = ok && EmitClassHeaders(out);
-    out << "#include <InterViews/2.6/_enter.h>\n\n";
+    out << "#include <IV-2_6/_enter.h>\n\n";
 
     out << "static PropertyData properties[] = {\n";
     out << "#include \"" << orig << "-props\"\n";
@@ -1324,18 +1459,26 @@ boolean CodeView::GenMainFile (const char* orig, ostream& out) {
         ok = ok && EmitGlue(out);
     }
 
-    
     ok = ok && Iterate(out);
     _emitMain = false;
 
     out << "int main (int argc, char** argv) {\n";
 
-    out << "    Creator creator;\n";
-    out << "    Unidraw* unidraw = new Unidraw(\n";
-    out << "        new Catalog(\"/****/\", &creator), argc, argv";
-    out << ", options, properties\n";
-    out << "    );\n";
-    out << "    World* w = unidraw->GetWorld();\n";
+    if (IsUnidraw()) {
+        if (IsSubUnidraw()) {
+            out << "    " << orig << "Creator creator;\n";
+        } else {
+            out << "    Creator creator;\n";
+        }
+        out << "    Unidraw* unidraw = new Unidraw(\n";
+        out << "        new Catalog(\"/****/\", &creator), argc, argv";
+        out << ", options, properties\n";
+        out << "    );\n";
+        out << "    World* w = unidraw->GetWorld();\n";
+    } else {
+        out << "    World* w = new World(\"/****/\", argc, argv";
+        out << ", options, properties);\n";
+    }
     
     for(First(i); !Done(i); Next(i)) {
         CodeView* kid = (CodeView*) GetView(i);
@@ -1369,15 +1512,80 @@ boolean CodeView::GenMainFile (const char* orig, ostream& out) {
             out << "    w->InsertApplication(" << iname << "());\n";
         }
     }
-    out << "    unidraw->Run();\n";
-    out << "    delete unidraw;\n";
+    if (IsUnidraw()) {
+        out << "    unidraw->Run();\n";
+        out << "    delete unidraw;\n";
+    } else {
+        out << "    w->Run();\n";
+        out << "    delete w;\n";
+    }
     out << "    return 0;\n}\n";
 
-    if (!out.good()) {
+    if ((!ok || !out.good()) && _err_count < 10) {
 	strcat(_errbuf, orig);
         strcat(_errbuf, " Main code generation failed.\n");
+        _err_count++;
     }
     return out.good() && ok;
+}
+
+boolean CodeView::GenCreatorh (const char* orig, ostream& out) {
+    Iterator i;
+    boolean ok = true;
+
+    out << "#ifndef " << orig << "creator_h\n";
+    out << "#define " << orig << "creator_h\n\n";
+    out << "#include <Unidraw/creator.h> \n\n";
+
+    out << "class " << orig << "Creator : public Creator {\n";
+    out << "public:\n";
+    out << "    " << orig << "Creator();\n\n";
+    out << "    virtual void* Create(\n";
+    out << "        ClassId, istream&, ObjectMap* = nil, int = 0\n";
+    out << "    );\n";
+    out << "    virtual void* Create(ClassId);\n";
+    out << "};\n\n";
+
+    out << "#endif\n";
+
+    if ((!ok || !out.good()) && _err_count < 10) {
+	strcat(_errbuf, orig);
+        strcat(_errbuf, " creator code generation failed.\n");
+        _err_count++;
+    }
+    return out.good() && ok;
+}
+
+boolean CodeView::GenCreatorc(const char* orig, ostream& out) {
+    char buf[CHARBUFSIZE];
+
+    sprintf(buf, "%sCreator", orig);
+
+    CleanUp();
+    boolean ok = EmitCreatorHeader(out);
+    out << "#include \"" << orig << "-creator.h\"\n\n";
+    out << "#include <Unidraw/catalog.h>\n";
+    out << "\n";
+    out << buf << "::" << buf << " () {}\n\n";
+
+    out << "void* " << buf << "::Create(\n";
+    out << "    ClassId id, istream& in, ObjectMap* objmap, int objid\n";
+    out << ") {\n";
+    out << "    switch(id) {\n";
+
+    CleanUp();
+    ok = ok && EmitCreatorSubj(out);
+    out << "        default:    return Creator::Create";
+    out << "(id, in, objmap, objid);\n";
+    out << "    }\n";
+    out << "}\n\n";
+
+    out << "void* " << buf << "::Create (ClassId id) {\n";
+    ok = ok && EmitCreatorView(out);
+    out << "\n";
+    out << "    return Creator::Create(id);\n";
+    out << "}\n";
+    return ok && out.good();
 }
 
 boolean CodeView::Scan (ClassId id) {
@@ -1389,15 +1597,15 @@ boolean CodeView::Scan (ClassId id) {
 
 void CodeView::BeginInstantiate (ostream& out) {
     InteractorComp* icomp = GetIntComp();
-    const char* instance = icomp->GetMemberNameVar()->GetName();
+    const char* mname = icomp->GetMemberNameVar()->GetName();
     boolean export = icomp->GetMemberNameVar()->GetExport();
     const char* classname = icomp->GetClassNameVar()->GetName();
 
     if (export && !_emitMain) {
-        out << "    " << instance << " = new ";
+        out << "    " << mname << " = new ";
     } else {
         out << "    " << classname << "* ";
-        out << instance << " = new ";
+        out << mname << " = new ";
     }
     out << classname;
 }
@@ -1407,10 +1615,10 @@ void CodeView::EndInstantiate (ostream& out) {
 }
 
 void CodeView::InstanceName (ostream& out, const char* separator) {
-    const char* instanceName = GetIntComp()->GetInstanceNameVar()->GetName();
+    const char* instance = GetIntComp()->GetInstanceNameVar()->GetName();
 
-    if (*instanceName != '\0' && separator != '\0') {
-        out << "\"" << instanceName << "\"" << separator;
+    if (*instance != '\0' && separator != '\0') {
+        out << "\"" << instance << "\"" << separator;
     }
 }
 
@@ -1491,72 +1699,66 @@ void CodeView::DeleteViews () {
     }
 }    
 
-boolean CodeView::EmitBSDecls (CodeView* kid, ostream& out) {
-    boolean ok = true;
-    _emitBSDecls = true;
-    ok = ok && kid->Definition(out);
-    _emitBSDecls = false;
-
-    if (!ok) {
-        strcat(_errbuf, "ButtonState declaration failed. \n");
-    }
+boolean CodeView::EmitBSInits (CodeView* kid, ostream& out) {
+    boolean ok = CentralEmitter(
+        kid, out, _emitBSInits, "ButtonState initialization failed."
+    );
     return ok;
 }
 
-boolean CodeView::EmitBSInits (CodeView* kid, ostream& out) {
-    boolean ok = true;
-    _emitBSInits = true;
-    ok = ok && kid->Definition(out);
-    _emitBSInits = false;
-
-    if (!ok) {
-        strcat(_errbuf, "ButtonState initialization failed. \n");
-    }
+boolean CodeView::EmitBSDecls (CodeView* kid, ostream& out) {
+    boolean ok = CentralEmitter(
+        kid, out, _emitBSDecls, "ButtonState declaration failed."
+    );
     return ok;
 }
 
 boolean CodeView::EmitInstanceDecls (CodeView* kid, ostream& out) {
     boolean ok = true;
-    _emitInstanceDecls = true;
-    ok = ok && kid->Definition(out);
-    _emitInstanceDecls = false;
-    if (!ok) {
-        strcat(_errbuf, "Instance declaration failed. \n");
+    if (kid != nil) {
+        _emitInstanceDecls = true;
+        ok = ok && kid->Definition(out);
+        _emitInstanceDecls = false;
+        if (!ok && _err_count < 10) {
+            strcat(_errbuf, "Instance declaration failed");
+            strcat(_errbuf, "\n");
+            _err_count++;
+        }
     }
     return ok;
 }
 
 boolean CodeView::EmitInstanceInits(CodeView* kid, ostream& out) {
     boolean ok = true;
-    _emitInstanceInits = true;
-    _icomplete = true;
-
-    while (ok) {
-	UList* track = _instancelist->Last();
-        ok = ok && kid->Definition(out);
-
-        if (track == _instancelist->Last()) {
-	    break;
-	}
-    }
-
-    _emitInstanceInits = false;
-    ok = ok && _icomplete;
-    
-    if (!ok) {
-        strcat(_errbuf, "Instance instantiation failed.\n");
+    if (kid != nil) {
+        _emitInstanceInits = true;
+        _icomplete = true;
+        
+        while (ok) {
+            UList* track = _instancelist->Last();
+            ok = ok && kid->Definition(out);
+            
+            if (track == _instancelist->Last() || _icomplete) {
+                break;
+            }
+        }
+        
+        _emitInstanceInits = false;
+        ok = ok && _icomplete;
+        
+        if (!ok && _err_count < 10) {
+            strcat(_errbuf, "Instance instantiation failed.\n");
+            _err_count++;
+        }
     }
 
     return ok;
 }
 
 boolean CodeView::EmitPropertyData(ostream& out) {
-    _emitProperty = true;
-    boolean ok = Iterate(out);
-    _emitProperty = false;
-    if (!ok) {
-        strcat(_errbuf, "Property generation failed.\n");
-    }
+    boolean ok = CentralEmitter(
+        out, _emitProperty, "Property generation failed."
+    );
     return ok;
 }
 
@@ -1578,71 +1780,45 @@ boolean CodeView::AllKidsDefined() {
 }
 
 boolean CodeView::EmitCoreDecls(ostream& out) {
-    _emitCoreDecls = true;
-    CleanUp();
-    boolean ok = Iterate(out);
-    _emitCoreDecls = false;
-    if (!ok) {
-        strcat(_errbuf, "Core class declaration failed.\n");
-    }
+    boolean ok = CentralEmitter(
+        out, _emitCoreDecls, "Core class declaration failed."
+    );
     return ok;
 }
     
 boolean CodeView::EmitFunctionDecls(CodeView* kid, ostream& out) {
-    boolean ok = true;
-
-    CleanUp();
-    _emitFunctionDecls = true;
-    ok = ok && kid->Definition(out);
-   _emitFunctionDecls = false;
-
-    if (!ok) {
-        strcat(_errbuf, "Class function declaration failed.\n");
-    }
+    boolean ok = CentralEmitter(
+        kid, out, _emitFunctionDecls, "Class function declaration failed."
+    );
     return ok;
 }
     
 boolean CodeView::EmitFunctionInits(CodeView* kid, ostream& out) {
-    Iterator i;
-    boolean ok = true;
-
-    CleanUp();
-    _emitFunctionInits = true;
-    ok = ok && kid->Definition(out);
-    _emitFunctionInits = false;
-
+    boolean ok = CentralEmitter(
+        kid, out, _emitFunctionInits, "Class function initialization failed."
+    );
     out << "\n";
-    ok = ok && out.good();
-    if (!ok) {
-        strcat(_errbuf, "Class function initialization failed.\n");
-    }
-    return ok;
+    return ok && out.good();
 }
     
 boolean CodeView::EmitCoreInits(ostream& out) {
-    _emitCoreInits = true;
-    CleanUp();
-    boolean ok = Iterate(out);
-   _emitCoreInits = false;
-    if (!ok) {
-        strcat(_errbuf, "Core class initialization failed.\n");
-    }
+    boolean ok = CentralEmitter(
+        out, _emitCoreInits, "Core class initialization failed."
+    );
     return ok;
 }
 
 boolean CodeView::EmitExpHeader (ostream& out) {
-    _emitExpHeader = true;
-    CleanUp();
-    boolean ok = Iterate(out);
-    _emitExpHeader = false;
+    boolean ok = CentralEmitter(
+        out, _emitExpHeader, "Exported header generation failed."
+    );
     return ok;
 }
 
 boolean CodeView::EmitCorehHeader (ostream& out) {
-    _emitCorehHeader = true;
-    CleanUp();
-    boolean ok = Iterate(out);
-    _emitCorehHeader = false;
+    boolean ok = CentralEmitter(
+        out, _emitCorehHeader, "Core header generation failed."
+    );
     return ok;
 }
 
@@ -1659,3 +1835,735 @@ boolean CodeView::CoreConstInits(ostream&) { return true; }
 boolean CodeView::ConstDecls(ostream&) { return true; }
 boolean CodeView::ConstInits(ostream&) { return true; }
 
+boolean CodeView::BSCoreConstDecls(ostream& out) { 
+    InteractorComp* icomp = GetIntComp();
+    ButtonStateVar* bsVar = icomp->GetButtonStateVar();
+    SubclassNameVar* svar = bsVar->GetButtonSharedName()->GetSubclass();
+
+    const char* subclass = svar->GetName();
+    const char* baseclass = svar->GetBaseClass();
+
+    char Func[CHARBUFSIZE];
+    char coreclass[CHARBUFSIZE];
+    char Subclass[CHARBUFSIZE];
+    const char* fwname = GetFirewall();
+    strcpy(Subclass, subclass);
+    strcat(Subclass, "_core");
+
+    if (fwname != nil) {
+        sprintf(coreclass, "%s_core", fwname);
+        strcpy(Func, coreclass);
+        strcat(Func, "_Func");
+    }
+        
+    out << "class " << Subclass << " : public " << baseclass << " {\n";
+    out << "public:\n";
+    out << "    " << Subclass << "(int);\n";
+
+    if (fwname != nil) {
+        out << "    virtual void Notify();\n";
+        out << "    void SetCoreClass(" << coreclass << "*);\n";
+        out << "    void SetCoreFunc(" << Func << ");\n";
+        out << "private:\n";
+        out << "    " << Func << " _func;\n";
+        out << "    " << coreclass << "* _coreclass;\n";
+    }
+
+    out << "};\n\n";
+
+    return out.good();
+}
+
+boolean CodeView::BSCoreConstInits(ostream& out) {
+    InteractorComp* icomp = GetIntComp();
+    ButtonStateVar* bsVar = icomp->GetButtonStateVar();
+    SubclassNameVar* svar = bsVar->GetButtonSharedName()->GetSubclass();
+
+    const char* subclass = svar->GetName();
+    const char* baseclass = svar->GetBaseClass();
+
+    char Func[CHARBUFSIZE];
+    char coreclass[CHARBUFSIZE];
+    char Subclass[CHARBUFSIZE];
+    const char* fwname = GetFirewall();
+    strcpy(Subclass, subclass);
+    strcat(Subclass, "_core");
+
+    if (fwname != nil) {
+        sprintf(coreclass, "%s_core", fwname);
+        strcpy(Func, coreclass);
+        strcat(Func, "_Func");
+    }
+    
+    out << Subclass << "::" << Subclass << "(\n";
+    out << "    int i\n";
+    out << ") : " << baseclass << "(i) {";
+    if (fwname != nil) {
+        out << "\n";
+        out << "    _func = nil;\n";
+        out << "    _coreclass = nil;\n";
+    }
+    out << "}\n\n";
+
+    if (fwname != nil) {
+        out << "void " << Subclass << "::SetCoreClass(" << coreclass;
+        out << "* core) {\n";
+        out << "    _coreclass = core;\n";
+        out << "}\n\n";
+        
+        out << "void " << Subclass << "::SetCoreFunc(" << Func;
+        out << " func) {\n";
+        out << "    _func = func;\n";
+        out << "}\n\n";
+        
+        out << "void " << Subclass << "::Notify() {\n";
+        out << "    " << baseclass << "::Notify();\n";
+        out << "    if (_func != nil) {\n";
+        out << "        (_coreclass->*_func)();\n";
+        out << "    }\n";
+        out << "}\n\n";
+    }
+
+    return out.good();
+}
+
+boolean CodeView::BSConstDecls(ostream& out) {
+    InteractorComp* icomp = GetIntComp();
+    ButtonStateVar* bsVar = icomp->GetButtonStateVar();
+
+    const char* subclass = bsVar->GetSubclassName();
+    char Subclass[CHARBUFSIZE];
+    strcpy(Subclass, subclass);
+    strcat(Subclass, "_core");
+
+    out << "class " << subclass << " : public " << Subclass << " {\n";
+    out << "public:\n";
+    out << "    " << subclass << "(int);\n";
+    out << "};\n\n";
+
+    return out.good();
+}
+
+boolean CodeView::BSConstInits(ostream& out) {
+    InteractorComp* icomp = GetIntComp();
+    ButtonStateVar* bsVar = icomp->GetButtonStateVar();
+
+    const char* subclass = bsVar->GetSubclassName();
+    char Subclass[CHARBUFSIZE];
+    strcpy(Subclass, subclass);
+    strcat(Subclass, "_core");
+
+    out << subclass << "::" << subclass << "(\n";
+    out << "    int i\n";
+    out << ") : " << Subclass << "(i) {}\n\n";
+
+    return out.good();
+}
+
+boolean CodeView::CSCoreConstDecls(ostream& out) { 
+    InteractorComp* icomp = GetIntComp();
+    ButtonStateVar* csVar = icomp->GetButtonStateVar();
+    SubclassNameVar* svar = csVar->GetButtonSharedName()->GetSubclass();
+
+    const char* subclass = svar->GetName();
+    const char* baseclass = svar->GetBaseClass();
+
+    char Subclass[CHARBUFSIZE];
+    strcpy(Subclass, subclass);
+    strcat(Subclass, "_core");
+
+    out << "class " << Subclass << " : public " << baseclass << " {\n";
+    out << "public:\n";
+    out << "    " << Subclass << "(unsigned status = 0);\n";
+    out << "};\n\n";
+
+    return out.good();
+}
+
+boolean CodeView::CSCoreConstInits(ostream& out) {
+    InteractorComp* icomp = GetIntComp();
+    ButtonStateVar* csVar = icomp->GetButtonStateVar();
+    SubclassNameVar* svar = csVar->GetButtonSharedName()->GetSubclass();
+
+    const char* subclass = svar->GetName();
+    const char* baseclass = svar->GetBaseClass();
+
+    char Subclass[CHARBUFSIZE];
+    strcpy(Subclass, subclass);
+    strcat(Subclass, "_core");
+
+    out << Subclass << "::" << Subclass << "(\n";
+    out << "    unsigned status\n";
+    out << ") : " << baseclass << "(status) {";
+    out << "}\n\n";
+
+    return out.good();
+}
+
+boolean CodeView::CSConstDecls(ostream& out) {
+    InteractorComp* icomp = GetIntComp();
+    ButtonStateVar* csVar = icomp->GetButtonStateVar();
+
+    const char* subclass = csVar->GetSubclassName();
+    char Subclass[CHARBUFSIZE];
+    strcpy(Subclass, subclass);
+    strcat(Subclass, "_core");
+
+    out << "class " << subclass << " : public " << Subclass << " {\n";
+    out << "public:\n";
+    out << "    " << subclass << "(unsigned status = 0);\n";
+    out << "};\n\n";
+
+    return out.good();
+}
+
+boolean CodeView::CSConstInits(ostream& out) {
+    InteractorComp* icomp = GetIntComp();
+    ButtonStateVar* csVar = icomp->GetButtonStateVar();
+
+    const char* subclass = csVar->GetSubclassName();
+    char Subclass[CHARBUFSIZE];
+    strcpy(Subclass, subclass);
+    strcat(Subclass, "_core");
+
+    out << subclass << "::" << subclass << "(\n";
+    out << "    unsigned status\n";
+    out << ") : " << Subclass << "(status) {}\n\n";
+
+    return out.good();
+}
+
+/*****************************************************************************/
+
+GraphicCodeView::GraphicCodeView (IComp* subj) : CodeView(subj) {}
+
+void GraphicCodeView::Update () {
+    IComp* subj = GetIComp();
+    if (subj->IsAComponent()) {
+        if (
+            subj->GetCClassNameVar()->IsSubclass() || 
+            subj->GetVClassNameVar()->IsSubclass()
+        ) {
+            _subunidraw = true;
+        }
+    }
+    CodeView::Update();
+}
+    
+IComp* GraphicCodeView::GetIComp () { return (IComp*) GetSubject(); }
+
+ClassId GraphicCodeView::GetClassId () { return GRAPHICCODE_VIEW; }
+
+boolean GraphicCodeView::IsA (ClassId id) {
+    return GRAPHICCODE_VIEW == id || CodeView::IsA(id);
+}
+
+boolean GraphicCodeView::Definition(ostream& out) {
+    boolean ok = true;
+    
+    char coreclass[CHARBUFSIZE];
+    GetCoreClassName(coreclass);
+    
+    IComp* icomp = GetIComp();
+    GraphicComp* target = icomp->GetTarget();
+    if (target == nil) {
+        target = icomp;
+    }
+    Graphic* graphic= target->GetGraphic();
+    
+    SubclassNameVar* cnamer = icomp->GetCClassNameVar();
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    SubclassNameVar* vnamer = icomp->GetVClassNameVar();
+    MemberNameVar* mnamer = icomp->GetMemberNameVar();
+    
+    const char* cname = cnamer->GetName();
+    const char* gname = gnamer->GetName();
+    const char* vname = vnamer->GetName();
+    
+    const char* cbname = cnamer->GetBaseClass();
+    const char* gbname = gnamer->GetBaseClass();
+    const char* vbname = vnamer->GetBaseClass();
+    const char* mname = mnamer->GetName();
+    
+    const char* gheader = GetGHeader();
+    const char* cvheader = GetCVHeader();
+
+    int cid = icomp->GetCIDVar()->GetID();
+    int origcid = icomp->GetCIDVar()->GetOrigID();
+
+    ClassId vid = Combine(cid, COMPONENT_VIEW);
+    ClassId origvid = Combine(origcid, COMPONENT_VIEW);
+    
+    if (_emitGraphicState) {
+        ok = WriteGraphicDecls(graphic, out);
+        
+    } else if (_emitInstanceDecls) {
+        if (_emitGraphicComp) {
+            if (_emitExport) {
+                if (mnamer->GetExport()) {
+                    out << "    " << cname << "* " << mname << ";\n";
+                }
+            } else {
+                out << "    " << gname << "* " << mname << "_gr;\n";
+                if (!mnamer->GetExport() || _emitMain) {
+                    out << "    " << cname << "* " << mname << ";\n";
+                }
+            }
+	} else {
+            if (_emitExport) {
+                if (mnamer->GetExport()) {
+                    out << "    " << gname << "* " << mname << ";\n";
+                }
+            } else {
+                if (!mnamer->GetExport() || _emitMain) {
+                    out << "    " << gname << "* " << mname << ";\n";
+                }
+            }
+	}
+    } else if (_emitExpHeader) {
+        if (!gnamer->IsSubclass()) {
+            if (
+                _scope && mnamer->GetExport() && 
+                !_namelist->Search(gheader)
+            ) {
+                _namelist->Append(gheader);
+                out << "#include <Unidraw/Graphic/" << gheader << ".h> \n";
+            }
+        } else if (
+            strcmp(gname, _classname) == 0 || 
+            _scope && mnamer->GetExport() && *_classname != '\0'
+        ) {
+            ok = ok && CheckToEmitHeader(out, gname);
+        }
+        if (_emitGraphicComp) {
+            if (!cnamer->IsSubclass() && !vnamer->IsSubclass()) {
+                if (
+                    _scope && mnamer->GetExport() && 
+                    !_namelist->Search(cvheader)
+                ) {
+                    _namelist->Append(cvheader);
+                    out << "#include <Unidraw/Components/";
+                    out << cvheader << ".h> \n";
+                }
+            } else {
+                if (
+                    strcmp(cname, _classname) == 0 || 
+                    _scope && mnamer->GetExport() && *_classname != '\0'
+                ) {
+                    ok = ok && CheckToEmitHeader(out, cname);
+                    if (strcmp(cname, _classname) == 0) {
+                        if (gnamer->IsSubclass()) {
+                            ok = ok && CheckToEmitClassHeader(out, gname);
+                        } else {
+                            if (!_namelist->Search(gheader)) {
+                                _namelist->Append(gheader);
+                                out << "#include <Unidraw/Graphic/";
+                                out << gheader << ".h> \n";
+                            }
+                        }
+                    }
+                }
+                if (
+                    strcmp(vname, _classname) == 0 || 
+                    _scope && mnamer->GetExport() && *_classname != '\0'
+                ) {
+                    ok = ok && CheckToEmitHeader(out, vname);
+                }
+            }
+        }
+    } else if (_emitCorehHeader) {
+        if (gnamer->IsSubclass() && strcmp(gname, _classname) == 0) {
+            if (!_namelist->Search(gheader)) {
+                _namelist->Append(gheader);
+                out << "#include <Unidraw/Graphic/" << gheader << ".h> \n";
+            }
+        }
+        if (_emitGraphicComp) {
+            if (
+                cnamer->IsSubclass() && strcmp(cname, _classname) == 0 ||
+                vnamer->IsSubclass() && strcmp(vname, _classname) == 0
+            ) {
+                if (!_namelist->Search(cvheader)) {
+                    _namelist->Append(cvheader);
+                    out << "#include <Unidraw/Components/";
+                    out << cvheader << ".h> \n";
+                }
+            }
+        }
+    } else if (_emitForward) {
+        if (_emitGraphicComp) {
+            if (
+                strcmp(cname, _classname) == 0 && gnamer->IsSubclass() && 
+                !_namelist->Search(gname)
+            ) {
+                _namelist->Append(gname);
+                out << "class " << gname << ";\n";
+            }
+            if (strcmp(vname, _classname) == 0 && !_namelist->Search(cname)) {
+                _namelist->Append(cname);
+                out << "class " << cname << ";\n";
+            }
+        }
+        ok = ok && CodeView::Definition(out);
+        
+    } else if (_emitCoreDecls || _emitCoreInits) {
+        if (
+            strcmp(gname, _classname) == 0 &&
+            !_globallist->Search(_classname)
+        ) {
+            _globallist->Append(_classname);
+            if (_emitCoreDecls) {
+                ok = ok && DeclsTemplate(out, coreclass, gbname);
+                ok = ok && GCoreConstDecls(out);
+                out << "};\n\n";
+                
+            } else {
+                out << coreclass << "::" << coreclass;
+                ok = ok && GCoreConstInits(out);
+                
+            }
+        }
+        if (_emitGraphicComp) {
+            if (
+                strcmp(cname, _classname) == 0 &&
+                !_globallist->Search(_classname)
+            ) {
+                _globallist->Append(_classname);
+                if (_emitCoreDecls) {
+                    ok = ok && DeclsTemplate(out, coreclass, cbname);
+                    ok = ok && CCoreConstDecls(out);
+                    out << "};\n\n";
+                    
+                } else {
+                    out << coreclass << "::" << coreclass;
+                    ok = ok && CCoreConstInits(out);
+                    
+                }
+            }
+            if (
+                strcmp(vname, _classname) == 0 &&
+                !_globallist->Search(_classname)
+            ) {
+                _globallist->Append(_classname);
+                if (_emitCoreDecls) {
+                    ok = ok && DeclsTemplate(out, coreclass, vbname);
+                    ok = ok && VCoreConstDecls(out);
+                    out << "};\n\n";
+                    
+                } else {
+                    out << coreclass << "::" << coreclass;
+                    ok = ok && VCoreConstInits(out);
+                    
+                }
+            }
+        }
+    } else if (_emitClassDecls) {
+        if (
+            strcmp(gname, _classname) == 0 &&
+            !_globallist->Search(_classname)
+        ) {
+            _globallist->Append(_classname);
+            ok = ok && DeclsTemplate(out, gname, coreclass);
+            ok = ok && GConstDecls(out);
+            out << "};\n\n";
+        }
+        if (_emitGraphicComp) {
+            if (
+                strcmp(cname, _classname) == 0 &&
+                !_globallist->Search(_classname)
+            ) {
+                _globallist->Append(_classname);
+                ok = ok && DeclsTemplate(out, cname, coreclass);
+                ok = ok && CConstDecls(out);
+                out << "};\n\n";
+            }
+            if (
+                strcmp(vname, _classname) == 0 &&
+                !_globallist->Search(_classname)
+            ) {
+                _globallist->Append(_classname);
+                ok = ok && DeclsTemplate(out, vname, coreclass);
+                ok = ok && VConstDecls(out);
+                out << "};\n\n";
+            }
+        }
+    } else if (_emitClassInits) {
+        if (
+            strcmp(gname, _classname) == 0 &&
+            !_globallist->Search(_classname)
+        ) {
+            _globallist->Append(_classname);
+            out << gname << "::" << gname;
+            ok = ok && GConstInits(out);
+            
+        }
+        if (_emitGraphicComp) {
+            if (
+                strcmp(cname, _classname) == 0 &&
+                !_globallist->Search(_classname)
+            ) {
+                _globallist->Append(_classname);
+                out << cname << "::" << cname;
+                ok = ok && CConstInits(out);
+                
+            }
+            if (
+                strcmp(vname, _classname) == 0 &&
+                !_globallist->Search(_classname)
+            ) {
+                _globallist->Append(_classname);
+                out << vname << "::" << vname;
+                ok = ok && VConstInits(out);
+                
+            }
+        }            
+    } else if (_emitHeaders) {
+        if (
+            *_classname == '\0' || _scope || 
+            strcmp(gname, _classname) == 0 || 
+            strcmp(cname, _classname) == 0 ||
+            strcmp(vname, _classname) == 0 
+        ) {
+            ok = ok && EmitIncludeHeaders(out);
+        }
+    } else if (_emitClassHeaders) {
+        if (gnamer->IsSubclass()) {
+            if (
+                *_classname == '\0' && !_scope || 
+                *_classname != '\0' && _scope || 
+                strcmp(gname, _classname) == 0
+            ) {
+                ok = ok && CheckToEmitClassHeader(out, gname);
+            }
+        }
+        if (cnamer->IsSubclass()) {
+            if (
+                *_classname == '\0' && !_scope || 
+                *_classname != '\0' && _scope || 
+                strcmp(cname, _classname) == 0
+            ) {
+                ok = ok && CheckToEmitClassHeader(out, cname);
+                if (gnamer->IsSubclass()) {
+                    ok = ok && CheckToEmitClassHeader(out, gname);
+                }
+            }
+        }
+        if (vnamer->IsSubclass()) {
+            if (
+                *_classname == '\0' && !_scope || 
+                *_classname != '\0' && _scope || 
+                strcmp(vname, _classname) == 0
+            ) {
+                ok = ok && CheckToEmitClassHeader(out, vname);
+                if (cnamer->IsSubclass()) {
+                    ok = ok && CheckToEmitClassHeader(out, cname);
+                }
+            }
+        }
+    } else if (_emitCreatorHeader) {
+        if (cnamer->IsSubclass()) {
+            ok = ok && CheckToEmitHeader(out, cname);
+            if (!vnamer->IsSubclass()) {
+                if (!_namelist->Search(cvheader)) {
+                    _namelist->Append(cvheader);
+                    out << "#include <Unidraw/Components/" << cvheader;
+                    out << ".h> \n";
+                }
+            }
+        }
+        if (vnamer->IsSubclass()) {
+            ok = ok && CheckToEmitHeader(out, vname);
+        }
+    } else if (_emitCreatorSubj) {
+        if (cnamer->IsSubclass() && !_namelist->Search(cname)) {
+            _namelist->Append(cname);
+            out << "        case " << cid << ":\tCREATE(";
+            out << cname << ", in, objmap, objid);\n";
+        }
+    } else if (_emitCreatorView) {
+        if (cnamer->IsSubclass()) {
+            if (!_namelist->Search(vname)) {
+                _namelist->Append(vname);
+                out <<"    if (id == " << vid << ")\treturn new " << vname;
+                out << ";\n";
+            }
+        } else {
+            if (vnamer->IsSubclass()) {
+                if (!_namelist->Search(vname)) {
+                    _namelist->Append(vname);
+                    out << "    if (id == " << origvid;
+                    out << ")\treturn new " << vname;
+                    out << ";\n";
+                }
+            }
+        }
+    } else {
+        ok = ok && CodeView::Definition(out);
+    }
+    return out.good() && ok;
+}
+    
+boolean GraphicCodeView::CCoreConstDecls(ostream& out) { 
+    IComp* icomp = GetIComp();
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    const char* gname = gnamer->GetName();
+
+    out << "(" << gname << "* = nil);\n\n";
+    out << "    virtual ClassId GetClassId();\n";
+    out << "    virtual boolean IsA(ClassId);\n";
+
+    if (gnamer->IsSubclass()) {
+        out << "    " << gname << "* Get" << gname << "() {\n";
+        out << "        return (" << gname << "*) GetGraphic();\n";
+        out << "    }\n";
+    }
+
+    return out.good();
+}
+
+boolean GraphicCodeView::CCoreConstInits(ostream& out) {
+    IComp* icomp = GetIComp();
+    SubclassNameVar* cnamer = icomp->GetCClassNameVar();
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    const char* cname = cnamer->GetName();
+    const char* gname = gnamer->GetName();
+    const char* cbname = cnamer->GetBaseClass();
+    int cid = icomp->GetCIDVar()->GetID();
+
+
+    out << "(" << gname << "* gr) : ";
+    out << cbname << "(gr) {}\n\n";
+
+    out << "ClassId " << cname << "_core::GetClassId () { return ";
+    out << cid << ";}\n";
+    out << "boolean " << cname << "_core::IsA (ClassId id) {\n";
+    out << "    return id == " << cid << " || " << cbname << "::IsA(id);\n";
+    out << "}\n\n";
+
+    return out.good();
+}
+
+boolean GraphicCodeView::CConstDecls(ostream& out) {
+    IComp* icomp = GetIComp();
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    const char* gname = gnamer->GetName();
+
+    out << "(" << gname << "* = nil);\n\n";
+    out << "    virtual Component* Copy();\n";
+    return out.good();
+}
+
+boolean GraphicCodeView::CConstInits(ostream& out) {
+    IComp* icomp = GetIComp();
+    char coreclass[CHARBUFSIZE];
+    GetCoreClassName(coreclass);
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    SubclassNameVar* cnamer = icomp->GetCClassNameVar();
+    const char* gname = gnamer->GetName();
+    const char* cname = cnamer->GetName();
+
+    out << "(" << gname << "* gr) : ";
+    out << coreclass << "(gr) {}\n\n";
+    out << "Component* " << cname << "::Copy () {\n";
+    out << "    return new " << cname << "((" << gname;
+    out << "*) GetGraphic()->Copy());\n";
+    out << "}\n\n";
+
+    return out.good();
+}
+
+boolean GraphicCodeView::VCoreConstDecls (ostream& out) { 
+    IComp* icomp = GetIComp();
+    SubclassNameVar* cnamer = icomp->GetCClassNameVar();
+    const char* cname = cnamer->GetName();
+
+    out << "(" << cname << "* = nil);\n\n";
+    out << "    virtual ClassId GetClassId();\n";
+    out << "    virtual boolean IsA(ClassId);\n";
+    
+    out << "    " << cname << "* Get" << cname << "() {\n";
+    out << "        return (" << cname << "*) GetSubject();\n";
+    out << "    }\n";
+
+    return out.good();
+}
+
+boolean GraphicCodeView::VCoreConstInits (ostream& out) {
+    IComp* icomp = GetIComp();
+    SubclassNameVar* cnamer = icomp->GetCClassNameVar();
+    SubclassNameVar* vnamer = icomp->GetVClassNameVar();
+    const char* cname = cnamer->GetName();
+    const char* vname = vnamer->GetName();
+    const char* vbname = vnamer->GetBaseClass();
+    int cid = icomp->GetCIDVar()->GetID();
+    ClassId vid = Combine(cid, COMPONENT_VIEW);
+
+    out << "(" << cname << "* comp) : ";
+    out << vbname << "(comp) {}\n\n";
+
+    out << "ClassId " << vname << "_core::GetClassId () { return ";
+    out << vid << ";}\n";
+    out << "boolean " << vname << "_core::IsA (ClassId id) {\n";
+    out << "    return id == " << vid << " || " << vbname << "::IsA(id);\n";
+    out << "}\n\n";
+
+    return out.good();
+}
+
+boolean GraphicCodeView::VConstDecls(ostream& out) {
+    IComp* icomp = GetIComp();
+    SubclassNameVar* cnamer = icomp->GetCClassNameVar();
+    const char* cname = cnamer->GetName();
+
+    out << "(" << cname << "* = nil);\n\n";
+    return out.good();
+}
+
+boolean GraphicCodeView::VConstInits(ostream& out) {
+    IComp* icomp = GetIComp();
+    char coreclass[CHARBUFSIZE];
+    GetCoreClassName(coreclass);
+    SubclassNameVar* cnamer = icomp->GetCClassNameVar();
+    const char* cname = cnamer->GetName();
+
+    out << "(" << cname << "* comp) : ";
+    out << coreclass << "(comp) {}\n\n";
+
+    return out.good();
+}
+
+boolean GraphicCodeView::GCoreConstDecls (ostream&) { return true; }
+boolean GraphicCodeView::GCoreConstInits (ostream&) { return true; }
+boolean GraphicCodeView::GConstDecls (ostream&) { return true; }
+boolean GraphicCodeView::GConstInits (ostream&) { return true; }
+
+const char* GraphicCodeView::GetGHeader () { return nil; }
+const char* GraphicCodeView::GetCVHeader () { return nil; }
+
+boolean GraphicCodeView::EmitIncludeHeaders (ostream& out) {
+    IComp* icomp = GetIComp();
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    SubclassNameVar* cnamer = icomp->GetCClassNameVar();
+    SubclassNameVar* vnamer = icomp->GetVClassNameVar();
+    
+    const char* gheader = GetGHeader();
+    const char* cvheader = GetCVHeader();
+
+    if (
+        !gnamer->IsSubclass() && !_namelist->Search(gheader) &&
+        !strcmp(_classname, vnamer->GetName()) == 0
+    ) {
+        _namelist->Append(gheader);
+        out << "#include <Unidraw/Graphic/" << gheader << ".h> \n";
+    }
+    if (_emitGraphicComp) {
+        if (
+            !cnamer->IsSubclass() && !vnamer->IsSubclass() &&
+            !_namelist->Search(cvheader) 
+        ) {
+            _namelist->Append(cvheader);
+            out << "#include <Unidraw/Components/" << cvheader << ".h> \n";
+        }
+    }
+    return out.good();
+}

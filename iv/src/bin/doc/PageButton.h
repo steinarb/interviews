@@ -31,18 +31,20 @@
 
 class Bitmap;
 class Color;
-class Deck;
+class Patch;
 
 class PageButton : public Telltale {
 public:
     PageButton(Glyph* label, const Color*);
-
-    virtual void draw(Canvas*, const Allocation&) const;
-protected:
     virtual ~PageButton();
+
+    virtual void allocate(Canvas*, const Allocation&, Extension&);
+    virtual void draw(Canvas*, const Allocation&) const;
+
+    virtual void state_changed(const TelltaleState);
 private:
     const Color* color_;
-    Deck* deck_;
+    Patch* patch_;
     static Color* __fade;
     static Bitmap* __plain;
     static Bitmap* __hit;

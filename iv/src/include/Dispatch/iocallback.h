@@ -31,23 +31,34 @@
  */
 
 #include <Dispatch/iohandler.h>
-#include <generic.h>
 
-#define IOCallback(T) name2(T,_IOCallback)
-#define IOReady(T) name2(T,_IOReady)
-#define IOTimer(T) name2(T,_IOTimer)
+#if defined(__STDC__) || defined(__ANSI_CPP__)
+#define __IOCallback(T) T##_IOCallback
+#define IOCallback(T) __IOCallback(T)
+#define __IOReady(T) T##_IOReady
+#define IOReady(T) __IOReady(T)
+#define __IOTimer(T) T##_IOTimer
+#define IOTimer(T) __IOTimer(T)
+#else
+#define __IOCallback(T) T/**/_IOCallback
+#define IOCallback(T) __IOCallback(T)
+#define __IOReady(T) T/**/_IOReady
+#define IOReady(T) __IOReady(T)
+#define __IOTimer(T) T/**/_IOTimer
+#define IOTimer(T) __IOTimer(T)
+#endif
 
-#define IOCallbackdeclare(T) \
-typedef int T::IOReady(T)(int fd); \
-typedef void T::IOTimer(T)(long sec, long usec); \
+#define declareIOCallback(T) \
+typedef int (T::*IOReady(T))(int fd); \
+typedef void (T::*IOTimer(T))(long sec, long usec); \
 class IOCallback(T) : public IOHandler { \
 public: \
     IOCallback(T)( \
-	T*, IOReady(T)* in, IOReady(T)* out = nil, IOReady(T)* ex = nil \
+	T*, IOReady(T) in, IOReady(T) out = nil, IOReady(T) ex = nil \
     ); \
     IOCallback(T)( \
-	T*, IOTimer(T)*, \
-	IOReady(T)* in = nil, IOReady(T)* out = nil, IOReady(T)* ex = nil \
+	T*, IOTimer(T), \
+	IOReady(T) in = nil, IOReady(T) out = nil, IOReady(T) ex = nil \
     ); \
 \
     virtual int inputReady(int fd); \
@@ -56,22 +67,22 @@ public: \
     virtual void timerExpired(long sec, long usec); \
 private: \
     T* _obj; \
-    IOReady(T)* _input; \
-    IOReady(T)* _output; \
-    IOReady(T)* _except; \
-    IOTimer(T)* _timer; \
+    IOReady(T) _input; \
+    IOReady(T) _output; \
+    IOReady(T) _except; \
+    IOTimer(T) _timer; \
 };
 
-#define IOCallbackimplement(T) \
+#define implementIOCallback(T) \
 IOCallback(T)::IOCallback(T)( \
-    T* obj, IOReady(T)* in, IOReady(T)* out, IOReady(T)* ex \
+    T* obj, IOReady(T) in, IOReady(T) out, IOReady(T) ex \
 ) { \
     _obj = obj; _timer = nil; \
     _input = in; _output = out; _except = ex; \
 } \
 \
 IOCallback(T)::IOCallback(T)( \
-    T* obj, IOTimer(T)* t, IOReady(T)* in, IOReady(T)* out, IOReady(T)* ex \
+    T* obj, IOTimer(T) t, IOReady(T) in, IOReady(T) out, IOReady(T) ex \
 ) { \
     _obj = obj; _timer = t; \
     _input = in; _output = out; _except = ex; \

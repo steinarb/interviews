@@ -22,7 +22,6 @@
 
 /*
  * IBuild object constructor class implementation.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibcreator.c,v 1.2 91/09/27 14:07:43 tang Exp $
  */
 
 #include "ibline.h"
@@ -69,6 +68,7 @@
 #include "ibviewport.h"
 #include "ibvars.h"
 
+#include <Unidraw/Components/psview.h>
 #include <Unidraw/catalog.h>
 
 /*****************************************************************************/
@@ -78,6 +78,8 @@ boolean IBCreator::_lock = true;
 IBCreator::IBCreator () {}
 
 void IBCreator::SetLock(boolean lock) { _lock = lock; }
+
+boolean IBCreator::GetLock() { return _lock; }
 
 void* IBCreator::Create (ClassId id, istream& in, ObjectMap* objmap,int objid){
   if (!_lock) {
@@ -131,6 +133,7 @@ void* IBCreator::Default(ClassId id, istream& in, ObjectMap* objmap,int objid){
         case EXAMINE_TOOL:      CREATE(ExamineTool, in, objmap, objid);
         case FBROWSER_COMP:     CREATE(FBrowserComp, in, objmap, objid);
         case FBROWSER_VAR:      CREATE(FBrowserVar, in, objmap, objid);
+        case ID_VAR:            CREATE(IDVar, in, objmap, objid);
         case STRBROWSER_COMP:   CREATE(StrBrowserComp, in, objmap, objid);
         case GRBLOCK_COMP:      CREATE(GrBlockComp, in, objmap, objid);
         case PANELCONTROL_COMP: CREATE(PanelCtrlComp, in, objmap, objid);
@@ -190,7 +193,7 @@ void* IBCreator::Create (ClassId id) {
     if (id == ISPLINE_VIEW)         return new IView;
     if (id == ITEXT_VIEW)           return new ITextView;
     if (id == IKEY_VIEW)            return new ITextView;
-    if (id == IRECT_VIEW)           return new IView;
+    if (id == IRECT_VIEW)           return new IRectView;
     if (id == IELLIPSE_VIEW)        return new IView;
     if (id == IPOLYGON_VIEW)        return new IView;
     if (id == ICLOSEDSPLINE_VIEW)   return new IView;
@@ -349,6 +352,20 @@ void* IBCreator::Create (ClassId id) {
     if (id == VBOX_COMP)           return new VBoxComp;
     if (id == VIEWPORT_COMP)       return new ViewportComp;
     if (id == COMMANDCONTROL_COMP) return new CommandCtrlComp;
+
+    if (id == ITEXT_PS)            return new IPSView;
+    if (id == IKEY_PS)             return new IPSView;
+    if (id == ILINE_PS)            return new IPSView;
+    if (id == IMULTILINE_PS)       return new IPSView;
+    if (id == ISPLINE_PS)          return new IPSView;
+    if (id == IRECT_PS)            return new IPSView;
+    if (id == IELLIPSE_PS)         return new IPSView;
+    if (id == IPOLYGON_PS)         return new IPSView;
+    if (id == ICLOSEDSPLINE_PS)    return new IPSView;
+    if (id == ISTENCIL_PS)         return new IPSView;
+    if (id == IRASTER_PS)          return new IPSView;
+    if (id == GRBLOCK_PS)          return new IPSView;
+    if (id == IPS_VIEWS)           return new PostScriptViews;
             
 
     return Creator::Create(id);

@@ -21,7 +21,7 @@
  */
 
 /*
- * Rubberbanding for IB components.
+ * Rubberbanding for ibuild components.
  */
 
 #ifndef ibrubrect_h

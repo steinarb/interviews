@@ -27,6 +27,9 @@
 #ifndef unidraw_components_cglue_h
 #define unidraw_components_cglue_h
 
+#include <InterViews/enter-scope.h>
+#include <Unidraw/enter-scope.h>
+
 class Shape;
 
 class CGlue {

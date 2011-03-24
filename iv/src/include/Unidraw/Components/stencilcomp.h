@@ -31,14 +31,14 @@
 #include <Unidraw/Components/grview.h>
 #include <Unidraw/Components/psview.h>
 
-class Stencil;
+class UStencil;
 
 class StencilComp : public GraphicComp {
 public:
-    StencilComp(Stencil* = nil, const char* filename = nil);
+    StencilComp(UStencil* = nil, const char* filename = nil);
     virtual ~StencilComp();
 
-    Stencil* GetStencil();
+    UStencil* GetStencil();
     const char* GetFileName();
 
     virtual Component* Copy();

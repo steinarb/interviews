@@ -26,23 +26,24 @@
  * StringEditor - interactive editor for character strings
  */
 
-#include <IV-look/2.6/InterViews/button.h>
-#include <IV-look/2.6/InterViews/streditor.h>
 #include <InterViews/bitmap.h>
 #include <InterViews/cursor.h>
 #include <InterViews/font.h>
-#include <InterViews/sensor.h>
-#include <InterViews/world.h>
-#include <InterViews/2.6/InterViews/painter.h>
-#include <InterViews/2.6/InterViews/shape.h>
-#include <InterViews/2.6/InterViews/textbuffer.h>
-#include <InterViews/2.6/InterViews/textdisplay.h>
 #include <InterViews/Bitmaps/hand.bm>
 #include <InterViews/Bitmaps/handMask.bm>
 #include <InterViews/Bitmaps/lfast.bm>
 #include <InterViews/Bitmaps/lfastMask.bm>
 #include <InterViews/Bitmaps/rfast.bm>
 #include <InterViews/Bitmaps/rfastMask.bm>
+#include <IV-2_6/InterViews/button.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/sensor.h>
+#include <IV-2_6/InterViews/shape.h>
+#include <IV-2_6/InterViews/streditor.h>
+#include <IV-2_6/InterViews/textbuffer.h>
+#include <IV-2_6/InterViews/textdisplay.h>
+#include <IV-2_6/InterViews/world.h>
+#include <OS/math.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
@@ -100,27 +101,28 @@ static Cursor* rightCursor;
 
 void StringEditor::Reconfig () {
     if (handCursor == nil) {
-        Bitmap hand(
-            hand_bits, hand_width, hand_height, hand_x_hot, hand_y_hot
-        );
-        Bitmap handmask(hand_mask_bits, hand_mask_width, hand_mask_height);
-        Bitmap left(
-            lfast_bits, lfast_width, lfast_height, lfast_x_hot, lfast_y_hot
-        );
-        Bitmap leftmask(lfast_mask_bits, lfast_mask_width, lfast_mask_height);
-        Bitmap right(
-            rfast_bits, rfast_width, rfast_height, rfast_x_hot, rfast_y_hot
-        );
-        Bitmap rightmask(rfast_mask_bits, rfast_mask_width, rfast_mask_height);
-
         handCursor = new Cursor(
-            &hand, &handmask, output->GetFgColor(), output->GetBgColor()
-        );
+	    new Bitmap(
+		hand_bits, hand_width, hand_height, hand_x_hot, hand_y_hot
+	    ),
+	    new Bitmap(hand_mask_bits, hand_mask_width, hand_mask_height),
+	    output->GetFgColor(), output->GetBgColor()
+	);
+
         leftCursor = new Cursor(
-            &left, &leftmask, output->GetFgColor(), output->GetBgColor()
+	    new Bitmap(
+		lfast_bits, lfast_width, lfast_height, lfast_x_hot, lfast_y_hot
+	    ),
+	    new Bitmap(lfast_mask_bits, lfast_mask_width, lfast_mask_height),
+	    output->GetFgColor(), output->GetBgColor()
         );
+
         rightCursor = new Cursor(
-            &right, &rightmask, output->GetFgColor(), output->GetBgColor()
+	    new Bitmap(
+		rfast_bits, rfast_width, rfast_height, rfast_x_hot, rfast_y_hot
+	    ),
+	    new Bitmap(rfast_mask_bits, rfast_mask_width, rfast_mask_height),
+            output->GetFgColor(), output->GetBgColor()
         );
     }
 

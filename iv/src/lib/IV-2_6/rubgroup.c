@@ -26,7 +26,7 @@
  * RubberGroup implementation.
  */
 
-#include <InterViews/2.6/InterViews/rubgroup.h>
+#include <IV-2_6/InterViews/rubgroup.h>
 
 class RubberList {
 private:
@@ -107,33 +107,33 @@ RubberList* RubberList::Find(Rubberband* target) {
 /*****************************************************************************/
 
 RubberGroup::RubberGroup(Painter* p, Canvas* c) : Rubberband(p, c, 0, 0) {
-    list = cur = new RubberList;
+    rlist = cur = new RubberList;
 }
 
 void RubberGroup::Draw() {
-    for (RubberList* r = list->Next(); r != list->End(); r = r->Next()) {
+    for (RubberList* r = rlist->Next(); r != rlist->End(); r = r->Next()) {
 	r->rub->Draw();
     }
 }
 
 void RubberGroup::Erase() {
-    for (RubberList* r = list->Next(); r != list->End(); r = r->Next()) {
+    for (RubberList* r = rlist->Next(); r != rlist->End(); r = r->Next()) {
 	r->rub->Erase();
     }
 }
 
 void RubberGroup::Track(IntCoord x, IntCoord y) {
-    for (RubberList* r = list->Next(); r != list->End(); r = r->Next()) {
+    for (RubberList* r = rlist->Next(); r != rlist->End(); r = r->Next()) {
 	r->rub->Track(x, y);
     }
 }
 
-RubberGroup::~RubberGroup() { delete list; }
+RubberGroup::~RubberGroup() { delete rlist; }
 
 void RubberGroup::SetPainter(Painter* p) {
     Rubberband::SetPainter(p);
 
-    for (RubberList* r = list->Next(); r != list->End(); r = r->Next()) {
+    for (RubberList* r = rlist->Next(); r != rlist->End(); r = r->Next()) {
 	r->rub->SetPainter(p);
     }
 }
@@ -141,7 +141,7 @@ void RubberGroup::SetPainter(Painter* p) {
 void RubberGroup::SetCanvas(Canvas* c) {
     Rubberband::SetCanvas(c);
 
-    for (RubberList* r = list->Next(); r != list->End(); r = r->Next()) {
+    for (RubberList* r = rlist->Next(); r != rlist->End(); r = r->Next()) {
 	r->rub->SetCanvas(c);
     }
 }
@@ -149,26 +149,26 @@ void RubberGroup::SetCanvas(Canvas* c) {
 void RubberGroup::Append(
     Rubberband* r1, Rubberband* r2, Rubberband* r3, Rubberband* r4
 ) {
-    list->Append(r1);
+    rlist->Append(r1);
     if (r2 != nil) {
-	list->Append(r2);
+	rlist->Append(r2);
 
         if (r3 != nil) {
-            list->Append(r3);
+            rlist->Append(r3);
 
             if (r4 != nil) {
-                list->Append(r4);
+                rlist->Append(r4);
             }
         }
     }
 }
 
 void RubberGroup::Remove(Rubberband* target) {
-    RubberList* r = list->Find(target);
+    RubberList* r = rlist->Find(target);
     
     if (r != nil) {
 	cur = cur->Next();
-	list->Delete(r);
+	rlist->Delete(r);
     }
 }
 
@@ -177,12 +177,12 @@ void RubberGroup::RemoveCur() {
     
     if (!AtEnd()) {
 	cur = cur->Next();
-	list->Delete(doomed);
+	rlist->Delete(doomed);
     }
 }
 
 void RubberGroup::SetCurrent(Rubberband* target) {
-    RubberList* r = list->Find(target);
+    RubberList* r = rlist->Find(target);
     
     if (r != nil) {
 	cur = r;
@@ -194,23 +194,23 @@ Rubberband* RubberGroup::GetCurrent() {
 }
 
 Rubberband* RubberGroup::First() {
-    cur = list->Next(); 
+    cur = rlist->Next(); 
     return cur->rub;
 }
 Rubberband* RubberGroup::Last() {
-    cur = list->Prev(); 
+    cur = rlist->Prev(); 
     return cur->rub;
 }
 
 Rubberband* RubberGroup::Next() {
-    cur = list->Next(); 
+    cur = cur->Next(); 
     return cur->rub;
 }
 
 Rubberband* RubberGroup::Prev() {
-    cur = list->Prev(); 
+    cur = cur->Prev(); 
     return cur->rub;
 }
 
-boolean RubberGroup::AtEnd() { return cur == list; }
-boolean RubberGroup::IsEmpty() { return list->IsEmpty(); }
+boolean RubberGroup::AtEnd() { return cur == rlist; }
+boolean RubberGroup::IsEmpty() { return rlist->IsEmpty(); }

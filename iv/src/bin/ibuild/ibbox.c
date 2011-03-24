@@ -22,7 +22,6 @@
 
 /*
  * Implementation of Box component and derived classes.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibbox.c,v 1.2 91/09/27 14:07:11 tang Exp $
  */
 
 #include "ibbox.h"
@@ -250,13 +249,21 @@ boolean BoxCode::IsA (ClassId id) { return BOX_CODE ==id || CodeView::IsA(id);}
 BoxCode::BoxCode (BoxComp* subj) : CodeView(subj) { }
 BoxComp* BoxCode::GetBoxComp () { return (BoxComp*) GetSubject(); }
 
+void BoxCode::Update () {
+    CodeView::Update();
+    InteractorComp* subj = GetIntComp();
+    Graphic* gr = subj->GetGraphic();
+    gr->SetColors(nil, nil);
+    gr->SetFont(nil);
+}
+
 boolean BoxCode::Definition (ostream& out) {
     boolean ok = true;
     Iterator i;
 
     if (
-        _emitInstanceDecls || _emitForward || 
-        _emitProperty || _emitClassHeaders || _emitHeaders
+        _emitInstanceDecls || _emitForward || _emitProperty ||
+        _emitClassHeaders || _emitHeaders
     ) {
 	ok = ok && CodeView::Definition(out);
         ok = ok && Iterate(out);
@@ -312,7 +319,8 @@ boolean BoxCode::Definition (ostream& out) {
 
     } else if (
 	_emitBSDecls || _emitBSInits || 
-	_emitFunctionDecls || _emitFunctionInits 
+	_emitFunctionDecls || _emitFunctionInits ||
+        _emitCreatorHeader || _emitCreatorSubj || _emitCreatorView
     ) {
         ok = ok && Iterate(out);
     } else if (
@@ -334,8 +342,11 @@ boolean BoxCode::CoreConstDecls(ostream& out) {
 }
 
 boolean BoxCode::CoreConstInits(ostream& out) {
+    SubclassNameVar* snamer = GetIntComp()->GetClassNameVar();
+    const char* subclass = snamer->GetName();
+
     out << "() {\n";
-    out << "    perspective = new Perspective;\n";
+    out << "    SetClassName(\"" << subclass << "\");\n";
     out << "}\n\n";
     return out.good();
 }

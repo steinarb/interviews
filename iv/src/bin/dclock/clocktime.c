@@ -27,23 +27,39 @@
 #include "clocktime.h"
 #include <string.h>
 
+#ifdef __DECCXX
+extern "C" int gettimeofday(struct timeval*, struct timezone*);
+#endif
+
 Clock::Clock () {
+#if defined(sun) && OSMajorVersion >= 5
+    gettimeofday(&gmt);
+#else
     gettimeofday(&gmt, 0);
+#endif
     nextMinute = gmt.tv_sec;
 }
 
 int Clock::NextTick () {
+#if defined(sun) && OSMajorVersion >= 5
+    gettimeofday(&gmt);
+#else
     gettimeofday(&gmt, 0);
+#endif
     return nextMinute - gmt.tv_sec;
 }
 
 void Clock::GetTime (char* date, int& h, int& m, int& s) {
     struct tm local;
 
-#ifdef hpux
+#if defined(hpux) || defined(AIXV3)
+    local = * localtime((time_t*) &gmt.tv_sec);
+#else
+#ifdef __DECCXX
     local = * localtime((time_t*)&gmt.tv_sec);
 #else
     local = * localtime(&gmt.tv_sec);
+#endif
 #endif
     h = local.tm_hour;
     m = local.tm_min;

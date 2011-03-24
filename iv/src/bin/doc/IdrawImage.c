@@ -30,18 +30,15 @@
 
 #include "Figure.h"
 
-#include <InterViews/box.h>
 #include <InterViews/brush.h>
 #include <InterViews/character.h>
 #include <InterViews/color.h>
-#include <InterViews/fixedspan.h>
 #include <InterViews/font.h>
+#include <InterViews/layout.h>
 #include <InterViews/psfont.h>
-#include <InterViews/shapeof.h>
-#include <InterViews/strut.h>
 #include <InterViews/tformsetter.h>
 #include <InterViews/transformer.h>
-#include <InterViews/world.h>
+#include <IV-2_6/InterViews/world.h>
 
 #include <string.h>
 #include <ctype.h>
@@ -227,18 +224,6 @@ const Font* read_font (FILE* f) {
     }
 }
 
-float pointsize (const Font* f) {
-    FontInfo* font = _fonts;
-    while (font != nil && font->_font != f) {
-        font = font->_next;
-    }
-    if (font != nil) {
-        return font->_pointsize;
-    } else {
-        return 0;
-    }
-}
-
 class Stipple : public Resource {
 public:
     Stipple (float dither);
@@ -388,6 +373,7 @@ Glyph* read_idraw_graphic (
     skip(file);
     Transformer tx;
     Glyph* glyph = nil;
+    const LayoutKit& layout = *LayoutKit::instance();
     if (fscanf(file, "%s", buffer) != EOF) {
         figure& fig = figures[which(figures, buffer)];
 
@@ -415,7 +401,7 @@ Glyph* read_idraw_graphic (
         } else if (
             strcmp(fig.name, "Idraw") == 0 || strcmp(fig.name, "Pict") == 0
         ) {
-            Glyph* pic = new Overlay();
+            Glyph* pic = layout.overlay();
             Glyph* g;
             do {
                 g = read_idraw_graphic(file, b, fg, bg, f, s);
@@ -430,21 +416,27 @@ Glyph* read_idraw_graphic (
             skip(file);
             fscanf(file, "%s", buffer);
             getc(file);
-            TBBox* col = new TBBox();
-            LRBox* line = new LRBox();
-            Coord lineheight = pointsize(f);
+            PolyGlyph* col = layout.vbox_first_aligned();
+            PolyGlyph* line = layout.hbox_first_aligned();
+	    FontBoundingBox bbox;
+	    f->font_bbox(bbox);
+            Coord lineheight = bbox.font_ascent() + bbox.font_descent();
             if (_idraw_font_metrics) {
-                lineheight = lineheight/fixtextscale;
+                lineheight /= fixtextscale;
             }
             int c;
             while ((c = getc(file)) != ']') {
                 if (c == '\n') {
-                    line->append(new Strut(f));
-                    col->append(new FixedSpan(line, Dimension_Y, lineheight));
-                    line = new LRBox();
+                    line->append(layout.strut(f));
+                    col->append(
+			layout.v_fixed_span(line, lineheight)
+		    );
+                    line = layout.hbox();
                 } else if (c == ' ') {
                     if (_idraw_font_metrics) {
-                        line->append(new ShapeOf(new Character(' ', f, fg)));
+                        line->append(
+			    layout.shape_of(new Character(' ', f, fg))
+			);
                     } else {
                         line->append(new Character(' ', f, fg));
                     }
@@ -464,7 +456,7 @@ Glyph* read_idraw_graphic (
             if (_idraw_font_metrics) {
                 fixtext.scale(fixtextscale, fixtextscale);
             }
-            fixtext.translate(0, f->descent() - lineheight);
+            fixtext.translate(0, bbox.font_descent() - lineheight);
             glyph = new TransformSetter(col, fixtext);
         } else {
             skip(file);

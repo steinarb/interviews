@@ -27,7 +27,10 @@
 #ifndef unidraw_stateview_h
 #define unidraw_stateview_h
 
-#include <InterViews/scene.h>
+#include <IV-2_6/InterViews/scene.h>
+#include <Unidraw/enter-scope.h>
+
+#include <IV-2_6/_enter.h>
 
 class StateVar;
 
@@ -49,5 +52,7 @@ private:
     friend class StateVar;
     virtual void SetSubject(StateVar*);
 };
+
+#include <IV-2_6/_leave.h>
 
 #endif

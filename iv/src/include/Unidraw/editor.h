@@ -29,24 +29,31 @@
 #ifndef unidraw_editor_h
 #define unidraw_editor_h
 
-#include <InterViews/scene.h>
+#include <InterViews/input.h>
+#include <Unidraw/enter-scope.h>
+
+#include <InterViews/_enter.h>
 
 class Component;
+class EditorImpl;
 class KeyMap;
+class Interactor;
 class ManagedWindow;
 class Selection;
 class StateVar;
 class Tool;
 class Viewer;
 
-class Editor : public MonoScene {
+class Editor : public InputHandler {
 public:
     virtual ~Editor();
 
     virtual void Open();
     virtual void Close();
-    virtual void Handle(Event&);
     virtual void Update();
+
+    virtual void SetWindow(ManagedWindow*);
+    virtual ManagedWindow* GetWindow() const;
 
     virtual Component* GetComponent();
     virtual Viewer* GetViewer(int = 0);
@@ -62,25 +69,26 @@ public:
 
     virtual StateVar* GetState(const char*);
 
-    virtual void InsertDialog(Interactor*);
-    virtual void RemoveDialog(Interactor*);
-protected:
-    Editor();
-    virtual void HandleKey(Event&);
     virtual boolean DependsOn(Component*);
 
-    void SetWindow(ManagedWindow*);
-    ManagedWindow* GetWindow();
+    virtual void InsertDialog(Glyph*);
+    virtual void RemoveDialog(Glyph*);
+
+    virtual void SetClassName(const char*);
+    virtual void SetInstance(const char*);
+
+    virtual void keystroke(const Event&);
+protected:
+    Editor();
+    void Insert(Interactor*);
 private:
-    friend class Unidraw;
-    void Ref();
-    void Unref();
-private:
-    int _ref;
     ManagedWindow* _window;
+    EditorImpl* _impl;
 };
 
-inline void Editor::SetWindow (ManagedWindow* w) { _window = w; }
-inline ManagedWindow* Editor::GetWindow () { return _window; }
+inline void Editor::SetWindow(ManagedWindow* w) { _window = w; }
+inline ManagedWindow* Editor::GetWindow() const { return _window; }
+
+#include <InterViews/_leave.h>
 
 #endif

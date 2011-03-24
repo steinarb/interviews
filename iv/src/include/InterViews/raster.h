@@ -37,7 +37,7 @@
 
 class RasterRep;
 
-class Raster : virtual public Resource {
+class Raster : public Resource {
 public:
     Raster(unsigned long width, unsigned long height);
     Raster(const Raster&);

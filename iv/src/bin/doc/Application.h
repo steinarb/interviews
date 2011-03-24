@@ -29,8 +29,11 @@
 
 #include <InterViews/boolean.h>
 
+class ApplicationViewerInfo;
+class ApplicationViewerInfo_List;
 class Document;
 class DocumentViewer;
+class Session;
 
 const int Confirmed = 1;
 const int NotConfirmed = 2;
@@ -40,8 +43,6 @@ class Application {
 public:
     Application ();
     virtual ~Application ();
-
-    virtual void run ();
 
     virtual const char* choose (
         DocumentViewer*, const char* prompt, const char* filter
@@ -65,8 +66,10 @@ public:
 
     virtual boolean command (const char* command);
 protected:
-    class World* _world;
-    class ApplicationViewerInfo_List* _viewer;
+    Session* _session;
+    ApplicationViewerInfo_List* _viewer;
+private:
+    void raise_for_post(ApplicationViewerInfo&);
 };
 
 #endif

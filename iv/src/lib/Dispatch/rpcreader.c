@@ -29,21 +29,26 @@
 
 // Prepare to read RPC requests from somebody else's connection or
 // prepare to handle RPC requests read by somebody else.  Assume the
-// I/O format has already been negotiated.  Zero the function array
-// that a derived class will initialize with addresses of static
+// I/O format has already been negotiated.  Start listening for RPC
+// requests on the connection, taking into account the special case
+// where RPC requests have already been buffered.  Zero the function
+// array that a derived class will initialize with addresses of static
 // member functions to unmarshall RPC requests.
 
 RpcReader::RpcReader(rpcstream* _client, int nfcns) : IOHandler(),
+    _nfcns(nfcns),
+    _function(new PF[nfcns]),
     _client(_client),
     _delete(false),
-    _function(new PF[nfcns]),
-    _nfcns(nfcns)
+    _fd(_client ? _client->rdbuf()->fd() : -1)
 {
     if (_client) {
 	client().nonblocking(true);
-	Dispatcher::instance().link(
-	    client().rdbuf()->fd(), Dispatcher::ReadMask, this
-	);
+	Dispatcher::instance().link(_fd, Dispatcher::ReadMask, this);
+	if (client().rdbuf()->read_request() != EOF) {
+	    Dispatcher::instance().setReady(_fd, Dispatcher::ReadMask);
+	    client().incomplete_request(false);
+	}
     }
 
     for (int i = 0; i < nfcns; i++) {
@@ -53,20 +58,26 @@ RpcReader::RpcReader(rpcstream* _client, int nfcns) : IOHandler(),
 
 // Connect to a client through an already open file number.  Negotiate
 // the I/O format.  Start listening for RPC requests on the
-// connection.  Zero the function array that a derived class will
-// initialize with addresses of static member functions to unmarshall
-// RPC requests.
+// connection, taking into account the special case where RPC requests
+// have already been buffered (when the I/O format was negotiated).
+// Zero the function array that a derived class will initialize with
+// addresses of static member functions to unmarshall RPC requests.
 
 RpcReader::RpcReader(int fd, int nfcns, boolean binary) : IOHandler(),
+    _nfcns(nfcns),
+    _function(new PF[nfcns]),
     _client(new rpcstream),
     _delete(true),
-    _function(new PF[nfcns]),
-    _nfcns(nfcns)
+    _fd(fd)
 {
     client().attach(fd);
     client().negotiate(binary);
     client().nonblocking(true);
     Dispatcher::instance().link(fd, Dispatcher::ReadMask, this);
+    if (client().rdbuf()->read_request() != EOF) {
+	Dispatcher::instance().setReady(fd, Dispatcher::ReadMask);
+	client().incomplete_request(false);
+    }
 
     for (int i = 0; i < nfcns; i++) {
 	_function[i] = nil;
@@ -75,13 +86,12 @@ RpcReader::RpcReader(int fd, int nfcns, boolean binary) : IOHandler(),
 
 // Stop listening for RPC requests on the connection if we have one.
 // Delete the connection if we created it ourselves.  Note that
-// deleting the connection will not close its file number.
+// deleting a connection attached to a file number will not close that
+// file number.
 
 RpcReader::~RpcReader() {
-    if (_client) {
-	Dispatcher::instance().link(
-	    client().rdbuf()->fd(), Dispatcher::ReadMask, nil
-	);
+    if (_fd >= 0) {
+	Dispatcher::instance().unlink(_fd);
     }
     if (_delete) {
 	delete _client;

@@ -31,10 +31,17 @@
 
 #include <InterViews/canvas.h>
 
+class ostream;
+class PrinterRep;
+
 class Printer : public Canvas {
 public:
-    Printer(class ostream*);
+    Printer(ostream*);
     virtual ~Printer();
+
+    virtual PixelCoord to_pixels(Coord) const;
+    virtual Coord to_coord(PixelCoord) const;
+    virtual Coord to_pixels_coord(Coord) const;
 
     virtual void resize(Coord left, Coord bottom, Coord right, Coord top);
 
@@ -70,7 +77,7 @@ public:
 protected:
     virtual void flush();
 private:
-    class PrinterRep* rep_;
+    PrinterRep* rep_;
 };
 
 #endif

@@ -34,8 +34,8 @@ A2: Unidraw is a graphical editing framework that is part of InterViews.
 
 Q3: What is the latest release of InterViews?
 
-A3: We are currently distributing version 3.0.1.  The 3.1 release
-    will probably occur near the end of '91.
+A3: We are currently distributing version 3.1.  The 3.2 release
+    will probably occur in the middle of '93.
 
 --------------------
 
@@ -44,7 +44,7 @@ Q4: How does one obtain the InterViews distribution?
 A4: The distribution is available via anonymous ftp from
     interviews.stanford.edu (IP address 36.22.0.175).
     Use login "ftp" and any password.  Make sure to use
-    type "binary" and get "pub/3.0.1.tar.Z".  This is a
+    type "binary" and get "pub/3.1.tar.Z".  This is a
     single compressed tar file with the source and documentation.
     There is a README file in the top directory that explains
     how to build and install it.
@@ -118,8 +118,8 @@ A10: InterViews is a research project with participation from both
      generate new releases, write documentation, give tutorials, and
      try to answer questions as best as we can.  Quest Systems,
      a small company in Santa Clara, now offers support for InterViews
-     (their product is called ObjectViews).  Other companies
-     are considering offering a product based on InterViews.
+     (their product is called ObjectViews).  HP has announced
+     a product based on InterViews called InterViews Plus.
 
 --------------------
 
@@ -171,8 +171,9 @@ A14: Briefly, the next technical push is to make high-level
      is available to all applications.  We also want to apply
      the composition ideas we have used for geometry to the time
      domain, making it easy to mix audio, video, and animation objects.
-     Strategically, we will continue to lead the X Consortium XC++
-     working group to try to define a standard C++ binding for X.
+     Strategically, we will continue to lead the X Consortium
+     Fresco (formerly known as XC++) working group to try
+     to define a standard C++ binding for X.
 
 --------------------
 
@@ -189,9 +190,8 @@ A15: Our philosophy is not to break something unless we have to.
 
 Q16: What is the schedule for future InterViews releases?
 
-A16: The main goal of 3.1 will be to integrate the Unidraw and glyph work,
-     especially so that the interface builder (ibuild) can work with glyphs.
-     Our best guess for 3.1 is the late '91.
+A16: The schedule and feature list for 3.2 has not yet been determined.
+     We will make more information available as it becomes firmer.
 
 --------------------
 
@@ -215,12 +215,13 @@ A18: The uncompressed source is about 8Mb.  The installed binaries
 Q19: How long does it take to build InterViews?
 
 A19: This depends on the platform, of course, but on an Iris Indigo
-     (33 MHz MIPS R3000) it takes about 1 hour for a complete build and
+     (33 MHz MIPS R3000) it takes about 45 minutes for a complete build and
      install from scratch.
 
 --------------------
 
 Q20: Does InterViews work with g++?
 
-A20: Currently, InterViews 3.0.1 does not work with g++.
-     For more details, please contact Mike Stump, mrs@csun.edu.
+A20: For details about how to use g++ with InterViews, please see Mike
+     Stump's patch kit in pub/contrib/g++ on interviews.stanford.edu.
+     For further information please contact Mike Stump, mrs@cygnus.com.

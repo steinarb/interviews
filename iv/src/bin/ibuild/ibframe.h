@@ -22,7 +22,6 @@
 
 /*
  * Frame component declarations.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibframe.h,v 1.2 91/09/27 14:14:01 tang Exp $
  */
 
 #ifndef ibframe_h
@@ -65,6 +64,7 @@ inline FrameGraphic* FrameComp::GetFrameGraphic() { return _framegr; }
 class FrameView : public MonoSceneView {
 public:
     FrameView(FrameComp* = nil);
+    virtual ~FrameView();
 
     FrameComp* GetFrameComp();
 
@@ -81,6 +81,7 @@ class FrameCode : public MonoSceneCode {
 public:
     FrameCode(FrameComp* = nil);
 
+    virtual void Update();
     virtual boolean Definition(ostream&);
     FrameComp* GetFrameComp();
 

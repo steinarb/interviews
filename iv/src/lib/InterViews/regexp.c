@@ -26,7 +26,6 @@
  * Regexp - regular expression searching
  */
 
-#include <InterViews/boolean.h>
 #include <InterViews/regexp.h>
 #include <stream.h>
 #include <string.h>

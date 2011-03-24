@@ -31,18 +31,25 @@
 #include <InterViews/boolean.h>
 
 class Application;
-class DocumentViewer;
-class Glyph;
-
-class Item;
-class TextItem;
-class PSFigItem;
-class TabularItem;
+class CounterInfo_List;
 class CounterItem;
-class LabelItem;
-class RefItem;
+class DocumentParameterInfo_List;
+class DocumentViewer;
+class DocumentViewerInfo_List;
+class FloatInfo_List;
 class FloatItem;
+class Glyph;
+class Item;
+class LabelInfo_List;
+class LabelItem;
+class MacroInfo_List;
 class PagenumberItem;
+class PSFigItem;
+class RefItem;
+class StyleInfo_List;
+class SourceInfo_List;
+class TabularItem;
+class TextItem;
 
 class istream;
 class ostream;
@@ -76,6 +83,7 @@ public:
     virtual const char* document_parameter (const char*);
     virtual float document_metric (const char*);
     virtual float convert_metric (const char*);
+    virtual void format_counter (long value, const char* format, char* buffer);
 
     virtual TextItem* body ();
 
@@ -229,14 +237,14 @@ protected:
     TextItem* _body;
     char* _style_name;
     float _format_width;
-    class StyleInfo_List* _style;
-    class SourceInfo_List* _source;
-    class MacroInfo_List* _macro;
-    class CounterInfo_List* _counter;
-    class LabelInfo_List* _label;
-    class FloatInfo_List* _float;
-    class DocumentParameterInfo_List* _parameter;
-    class DocumentViewerInfo_List* _viewer;
+    StyleInfo_List* _style;
+    SourceInfo_List* _source;
+    MacroInfo_List* _macro;
+    CounterInfo_List* _counter;
+    LabelInfo_List* _label;
+    FloatInfo_List* _float;
+    DocumentParameterInfo_List* _parameter;
+    DocumentViewerInfo_List* _viewer;
 };
 
 #endif

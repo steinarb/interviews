@@ -48,24 +48,6 @@ private:
     Requisition requisition_;
 };
 
-class HGlue : public Glue {
-public:
-    HGlue();
-    HGlue(Coord natural);
-    HGlue(Coord natural, Coord stretch, Coord shrink);
-    HGlue(Coord natural, Coord stretch, Coord shrink, float alignment);
-    virtual ~HGlue();
-};
-
-class VGlue : public Glue {
-public:
-    VGlue();
-    VGlue(Coord natural);
-    VGlue(Coord natural, Coord stretch, Coord shrink);
-    VGlue(Coord natural, Coord stretch, Coord shrink, float alignment);
-    virtual ~VGlue();
-};
-
 #include <InterViews/_leave.h>
 
 #endif

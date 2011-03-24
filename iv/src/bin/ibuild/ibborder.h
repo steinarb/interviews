@@ -22,7 +22,6 @@
 
 /*
  * Border component declarations.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibborder.h,v 1.2 91/09/27 14:12:56 tang Exp $
  */
 
 #ifndef ibborder_h
@@ -66,6 +65,7 @@ public:
     BorderCode(BorderComp* = nil);
 
     BorderComp* GetBorderComp();
+    virtual void Update();
     virtual boolean Definition(ostream&);
 
     virtual ClassId GetClassId();

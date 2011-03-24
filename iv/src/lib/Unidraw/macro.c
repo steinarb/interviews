@@ -105,13 +105,13 @@ boolean MacroCmd::Reversible () {
     return false;
 }
 
-UList* MacroCmd::Elem (Iterator i) { return (UList*) i.GetValue(); }
+UList* MacroCmd::Elem (Iterator& i) { return (UList*) i.GetValue(); }
 void MacroCmd::First (Iterator& i) { i.SetValue(_cmds->First()); }
 void MacroCmd::Last (Iterator& i) { i.SetValue(_cmds->Last()); }
 void MacroCmd::Next (Iterator& i) { i.SetValue(Elem(i)->Next()); }
 void MacroCmd::Prev (Iterator& i) { i.SetValue(Elem(i)->Prev()); }
-boolean MacroCmd::Done (Iterator i) { return Elem(i) == _cmds->End(); }
-Command* MacroCmd::GetCommand (Iterator i) { return Cmd(Elem(i)); }
+boolean MacroCmd::Done (Iterator& i) { return Elem(i) == _cmds->End(); }
+Command* MacroCmd::GetCommand (Iterator& i) { return Cmd(Elem(i)); }
 
 void MacroCmd::SetCommand (Command* cmd, Iterator& i) {
     i.SetValue(_cmds->Find(cmd));
@@ -149,11 +149,11 @@ void MacroCmd::Prepend (Command* c1, Command* c2, Command* c3, Command* c4) {
     }
 }
 
-void MacroCmd::InsertBefore (Iterator i, Command* cmd) {
+void MacroCmd::InsertBefore (Iterator& i, Command* cmd) {
     Elem(i)->Append(new UList(cmd));
 }
 
-void MacroCmd::InsertAfter (Iterator i, Command* cmd) {
+void MacroCmd::InsertAfter (Iterator& i, Command* cmd) {
     Elem(i)->Prepend(new UList(cmd));
 }
 

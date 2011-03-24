@@ -35,7 +35,10 @@ MonoGlyph::~MonoGlyph() {
 
 void MonoGlyph::body(Glyph* glyph) {
     Resource::ref(glyph);
-    Resource::unref(body_);
+    if (body_ != nil) {
+	body_->undraw();
+	Resource::unref_deferred(body_);
+    }
     body_ = glyph;
 }
 
@@ -44,24 +47,32 @@ Glyph* MonoGlyph::body() const { return body_; }
 void MonoGlyph::request(Requisition& requisition) const {
     if (body_ != nil) {
         body_->request(requisition);
+    } else {
+	Glyph::request(requisition);
     }
 }
 
 void MonoGlyph::allocate(Canvas* c, const Allocation& a, Extension& ext) {
     if (body_ != nil) {
         body_->allocate(c, a, ext);
+    } else {
+	Glyph::allocate(c, a, ext);
     }
 }
 
-void MonoGlyph::draw(Canvas* canvas, const Allocation& a) const {
+void MonoGlyph::draw(Canvas* c, const Allocation& a) const {
     if (body_ != nil) {
-        body_->draw(canvas, a);
+        body_->draw(c, a);
+    } else {
+	Glyph::draw(c, a);
     }
 }
 
 void MonoGlyph::print(Printer* p, const Allocation& a) const {
     if (body_ != nil) {
         body_->print(p, a);
+    } else {
+	Glyph::print(p, a);
     }
 }
 
@@ -71,6 +82,12 @@ void MonoGlyph::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
     } else {
         Glyph::pick(c, a, depth, h);
     }        
+}
+
+void MonoGlyph::undraw() {
+    if (body_ != nil) {
+	body_->undraw();
+    }
 }
 
 void MonoGlyph::append(Glyph* glyph) {

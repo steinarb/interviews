@@ -32,10 +32,9 @@ class Transformer;
 class Painter;
 
 extern void ComputeViewPath (Event& e, GraphicView* views, Selection* s);
-extern int best_new_count (int count, int size);
 extern Painter* InitPainter (Graphic*, Transformer*);
-extern const char* GetName(GraphicComp* comp);
+extern const char* GetName(GraphicComp* comp, boolean, boolean);
 extern char* GetDirName(const char* fullname);
 extern char* GetOrigName(const char* fullname);
-
+extern char* FilterName (const char* name);
 #endif

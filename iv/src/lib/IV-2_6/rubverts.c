@@ -26,8 +26,8 @@
  * Implementation of GrowingVertices and derived classes.
  */
 
-#include <InterViews/2.6/InterViews/rubverts.h>
-#include <InterViews/2.6/InterViews/painter.h>
+#include <IV-2_6/InterViews/rubverts.h>
+#include <IV-2_6/InterViews/painter.h>
 #include <OS/math.h>
 #include <OS/memory.h>
 #include <stdlib.h>
@@ -48,6 +48,8 @@ void GrowingVertices::Init (
     origPt = curPt = pt;
     x = new IntCoord[bufsize];
     y = new IntCoord[bufsize];
+    trackx = px[n-1];
+    tracky = py[n-1];
     handleSize = h;
     Memory::copy(px, x, n*sizeof(IntCoord));
     Memory::copy(py, y, n*sizeof(IntCoord));
@@ -205,7 +207,7 @@ void GrowingPolygon::DrawVertices(IntCoord* x, IntCoord* y, int n) {
     } else {
         output->Polygon(canvas, x, y, n);
     }
-};
+}
 
 /*****************************************************************************/
 
@@ -216,7 +218,7 @@ GrowingBSpline::GrowingBSpline(
 
 void GrowingBSpline::DrawVertices(IntCoord* x, IntCoord* y, int n) {
     output->BSpline(canvas, x, y, n);
-};
+}
 
 /*****************************************************************************/
 
@@ -227,4 +229,4 @@ GrowingClosedBSpline::GrowingClosedBSpline(
 
 void GrowingClosedBSpline::DrawVertices(IntCoord* x, IntCoord* y, int n) {
     output->ClosedBSpline(canvas, x, y, n);
-};
+}

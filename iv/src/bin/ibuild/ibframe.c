@@ -22,7 +22,6 @@
 
 /*
  * Implementation of Frame component and derived classes.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibframe.c,v 1.2 91/09/27 14:10:28 tang Exp $
  */
 
 #include "ibclasses.h"
@@ -46,6 +45,7 @@
 #include <Unidraw/viewer.h>
 #include <Unidraw/unidraw.h>
 #include <Unidraw/Commands/brushcmd.h>
+#include <Unidraw/Commands/colorcmd.h>
 #include <Unidraw/Tools/grcomptool.h>
 
 #include <InterViews/button.h>
@@ -87,25 +87,15 @@ public:
     virtual void Bequeath();
     void SetFrameGraphic(FrameGraphic*);
 
-    virtual void draw(Canvas*, Graphic*);
     virtual void drawClipped(Canvas*, Coord, Coord, Coord, Coord, Graphic*);
-
-    void SetDamage(boolean);
-    boolean GetDamage();
 
 protected:
     FrameGraphic* _framegr;
-    boolean _damage;
 };
 
 FramePicture::FramePicture (CanvasVar* c, Graphic* g) : IBGraphic(c, g) {
     _framegr = nil;
-    _damage = false;
 }
-
-void FramePicture::SetDamage (boolean damage) { _damage = damage; }
-
-boolean FramePicture::GetDamage () { return _damage; }
 
 void FramePicture::Bequeath () {
     Remove(_framegr);
@@ -135,20 +125,6 @@ void FramePicture::SetCanvasVar(CanvasVar* cvar) {
     IBGraphic::SetCanvasVar(cvar);
     if (_framegr != nil) {
         _framegr->SetCanvasVar(cvar);
-    }
-}
-
-void FramePicture::draw (Canvas* c, Graphic* gs) {
-    IBGraphic::draw(c, gs);
-    if (_framegr != nil && !_framegr->IsA(MARGINFRAME_GRAPHIC)) {
-        FullGraphic gstemp;
-        Transformer ttemp;
-        gstemp.SetTransformer(&ttemp);
-
-        concatGraphic(_framegr, _framegr, gs, &gstemp);
-        drawGraphic(_framegr, c, &gstemp);
-        gstemp.SetTransformer(nil); /* to avoid deleting ttemp explicitly */
-
     }
 }
 
@@ -200,31 +176,31 @@ void FrameComp::Interpret (Command* cmd) {
 	Reconfig();
         Notify();
 
-        InteractorComp* kid = GetKid();
-        if (kid != nil) {
-            kid->Interpret(cmd);
+        if (!cmd->GetClipboard()->Includes(this)) {
+            InteractorComp* kid = GetKid();
+            if (kid != nil) {
+                kid->Interpret(cmd);
+            }
+        } else {
+            Propagate(cmd);
         }
-        Propagate(cmd);
 
     } else if (cmd->IsA(COLOR_CMD)) {
-        ColorCmd* colorCmd = (ColorCmd*) cmd;
-	PSColor* fg = colorCmd->GetFgColor();
-        if (fg != nil) {
-            InteractorComp::Interpret(cmd);
+        InteractorComp::Interpret(cmd);
+        if (!cmd->GetClipboard()->Includes(this)) {
+            InteractorComp* kid = GetKid();
+            if (kid != nil) {
+                kid->Interpret(cmd);
+            }
+        } else {
+            Propagate(cmd);
         }
-
+        
     } else if (cmd->IsA(UNGROUP_CMD) || cmd->IsA(MONOSCENE_CMD)) {
         Editor* ed = cmd->GetEditor();
         if (ed->GetComponent() != this) {
-            FramePicture* fp = (FramePicture*) GetGraphic();
-            fp->SetDamage(true);
             Notify();
         }
-        MonoSceneComp::Interpret(cmd);
-
-    } else if (cmd->IsA(NAVIGATE_CMD)) {
-        FramePicture* fp = (FramePicture*) GetGraphic();
-        fp->SetDamage(true);
         MonoSceneComp::Interpret(cmd);
 
     } else {
@@ -240,33 +216,34 @@ void FrameComp::Uninterpret (Command* cmd) {
         gr->SetThickness(lbrt, lbrt, lbrt, lbrt);
         Reconfig();
         Notify();
-        InteractorComp* kid = GetKid();
-        if (kid != nil) {
-            kid->Uninterpret(cmd);
+
+        if (!cmd->GetClipboard()->Includes(this)) {
+            InteractorComp* kid = GetKid();
+            if (kid != nil) {
+                kid->Uninterpret(cmd);
+            }
+        } else {
+            Unpropagate(cmd);
         }
-        Unpropagate(cmd);
 
     } else if (cmd->IsA(COLOR_CMD)) {
-        ColorCmd* colorCmd = (ColorCmd*) cmd;
-	PSColor* fg = colorCmd->GetFgColor();
-        if (fg != nil) {
-            InteractorComp::Uninterpret(cmd);
+        InteractorComp::Uninterpret(cmd);
+        if (!cmd->GetClipboard()->Includes(this)) {
+            InteractorComp* kid = GetKid();
+            if (kid != nil) {
+                kid->Uninterpret(cmd);
+            }
+        } else {
+            Unpropagate(cmd);
         }
-
+        
     } else if (cmd->IsA(UNGROUP_CMD) || cmd->IsA(MONOSCENE_CMD)) {
         Editor* ed = cmd->GetEditor();
         if (ed->GetComponent() != this) {
-            FramePicture* fp = (FramePicture*) GetGraphic();
-            fp->SetDamage(true);
             Notify();
         }
         MonoSceneComp::Uninterpret(cmd);
         
-    } else if (cmd->IsA(NAVIGATE_CMD)) {
-        FramePicture* fp = (FramePicture*) GetGraphic();
-        fp->SetDamage(true);
-        MonoSceneComp::Uninterpret(cmd);
-
     } else {
         MonoSceneComp::Uninterpret(cmd);
     }
@@ -374,6 +351,11 @@ FrameView::FrameView (FrameComp* subj) : MonoSceneView(subj) {
     _framegr = nil;
 }
 
+FrameView::~FrameView () {
+    GetGraphic()->Remove(_framegr);
+    delete _framegr;
+}
+
 FrameComp* FrameView::GetFrameComp () { return (FrameComp*) GetSubject();}
 
 ClassId FrameView::GetClassId () { return FRAME_VIEW; }
@@ -404,14 +386,20 @@ void FrameView::Update () {
 
     int l, b, r, t;
     FrameGraphic* framegr = GetFrameComp()->GetFrameGraphic();
-    framegr->GetThickness(l, b, r, t);
-    fcomp->SetDamage(false);
-    IncurDamage(fview);
-    *(Graphic*)fview = *(Graphic*)fcomp;
-    *(Graphic*)_framegr = *(Graphic*)framegr;
-    UpdateCanvasVar();
-    _framegr->SetThickness(l, b, r, t);
-    IncurDamage(fview);
+    Viewer* viewer = GetViewer();
+    if (viewer != nil && viewer->GetGraphicView() == this) {
+        IncurDamage(fview);
+        fview->Remove(_framegr);
+
+    } else {
+        framegr->GetThickness(l, b, r, t);
+        IncurDamage(fview);
+        *(Graphic*)fview = *(Graphic*)fcomp;
+        *(Graphic*)_framegr = *(Graphic*)framegr;
+        UpdateCanvasVar();
+        _framegr->SetThickness(l, b, r, t);
+        IncurDamage(fview);
+    } 
     GraphicViews::Update();
 }
 
@@ -423,7 +411,15 @@ boolean FrameCode::IsA (ClassId id) {
     return FRAME_CODE ==id || MonoSceneCode::IsA(id);
 }
 
-FrameCode::FrameCode (FrameComp* subj) : MonoSceneCode(subj) { }
+FrameCode::FrameCode (FrameComp* subj) : MonoSceneCode(subj) {}
+
+void FrameCode::Update () {
+    MonoSceneCode::Update();
+    InteractorComp* subj = GetIntComp();
+    Graphic* gr = subj->GetGraphic();
+    gr->SetFont(nil);
+}
+
 FrameComp* FrameCode::GetFrameComp () { return (FrameComp*) GetSubject(); }
 
 boolean FrameCode::Definition (ostream& out) {
@@ -495,6 +491,7 @@ boolean FrameCode::Definition (ostream& out) {
 
         	sg->GetShadow(h, v);
         	out << ", " << h << ", " << v << ")";
+
     	    } else if (strcmp(classname, "MarginFrame") == 0) {
 		MarginFrameComp* mfc = (MarginFrameComp*) fcomp;
 		Shape* s = mfc->GetMarginStateVar()->GetShape();
@@ -526,7 +523,8 @@ boolean FrameCode::Definition (ostream& out) {
 
     } else if (
 	_emitBSDecls || _emitBSInits || 
-        _emitFunctionDecls || _emitFunctionInits 
+	_emitFunctionDecls || _emitFunctionInits ||
+        _emitCreatorHeader || _emitCreatorSubj || _emitCreatorView
     ) {
         if (kview != nil) {
             ok = ok && kview->Definition(out);
@@ -565,22 +563,23 @@ boolean FrameCode::CoreConstDecls(ostream& out) {
 
 boolean FrameCode::CoreConstInits(ostream& out) {
     const char* classname =GetIntComp()->GetClassNameVar()->GetBaseClass();
+    const char* subclass = GetIntComp()->GetClassNameVar()->GetName();
 
     out << "(\n    const char* name, Interactor* i, ";
     if ( strcmp(classname, "Frame") == 0) {
         out << "int w\n) : " << classname << "(name, i, w) {\n";
-        out << "    perspective = new Perspective;\n";
+        out << "    SetClassName(\"" << subclass << "\");\n";
         out << "}\n\n";
 
     } else if (strcmp(classname, "ShadowFrame") == 0) {
         out << "int h, int v\n) : " << classname << "(name, i, h, v) {\n";
-        out << "    perspective = new Perspective;\n";
+        out << "    SetClassName(\"" << subclass << "\");\n";
         out << "}\n\n";
 
     } else if (strcmp(classname, "MarginFrame") == 0) {
         out << "int hn, int hshr, int hstr, int vn, int vshr, int vstr\n) : ";
         out << classname << "(name, i, hn, hshr, hstr, vn, vshr, vstr) {\n";
-        out << "    perspective = new Perspective;\n";
+        out << "    SetClassName(\"" << subclass << "\");\n";
         out << "}\n\n";
     }
 
@@ -644,7 +643,7 @@ void FrameGraphic::getExtent (
     float& l, float& b, float& cx, float& cy, float& tol, Graphic* gs
 ) {
     CanvasVar* cvar = GetCanvasVar();
-
+    l = b = cx = cy = 0.0;
     if (cvar != nil) {
         CalcExtent(cvar->Width(), cvar->Height(), l,b,cx,cy,tol,gs);
     }
@@ -683,6 +682,7 @@ void FrameGraphic::draw (Canvas* c, Graphic* gs) {
         register Coord r = xmax - _r;
         register Coord t = ymax - _t;
 
+        _p->ClearRect(c, 0, 0, xmax, ymax);
         _p->FillRect(c, 0, 0, _l-1, t);
         _p->FillRect(c, _l, 0, xmax, _b-1);
         _p->FillRect(c, r+1, _b, xmax, ymax);
@@ -810,31 +810,25 @@ boolean MarginFrameComp::IsA (ClassId id) {
 
 void MarginFrameComp::Interpret (Command* cmd) {
     if (cmd->IsA(COLOR_CMD)) {
-        ColorCmd* colorCmd = (ColorCmd*) cmd;
-	PSColor* bg = colorCmd->GetBgColor();
-        if (bg != nil) {
-            InteractorComp::Interpret(cmd);
-        }
+	ColorCmd* colorCmd = (ColorCmd*) cmd;
+        PSColor* fg = colorCmd->GetFgColor();
+	if (fg == nil) {
+	    InteractorComp::Interpret(cmd);
+	}
     } else if (!cmd->IsA(BRUSH_CMD) || cmd->IsA(GLUEVISIBILITY_CMD)) {
 	FrameComp::Interpret(cmd);
-
-    } else {
-	MonoSceneComp::Interpret(cmd);
     }
 }
 
 void MarginFrameComp::Uninterpret (Command* cmd) {
     if (cmd->IsA(COLOR_CMD)) {
-        ColorCmd* colorCmd = (ColorCmd*) cmd;
-	PSColor* bg = colorCmd->GetBgColor();
-        if (bg != nil) {
-            InteractorComp::Uninterpret(cmd);
-        }
+	ColorCmd* colorCmd = (ColorCmd*) cmd;
+        PSColor* fg = colorCmd->GetFgColor();
+	if (fg == nil) {
+	    InteractorComp::Uninterpret(cmd);
+	}
     } else if (!cmd->IsA(BRUSH_CMD) || cmd->IsA(GLUEVISIBILITY_CMD)) {
 	FrameComp::Uninterpret(cmd);
-
-    } else {
-	MonoSceneComp::Uninterpret(cmd);
     }
 }
 
@@ -1038,20 +1032,25 @@ void MarginFrameView::Update () {
     int hm, hshr, hstr, vm, vshr, vstr;
 
     MarginFrameGraphic* framegr = mcomp->GetMarginFrameGraphic();
-    framegr->GetThickness(l, b, r, t);
-    framegr->GetShrStr(hm, hshr, hstr, vm, vshr, vstr);
-
-    IncurDamage(fview);
-    *(Graphic*)_framegr = *(Graphic*)framegr;
-    *(Graphic*)fview = *(Graphic*)fcomp;
-    UpdateCanvasVar();
-
-    MarginFrameGraphic* mg= (MarginFrameGraphic*) _framegr;
-    mg->SetThickness(l, b, r, t);
-    mg->SetShrStr(hm, hshr, hstr, vm, vshr, vstr);
-    IncurDamage(fview);
-    EraseHandles();
-
+    Viewer* viewer = GetViewer();
+    if (viewer != nil && viewer->GetGraphicView() == this) {
+        IncurDamage(fview);
+        fview->Remove(_framegr);
+        
+    } else {
+        framegr->GetThickness(l, b, r, t);
+        framegr->GetShrStr(hm, hshr, hstr, vm, vshr, vstr);
+        
+        IncurDamage(fview);
+        *(Graphic*)_framegr = *(Graphic*)framegr;
+        *(Graphic*)fview = *(Graphic*)fcomp;
+        UpdateCanvasVar();
+        
+        MarginFrameGraphic* mg= (MarginFrameGraphic*) _framegr;
+        mg->SetThickness(l, b, r, t);
+        mg->SetShrStr(hm, hshr, hstr, vm, vshr, vstr);
+        IncurDamage(fview);
+    }
     GraphicViews::Update();
 }
 

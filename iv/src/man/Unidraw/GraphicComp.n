@@ -11,6 +11,9 @@ attributes.  GraphicComps is a non-abstract subclass of GraphicComp
 for composite graphical component subjects.
 .SH GRAPHICCOMP PUBLIC OPERATIONS
 .TP
+.B "virtual ~GraphicComp()"
+The destructor deletes the GraphicComp's graphic, if any.
+.TP
 .B "virtual void Interpret(Command*)"
 .ns
 .TP
@@ -213,9 +216,13 @@ the istream supplies.
 .B "GraphicComps()"
 .ns
 .TP
+.B "GraphicComps(Graphic*)"
+.ns
+.TP
 .B "virtual ~GraphicComps()"
-The constructor sets the GraphicComps' graphic to a new Picture
-instance. The destructor deletes its children.
+The parameterless constructor sets the GraphicComps' graphic to a new
+Picture instance, while the other lets you specify the graphic
+explicitly.  The destructor deletes its children.
 .TP
 .B "virtual void Interpret(Command*)"
 .ns
@@ -274,10 +281,6 @@ appends copies of the components in the PasteCmd's clipboard to the
 GraphicComps.  If the PasteCmd has no clipboard initially, it will use
 the global clipboard from the catalog.
 .SH GRAPHICCOMPS PROTECTED OPERATIONS
-.TP
-.B "GraphicComps(Graphic*)"
-GraphicComps defines a protected constructor that lets subclasses
-specify its graphic explicitly.
 .TP
 .B "GraphicComp* Comp(UList*)"
 .ns

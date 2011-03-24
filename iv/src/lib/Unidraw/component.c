@@ -33,6 +33,8 @@
 #include <Unidraw/Components/component.h>
 #include <Unidraw/Components/compview.h>
 
+#include <IV-2_6/_enter.h>
+
 /*****************************************************************************/
 
 ClassId Component::GetClassId () { return COMPONENT; }

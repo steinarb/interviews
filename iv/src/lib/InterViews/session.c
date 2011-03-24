@@ -47,21 +47,13 @@
 #endif
 
 /*
- * Default property values.
+ * These attributes must be defined somewhere.
  */
 
 static PropertyData defpropvalues[] = {
-    { "*double_buffered", "on" },
     { "*background", "#ffffff" },
-    { "*brush_width", "0" },
-    { "*flat", "#c0c0c0" },
-    { "*font", "fixed" },
     { "*foreground", "#000000" },
-    { "*monochrome", "off" },
-    { "*synchronous", "off" },
-#ifdef sgi
-    { "*malloc-debug", "off" },
-#endif
+    { "*font", "fixed" },
     { nil }
 };
 
@@ -82,15 +74,16 @@ static OptionDesc defoptions[] = {
     { "-foreground", "*foreground", OptionValueNext },
     { "-geometry", "*geometry", OptionValueNext },
     { "-iconic", "*iconic", OptionValueImplicit, "on" },
-    { "-monochrome", "*monochrome", OptionValueImplicit, "on" },
-    { "-motif", "*motif", OptionValueImplicit, "on" },
+    { "-monochrome", "*gui", OptionValueImplicit, "monochrome" },
+    { "-motif", "*gui", OptionValueImplicit, "Motif" },
     { "-name", "*name", OptionValueNext },
     { "-nodbuf", "*double_buffered", OptionValueImplicit, "off" },
     { "-noshape", "*shaped_windows", OptionValueImplicit, "off" },
-    { "-openlook", "*openlook", OptionValueImplicit, "on" },
+    { "-openlook", "*gui", OptionValueImplicit, "OpenLook" },
     { "-reverse", "*reverseVideo", OptionValueImplicit, "on" },
     { "-rv", "*reverseVideo", OptionValueImplicit, "on" },
     { "-shape", "*shaped_windows", OptionValueImplicit, "on" },
+    { "-smotif", "*gui", OptionValueImplicit, "SGIMotif" },
     { "-synchronous", "*synchronous", OptionValueImplicit, "on" },
     { "+synchronous", "*synchronous", OptionValueImplicit, "off" },
     { "-title", "*title", OptionValueNext },
@@ -98,7 +91,7 @@ static OptionDesc defoptions[] = {
     { "-visual_id", "*visual_id", OptionValueNext },
     { "-xrm", nil, OptionPropertyNext },
 #ifdef sgi
-    { "-malloc", "*malloc-debug", OptionValueImplicit, "on" },
+    { "-malloc", "*malloc_debug", OptionValueImplicit, "on" },
 #endif
     { nil }
 };
@@ -107,8 +100,8 @@ static OptionDesc defoptions[] = {
  * Session representation.
  */
 
-declareList(DisplayList,Display*);
-implementList(DisplayList,Display*);
+declarePtrList(DisplayList,Display)
+implementPtrList(DisplayList,Display)
 
 class SessionRep {
 private:
@@ -159,13 +152,6 @@ private:
 	Style*, const char*, const char*, const char*, int priority
     );
     const char* home();
-    void load_file(Style*, const char* filename, int priority);
-    void load_list(Style*, const String&, int priority);
-    void load_property(Style*, const String&, int priority);
-    String strip(const String&);
-    void missing_colon(const String&);
-    void bad_property_name(const String&);
-    void bad_property_value(const String&);
 
     void init_display();
     void connect(Display*);
@@ -266,8 +252,15 @@ void SessionRep::handle_display_input(Display* d) {
 	return;
     }
     if (readinput_) {
+	/*
+	 * I know this loop would better be expressed as a while loop,
+	 * but my silly compiler doesn't understand it in that form.
+	 */
 	Event e;
-	while (d->get(e)) {
+	for (;;) {
+	    if (!d->get(e)) {
+		break;
+	    }
 	    e.handle();
 	}
     }
@@ -328,12 +321,14 @@ boolean Session::pending() const {
 
 /*
  * Read an event.  Could be from any open display.
+ * The redundant-looking test of rep_->done_ is necessary
+ * because check might change the value of done_.
  */
 
 void Session::read(Event& e) {
     boolean save = rep_->readinput_;
     rep_->readinput_ = false;
-    while (!rep_->done_ && !rep_->check(e)) {
+    while (!rep_->done_ && !rep_->check(e) && !rep_->done_) {
 	Dispatcher::instance().dispatch();
     }
     rep_->readinput_ = save;
@@ -349,7 +344,7 @@ boolean Session::read(long sec, long usec, Event& e) {
     long usec_left = usec;
     boolean save = rep_->readinput_;
     rep_->readinput_ = false;
-    while (!rep_->done_ && !rep_->check(e)) {
+    while (!rep_->done_ && !rep_->check(e) && !rep_->done_) {
 	if (!(sec_left > 0 || usec_left > 0)) {
 	    rep_->readinput_ = save;
 	    return false;
@@ -401,6 +396,12 @@ SessionRep::SessionRep() {
 SessionRep::~SessionRep() {
     delete name_;
     Resource::unref(style_);
+    for (ListItr(DisplayList) i(*displays_); i.more(); i.next()) {
+	Display* d = i.cur();
+	delete d;
+    }
+    delete displays_;
+    delete argv_;
 }
 
 void SessionRep::init(
@@ -424,7 +425,7 @@ void SessionRep::init(
     Cursor::init();
 
 #ifdef sgi
-    if (style_->value_is_on("malloc-debug")) {
+    if (style_->value_is_on("malloc_debug")) {
 	mallopt(M_DEBUG, 1);
     }
 #endif
@@ -496,10 +497,11 @@ void SessionRep::extract(
     const String& arg, const OptionDesc& o, int& i, int argc, char** argv,
     String& name, String& value
 ) {
+    int colon;
     switch (o.style) {
     case OptionPropertyNext:
 	value = next_arg(i, argc, argv, "missing property after '%s'", arg);
-	int colon = value.index(':');
+	colon = value.index(':');
 	if (colon < 0) {
 	    bad_arg("missing ':' in '%s'", value);
 	} else {
@@ -578,7 +580,7 @@ void SessionRep::init_style(const char* name, const PropertyData* props) {
     name_ = find_name();
     style_ = new Style(*name_);
     Resource::ref(style_);
-    style_->prefix(classname_);
+    style_->alias(classname_);
     props_ = props;
 }
 
@@ -592,11 +594,12 @@ void SessionRep::init_style(const char* name, const PropertyData* props) {
 void SessionRep::set_style(Display* d) {
     Style* s = new Style(*style_);
     load_props(s, defpropvalues, -5);
+    load_path(s, IV_LIBALL, "/app-defaults/InterViews", -5);
     load_props(s, props_, -5);
     load_app_defaults(s, -5);
     String str;
     if (d->defaults(str)) {
-	load_list(s, str, -5);
+	s->load_list(str, -5);
     } else {
 	load_path(s, home(), "/.Xdefaults", -5);
     }
@@ -628,7 +631,7 @@ void SessionRep::load_app_defaults(Style* s, int priority) {
 void SessionRep::load_environment(Style* s, int priority) {
     const char* xenv = getenv("XENVIRONMENT");
     if (xenv != nil) {
-	load_file(s, xenv, priority);
+	s->load_file(String(xenv), priority);
     } else {
 	load_path(s, ".Xdefaults-", Host::name(), priority);
     }
@@ -641,7 +644,7 @@ void SessionRep::load_path(
     String t(tail);
     char* buf = new char[h.length() + t.length() + 1];
     sprintf(buf, "%s%s", h.string(), t.string());
-    load_file(s, buf, priority);
+    s->load_file(String(buf), priority);
     delete buf;
 }
 
@@ -662,74 +665,9 @@ void SessionRep::load_path(
     String t(tail);
     char* buf = new char[h.length() + m.length() + t.length() + 1];
     sprintf(buf, "%s%s%s", h.string(), m.string(), t.string());
-    load_file(s, buf, priority);
+    s->load_file(String(buf), priority);
     delete buf;
 }
-
-void SessionRep::load_file(Style* s, const char* filename, int priority) {
-    InputFile* f = InputFile::open(filename);
-    if (f == nil) {
-	return;
-    }
-    const char* start;
-    int len = f->read(start);
-    if (len > 0) {
-	load_list(s, String(start, len), priority);
-    }
-    f->close();
-}
-
-void SessionRep::load_list(Style* s, const String& str, int priority) {
-    const char* p = str.string();
-    const char* q = p + str.length();
-    const char* start = p;
-    for (; p < q; p++) {
-	if (*p == '\n') {
-	    if (p > start && *(p-1) != '\\') {
-		load_property(s, String(start, p - start), priority);
-		start = p + 1;
-	    }
-	}
-    }
-}
-
-void SessionRep::load_property(Style* s, const String& prop, int priority) {
-    String p(strip(prop));
-    if (p.length() == 0 || p[0] == '!') {
-	return;
-    }
-    int colon = p.index(':');
-    if (colon < 0) {
-	missing_colon(p);
-    } else {
-	String name(strip(p.left(colon)));
-	String value(strip(p.right(colon + 1)));
-	if (name.length() <= 0) {
-	    bad_property_name(name);
-	} else if (value.length() <= 0) {
-	    bad_property_value(value);
-	} else {
-	    s->attribute(name, value, priority);
-	}
-    }
-}
-
-String SessionRep::strip(const String& s) {
-    int i = 0;
-    int len = s.length();
-    for (i = 0; i < len && isspace(s[i]); i++);
-    int j = len - 1;
-    for (; j >= 0 && isspace(s[j]); j--);
-    return s.substr(i, j - i + 1);
-}
-
-/*
- * Errors are nops for now.
- */
-
-void SessionRep::missing_colon(const String&) { }
-void SessionRep::bad_property_name(const String&) { }
-void SessionRep::bad_property_value(const String&) { }
 
 /*
  * Use ICCCM rules to find an application's instance name

@@ -96,7 +96,7 @@ void RpcService::startListening() {
 // service if it was registered, and close it.
 
 void RpcService::stopListening() {
-    Dispatcher::instance().link(_service->fd(), Dispatcher::ReadMask, nil);
+    Dispatcher::instance().unlink(_service->fd());
 
     if (_path) {
 	RpcRegistry::erase(_path);

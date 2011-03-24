@@ -47,7 +47,7 @@ public:
     virtual void update ();
     virtual boolean command (const char*);
 
-    virtual void allocate (Canvas*, const Allocation&, Extension&);
+    virtual void allocate(Canvas*, const Allocation&, Extension&);
 protected:
     virtual ~MinipageView ();
     virtual void mark_selection ();

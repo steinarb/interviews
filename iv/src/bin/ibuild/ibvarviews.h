@@ -22,25 +22,31 @@
 
 /*
  * Views of user interface builder-specific state variables.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibvarviews.h,v 1.2 91/09/27 14:15:37 tang Exp $
  */
 
 #ifndef ibvarviews_h
 #define ibvarviews_h
 
 #include <Unidraw/stateviews.h>
+#include <InterViews/matcheditor.h>
 
 class ButtonState;
 class BooleanStateVar;
 class BSDialog;
+class Deck;
+class Displayer;
 class IBEditor;
+class IComp;
+class IDMatchEditor;
 class CanvasVar;
 class MatchEditor;
+class MemberNameVar;
 class Message;
 class MonoShapeVar;
-class NameChooserDialog;
 class GraphicComp;
 class SubclassNameVar;
+class SubclassNameVarView;
+class SMemberDialog;
 class ShapeVar;
 class UList;
 
@@ -56,6 +62,34 @@ protected:
 };
 
 inline GraphicComp* IBVarView::GetGraphicComp () { return _icomp; }
+
+class IDVarView : public IBVarView {
+public:
+    IDVarView(
+        IDVar*, ButtonState*, const char*
+    );
+    void SetSubclassNameVarView(SubclassNameVarView*);
+    void DMessage(int);
+    void ShowStred(boolean);
+
+    virtual boolean ChangedSubject(const char*& errors);
+    void IDUpdate();
+    void IDUpdate(const char* subclass, const char* baseclass);
+protected:
+    virtual void Init();
+protected:
+    IDMatchEditor* _ided;
+    Displayer* _displayer;
+    Deck* _iddeck;
+    SubclassNameVarView* _subvarview;
+    boolean _tochange;
+private:
+    Interactor* Interior(ButtonState*, const char*);
+};
+
+inline void IDVarView::SetSubclassNameVarView(SubclassNameVarView* s) {
+    _subvarview = s;
+}
 
 class CanvasVarView : public IBVarView {
 public:
@@ -107,54 +141,73 @@ private:
     Interactor* Interior(ButtonState*);
 };
 
+class SMemberNameVarView : public IBVarView {
+public:
+    SMemberNameVarView(
+        MemberNameVar*, ButtonState*, GraphicComp*, IBEditor*, 
+        const char*, const int* = nil
+    );
+    SMemberNameVarView(
+        IComp*, ButtonState*, GraphicComp*, IBEditor*, 
+        const char*
+    );
+    virtual ~SMemberNameVarView();
+    virtual boolean ChangedSubject(const char*& errors);
+    virtual void SetAffectedStates(UList*);
+
+    MatchEditor* GetSMemberEditor();
+    IBEditor* GetIBEditor();
+
+    MemberSharedName* GetSMemberName();
+    void SetNameChange(boolean);
+    boolean GetNameChange();
+    void Append(const char*);
+protected:
+    virtual void Init();
+protected:
+    MatchEditor* _smember;
+    SMemberDialog* _smemberdialog;
+    IBEditor* _ibed;
+    MemberSharedName* _msnamer;
+    IComp* _scomp, *_subject;
+    boolean _namechange;
+private:
+    Interactor* Interior(ButtonState*, const char*);
+};
+
+inline MatchEditor* SMemberNameVarView::GetSMemberEditor() { return _smember; }
+inline IBEditor* SMemberNameVarView::GetIBEditor() { return _ibed; }
+inline MemberSharedName* SMemberNameVarView::GetSMemberName() {
+    return _msnamer; 
+}
+inline void SMemberNameVarView::SetNameChange(boolean namechange) {
+    _namechange = namechange; 
+}
+inline boolean SMemberNameVarView::GetNameChange() { return _namechange; }
+inline void SMemberNameVarView::Append(const char* n) {
+    _smemberdialog->Append(n);
+}
+
 class InstanceNameVarView : public IBVarView {
 public:
     InstanceNameVarView(
         InstanceNameVar*, ButtonState*, GraphicComp*, 
         const char* = "Instance Name: "
     );
-    virtual ~InstanceNameVarView();
     virtual boolean ChangedSubject(const char*& errors);
 protected:
     virtual void Init();
 protected:
-    char* _msg;
     MatchEditor* _name;
 private:
-    Interactor* Interior(ButtonState*);
+    Interactor* Interior(ButtonState*, const char*);
 };
-
-class NameChooserView : public IBVarView {
-public:
-    NameChooserView(
-        IBNameVar*, ButtonState*, IBEditor*,
-        const char*, const char*
-    );
-    virtual ~NameChooserView();
-
-    void Append(const char*);
-    void Accept();
-
-protected:
-    NameChooserDialog* _chooser;
-    IBEditor* _ibed;
-
-protected:
-    virtual boolean ChangedSubject(const char*& errors);
-    virtual void Init();
-private:
-    Interactor* Interior(ButtonState*);
-private:
-    char* _msg;
-    MatchEditor* _name;
-};
-
 
 class MemberNameVarView : public IBVarView {
 public:
     MemberNameVarView(
         MemberNameVar*, ButtonState*, GraphicComp*,
-        const char* = "Member Name: "
+        const char* = "Member Name: ", boolean = true
     );
 
     virtual ~MemberNameVarView();
@@ -169,6 +222,7 @@ private:
     Interactor* Interior(ButtonState*);
 private:
     char* _msg;
+    boolean _show_exp;
 };
 
 class TrackNameVarView : public IBVarView {
@@ -229,19 +283,64 @@ private:
     char* _msg;
 };
 
+class SubMatchEditor : public MatchEditor {
+public:
+    SubMatchEditor(
+        SubclassNameVarView*, ButtonState*, const char*, 
+        const char* done = SEDone
+    );
+    SubMatchEditor(
+        SMemberDialog*, ButtonState*, const char*, 
+        const char* done = SEDone
+    );
+protected:
+    virtual boolean HandleChar(char);
+private:
+    SMemberDialog* _d;
+    SubclassNameVarView* _s;
+};
+
 class SubclassNameVarView : public IBVarView {
 public:
-    SubclassNameVarView(SubclassNameVar*, ButtonState*, GraphicComp*);
+    SubclassNameVarView(
+        SubclassNameVar*, ButtonState*, GraphicComp*, const char* = nil
+    );
 
+    void SetIDVarView(IDVarView*);
+    boolean IsSubclass();
+    const char* GetSubclassName();
+
+    void IDUpdate ();
     virtual boolean ChangedSubject(const char*& errors);
 protected:
     virtual void Init();
 protected:
     MatchEditor* _subclass;
+    IDVarView* _idvarview;
 private:
-    Interactor* Interior(ButtonState*);
+    Interactor* Interior(ButtonState*, const char*);
     boolean _resolve;
 };
+
+class ICompNameVarView: public SubclassNameVarView {
+public:
+    ICompNameVarView(
+        SubclassNameVar*, ButtonState*, GraphicComp*, const char* = nil
+    );
+    void SetViewNameVarView(SubclassNameVarView*);
+    void SetGraphicNameVarView(SubclassNameVarView*);
+    virtual boolean ChangedSubject(const char*& errors);
+protected:
+    SubclassNameVarView* _view;
+    SubclassNameVarView* _graphic;
+};
+
+inline void ICompNameVarView::SetViewNameVarView(SubclassNameVarView* v) {
+    _view = v;
+}
+inline void ICompNameVarView::SetGraphicNameVarView(SubclassNameVarView* g) {
+    _graphic = g;
+}
 
 class BooleanStateVarView : public IBVarView {
 public:

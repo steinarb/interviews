@@ -22,7 +22,6 @@
 
 /*
  * Button component definitions.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibbutton.c,v 1.2 91/09/27 14:07:17 tang Exp $
  */
 
 #include "ibbutton.h"
@@ -49,6 +48,7 @@
 #include <InterViews/Bitmaps/radioMask.bm>
 #include <InterViews/Bitmaps/radio.bm>
 
+#include <stdio.h>
 #include <stream.h>
 #include <string.h>
 #include <stdlib.h>
@@ -68,6 +68,8 @@ ButtonComp::ButtonComp (MessageGraphic* g) : MessageComp(g) {
     if (g != nil) {
         GetClassNameVar()->SetName(g->GetClassName());
         GetClassNameVar()->SetBaseClass(g->GetClassName());
+        IBShape* ibshape = GetShapeVar()->GetShape();
+        ibshape->hstr = ibshape->vstr = false;
     }
     _bsVar = nil;
 }
@@ -143,6 +145,13 @@ void ButtonComp::Instantiate () {
     }
 }
 
+void ButtonComp::Reconfig () {
+    MessageComp::Reconfig();
+    Shape* shape = GetShapeVar()->GetShape();
+    shape->Rigid();
+    GetShapeVar()->Notify();
+}
+
 void ButtonComp::Interpret(Command* cmd) {
     if (cmd->IsA(GETCONFLICT_CMD)) {
         GetConflictCmd* gcmd = (GetConflictCmd*) cmd;
@@ -155,6 +164,11 @@ void ButtonComp::Interpret(Command* cmd) {
         if (strcmp(buttonname, cname) == 0 || strcmp(funcname, cname) == 0) {
             conflictlist->Append(new UList(bsnamer));
         }
+    } else if (cmd->IsA(GETNAMEVARS_CMD)) {
+        MessageComp::Interpret(cmd);
+        GetNameVarsCmd* gcmd = (GetNameVarsCmd*) cmd;
+        gcmd->AppendExtras(_bsVar->GetButtonSharedName()->GetSubclass());
+        
     } else if (!cmd->IsA(ALIGN_CMD)) {
         MessageComp::Interpret(cmd);
     }
@@ -168,6 +182,8 @@ void ButtonComp::Uninterpret(Command* cmd) {
 
 void ButtonComp::Read (istream& in) {
     MessageComp::Read(in);
+    IBShape* ibshape = GetShapeVar()->GetShape();
+    ibshape->hstr = ibshape->vstr = false;
     delete _bsVar;
     _bsVar = (ButtonStateVar*) unidraw->GetCatalog()->ReadStateVar(in);
 }
@@ -233,31 +249,63 @@ ButtonComp* ButtonCode::GetButtonComp () { return (ButtonComp*) GetSubject(); }
 
 boolean ButtonCode::Definition (ostream& out) {
     boolean ok = true;
+    InteractorComp* icomp = GetIntComp();
+    MemberNameVar* mnamer = icomp->GetMemberNameVar();
+    SubclassNameVar* snamer = icomp->GetClassNameVar();
+    ButtonStateVar* bsVar = icomp->GetButtonStateVar();
+    SubclassNameVar* bsclass = bsVar->GetButtonSharedName()->GetSubclass();
+    const char* bsname = bsclass->GetName();
     if (
 	_emitProperty || _emitBSDecls ||
 	_emitBSInits || _emitInstanceDecls || _emitHeaders ||
-	_emitFunctionDecls || _emitFunctionInits || _emitClassHeaders
+	_emitFunctionDecls || _emitFunctionInits
     ) {
         return CodeView::Definition(out);
 
+    } else if (_emitClassHeaders) {
+        ok = ok && CodeView::Definition(out);
+        if (bsclass->IsSubclass()) {
+            if (
+                *_classname == '\0' && !_scope || 
+                *_classname != '\0' && _scope || 
+                strcmp(bsname, _classname) == 0
+            ) {
+                ok = ok && CheckToEmitClassHeader(out, bsname);
+            }
+        }
     } else if (_emitForward) {
+        char Func[CHARBUFSIZE];
+        char coreclass[CHARBUFSIZE];
+        
+        const char* fwname = GetFirewall();
+        if (fwname != nil) {
+            sprintf(coreclass, "%s_core", fwname);
+            strcpy(Func, coreclass);
+            strcat(Func, "_Func");
+        }
+        
+        if (strcmp(bsname, _classname) == 0) {
+            if (fwname != nil && !_namelist->Search(fwname)) {
+                _namelist->Append(fwname);
+                out << "\n#ifndef " << fwname << "_core_func\n";
+                out << "#define " << fwname << "_core_func\n";
+                out << "typedef void (" << coreclass << "::*";
+                out << Func << ")();\n";
+                out << "#endif\n\n";
+            }
+        }
         if (_scope) {
             ok = ok && CodeView::Definition(out);
-            ButtonStateVar* bsVar = GetButtonComp()->GetButtonStateVar();
             if (
-                bsVar->GetExport() && !_bsdeclslist->Search("ButtonState")
+                bsVar->GetExport() && !_bsdeclslist->Search(bsname)
             ) {
-                _bsdeclslist->Append("ButtonState");
-                out << "class ButtonState;\n";
+                _bsdeclslist->Append(bsname);
+                out << "class " << bsname << ";\n";
             }
         }
     } else if (_emitExpHeader) {
-	InteractorComp* icomp = GetIntComp();
-	MemberNameVar* mnamer = icomp->GetMemberNameVar();
-        SubclassNameVar* snamer = icomp->GetClassNameVar();
-        if (!snamer->IsSubclass()) {
+        if (!snamer->IsSubclass() && !bsVar->IsSubclass()) {
             if (_scope) {
-                ButtonStateVar* bsVar = icomp->GetButtonStateVar();
                 if (
                     (mnamer->GetExport() || bsVar->GetExport()) &&
                     !_namelist->Search("button")
@@ -267,21 +315,35 @@ boolean ButtonCode::Definition (ostream& out) {
                 }
             }
         } else {
+            if (
+                (strcmp(bsname, _classname) == 0 || 
+                _scope && bsVar->GetExport()) && bsVar->IsSubclass()
+            ) {
+                ok = ok && CheckToEmitHeader(out, bsname);
+            }
             ok = ok && CodeView::Definition(out);
         }
     } else if (_emitCorehHeader) {
-	InteractorComp* icomp = GetIntComp();
-        SubclassNameVar* snamer = icomp->GetClassNameVar();
         const char* subclass = snamer->GetName();
+        const char* fwname = GetFirewall();
         if (snamer->IsSubclass() && strcmp(subclass, _classname) == 0) {
             if (!_namelist->Search("button")) {
                 _namelist->Append("button");
                 out << "#include <InterViews/button.h>\n";
             }
         }
+        if (bsVar->IsSubclass() && strcmp(bsname, _classname) == 0) {
+            if (!_namelist->Search("button")) {
+                _namelist->Append("button");
+                out << "#include <InterViews/button.h>\n";
+            }
+            if (fwname != nil && !_namelist->Search(fwname)) {
+                _namelist->Append(fwname);
+                out << "#include \"" << fwname << "-core.h\"\n";
+            }
+        }
     } else if (_emitInstanceInits) {
-        InteractorComp* icomp = GetIntComp();
-        const char* mname = icomp->GetMemberNameVar()->GetName();
+        const char* mname = mnamer->GetName();
 
         if (!_instancelist->Find((void*) mname)) {
             _instancelist->Append(new UList((void*)mname));
@@ -311,8 +373,26 @@ boolean ButtonCode::Definition (ostream& out) {
     } else if (
         _emitCoreDecls || _emitCoreInits || _emitClassDecls || _emitClassInits
     ) {
-	ok = ok && CodeView::Definition(out);
-        
+        if (
+            strcmp(bsname, _classname) == 0 &&
+            !_globallist->Search(_classname)
+        ) {
+	    _globallist->Append(_classname);
+            if (_emitCoreDecls) {
+                ok = ok && BSCoreConstDecls(out);
+
+            } else if (_emitCoreInits) {
+                ok = ok && BSCoreConstInits(out);
+
+            } else if (_emitClassDecls) {
+                ok = ok && BSConstDecls(out);
+
+            } else {
+                ok = ok && BSConstInits(out);
+            }
+        } else {
+            ok = ok && CodeView::Definition(out);
+        }
     } else if (_emitMain) {
 	ok = ok && CodeView::Definition(out);
         
@@ -334,16 +414,17 @@ boolean ButtonCode::CoreConstDecls(ostream& out) {
 
 boolean ButtonCode::CoreConstInits(ostream& out) {
     const char* classname =GetIntComp()->GetClassNameVar()->GetBaseClass();
+    const char* subclass = GetIntComp()->GetClassNameVar()->GetName();
 
     out <<"(\n    const char* name, const char* text, ButtonState* bs, int s";
     if (strcmp(classname, "CheckBox") == 0) {
         out << ", int i\n) : " << classname << "(name, text, bs, s, i) {\n";
-        out << "    perspective = new Perspective;\n";
+        out << "    SetClassName(\"" << subclass << "\");\n";
         out << "}\n\n";
 
     } else {
         out << "\n) : " << classname << "(name, text, bs, s) {\n";
-        out << "    perspective = new Perspective;\n";
+        out << "    SetClassName(\"" << subclass << "\");\n";
         out << "}\n\n";
     }
 
@@ -392,7 +473,7 @@ boolean ButtonCode::EmitIncludeHeaders(ostream& out) {
 
 PushButtonGraphic::PushButtonGraphic (
     const char* text, CanvasVar* c, Graphic* g
-) : MessageGraphic(text, c, g) { }
+) : MessageGraphic(text, c, g, Center, 3) { }
 
 void PushButtonGraphic::Natural (int& w, int& h) {
     FullGraphic gs;

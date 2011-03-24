@@ -25,8 +25,8 @@
 #include <InterViews/resource.h>
 #include <OS/list.h>
 
-declareList(ResourceList,Resource*);
-implementList(ResourceList,Resource*);
+declarePtrList(ResourceList,Resource)
+implementPtrList(ResourceList,Resource)
 
 class ResourceImpl {
     friend class Resource;
@@ -52,6 +52,18 @@ void Resource::unref() const {
 	r->refcount_ -= 1;
     }
     if (r->refcount_ == 0) {
+	r->cleanup();
+	delete r;
+    }
+}
+
+void Resource::unref_deferred() const {
+    Resource* r = (Resource*)this;
+    if (r->refcount_ != 0) {
+	r->refcount_ -= 1;
+    }
+    if (r->refcount_ == 0) {
+	r->cleanup();
 	if (ResourceImpl::deferred_) {
 	    if (ResourceImpl::deletes_ == nil) {
 		ResourceImpl::deletes_ = new ResourceList;
@@ -63,6 +75,8 @@ void Resource::unref() const {
     }
 }
 
+void Resource::cleanup() { }
+
 void Resource::ref(const Resource* r) {
     if (r != nil) {
 	r->ref();
@@ -72,6 +86,12 @@ void Resource::ref(const Resource* r) {
 void Resource::unref(const Resource* r) {
     if (r != nil) {
 	r->unref();
+    }
+}
+
+void Resource::unref_deferred(const Resource* r) {
+    if (r != nil) {
+	r->unref_deferred();
     }
 }
 

@@ -26,18 +26,28 @@
 #include <OS/host.h>
 #include <fstream.h>
 #include <errno.h>
+#ifndef __DECCXX
 #include <osfcn.h>
+#endif
 #include <stddef.h>
 #include <string.h>
 #include <sys/param.h>
+#if defined(sun) && OSMajorVersion >= 5
+#include <sys/utsname.h>
+#define MAXHOSTNAMELEN SYS_NMLN
+#endif
 
 // Print a short error message describing the last error encountered
 // during a call to a system function.
 
 static ostream& perror(ostream& s) {
+#if defined(sun) && OSMajorVersion >= 5
+    s << ": " << strerror(errno);
+#else
     if (errno > 0 && errno < sys_nerr) {
 	s << ": " << sys_errlist[errno];
     }
+#endif
     s << '\n';
     return s;
 }

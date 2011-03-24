@@ -37,7 +37,7 @@ class Selection;
 
 class IGraphicComps : public IComp {
 public:
-    IGraphicComps();
+    IGraphicComps(Graphic* = nil);
 
     virtual GraphicComp* GetTarget();
     virtual void Interpret(Command*);
@@ -51,7 +51,7 @@ public:
     virtual boolean IsA(ClassId);
 };
 
-class GroupCode : public CodeView {
+class GroupCode : public GraphicCodeView {
 public:
     GroupCode(IGraphicComps* = nil);
 
@@ -61,11 +61,20 @@ public:
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
 protected:
-    virtual boolean CoreConstDecls(ostream&);
-    virtual boolean CoreConstInits(ostream&);
-    virtual boolean ConstDecls(ostream&);
-    virtual boolean ConstInits(ostream&);
+    virtual boolean GCoreConstDecls(ostream&);
+    virtual boolean GCoreConstInits(ostream&);
+    virtual boolean GConstDecls(ostream&);
+    virtual boolean GConstInits(ostream&);
+
+    virtual boolean CConstDecls(ostream&);
+    virtual boolean CConstInits(ostream&);
+    virtual boolean CCoreConstInits(ostream&);
+    virtual boolean VCoreConstDecls(ostream&);
+    virtual boolean VCoreConstInits(ostream&);
     virtual boolean EmitIncludeHeaders(ostream&);
+
+    virtual const char* GetGHeader();
+    virtual const char* GetCVHeader();
 };
 
 class IGraphicViews : public IView {

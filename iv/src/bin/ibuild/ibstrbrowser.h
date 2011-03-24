@@ -20,6 +20,10 @@
  * WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+/*
+ *  StrBrowser component declarations
+ */
+
 #ifndef ibstrbrowser_h
 #define ibstrbrowser_h
 
@@ -65,7 +69,7 @@ public:
     virtual boolean IsA(ClassId);
 };
 
-class StrBrowserCode : public CodeView {
+class StrBrowserCode : public ButtonCode {
 public:
     StrBrowserCode(StrBrowserComp* = nil);
 

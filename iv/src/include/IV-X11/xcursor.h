@@ -31,21 +31,80 @@
 
 class Color;
 class Display;
+class WindowVisual;
 
 class CursorRep {
 public:
-    short x_, y_;
-    const int* pat_;
-    const int* mask_;
     const Color* fg_;
     const Color* bg_;
     Display* display_;
     XCursor xcursor_;
 
-    XCursor xid(Display*) const;
+    CursorRep(const Color* fg, const Color* bg);
+    virtual ~CursorRep();
 
-    void make_colors(Display*);
-    void make_xcursor(Display*);
+    XCursor xid(Display*, WindowVisual*);
+
+    virtual void make_xcursor(Display*, WindowVisual*) = 0;
+    const Color* make_color(
+	Display*, Style*,
+	const char* str1, const char* str2, const char* str3,
+	const char* default_value
+    );
+};
+
+class CursorRepData : public CursorRep {
+public:
+    short x_, y_;
+    const int* pat_;
+    const int* mask_;
+
+    CursorRepData(
+	short x_hot, short y_hot, const int* pat, const int* mask,
+	const Color* fg, const Color* bg
+    );
+    virtual ~CursorRepData();
+
+    virtual void make_xcursor(Display*, WindowVisual*);
+    Pixmap make_cursor_pixmap(XDisplay*, XWindow, const int* scanline);
+};
+
+class CursorRepBitmap : public CursorRep {
+public:
+    const Bitmap* pat_;
+    const Bitmap* mask_;
+
+    CursorRepBitmap(
+	const Bitmap* pat, const Bitmap* mask,
+	const Color* fg, const Color* bg
+    );
+    virtual ~CursorRepBitmap();
+
+    virtual void make_xcursor(Display*, WindowVisual*);
+};
+
+class CursorRepFont : public CursorRep {
+public:
+    const Font* font_;
+    int pat_;
+    int mask_;
+
+    CursorRepFont(
+	const Font*, int pat, int mask, const Color* fg, const Color* bg
+    );
+    virtual ~CursorRepFont();
+
+    virtual void make_xcursor(Display*, WindowVisual*);
+};
+
+class CursorRepXFont : public CursorRep {
+public:
+    int code_;
+
+    CursorRepXFont(int code, const Color* fg, const Color* bg);
+    virtual ~CursorRepXFont();
+
+    virtual void make_xcursor(Display*, WindowVisual*);
 };
 
 #include <InterViews/_leave.h>

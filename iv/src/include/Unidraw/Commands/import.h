@@ -29,6 +29,9 @@
 
 #include <Unidraw/Commands/command.h>
 
+#undef FileChooser
+#define FileChooser _lib_iv(FileChooser)
+
 class FileChooser;
 
 class ImportCmd : public Command {
@@ -39,6 +42,7 @@ public:
 
     virtual void Execute();
     virtual boolean Reversible();
+    virtual GraphicComp* PostDialog();
 
     virtual Command* Copy();
     virtual ClassId GetClassId();
@@ -49,11 +53,10 @@ public:
     static GraphicComp* PGM_Image(const char*);
     static GraphicComp* PPM_Image(const char*);
     static GraphicComp* XBitmap_Image(const char*);
-protected:
+private:
+    FileChooser* chooser_;
+
     void Init(FileChooser*);
-    GraphicComp* PostDialog();
-protected:
-    FileChooser* _dialog;
 };
 
 #endif

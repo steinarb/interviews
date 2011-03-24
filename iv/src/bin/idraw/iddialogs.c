@@ -47,7 +47,7 @@ MoveDialog::MoveDialog () : BasicDialog(
 ) {
     _medit = new MatchEditor(state, "9999999999999999999");
     _medit->Message("");
-    _medit->Match("%f %f");
+    _medit->Match("%f %f", false);
 
     _units = new ButtonState('p');
     input = new Sensor;
@@ -145,7 +145,7 @@ ScaleDialog::ScaleDialog () : BasicDialog(
 ) {
     _medit = new MatchEditor(state, "9999999999999999999");
     _medit->Message("");
-    _medit->Match("%f %f");
+    _medit->Match("%f %f", false);
 
     input = new Sensor;
     Ref(input);
@@ -219,7 +219,7 @@ RotateDialog::RotateDialog () : BasicDialog(
 ) {
     _medit = new MatchEditor(state, "9999999999999999999");
     _medit->Message("");
-    _medit->Match("%f");
+    _medit->Match("%f", false);
 
     input = new Sensor;
     Ref(input);

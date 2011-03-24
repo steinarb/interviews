@@ -27,9 +27,12 @@
 #ifndef unidraw_graphic_grblock_h
 #define unidraw_graphic_grblock_h
 
-#include <InterViews/interactor.h>
+#include <IV-2_6/InterViews/interactor.h>
+#include <Unidraw/enter-scope.h>
 
-typedef enum Zooming { Continuous, Binary };
+#include <IV-2_6/_enter.h>
+
+enum Zooming { Continuous, Binary };
 
 class Graphic;
 class Perspective;
@@ -84,5 +87,7 @@ private:
     float _mag;			    /* total magnification */
     boolean _highlighted;
 };
+
+#include <IV-2_6/_leave.h>
 
 #endif

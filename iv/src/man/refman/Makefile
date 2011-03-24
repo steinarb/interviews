@@ -5,7 +5,7 @@
 # Edit <InterViews/arch.def> to add support for a new platform.
 # Edit <InterViews/iv-sgi.cf> to change platform-specific parameters.
 # Edit <InterViews/local.def> to change site-specific parameters.
-# Edit <Imakefile> to change actions that make should perform.
+# Edit <refman/Imakefile> to change actions that make should perform.
 
 # architecture:  SGI
 
@@ -21,7 +21,7 @@ CRTN = /usr/lib/crtn.o
 		      $(SPECIAL_IMAKEFLAGS)
  SPECIAL_IMAKEFLAGS =
              DEPEND = makedepend
-     DEPEND_CCFLAGS = $(CCDEFINES) $(CCINCLUDES) -I/usr/include/CC
+     DEPEND_CCFLAGS = -DMAKEDEPEND $(CCDEFINES) $(CCINCLUDES) -I/usr/include/CC
                MAKE = make
            PASSARCH = ARCH="$(ARCH)" SPECIAL_IMAKEFLAGS="$(SPECIAL_IMAKEFLAGS)"
           ARCHORCPU = $$CPU
@@ -93,7 +93,7 @@ NONSHARED_CCLDFLAGS =
 		      $(LDLIBX11)\
 		      $(LDLIBM)\
 		      $(ABSLIBDIRPATH)
-     EXTRA_CCLDLIBS = -lrpcsvc -lsun -lC -lmalloc -lc_s
+     EXTRA_CCLDLIBS = -lC -lsun -lmalloc -lc_s
 
             INSTALL = $(SHELL) $(SCRIPTSRC)/bsdinst.sh
        INSTPGMFLAGS = -s
@@ -170,7 +170,8 @@ clean::
 .SUFFIXES: .ps .PS
 
 DOCS = title.ps cover.ps\
-    ch1.ps ch2.ps ch3.ps ch4.ps ch5.ps ch6.ps ch7.ps ch8.ps
+    ch1.ps ch2.ps ch3.ps ch4.ps ch5.ps ch6.ps ch8.ps \
+    ch9.ps ch10.ps ch11.ps ch12.ps appA.ps
 
 MANUAL = refman.PS
 

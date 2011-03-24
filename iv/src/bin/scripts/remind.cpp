@@ -46,6 +46,9 @@ cat $MacrosFile $RemindersFile \
 		    if ( suffix == "pm" || substr( $(i+1), 1, 2 ) == "pm" ) {
 			time[1] = time[1] + 12;
 		    }
+		    if ( time[1] < 10 ) {
+			time[1] = "0" time[1];
+		    }
 		    print "echo '\''" $0 "'\'' | '$Remind' " time[1] time[2];
 		    break;
 		}

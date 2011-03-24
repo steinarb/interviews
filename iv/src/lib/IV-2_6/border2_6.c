@@ -26,10 +26,10 @@
  * Border implementation.
  */
 
-#include <IV-look/2.6/InterViews/border.h>
-#include <InterViews/2.6/InterViews/painter.h>
-#include <InterViews/2.6/InterViews/shape.h>
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/InterViews/border.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/shape.h>
+#include <IV-2_6/_enter.h>
 
 Border::Border(int t) {
     thickness = t;

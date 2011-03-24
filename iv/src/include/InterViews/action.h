@@ -33,7 +33,7 @@
 
 #include <InterViews/_enter.h>
 
-class Action : virtual public Resource {
+class Action : public Resource {
 protected:
     Action();
     virtual ~Action();
@@ -45,42 +45,58 @@ public:
  * Macro - list of actions
  */
 
+typedef long MacroIndex;
+
+class MacroActionList;
+
 class Macro : public Action {
 public:
     Macro(Action* = nil, Action* = nil, Action* = nil, Action* = nil);
     virtual ~Macro();
 
-    void append(Action*);
+    virtual void prepend(Action*);
+    virtual void append(Action*);
+    virtual void insert(MacroIndex, Action*);
+    virtual void remove(MacroIndex);
+
+    virtual MacroIndex count() const;
+    virtual Action* action(MacroIndex) const;
 
     virtual void execute();
-protected:
-    Action** actions_;
-    int count_;
+private:
+    MacroActionList* list_;
 };
 
 /*
  * Action denoted by an object and member function to call on the object.
  */
 
-#include <generic.h>
+#if defined(__STDC__) || defined(__ANSI_CPP__)
+#define __ActionCallback(T) T##_ActionCallback
+#define ActionCallback(T) __ActionCallback(T)
+#define __ActionMemberFunction(T) T##_ActionMemberFunction
+#define ActionMemberFunction(T) __ActionMemberFunction(T)
+#else
+#define __ActionCallback(T) T/**/_ActionCallback
+#define ActionCallback(T) __ActionCallback(T)
+#define __ActionMemberFunction(T) T/**/_ActionMemberFunction
+#define ActionMemberFunction(T) __ActionMemberFunction(T)
+#endif
 
-#define ActionCallback(T) name2(T,_ActionCallback)
-#define ActionMemberFunction(T) name2(T,_ActionMemberFunction)
-
-#define ActionCallbackdeclare(T) \
-typedef void T::ActionMemberFunction(T)(); \
+#define declareActionCallback(T) \
+typedef void (T::*ActionMemberFunction(T))(); \
 class ActionCallback(T) : public Action { \
 public: \
-    ActionCallback(T)(T*, ActionMemberFunction(T)*); \
+    ActionCallback(T)(T*, ActionMemberFunction(T)); \
 \
     virtual void execute(); \
 private: \
     T* obj_; \
-    ActionMemberFunction(T)* func_; \
+    ActionMemberFunction(T) func_; \
 };
 
-#define ActionCallbackimplement(T) \
-ActionCallback(T)::ActionCallback(T)(T* obj, ActionMemberFunction(T)* func) { \
+#define implementActionCallback(T) \
+ActionCallback(T)::ActionCallback(T)(T* obj, ActionMemberFunction(T) func) { \
     obj_ = obj; \
     func_ = func; \
 } \

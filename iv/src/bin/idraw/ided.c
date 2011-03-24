@@ -41,12 +41,12 @@
 #include <Unidraw/globals.h>
 #include <Unidraw/keymap.h>
 #include <Unidraw/kybd.h>
-#include <Unidraw/page.h>
 #include <Unidraw/selection.h>
 #include <Unidraw/statevars.h>
 #include <Unidraw/stateviews.h>
 #include <Unidraw/uctrls.h>
 #include <Unidraw/unidraw.h>
+#include <Unidraw/upage.h>
 #include <Unidraw/viewer.h>
 
 #include <Unidraw/Commands/align.h>
@@ -85,12 +85,13 @@
 
 #include <InterViews/border.h>
 #include <InterViews/box.h>
-#include <InterViews/filechooser.h>
 #include <InterViews/frame.h>
 #include <InterViews/glue.h>
 #include <InterViews/menu.h>
 #include <InterViews/message.h>
 #include <InterViews/panner.h>
+#include <InterViews/session.h>
+#include <InterViews/style.h>
 #include <InterViews/tray.h>
 #include <InterViews/window.h>
 
@@ -112,6 +113,11 @@ static const char* initPatAttrib = "initialpattern";
 static const char* initFgAttrib = "initialfgcolor";
 static const char* initBgAttrib = "initialbgcolor";
 static const char* initArrowAttrib = "initialarrow";
+
+static const char* page_width_attrib = "pagewidth";
+static const char* page_height_attrib = "pageheight";
+static const char* grid_x_incr = "gridxincr";
+static const char* grid_y_incr = "gridyincr";
 
 /*****************************************************************************/
 
@@ -159,12 +165,13 @@ IdrawEditor::IdrawEditor (const char* file) {
 }
 
 void IdrawEditor::Init (GraphicComp* comp) {
-    SetClassName("IdrawEditor");
-
-    ManagedWindow* window = new ApplicationWindow(this);
-    window->name("InterViews drawing editor");
-    window->icon_name("idraw");
-    SetWindow(window);
+    if (GetWindow() == nil) {
+	ManagedWindow* w = new ApplicationWindow(this);
+	SetWindow(w);
+	Style* s = new Style(Session::instance()->style());
+	s->alias("IdrawEditor");
+	w->style(s);
+    }
 
     _comp = (comp == nil) ? (new IdrawComp) : comp;
     _keymap = new KeyMap;
@@ -222,6 +229,16 @@ IdrawEditor::~IdrawEditor () {
     delete _keymap;
     delete _selection;
     delete _modifStatus;
+
+    delete _name;
+    delete _modifStatus;
+    delete _gravity;
+    delete _magnif;
+    delete _font;
+    delete _brush;
+    delete _pattern;
+    delete _color;
+    delete _arrows;
 }
 
 Component* IdrawEditor::GetComponent () { return _comp; }
@@ -456,21 +473,27 @@ Interactor* IdrawEditor::Tools () {
     return tools;
 }
 
-static const float PAGE_WIDTH = 8.5;
-static const float PAGE_HEIGHT = 11;
-static const float DEFAULT_XINCR = 8;
-static const float DEFAULT_YINCR = 8;
-
 void IdrawEditor::InitViewer () {
-    const float w = round(PAGE_WIDTH * inches);
-    const float h = round(PAGE_HEIGHT * inches);
+    Catalog* catalog = unidraw->GetCatalog();
+
+    const char* page_w = catalog->GetAttribute(page_width_attrib);
+    const char* page_h = catalog->GetAttribute(page_height_attrib);
+    const char* x_incr = catalog->GetAttribute(grid_x_incr);
+    const char* y_incr = catalog->GetAttribute(grid_y_incr);
 
     GraphicView* view = (GraphicView*) _comp->Create(COMPONENT_VIEW);
     _comp->Attach(view);
     view->Update();
 
-    Page* page = new Page(w, h);
-    Grid* grid = new Grid(w, h, DEFAULT_XINCR, DEFAULT_YINCR);
+    /*
+     * These statements had to be moved down here to workaround
+     * a strange cfront 3.0 bug.
+     */
+    const float w = round(atof(page_w) * inches);
+    const float h = round(atof(page_h) * inches);
+
+    UPage* page = new UPage(w, h);
+    Grid* grid = new Grid(w, h, atof(x_incr), atof(y_incr));
     grid->Visibility(false);
 
     _viewer = new Viewer(this, view, page, grid);

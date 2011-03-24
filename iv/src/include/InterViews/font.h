@@ -30,13 +30,14 @@
 #ifndef iv_font_h
 #define iv_font_h
 
-#include <InterViews/boolean.h>
 #include <InterViews/coord.h>
 #include <InterViews/resource.h>
 
 #include <InterViews/_enter.h>
 
 class Display;
+class FontFamilyImpl;
+class FontFamilyRep;
 class FontImpl;
 class FontRep;
 class String;
@@ -55,19 +56,50 @@ public:
         int size, const char* style, const char*& name, float& scale
     ) const;
 
-    class FontFamilyRep* rep(Display*) const;
+    FontFamilyRep* rep(Display*) const;
 private:
-    class FontFamilyImpl* impl_;
+    FontFamilyImpl* impl_;
 
     FontFamilyRep* create(Display*) const;
     void destroy(FontFamilyRep*);
 };
 
-class Font : virtual public Resource {
+class FontBoundingBox {
+public:
+    Coord left_bearing() const;
+    Coord right_bearing() const;
+    Coord width() const;
+    Coord ascent() const;
+    Coord descent() const;
+    Coord font_ascent() const;
+    Coord font_descent() const;
+private:
+    friend class Font;
+
+    Coord left_bearing_;
+    Coord right_bearing_;
+    Coord width_;
+    Coord ascent_;
+    Coord descent_;
+    Coord font_ascent_;
+    Coord font_descent_;
+};
+
+inline Coord FontBoundingBox::left_bearing() const { return left_bearing_; }
+inline Coord FontBoundingBox::right_bearing() const { return right_bearing_; }
+inline Coord FontBoundingBox::width() const { return width_; }
+inline Coord FontBoundingBox::ascent() const { return ascent_; }
+inline Coord FontBoundingBox::descent() const { return descent_; }
+inline Coord FontBoundingBox::font_ascent() const { return font_ascent_; }
+inline Coord FontBoundingBox::font_descent() const { return font_descent_; }
+
+class Font : public Resource {
 public:
     Font(const String&, float scale = 1.0);
     Font(const char*, float scale = 1.0);
     virtual ~Font();
+
+    virtual void cleanup();
 
     static const Font* lookup(const String&);
     static const Font* lookup(const char*);
@@ -79,19 +111,10 @@ public:
     virtual const char* encoding() const;
     virtual Coord size() const;
 
-    virtual Coord ascent() const;
-    virtual Coord descent() const;
-
-    virtual Coord left_bearing(long) const;
-    virtual Coord right_bearing(long) const;
-    virtual Coord ascent(long) const;
-    virtual Coord descent(long) const;
+    virtual void font_bbox(FontBoundingBox&) const;
+    virtual void char_bbox(long, FontBoundingBox&) const;
+    virtual void string_bbox(const char*, int, FontBoundingBox&) const;
     virtual Coord width(long) const;
-
-    virtual Coord left_bearing(const char*, int) const;
-    virtual Coord right_bearing(const char*, int) const;
-    virtual Coord ascent(const char*, int) const;
-    virtual Coord descent(const char*, int) const;
     virtual Coord width(const char*, int) const;
 
     virtual int index(const char*, int, float offset, boolean between) const;

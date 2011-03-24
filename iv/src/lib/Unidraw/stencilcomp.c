@@ -30,10 +30,12 @@
 
 #include <Unidraw/Components/stencilcomp.h>
 
-#include <Unidraw/Graphic/stencil.h>
+#include <Unidraw/Graphic/ustencil.h>
 
 #include <InterViews/bitmap.h>
 #include <InterViews/transformer.h>
+
+#include <IV-2_6/_enter.h>
 
 #include <stream.h>
 #include <string.h>
@@ -53,15 +55,15 @@ boolean StencilComp::IsA (ClassId id) {
 }
 
 Component* StencilComp::Copy () {
-    return new StencilComp((Stencil*) GetGraphic()->Copy(), _filename);
+    return new StencilComp((UStencil*) GetGraphic()->Copy(), _filename);
 }
 
-StencilComp::StencilComp (Stencil* s, const char* filename) : GraphicComp(s) {
+StencilComp::StencilComp (UStencil* s, const char* filename) : GraphicComp(s) {
     _filename = (filename == nil) ? nil : strnew(filename);
 }
 
 StencilComp::~StencilComp () { delete _filename; }
-Stencil* StencilComp::GetStencil () { return (Stencil*) GetGraphic(); }
+UStencil* StencilComp::GetStencil () { return (UStencil*) GetGraphic(); }
 const char* StencilComp::GetFileName () { return _filename; }
 
 void StencilComp::Read (istream& in) {
@@ -79,7 +81,7 @@ void StencilComp::Read (istream& in) {
         mask = image;
     }
 
-    Stencil* stencil = new Stencil(image, mask);
+    UStencil* stencil = new UStencil(image, mask);
     stencil->FillBg(ReadBgFilled(in));
     PSColor* fg = ReadColor(in);
     PSColor* bg = ReadColor(in);
@@ -95,7 +97,7 @@ void StencilComp::Read (istream& in) {
 
 void StencilComp::Write (ostream& out) {
     GraphicComp::Write(out);
-    Stencil* stencil = GetStencil();
+    UStencil* stencil = GetStencil();
     Bitmap* image, *mask;
     stencil->GetOriginal(image, mask);
 
@@ -148,7 +150,7 @@ Graphic* StencilView::GetGraphic () {
         StencilComp* stencilComp = GetStencilComp();
         Bitmap* image, *mask;
         stencilComp->GetStencil()->GetOriginal(image, mask);
-        graphic = new Stencil(image, mask, stencilComp->GetGraphic());
+        graphic = new UStencil(image, mask, stencilComp->GetGraphic());
         SetGraphic(graphic);
     }
     return graphic;

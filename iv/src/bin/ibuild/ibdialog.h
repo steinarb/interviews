@@ -20,6 +20,10 @@
  * WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+/*
+ *  DialogClass declaration
+ */
+
 #ifndef ibdialog_h
 #define ibdialog_h
 
@@ -80,6 +84,7 @@ protected:
     virtual boolean CoreConstInits(ostream&);
     virtual boolean ConstDecls(ostream&);
     virtual boolean ConstInits(ostream&);
+    virtual boolean EmitIncludeHeaders(ostream&);
 };
 
 #endif

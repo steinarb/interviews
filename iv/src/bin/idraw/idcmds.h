@@ -30,6 +30,10 @@
 #include <Unidraw/Commands/catcmds.h>
 #include <Unidraw/Commands/viewcmds.h>
 
+class MoveDialog;
+class RotateDialog;
+class ScaleDialog;
+
 class OpenCmd : public ViewCompCmd {
 public:
     OpenCmd(ControlInfo*, FileChooser* = nil);
@@ -55,7 +59,7 @@ public:
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
 private:
-    class MoveDialog* _dialog;
+    MoveDialog* _dialog;
 };
 
 class PreciseScaleCmd : public Command {
@@ -71,7 +75,7 @@ public:
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
 private:
-    class ScaleDialog* _dialog;
+    ScaleDialog* _dialog;
 };
 
 class PreciseRotateCmd : public Command {
@@ -87,7 +91,7 @@ public:
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
 private:
-    class RotateDialog* _dialog;
+    RotateDialog* _dialog;
 };
 
 class NewViewCmd : public Command {

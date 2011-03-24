@@ -37,6 +37,8 @@
 /*****************************************************************************/
 
 static PropertyData properties[] = {
+    { "*IdrawEditor*name", "InterViews drawing editor" },
+    { "*IdrawEditor*iconName", "Idraw" },
     { "*domain",  "drawing" },
     { "*initialbrush",  "2" },
     { "*initialfgcolor","1" },
@@ -44,6 +46,10 @@ static PropertyData properties[] = {
     { "*initialfont",   "4" },
     { "*initialpattern","1" },
     { "*initialarrow", "none" },
+    { "*pagewidth", "8.5" },
+    { "*pageheight", "11" },
+    { "*gridxincr", "8" },
+    { "*gridyincr", "8" },
     { "*font1", "-*-courier-medium-r-normal-*-8-*-*-*-*-*-*-* Courier 8" },
     { "*font2", "-*-courier-medium-r-normal-*-10-*-*-*-*-*-*-* Courier 10" },
     { "*font3", "-*-courier-bold-r-normal-*-12-*-*-*-*-*-*-* Courier-Bold 12" },

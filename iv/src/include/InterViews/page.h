@@ -31,6 +31,8 @@
 
 #include <InterViews/glyph.h>
 
+class PageInfo_List;
+
 class Page : public Glyph {
 public:
     Page(Glyph* background);
@@ -53,6 +55,7 @@ public:
     virtual void draw(Canvas*, const Allocation&) const;
     virtual void print(Printer*, const Allocation&) const;
     virtual void pick(Canvas*, const Allocation&, int depth, Hit&);
+    virtual void undraw();
 
     virtual void append(Glyph*);
     virtual void prepend(Glyph*);
@@ -65,7 +68,7 @@ public:
     virtual Glyph* component(GlyphIndex) const;
     virtual void allotment(GlyphIndex, DimensionName, Allotment&) const;
 private:
-    class PageInfo_List* info_;
+    PageInfo_List* info_;
     Glyph* background_;
     Canvas* canvas_;
     Allocation allocation_;

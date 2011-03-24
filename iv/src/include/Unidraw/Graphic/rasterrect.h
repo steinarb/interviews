@@ -29,6 +29,8 @@
 
 #include <Unidraw/Graphic/graphic.h>
 
+#include <IV-2_6/_enter.h>
+
 class Raster;
 
 class RasterRect : public Graphic {
@@ -49,5 +51,7 @@ private:
 };
 
 inline Raster* RasterRect::GetOriginal () { return _raster; }
+
+#include <IV-2_6/_leave.h>
 
 #endif

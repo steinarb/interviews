@@ -41,6 +41,7 @@ public:
     UniqueString(const char*, int length);
     UniqueString(const String&);
     UniqueString(const UniqueString&);
+    virtual ~UniqueString();
 
     virtual unsigned long hash() const;
     virtual boolean operator ==(const String&) const;

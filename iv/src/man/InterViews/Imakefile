@@ -1,10 +1,10 @@
 XCOMM
-XCOMM man pages for using the InterViews library
+XCOMM man pages for using look+feel classes
 XCOMM
 
 TROFFSRCS	= *.n
 TROFFFLAGS	= -man
-TROFFOUTPUT	= libInterViews.PS
+TROFFOUTPUT	= libIV-look.PS
 DEST		= $(MANDIR)/mann
 
 TroffSources($(TROFFOUTPUT))

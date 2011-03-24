@@ -30,14 +30,14 @@
 #include "Document.h"
 #include "DocViewer.h"
 
+#include <OS/list.h>
+
 #include <string.h>
 
 class PagenumberViewInfo {
 public:
     PagenumberView* _view;
 };
-
-#include "list.h"
 
 declareList(PagenumberViewInfo_List,PagenumberViewInfo)
 implementList(PagenumberViewInfo_List,PagenumberViewInfo)
@@ -53,7 +53,7 @@ PagenumberItem::~PagenumberItem () {
     delete _sample;
     if (_view != nil) {
         while (_view->count() > 0) {
-            PagenumberViewInfo& view = _view->item(0);
+            PagenumberViewInfo& view = _view->item_ref(0);
             _view->remove(0);
         }
         delete _view;
@@ -98,7 +98,7 @@ void PagenumberItem::detach (PagenumberView* view) {
     if (_view != nil) {
         long count = _view->count();
         for (long i = 0; i < count; ++i) {
-            PagenumberViewInfo& info = _view->item(i);
+            PagenumberViewInfo& info = _view->item_ref(i);
             if (info._view == view) {
                 _view->remove(i);
                 break;

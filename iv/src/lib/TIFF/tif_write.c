@@ -1,10 +1,10 @@
 #ifndef lint
-static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_write.c,v 1.38 91/08/19 14:40:49 sam Exp $";
+static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_write.c,v 1.41 92/02/10 19:06:47 sam Exp $";
 #endif
 
 /*
- * Copyright (c) 1988, 1989, 1990, 1991 Sam Leffler
- * Copyright (c) 1991 Silicon Graphics, Inc.
+ * Copyright (c) 1988, 1989, 1990, 1991, 1992 Sam Leffler
+ * Copyright (c) 1991, 1992 Silicon Graphics, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and 
  * its documentation for any purpose is hereby granted without fee, provided
@@ -117,6 +117,7 @@ TIFFWriteScanline(tif, buf, row, sample)
 		    (strip % td->td_stripsperimage) * td->td_rowsperstrip;
 		if (tif->tif_preencode && !(*tif->tif_preencode)(tif))
 			return (-1);
+		tif->tif_flags |= TIFF_POSTENCODE;
 	}
 	/*
 	 * Check strip array to make sure there's space.
@@ -199,6 +200,7 @@ TIFFWriteEncodedStrip(tif, strip, data, cc)
 		tif->tif_flags |= TIFF_BUFFERSETUP;
 	}
 	tif->tif_curstrip = strip;
+	tif->tif_flags &= ~TIFF_POSTENCODE;
 	if (tif->tif_preencode && !(*tif->tif_preencode)(tif))
 		return (-1);
 	if (!(*tif->tif_encodestrip)(tif,
@@ -254,20 +256,25 @@ TIFFWriteTile(tif, buf, x, y, z, s)
 	u_long x, y, z;
 	u_int s;
 {
-	u_int tile;
-
 	if (!TIFFCheckTile(tif, x, y, z, s))
 		return (-1);
+	/*
+	 * NB: A tile size of -1 is used instead of tif_tilesize knowing
+	 *     that TIFFWriteEncodedTile will clamp this to the tile size.
+	 *     This is done because the tile size may not be defined until
+	 *     after the output buffer is setup in TIFFBufferSetup.
+	 */
 	return (TIFFWriteEncodedTile(tif,
-	    TIFFComputeTile(tif, x, y, z, s), buf, tif->tif_tilesize));
+	    TIFFComputeTile(tif, x, y, z, s), buf, (u_int)-1));
 }
 
 /*
  * Encode the supplied data and write it to the
  * specified tile.  There must be space for the
- * data.  The function assumes that the tile maps
- * onto the image (i.e. it doesn't check cc to make
- * sure it spans the tile).
+ * data.  The function clamps individual writes
+ * to a tile to the tile size, but does not (and
+ * can not) check that multiple writes to the same
+ * tile do not write more than tile size data.
  *
  * NB: Image length must be setup before writing; this
  *     interface does not support automatically growing
@@ -310,8 +317,16 @@ TIFFWriteEncodedTile(tif, tile, data, cc)
 	tif->tif_col = (tile % howmany(td->td_imagewidth, td->td_tilewidth))
 		* td->td_tilewidth;
 
+	tif->tif_flags &= ~TIFF_POSTENCODE;
 	if (tif->tif_preencode && !(*tif->tif_preencode)(tif))
 		return (-1);
+	/*
+	 * Clamp write amount to the tile size.  This is mostly
+	 * done so that callers can pass in some large number
+	 * (e.g. -1) and have the tile size used instead.
+	 */
+	if (cc > tif->tif_tilesize)
+		cc = tif->tif_tilesize;
 	if (!(*tif->tif_encodetile)(tif, data, cc, tile/td->td_stripsperimage))
 		return (0);
 	if (tif->tif_postencode && !(*tif->tif_postencode)(tif))
@@ -556,14 +571,17 @@ TIFFAppendToStrip(tif, strip, data, cc)
 TIFFFlushData1(tif)
 	register TIFF *tif;
 {
-	if (tif->tif_dir.td_fillorder != tif->tif_fillorder &&
-	    (tif->tif_flags & TIFF_NOBITREV) == 0)
-		TIFFReverseBits((u_char *)tif->tif_rawdata, tif->tif_rawcc);
-	if (!TIFFAppendToStrip(tif,
-	    isTiled(tif) ? tif->tif_curtile : tif->tif_curstrip,
-	    (u_char *)tif->tif_rawdata, tif->tif_rawcc))
-		return (0);
-	tif->tif_rawcc = 0;
-	tif->tif_rawcp = tif->tif_rawdata;
+	if (tif->tif_rawcc > 0) {
+		if (tif->tif_dir.td_fillorder != tif->tif_fillorder &&
+		    (tif->tif_flags & TIFF_NOBITREV) == 0)
+			TIFFReverseBits((u_char *)tif->tif_rawdata,
+			    tif->tif_rawcc);
+		if (!TIFFAppendToStrip(tif,
+		    isTiled(tif) ? tif->tif_curtile : tif->tif_curstrip,
+		    (u_char *)tif->tif_rawdata, tif->tif_rawcc))
+			return (0);
+		tif->tif_rawcc = 0;
+		tif->tif_rawcp = tif->tif_rawdata;
+	}
 	return (1);
 }

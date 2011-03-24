@@ -30,6 +30,8 @@
 #include <InterViews/dialog.h>
 
 class FileBrowser;
+class MarginFrame;
+class StringEditor;
 
 class BasicDialog : public Dialog {
 public:
@@ -76,7 +78,7 @@ public:
 private:
     void Init(const char*, const char*, int width = 0);
 private:
-    class StringEditor* _sedit;
+    StringEditor* _sedit;
 };
 
 class FileDialog : public BasicDialog {
@@ -95,7 +97,7 @@ private:
 private:
     FileBrowser* _browser;
     FileBrowser* _dirs;
-    class MarginFrame* _cur_dir;
+    MarginFrame* _cur_dir;
 };
 
 inline FileBrowser* FileDialog::GetBrowser () { return _browser; }

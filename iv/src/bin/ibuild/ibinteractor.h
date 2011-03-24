@@ -22,7 +22,6 @@
 
 /*
  * Interactor component declarations.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibinteractor.h,v 1.2 91/09/27 14:14:18 tang Exp $
  */
 
 #ifndef ibinteractor_h

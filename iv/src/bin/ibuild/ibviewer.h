@@ -20,6 +20,10 @@
  * WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+/*
+ *  Viewer component declarations
+ */
+
 #ifndef ibviewer_h
 #define ibviewer_h
 
@@ -67,6 +71,7 @@ inline Graphic* IBViewerComp::GetPage () { return _page; }
 class IBViewerView : public GrBlockView {
 public:
     IBViewerView(IBViewerComp* = nil);
+    virtual ~IBViewerView();
     IBViewerComp* GetIBViewerComp();
 
     virtual GraphicComp* CreateProtoComp(Editor*, Coord, Coord, Coord, Coord);
@@ -82,15 +87,16 @@ protected:
 class IBViewerGraphic : public GrBlockGraphic {
 public:
     IBViewerGraphic(CanvasVar* = nil, Graphic* = nil);
+
+    void SetShape(int, int);
+    void GetShape(int&, int&);
+
     virtual Graphic* Copy();
     virtual void Read(istream&);
     virtual void Write(ostream&);
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-
-    void SetShape(int, int);
-    void GetShape(int&, int&);
-private:
+protected:
     int _w, _h;
 };
 

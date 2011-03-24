@@ -22,7 +22,6 @@
 
 /*
  * Scroller component declarations.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibscroller.h,v 1.2 91/09/27 14:15:11 tang Exp $
  */
 
 #ifndef ibscroller_h
@@ -84,6 +83,7 @@ class ScrollerCode : public CodeView {
 public:
     ScrollerCode(ScrollerComp* = nil);
 
+    virtual void Update();
     virtual boolean Definition(ostream&);
     ScrollerComp* GetScrollerComp();
 

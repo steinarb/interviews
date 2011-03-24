@@ -38,8 +38,10 @@
 
 #include <Unidraw/Graphic/graphic.h>
 
-#include <InterViews/shape.h>
+#include <IV-2_6/InterViews/shape.h>
 #include <InterViews/transformer.h>
+
+#include <IV-2_6/_enter.h>
 
 #include <math.h>
 #include <stream.h>

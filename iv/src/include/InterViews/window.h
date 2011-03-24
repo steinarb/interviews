@@ -41,7 +41,10 @@ class Display;
 class Event;
 class Glyph;
 class Handler;
+class ManagedWindowRep;
 class String;
+class Style;
+class WindowRep;
 
 class Window {
 protected:
@@ -49,22 +52,20 @@ protected:
 public:
     virtual ~Window();
 
+    virtual Glyph* glyph() const;
+
+    virtual void style(Style*);
+    Style* style() const;
+
     virtual void display(Display*);
     virtual Display* display() const;
 
     virtual Canvas* canvas() const;
 
-    virtual void save_under(boolean);
-    virtual boolean save_under() const;
-
-    virtual void save_contents(boolean);
-    virtual boolean save_contents() const;
-
-    virtual void double_buffered(boolean);
-    virtual boolean double_buffered() const;
-
     virtual void cursor(Cursor*);
     virtual Cursor* cursor() const;
+    virtual void push_cursor();
+    virtual void pop_cursor();
 
     virtual void place(Coord left, Coord bottom);
     virtual void pplace(IntCoord left, IntCoord bottom);
@@ -74,11 +75,10 @@ public:
 
     virtual Coord width() const;
     virtual Coord height() const;
-    virtual unsigned int pwidth() const;
-    virtual unsigned int pheight() const;
 
     virtual void map();
     virtual void unmap();
+    virtual boolean is_mapped() const;
 
     virtual void bind();
     virtual void unbind();
@@ -96,7 +96,7 @@ public:
 
     virtual void repair();
 
-    class WindowRep* rep() const;
+    WindowRep* rep() const;
 protected:
     Window(WindowRep*);
 
@@ -120,36 +120,14 @@ protected:
 public:
     virtual ~ManagedWindow();
 
-    virtual void display(Display*);
-    virtual Display* display() const;
-
-    virtual void geometry(const String&);
-    virtual void geometry(const char*);
-    virtual const String* geometry() const;
-
-    virtual void name(const String&);
-    virtual void name(const char*);
-    virtual const String* name() const;
-
-    virtual void icon_name(const String&);
-    virtual void icon_name(const char*);
-    virtual const String* icon_name() const;
-
     virtual void icon(ManagedWindow*);
     virtual ManagedWindow* icon() const;
-
-    virtual void icon_geometry(const String&);
-    virtual void icon_geometry(const char*);
-    virtual const String* icon_geometry() const;
 
     virtual void icon_bitmap(Bitmap*);
     virtual Bitmap* icon_bitmap() const;
 
     virtual void icon_mask(Bitmap*);
     virtual Bitmap* icon_mask() const;
-
-    virtual void iconic(boolean);
-    virtual boolean iconic() const;
 
     virtual void iconify();
     virtual void deiconify();
@@ -159,9 +137,8 @@ public:
 
     virtual void resize();
 
-    class ManagedWindowRep* rep() const;
+    ManagedWindowRep* rep() const;
 protected:
-    virtual void configure();
     virtual void compute_geometry();
     virtual void set_props();
 private:
@@ -175,7 +152,7 @@ public:
     ApplicationWindow(Glyph*);
     ~ApplicationWindow();
 protected:
-    virtual void configure();
+    virtual void compute_geometry();
     virtual void set_props();
 };
 

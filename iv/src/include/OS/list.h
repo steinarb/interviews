@@ -29,19 +29,22 @@
 #ifndef os_list_h
 #define os_list_h
 
-#include <InterViews/boolean.h>
-#include <generic.h>
-
-#ifdef __GNUC__
-#define delete_list_items() delete [size_] items_
-#else
-#define delete_list_items() delete [] items_
-#endif
+#include <OS/enter-scope.h>
 
 extern void ListImpl_range_error(long index);
 extern long ListImpl_best_new_count(long count, unsigned size);
 
-#define ListItr(List) name2(List,_Iterator)
+#if defined(__STDC__) || defined(__ANSI_CPP__)
+#define __ListItr(List) List##_Iterator
+#define ListItr(List) __ListItr(List)
+#define __ListUpdater(List) List##_Updater
+#define ListUpdater(List) __ListUpdater(List)
+#else
+#define __ListItr(List) List/**/_Iterator
+#define ListItr(List) __ListItr(List)
+#define __ListUpdater(List) List/**/_Updater
+#define ListUpdater(List) __ListUpdater(List)
+#endif
 
 #define declareList(List,T) \
 class List { \
@@ -50,12 +53,12 @@ public: \
     ~List(); \
 \
     long count() const; \
-    T& item(long index) const; \
-    T* array(long index, long count); \
+    T item(long index) const; \
+    T& item_ref(long index) const; \
 \
-    void prepend(T& const); \
-    void append(T& const); \
-    void insert(long index, T& const); \
+    void prepend(const T&); \
+    void append(const T&); \
+    void insert(long index, const T&); \
     void remove(long index); \
     void remove_all(); \
 private: \
@@ -67,7 +70,14 @@ private: \
 \
 inline long List::count() const { return count_; } \
 \
-inline T& List::item(long index) const { \
+inline T List::item(long index) const { \
+    if (index < 0 || index >= count_) { \
+	ListImpl_range_error(index); \
+    } \
+    long i = index < free_ ? index : index + size_ - count_; \
+    return items_[i]; \
+} \
+inline T& List::item_ref(long index) const { \
     if (index < 0 || index >= count_) { \
 	ListImpl_range_error(index); \
     } \
@@ -75,12 +85,32 @@ inline T& List::item(long index) const { \
     return items_[i]; \
 } \
 \
-inline void List::append(T& const item) { insert(count_, item); } \
-inline void List::prepend(T& const item) { insert(0, item); } \
+inline void List::append(const T& item) { insert(count_, item); } \
+inline void List::prepend(const T& item) { insert(0, item); } \
 \
 class ListItr(List) { \
 public: \
-    ListItr(List)(List&); \
+    ListItr(List)(const List&); \
+\
+    boolean more() const; \
+    T cur() const; \
+    T& cur_ref() const; \
+    void next(); \
+private: \
+    const List* list_; \
+    long cur_; \
+}; \
+\
+inline boolean ListItr(List)::more() const { return cur_ < list_->count(); } \
+inline T ListItr(List)::cur() const { return list_->item(cur_); } \
+inline T& ListItr(List)::cur_ref() const { \
+    return list_->item_ref(cur_); \
+} \
+inline void ListItr(List)::next() { ++cur_; } \
+\
+class ListUpdater(List) { \
+public: \
+    ListUpdater(List)(List&); \
 \
     boolean more() const; \
     T cur() const; \
@@ -90,16 +120,92 @@ public: \
 private: \
     List* list_; \
     long cur_; \
-    long end_; \
 }; \
 \
-inline boolean ListItr(List)::more() const { return cur_ < end_; } \
-inline T ListItr(List)::cur() const { return list_->item(cur_); } \
-inline T& ListItr(List)::cur_ref() const { \
-    return list_->item(cur_); \
+inline boolean ListUpdater(List)::more() const { \
+    return cur_ < list_->count(); \
 } \
-inline void ListItr(List)::remove_cur() { list_->remove(cur_); } \
-inline void ListItr(List)::next() { ++cur_; }
+inline T ListUpdater(List)::cur() const { return list_->item(cur_); } \
+inline T& ListUpdater(List)::cur_ref() const { \
+    return list_->item_ref(cur_); \
+} \
+inline void ListUpdater(List)::remove_cur() { list_->remove(cur_); } \
+inline void ListUpdater(List)::next() { ++cur_; }
+
+/*
+ * Lists of pointers
+ *
+ * Don't ask me to explain the AnyPtr nonsense.  C++ compilers
+ * have a hard time deciding between (const void*)& and const (void*&).
+ * Typedefs help, though still keep me guessing.
+ */
+
+typedef void* __AnyPtr;
+
+declareList(__AnyPtrList,__AnyPtr)
+
+#define declarePtrList(PtrList,T) \
+class PtrList { \
+public: \
+    PtrList(long size = 0); \
+\
+    long count() const; \
+    T* item(long index) const; \
+\
+    void prepend(T*); \
+    void append(T*); \
+    void insert(long index, T*); \
+    void remove(long index); \
+    void remove_all(); \
+private: \
+    __AnyPtrList impl_; \
+}; \
+\
+inline PtrList::PtrList(long size) : impl_(size) { } \
+inline long PtrList::count() const { return impl_.count(); } \
+inline T* PtrList::item(long index) const { return (T*)impl_.item(index); } \
+inline void PtrList::append(T* item) { insert(impl_.count(), item); } \
+inline void PtrList::prepend(T* item) { insert(0, item); } \
+inline void PtrList::remove(long index) { impl_.remove(index); } \
+inline void PtrList::remove_all() { impl_.remove_all(); } \
+\
+class ListItr(PtrList) { \
+public: \
+    ListItr(PtrList)(const PtrList&); \
+\
+    boolean more() const; \
+    T* cur() const; \
+    void next(); \
+private: \
+    const PtrList* list_; \
+    long cur_; \
+}; \
+\
+inline boolean ListItr(PtrList)::more() const { \
+    return cur_ < list_->count(); \
+} \
+inline T* ListItr(PtrList)::cur() const { return list_->item(cur_); } \
+inline void ListItr(PtrList)::next() { ++cur_; } \
+\
+class ListUpdater(PtrList) { \
+public: \
+    ListUpdater(PtrList)(PtrList&); \
+\
+    boolean more() const; \
+    T* cur() const; \
+    void remove_cur(); \
+    void next(); \
+private: \
+    PtrList* list_; \
+    long cur_; \
+}; \
+\
+inline boolean ListUpdater(PtrList)::more() const { \
+    return cur_ < list_->count(); \
+} \
+inline T* ListUpdater(PtrList)::cur() const { return list_->item(cur_); } \
+inline void ListUpdater(PtrList)::remove_cur() { list_->remove(cur_); } \
+inline void ListUpdater(PtrList)::next() { ++cur_; }
 
 /*
  * List implementation
@@ -119,25 +225,10 @@ List::List(long size) { \
 } \
 \
 List::~List() { \
-    delete_list_items(); \
+    delete [] items_; \
 } \
 \
-T* List::array(long index, long count) { \
-    if (index + count <= free_) { \
-        return items_ + index; \
-    } else if (index >= free_) { \
-        return items_ + index + size_ - count_; \
-    } else { \
-        long i; \
-        for (i = 0; i < index + count - free_; ++i) { \
-            items_[free_ + i] = items_[free_ + size_ - count_ + i]; \
-        } \
-        free_ = index + count; \
-    } \
-    return items_ + index; \
-} \
-\
-void List::insert(long index, T& const item) { \
+void List::insert(long index, const T& item) { \
     if (count_ == size_) { \
         long size = ListImpl_best_new_count(size_ + 1, sizeof(T)); \
         T* items = new T[size]; \
@@ -150,7 +241,7 @@ void List::insert(long index, T& const item) { \
                 items[free_ + size - count_ + i] = \
                     items_[free_ + size_ - count_ + i]; \
             } \
-            delete_list_items(); \
+	    delete [] items_; \
         } \
         items_ = items; \
         size_ = size; \
@@ -193,10 +284,29 @@ void List::remove_all() { \
     free_ = 0; \
 } \
 \
-ListItr(List)::ListItr(List)(List& list) { \
+ListItr(List)::ListItr(List)(const List& list) { \
     list_ = &list; \
     cur_ = 0; \
-    end_ = list.count(); \
+} \
+\
+ListUpdater(List)::ListUpdater(List)(List& list) { \
+    list_ = &list; \
+    cur_ = 0; \
+}
+
+#define implementPtrList(PtrList,T) \
+void PtrList::insert(long index, T* item) { \
+    const __AnyPtr p = item; \
+    impl_.insert(index, p); \
+} \
+ListItr(PtrList)::ListItr(PtrList)(const PtrList& list) { \
+    list_ = &list; \
+    cur_ = 0; \
+} \
+\
+ListUpdater(PtrList)::ListUpdater(PtrList)(PtrList& list) { \
+    list_ = &list; \
+    cur_ = 0; \
 }
 
 #endif

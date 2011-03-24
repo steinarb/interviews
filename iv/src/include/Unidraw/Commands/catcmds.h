@@ -29,6 +29,9 @@
 
 #include <Unidraw/Commands/command.h>
 
+#undef FileChooser
+#define FileChooser _lib_iv(FileChooser)
+
 class CatalogChooser;
 class FileChooser;
 class PrintDialog;
@@ -49,11 +52,11 @@ public:
     virtual void Write(ostream&);
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-protected:
-    Component* _prototype;
+private:
+    Component* prototype_;
 };
 
-inline Component* NewCompCmd::GetPrototype () { return _prototype; }
+inline Component* NewCompCmd::GetPrototype () { return prototype_; }
 
 class RevertCmd : public Command {
 public:
@@ -80,8 +83,8 @@ public:
     virtual Command* Copy();
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-protected:
-    FileChooser* _dialog;
+private:
+    FileChooser* chooser_;
 };
 
 class SaveCompCmd : public Command {
@@ -109,8 +112,8 @@ public:
     virtual Command* Copy();
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-protected:
-    FileChooser* _dialog;
+private:
+    FileChooser* chooser_;
 };
 
 class PrintCmd : public Command {

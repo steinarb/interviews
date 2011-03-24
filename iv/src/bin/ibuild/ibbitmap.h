@@ -21,8 +21,7 @@
  */
 
 /*
- * Button component declarations.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibbitmap.h,v 1.2 91/09/27 14:12:53 tang Exp $
+ * Bitmap component declarations.
  */
 
 #ifndef ibbitmap_h

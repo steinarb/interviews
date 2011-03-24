@@ -21,8 +21,7 @@
  */
 
 /*
- * Implementation of IBViewer
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibviewer.c,v 1.2 91/09/27 14:12:30 tang Exp $
+ * Viewer component definitions 
  */
 
 #include "ibclasses.h"
@@ -38,11 +37,12 @@
 #include <Unidraw/clipboard.h>
 #include <Unidraw/editor.h>
 #include <Unidraw/iterator.h>
-#include <Unidraw/page.h>
 #include <Unidraw/selection.h>
 #include <Unidraw/viewer.h>
 #include <Unidraw/ulist.h>
 #include <Unidraw/unidraw.h>
+#include <Unidraw/upage.h>
+#include <Unidraw/Commands/colorcmd.h>
 #include <Unidraw/Graphic/pspaint.h>
 
 #include <stream.h>
@@ -59,7 +59,7 @@ IBViewerComp::IBViewerComp (IBViewerGraphic* gr) : GrBlockComp(gr) {
         SubclassNameVar* subclass = GetClassNameVar();
         subclass->SetName("Viewer");
         subclass->SetBaseClass("Viewer");
-        Page page(w, h);
+        UPage page(w, h);
         _page = page.GetGraphic()->Copy();
         GetGraphic()->Append(_page);
     }
@@ -84,6 +84,7 @@ void IBViewerComp::Instantiate () {
     if (_edVar == nil) {
         _edVar = new MemberNameVar("", false, false);
     }
+    _memberVar->SetExport(true);
 }
 
 void IBViewerComp::Reconfig () {
@@ -110,13 +111,13 @@ void IBViewerComp::Resize () {
 }
 
 void IBViewerComp::Interpret(Command* cmd) {
-    if (!cmd->IsA(FONT_CMD) && !cmd->IsA(BRUSH_CMD)) {
+    if (!cmd->IsA(FONT_CMD) && !cmd->IsA(BRUSH_CMD) && !cmd->IsA(ALIGN_CMD)) {
         GrBlockComp::Interpret(cmd);
     }
 }
 
 void IBViewerComp::Uninterpret(Command* cmd) {
-    if (!cmd->IsA(FONT_CMD) && !cmd->IsA(BRUSH_CMD)) {
+    if (!cmd->IsA(FONT_CMD) && !cmd->IsA(BRUSH_CMD) && !cmd->IsA(ALIGN_CMD)) {
         GrBlockComp::Uninterpret(cmd);
     }
 }
@@ -174,13 +175,16 @@ void IBViewerComp::Read (istream& in) {
     int w, h;
     IBViewerGraphic* vgr = GetIBViewerGraphic();
     vgr->GetShape(w, h);
-    Page page(w, h);
+    UPage page(w, h);
     _page = page.GetGraphic()->Copy();
     GetGraphic()->Append(_page);
     GetGrBlockGraphic()->Align(Center, _page, Center);
 
     delete _edVar;
     _edVar = (MemberNameVar*) catalog->ReadStateVar(in);
+    if (_memberVar != nil) {
+        _memberVar->SetExport(true);
+    }
 }
 
 void IBViewerComp::Write (ostream& out) {
@@ -196,6 +200,10 @@ IBViewerView::IBViewerView (
     IBViewerComp* subj
 ) : GrBlockView(subj) { _page = nil;}
 
+IBViewerView::~IBViewerView () {
+    GetGraphic()->Remove(_page);
+    delete _page;
+}
 
 IBViewerComp* IBViewerView::GetIBViewerComp () {
     return (IBViewerComp*) GetSubject();
@@ -235,43 +243,66 @@ Graphic* IBViewerView::GetGraphic () {
 
 void IBViewerView::Update () {
     IBViewerComp* vcomp = GetIBViewerComp();
-    Graphic* grvcomp = vcomp->GetGraphic();
-    Graphic* grvview = (IBGraphic*) GetGraphic();
+    GrBlockPicture* grvcomp = (GrBlockPicture*) vcomp->GetGraphic();
+    GrBlockPicture* grvview = (GrBlockPicture*) GetGraphic();
 
     GrBlockGraphic* grblockgr = vcomp->GetGrBlockGraphic();
     Graphic* page = vcomp->GetPage();
+
+    Viewer* viewer = GetViewer();
     
-    if (
-        Different(grvcomp, grvview) || Different(grblockgr, _grblockgr) ||
-        Different(page, _page)
-    ) {
-        IncurDamage(grvview);
-        *(Graphic*)grvview = *(Graphic*)grvcomp;
-        *(Graphic*)_grblockgr = *(Graphic*)grblockgr;
-        *(Graphic*)_page = *(Graphic*)page;
-        UpdateCanvasVar();
-        IncurDamage(grvview);
+    if (viewer != nil && viewer->GetGraphicView() == this) {
+        boolean clipped = grvview->GetClip();
+        if (clipped) {
+            grvview->SetClip(false);
+            IncurDamage(grvview);
+            grvview->Remove(_grblockgr);
+            grvview->Remove(_page);
+        }
+    } else {
+        if (
+            Different(grvcomp, grvview) || Different(grblockgr, _grblockgr) ||
+            Different(page, _page)
+        ) {
+            IncurDamage(grvview);
+            *(Graphic*)grvview = *(Graphic*)grvcomp;
+            *(Graphic*)_grblockgr = *(Graphic*)grblockgr;
+            *(Graphic*)_page = *(Graphic*)page;
+            UpdateCanvasVar();
+            IncurDamage(grvview);
+        }
     }
     GraphicViews::Update();
 }
 
 InfoDialog* IBViewerView::GetInfoDialog () {
     IBEditor* ibed = (IBEditor*) GetViewer()->GetEditor();
-    InfoDialog* info = InteractorView::GetInfoDialog();
+
+    InfoDialog* info = new InfoDialog;
     ButtonState* state = info->GetState();
-    IBViewerComp* viewerComp = GetIBViewerComp();
 
-    MemberNameVar* edVar = viewerComp->GetEditorVar();
+    IBViewerComp* icomp = GetIBViewerComp();
+    SubclassNameVar* classNameVar = icomp->GetClassNameVar();
+    MemberNameVar* memberVar = icomp->GetMemberNameVar();
+    CanvasVar* canvasVar = icomp->GetCanvasVar();
+    ShapeVar* shapeVar = icomp->GetShapeVar();
+    MemberNameVar* edVar = icomp->GetEditorVar();
 
-    info->Include(new RelatedVarView(
-        edVar, state, viewerComp, "Editor Name: ")
+    info->Include(new SubclassNameVarView(classNameVar, state, icomp));
+    info->Include(
+        new MemberNameVarView(memberVar, state, icomp, "Member Name: ", false)
     );
+    info->Include(new CanvasVarView(canvasVar));
+    info->Include(new ShapeVarView(shapeVar, state));
+    info->Include(new RelatedVarView(edVar, state, icomp, "Editor Name: "));
     return info;
 }
 
 /*****************************************************************************/
 
-IBViewerCode::IBViewerCode (IBViewerComp* subj) : GrBlockCode(subj) { }
+IBViewerCode::IBViewerCode (IBViewerComp* subj) : GrBlockCode(subj) {
+    _unidraw = true;
+}
 
 IBViewerComp* IBViewerCode::GetIBViewerComp() {
     return (IBViewerComp*) GetSubject();
@@ -308,23 +339,29 @@ boolean IBViewerCode::Definition (ostream& out) {
     GetCoreClassName(coreclass);
 
     if (*edname == '\0') {
-        strcat(_errbuf, mname);
-        strcat(_errbuf, " has undefined Editor.\n");
+        if (_err_count < 10) {
+            strcat(_errbuf, mname);
+            strcat(_errbuf, " has undefined Editor.\n");
+            _err_count++;
+        }
         return false;
 
     } else if (!Search(edVar, dummy)) {
-        strcat(_errbuf, mname);
-        strcat(
-            _errbuf, "'s Editor is not in the same hierachy.\n"
-        );
+        if (_err_count < 10) {
+            strcat(_errbuf, mname);
+            strcat(
+                _errbuf, "'s Editor is not in the same hierachy.\n"
+            );
+            _err_count++;
+        }
         return false;
     }
 
     _emitGraphicComp = true;
 
     if (
-        _emitInstanceDecls || _emitClassHeaders || 
-        _emitHeaders || _emitProperty || _emitForward
+        _emitClassHeaders || _emitHeaders || _emitProperty || _emitForward ||
+        _emitInstanceDecls
     ) {
         ok = ok && GrBlockCode::Definition(out);
 
@@ -361,13 +398,14 @@ boolean IBViewerCode::Definition (ostream& out) {
             out << "_comp->Create(COMPONENT_VIEW);\n";
             out << "    " << mname << "_comp->Attach(" << mname << "_view);\n";
             out << "    " << mname << "_view->Update();\n";
-            out << "    Page* " << mname << "_page = new Page(";
+            out << "    UPage* " << mname << "_page = new UPage(";
             out << w << ", " << h << ");\n";
             out << "    Grid* " << mname << "_grid = new Grid(";
             out << w << ", " << h << ", 8.0, 8.0);\n";
             out << "    " << mname << "_grid->Visibility(false);\n";
 
-            out << "    " << mname << " = new " << subclass << "(";
+            BeginInstantiate(out);
+            out << "(";
             InstanceName(out);
             out << "this, " << mname;
             out << "_view, " << mname << "_page, " << mname << "_grid, ";
@@ -383,7 +421,7 @@ boolean IBViewerCode::Definition (ostream& out) {
                 MemberNameVar* kmnamer = kid->GetIComp()->GetMemberNameVar();
                 const char* kmname = kmnamer->GetName();
                 out << "    " << mname << "_comp->Append(";
-                out << kmname << "_comp);\n";
+                out << kmname << ");\n";
             }
             out << "    " << mname;
             out << "_page->GetGraphic()->Align(Center, " << mname;
@@ -398,6 +436,11 @@ boolean IBViewerCode::Definition (ostream& out) {
 	ok = true;
 
     } else if (
+        _emitCreatorHeader || _emitCreatorSubj || _emitCreatorView
+    ) {
+        ok = ok && Iterate(out);
+
+    } else if (
         _emitCoreDecls || _emitCoreInits || _emitClassDecls || _emitClassInits
     ) {
 	ok = ok && GrBlockCode::Definition(out);
@@ -406,15 +449,15 @@ boolean IBViewerCode::Definition (ostream& out) {
 	ok = ok && GrBlockCode::Definition(out);
         
     }
-    _emitGraphicComp = true;
+    _emitGraphicComp = false;
 
     return out.good() && ok;
 }
 
 boolean IBViewerCode::CoreConstDecls(ostream& out) { 
     out << "(\n";
-    out << "        const char*, Editor*, GraphicView*, Page*, Grid* = nil,\n";
-    out << "        Coord = 0, Coord = 0, Orientation = Normal\n";
+    out << "        const char*, Editor*, GraphicView*, UPage*,\n";
+    out << "        Grid* = nil, Coord = 0, Coord = 0, Orientation = Normal\n";
     out << "   );\n";
     return out.good();
 }
@@ -423,20 +466,23 @@ boolean IBViewerCode::CoreConstInits(ostream& out) {
     InteractorComp* icomp = GetIntComp();
     SubclassNameVar* snamer = icomp->GetClassNameVar();
     const char* baseclass = snamer->GetBaseClass();
+    const char* subclass = snamer->GetName();
 
     out << "(\n";
     out << "    const char* n, Editor* ed, GraphicView* gv, ";
-    out << "Page* page, Grid* grid,\n";
+    out << "UPage* page, Grid* grid,\n";
     out << "    Coord w, Coord h, Orientation o\n) : ";
-    out << baseclass << "(n, ed, gv, page, grid, w, h, o) {}\n\n";
+    out << baseclass << "(n, ed, gv, page, grid, w, h, o) {\n";
+    out << "    SetClassName(\"" << subclass << "\");\n";
+    out << "}\n\n";
 
     return out.good();
 }
 
 boolean IBViewerCode::ConstDecls(ostream& out) {
     out << "(\n";
-    out << "        const char*, Editor*, GraphicView*, Page*, Grid* = nil,\n";
-    out << "        Coord = 0, Coord = 0, Orientation = Normal\n";
+    out << "        const char*, Editor*, GraphicView*, UPage*,\n";
+    out << "        Grid* = nil, Coord = 0, Coord = 0, Orientation = Normal\n";
     out << "   );\n";
     return out.good();
 }
@@ -447,7 +493,7 @@ boolean IBViewerCode::ConstInits(ostream& out) {
 
     out << "(\n";
     out << "    const char* n, Editor* ed, GraphicView* gv, ";
-    out << "Page* page, Grid* grid,\n";
+    out << "UPage* page, Grid* grid,\n";
     out << "    Coord w, Coord h, Orientation o\n) : ";
     out << coreclass << "(n, ed, gv, page, grid, w, h, o) {}\n\n";
 
@@ -470,7 +516,7 @@ boolean IBViewerCode::EmitIncludeHeaders(ostream& out) {
 
 IBViewerGraphic::IBViewerGraphic (
     CanvasVar* c, Graphic* g
-) : GrBlockGraphic(c, g) { _w = 0; _h = 0; }
+) : GrBlockGraphic(c, g) {}
 
 Graphic* IBViewerGraphic::Copy () {
     Graphic* copy = new IBViewerGraphic(nil, this);

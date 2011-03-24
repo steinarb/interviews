@@ -54,6 +54,7 @@ Obj(Figure)
 Obj(IdrawImage)
 Obj(InsertMarker)
 Obj(Keymap)
+Obj(Leader)
 Obj(Menus)
 Obj(NoPrint)
 Obj(PGM_Image)
@@ -61,10 +62,12 @@ Obj(PPM_Image)
 Obj(PageBorder)
 Obj(PageButton)
 
-/*
- * ibuild-generated source files
- */
 Obj(dialogs)
+Obj(doc-composition)
+Obj(doc-deck)
+Obj(doc-listener)
+Obj(doc-patch)
+Obj(doc-target)
 
 #else
 

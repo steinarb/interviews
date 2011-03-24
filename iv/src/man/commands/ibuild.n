@@ -1,4 +1,4 @@
-.TH ibuild 1 "19 Aug 1991" "InterViews" "InterViews Reference Manual"
+.TH ibuild 1 "4 June 1992" "InterViews" "InterViews Reference Manual"
 .SH NAME
 ibuild \- InterViews user interface builder
 .SH SYNOPSIS
@@ -6,9 +6,8 @@ ibuild \- InterViews user interface builder
 .RI [ options ]
 .RI [ file ]
 .SH DESCRIPTION
-.I Ibuild
-is an editor that
-allows a user to create InterViews based user interfaces
+Ibuild is an editor that
+allows a user to create InterViews and Unidraw based user interfaces
 by directly manipulating and composing
 graphical parallels of the interface objects in
 the InterViews toolkit.  
@@ -133,6 +132,11 @@ library class is used for instantiating the component during code
 generation, else
 a set of subclass files are generated to assist the customization of
 the new class as described earlier.
+Unidraw elements can be subclassed by going through the same exercise
+of changing the class names.  Some Unidraw elements can have more than
+one class name.  For instance, the "Info" dialog box associated with a
+rectangle in a viewer shows class names of the component, the view and
+the graphic associated with it.
 "Member Name" describes the member name of the
 selected component as a member variable of the closest enclosing
 .I MonoScene
@@ -149,6 +153,13 @@ The dialog box associated with the "Props" entry shows the selected
 component's instance name and user defined properties.  Property
 specification takes the form "attribute:value".
 
+In order to assist users in locating certain elements with certain
+member names or instance names, ibuild allows a user to probe these
+attributes by SHIFT-Left-Clicking on these elements when they are
+composed.  The "Info" entry will have a pullright menu that has class
+name, member name pairs in it, while the pullright menu associated
+with the "Props" entry has class name, instance name pairs.
+
 Examining a
 .I GraphicBlock
 component causes a third "Graphics" entry to display in the popup
@@ -159,6 +170,12 @@ for further refinement.  Graphics can be transferred back to
 ibuild by simply saving and quitting idraw.
 Attributes associated with graphics in ibuild
 not known to idraw such as member name are not lost in this process.
+This option is supported only for backward compatibility, a much
+better technique is to use the
+.I Narrow
+tool to narrow into
+.B GraphicBlocks,
+which changes ibuild into idraw in the same window.
 
 .I Note:
 All machine generated names are guaranteed to be unique in one session
@@ -177,7 +194,20 @@ take the filebrowser's member name as its scrolling target.  Relating
 two push buttons causes the push buttons to mutually exclude each other
 when receiving mouse clicks.  In this case the second (destination)
 push button would share the ButtonState defined by the first (source)
-push button.
+push button.  
+.B Relate 
+is also very useful for semantically connecting Unidraw objects.  For
+instance, an 
+.B Editor
+needs to be related to all Unidraw objects like 
+.I CommandControls, PanelControls,
+and
+.I Viewers
+enclosed.  In this case, the simpliest way to establish the
+relations is to relate the 
+.B Editor
+with the object right below it in the instance hierarchy, which causes
+the relations to establish recursively.
 
 .TP
 .B Edit
@@ -220,8 +250,15 @@ cutting or pasting components in the workspace now will
 only affects the 
 .I HBox.
 .I Note:
-Leaf level components don't define new scopes.
-
+Leaf level components don't define new scopes.  Narrowing into
+graphics related components like GraphicBlocks, CommandControls, 
+PanelControls, and Viewers 
+transform ibuild into idraw in the same window, in addition to
+switching the scope level.  This feature is extremely useful since
+specifying structured graphics objects, class names, member names can
+all be done within ibuild.  Firing up idraw using the 
+.B Examine 
+tool is still supported for backward compatibilty purposes.
 
 .SH "PULLDOWN MENUS"
 
@@ -456,13 +493,11 @@ except in addition,
 it provides features of the Dialog class in the library.
 .I Editor Subclass 
 is useful when the end application is a domain-specific editor.
-Inside an
-.I Editor
-subclass object there has to be at least one
-.I Viewer
-component instance.  
-.I Note:
-This composition mechanism is experimental.
+Objects kept by an editor like the 
+.I KeyMap, Selection, Component, 
+and 
+.I ControlState 
+can all be subclassed to define domain specific behavior.
 
 .TP
 .B Reorder
@@ -553,7 +588,8 @@ Set the current editor's component to be the current component's
 parent. Together with the
 .I Narrow
 tool, they create a convenient mechanism for navigating the structure
-of an interface.
+of an interface.  Viewing the parent of graphics related objects
+switch ibuild from graphics editing mode back to interface editing mode.
 .TP
 .B View Root
 Set the current editor's component to be the current component's
@@ -574,8 +610,9 @@ window.
 .SH "CODE GENERATION"
 
 Conceptually, components created in the workspace are instances of the
-actual InterViews counterparts.  All separate components (uncomposed
-components and composed components without common parents) generate
+actual InterViews and Unidraw counterparts.  
+All separate components (uncomposed and composed components without
+common parents) generate
 separate windows after code generation.  For example, if the user 
 specified filename associated with an ibuild
 session is "hello", "hello-imake", "hello-make", "hello-props" and
@@ -616,9 +653,10 @@ virtual functions defined by the base class.
 
 Ibuild also allows the creation of new user interface abstractions by
 providing 
-.I MonoScene subclass
-and
-.I Dialog subclass
+.I MonoScene subclass, 
+.I Dialog subclass, 
+and 
+.I Editor subclass
 composition mechanisms.  
 Typically, the top most composition of a completed user interface
 component is a 

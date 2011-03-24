@@ -20,6 +20,9 @@
  * WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+/*
+ *  TextEdit component definitions
+ */
 
 #include "ibclasses.h"
 #include "ibdialogs.h"
@@ -83,22 +86,10 @@ boolean TextEditCode::Definition (ostream& out) {
     boolean ok = true;
     if (
 	_emitProperty || _emitInstanceDecls || 
-        _emitClassHeaders || _emitHeaders
+        _emitClassHeaders || _emitHeaders || _emitForward
     ) {
         return CodeView::Definition(out);
 
-    } else if (_emitForward) {
-        if (_scope) {
-            ok = ok && CodeView::Definition(out);
-            ButtonStateVar* bsVar = GetTextEditComp()->GetButtonStateVar();
-            if (
-                bsVar->GetExport() &&
-                !_bsdeclslist->Search("ButtonState")
-            ) {
-                _bsdeclslist->Append("ButtonState");
-                out << "class ButtonState;\n";
-            }
-        }
     } else if (_emitExpHeader) {
 	InteractorComp* icomp = GetIntComp();
 	MemberNameVar* mnamer = icomp->GetMemberNameVar();
@@ -174,10 +165,13 @@ boolean TextEditCode::CoreConstInits(ostream& out) {
     InteractorComp* icomp = GetIntComp();
     SubclassNameVar* snamer = icomp->GetClassNameVar();
     const char* baseclass = snamer->GetBaseClass();
+    const char* subclass = snamer->GetName();
 
     out << "(\n    const char* name, int r, int c, int t, int h\n)";
     out << " : " << baseclass;
-    out << "(name, r, c, t, h) {}\n\n";
+    out << "(name, r, c, t, h) {\n";
+    out << "    SetClassName(\"" << subclass << "\");\n";
+    out << "}\n\n";
     return out.good();
 }
 

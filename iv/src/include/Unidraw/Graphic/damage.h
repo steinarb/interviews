@@ -28,7 +28,10 @@
 #ifndef unidraw_graphic_damage_h
 #define unidraw_graphic_damage_h
 
-#include <InterViews/defs.h>
+#include <IV-2_6/InterViews/defs.h>
+#include <Unidraw/enter-scope.h>
+
+#include <IV-2_6/_enter.h>
 
 class BoxObj;
 class Canvas;
@@ -85,5 +88,7 @@ private:
     Painter* _output;
     Graphic* _graphic;
 };
+
+#include <IV-2_6/_leave.h>
 
 #endif

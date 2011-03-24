@@ -42,6 +42,8 @@
 
 #include <Unidraw/Graphic/graphic.h>
 
+#include <IV-2_6/_enter.h>
+
 #include <stream.h>
 
 /*****************************************************************************/

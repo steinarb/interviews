@@ -22,7 +22,6 @@
 
 /*
  * MenuItem component declarations.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibmenu.h,v 1.2 91/09/27 14:14:35 tang Exp $
  */
 
 #ifndef ibmenu_h
@@ -88,7 +87,6 @@ public:
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
 protected:
-    const char* GetFirewall();
     virtual boolean CoreConstDecls(ostream&);
     virtual boolean CoreConstInits(ostream&);
     virtual boolean ConstDecls(ostream&);

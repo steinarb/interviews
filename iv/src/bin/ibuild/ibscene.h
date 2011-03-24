@@ -21,8 +21,7 @@
  */
 
 /*
- * SceneView - view of a InteractorComp with subcomponents.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibscene.h,v 1.2 91/09/27 14:15:08 tang Exp $
+ * SceneComp and SceneView subclasses declarations 
  */
 
 #ifndef ibscene_h
@@ -104,7 +103,6 @@ protected:
 class MonoSceneClass : public MonoSceneComp {
 public:
     MonoSceneClass(IBGraphic* = nil);
-    virtual ~MonoSceneClass();
 
     virtual void Interpret(Command*);
     virtual boolean IsANewScope();
@@ -115,8 +113,6 @@ public:
 
     void Clone(Command*);
     void UnClone(Command*);
-private:
-    static UList* _ClassList;
 };
 
 inline boolean MonoSceneClass::IsANewScope () { return true; }
@@ -134,6 +130,7 @@ class MonoSceneClassCode : public MonoSceneCode {
 public:
     MonoSceneClassCode(MonoSceneClass* = nil);
 
+    virtual void Update();
     virtual boolean Definition(ostream&);
     MonoSceneClass* GetMonoSceneClass();
 
@@ -144,6 +141,7 @@ protected:
     virtual boolean CoreConstInits(ostream&);
     virtual boolean ConstDecls(ostream&);
     virtual boolean ConstInits(ostream&);
+    virtual boolean EmitIncludeHeaders(ostream&);
 };
 
 #endif

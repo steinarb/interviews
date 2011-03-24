@@ -8,8 +8,8 @@ SUBDIRS = \
 	doc \
 	ibuild \
 	iclass \
+	idemo \
 	idraw \
-	ifb \
 	ifc \
 	logo \
 	mailbox \

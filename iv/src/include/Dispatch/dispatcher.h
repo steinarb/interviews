@@ -54,6 +54,7 @@ public:
     virtual void startTimer(long sec, long usec, IOHandler*);
     virtual void stopTimer(IOHandler*);
 
+    virtual boolean setReady(int fd, DispatcherMask);
     virtual void dispatch();
     virtual boolean dispatch(long& sec, long& usec);
 
@@ -84,6 +85,10 @@ protected:
     TimerQueue* _queue;
 private:
     static Dispatcher* _instance;
+private:
+    /* deny access since member-wise won't work */
+    Dispatcher(const Dispatcher&);
+    Dispatcher& operator =(const Dispatcher&);
 };
 
 #endif

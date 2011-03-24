@@ -27,6 +27,7 @@
  */
 
 #include <InterViews/align.h>
+#include <InterViews/alloctbl.h>
 #include <InterViews/box.h>
 #include <InterViews/canvas.h>
 #include <InterViews/hit.h>
@@ -36,45 +37,47 @@
 #include <OS/list.h>
 #include <OS/math.h>
 
-class BoxComponent {
-public:
-    Glyph* glyph_;
+class BoxImpl {
+private:
+    friend class Box;
+
+    Box* box_;
+    Layout* layout_;
+    boolean requested_;
+    Requisition requisition_;
+    AllocationTable* allocations_;
+
+    static Extension* empty_ext_;
+
+    void request();
+    AllocationInfo& info(Canvas*, const Allocation&, Extension&);
+    void offset_allocate(AllocationInfo&, Coord dx, Coord dy);
+    void full_allocate(AllocationInfo&);
+    void invalidate();
 };
 
-declareList(BoxComponent_List,BoxComponent);
-implementList(BoxComponent_List,BoxComponent);
+Extension* BoxImpl::empty_ext_;
 
-class BoxAllocation {
-public:
-    BoxAllocation();
-
-    Allocation allocation_;
-};
-
-BoxAllocation::BoxAllocation() { }
-
-declareList(BoxAllocation_List,BoxAllocation);
-implementList(BoxAllocation_List,BoxAllocation);
-
-static const float epsilon = 0.1;
-
-Box::Box(Layout* layout, GlyphIndex size) : Glyph() {
-    layout_ = layout;
-    component_info_ = new BoxComponent_List(size);
-    allocation_info_ = new BoxAllocation_List(size);
-    requested_ = false;
-    allocated_ = false;
-    canvas_ = nil;
+Box::Box(Layout* layout, GlyphIndex size) : PolyGlyph(size) {
+    BoxImpl* b = new BoxImpl;
+    impl_ = b;
+    b->box_ = this;
+    b->layout_ = layout;
+    b->requested_ = false;
+    b->allocations_ = nil;
 }
 
 Box::Box(
     Layout* layout,
     Glyph* g1, Glyph* g2, Glyph* g3, Glyph* g4, Glyph* g5,
     Glyph* g6, Glyph* g7, Glyph* g8, Glyph* g9, Glyph* g10
-) : Glyph() {
-    layout_ = layout;
-    component_info_ = new BoxComponent_List(4);
-    allocation_info_ = new BoxAllocation_List(4);
+) : PolyGlyph(4) {
+    BoxImpl* b = new BoxImpl;
+    impl_ = b;
+    b->box_ = this;
+    b->layout_ = layout;
+    b->requested_ = false;
+    b->allocations_ = nil;
     if (g1 != nil) {
         append(g1);
     }
@@ -105,324 +108,192 @@ Box::Box(
     if (g10 != nil) {
         append(g10);
     }
-    requested_ = false;
-    allocated_ = false;
-    canvas_ = nil;
 }
 
 Box::~Box() {
-    GlyphIndex count = component_info_->count();
-    for (GlyphIndex i = 0; i < count; ++i) {
-        BoxComponent& info = component_info_->item(i);
-	Resource::unref(info.glyph_);
-    }
-    delete component_info_;
-    component_info_ = nil;
-    delete allocation_info_;
-    allocation_info_ = nil;
-    delete layout_;
-    layout_ = nil;
-}
-
-GlyphIndex Box::count() const {
-    return component_info_->count();
-}
-
-Glyph* Box::component(GlyphIndex index) const {
-    return component_info_->item(index).glyph_;
-}
-
-void Box::allotment(GlyphIndex index, DimensionName res, Allotment& a) const {
-    a = allocation_info_->item(index).allocation_.allotment(res);
-}
-
-void Box::change(GlyphIndex) {
-    requested_ = false;
-    allocated_ = false;
-    canvas_ = nil;
-}
-
-void Box::append(Glyph* glyph) {
-    BoxComponent component;
-    component.glyph_ = glyph;
-    BoxAllocation allocation;
-    component_info_->append(component);
-    allocation_info_->append(allocation);
-    Resource::ref(glyph);
-    requested_ = false;
-    allocated_ = false;
-    canvas_ = nil;
-}
-
-void Box::prepend(Glyph* glyph) {
-    BoxComponent component;
-    component.glyph_ = glyph;
-    BoxAllocation allocation;
-    component_info_->prepend(component);
-    allocation_info_->prepend(allocation);
-    Resource::ref(glyph);
-    requested_ = false;
-    allocated_ = false;
-    canvas_ = nil;
-}
-
-void Box::insert(GlyphIndex index, Glyph* glyph) {
-    BoxComponent component;
-    component.glyph_ = glyph;
-    BoxAllocation allocation;
-    component_info_->insert(index, component);
-    allocation_info_->insert(index, allocation);
-    Resource::ref(glyph);
-    requested_ = false;
-    allocated_ = false;
-    canvas_ = nil;
-}
-
-void Box::remove(GlyphIndex index) {
-    BoxComponent& component = component_info_->item(index);
-    Resource::unref(component.glyph_);
-    component_info_->remove(index);
-    allocation_info_->remove(index);
-    requested_ = false;
-    allocated_ = false;
-    canvas_ = nil;
-}
-
-void Box::replace(GlyphIndex index, Glyph* glyph) {
-    BoxComponent& component = component_info_->item(index);
-    Resource::ref(glyph);
-    Resource::unref(component.glyph_);
-    component.glyph_ = glyph;
-    requested_ = false;
-    allocated_ = false;
-    canvas_ = nil;
+    BoxImpl* b = impl_;
+    delete b->layout_;
+    delete b->allocations_;
+    delete b;
 }
 
 void Box::request(Requisition& requisition) const {
-    if (!requested_) {
-        GlyphIndex count = component_info_->count();
-        Requisition* r = new Requisition[count];
-        for (GlyphIndex index = 0; index < count; ++index) {
-            BoxComponent& component = component_info_->item(index);
-            Glyph* glyph = component.glyph_;
-            if (glyph != nil) {
-                glyph->request(r[index]);
-            }
-        }
-	Box* b = (Box*)this;
-        b->layout_->request(count, r, b->requisition_);
-        b->requested_ = true;
-	delete r;
+    BoxImpl* b = impl_;
+    if (!b->requested_) {
+	b->request();
     }
-    requisition = requisition_;
+    requisition = b->requisition_;
 }
 
-static boolean same_size(
-    const Allotment& a1, const Allotment& a2, float epsilon
-) {
-    if (!Math::equal(a1.span(), a2.span(), epsilon)) {
-        return false;
-    } else if (!Math::equal(a1.alignment(), a2.alignment(), epsilon)) {
-        return false;
-    } else {
-        return true;
-    }
+void Box::allocate(Canvas* c, const Allocation& allocation, Extension& ext) {
+    impl_->info(c, allocation, ext);
 }
 
-static void offset_allocate(
-    Canvas* canvas, const Allocation&,
-    Extension& extension,
-    Coord dx, Coord dy,
-    BoxComponent_List* component_info,
-    BoxAllocation_List* allocation_info
-) {
-    Extension child_ext;
-    Extension empty_ext;
-    empty_ext.xy_extents(fil, -fil, fil, -fil);
-    GlyphIndex count = component_info->count();
-    GlyphIndex index;
-    for (index = 0; index < count; ++index) {
-        Glyph* glyph = component_info->item(index).glyph_;
-        Allocation& a = allocation_info->item(index).allocation_;
-        Allotment ax = a.x_allotment();
-        Allotment ay = a.y_allotment();
-        ax.offset(dx);
-        ay.offset(dy);
-        a.allot_x(ax);
-        a.allot_y(ay);
-        if (glyph != nil) {
-	    child_ext = empty_ext;
-            glyph->allocate(canvas, a, child_ext);
-	    extension.extend(child_ext);
+void Box::draw(Canvas* c, const Allocation& allocation) const {
+    BoxImpl* b = impl_;
+    Extension ext;
+    ext.clear();
+    AllocationInfo& info = b->info(c, allocation, ext);
+    if (c->damaged(ext)) {
+	Allocation* a = info.component_allocations();
+        GlyphIndex n = count();
+        for (GlyphIndex i = 0; i < n; i++) {
+            Glyph* g = component(i);
+	    if (g != nil) {
+		g->draw(c, a[i]);
+	    }
         }
     }
 }
 
-static void redo_allocate(
-    Canvas* canvas, const Allocation& allocation,
-    Extension& extension,
-    Layout* layout,
-    BoxComponent_List* component_info,
-    BoxAllocation_List* allocation_info
-) {
-    GlyphIndex count = component_info->count();
-    Allocation* allocations = new Allocation[count];
-    Requisition* requisitions = new Requisition[count];
-    GlyphIndex index;
-    for (index = 0; index < count; ++index) {
-        Glyph* glyph = component_info->item(index).glyph_;
-        if (glyph != nil) {
-            glyph->request(requisitions[index]);
+void Box::print(Printer* p, const Allocation& allocation) const {
+    BoxImpl* b = impl_;
+    Extension ext;
+    ext.clear();
+    AllocationInfo& info = b->info(p, allocation, ext);
+    if (p->damaged(ext)) {
+	Allocation* a = info.component_allocations();
+        GlyphIndex n = count();
+        for (GlyphIndex i = 0; i < n; i++) {
+            Glyph* g = component(i);
+	    if (g != nil) {
+		g->print(p, a[i]);
+	    }
         }
     }
-    layout->allocate(allocation, count, requisitions, allocations);
-    for (index = 0; index < count; ++index) {
-        Glyph* glyph = component_info->item(index).glyph_;
-        Allocation& a = allocation_info->item(index).allocation_;
-        a = allocations[index];
-        Extension b;
-	b.xy_extents(fil, -fil, fil, -fil);
-        if (glyph != nil) {
-            glyph->allocate(canvas, a, b);
-        }
-        extension.extend(b);
-    }
-    delete allocations;
-    delete requisitions;
 }
 
-void Box::allocate(Canvas* c, const Allocation& a, Extension& ext) {
-    const Allotment& x = a.x_allotment();
-    const Allotment& y = a.y_allotment();
-    Allotment& oldx = allocation_.x_allotment();
-    Allotment& oldy = allocation_.y_allotment();
-    if (
-        allocated_ && canvas_ == c &&
-        same_size(x, oldx, epsilon) && same_size(y, oldy, epsilon)
+void Box::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
+    if (h.right() >= a.left() && h.left() < a.right() &&
+	h.top() >= a.bottom() && h.bottom() < a.top()
     ) {
-        Coord dx = x.origin() - oldx.origin();
-        Coord dy = y.origin() - oldy.origin();
-        if (dx < epsilon && dx > -epsilon && dy < epsilon && dy > -epsilon) {
-            ext = extension_;
-        } else {
-            extension_ = ext;
-            offset_allocate(
-                c, a, extension_,
-                dx, dy, component_info_, allocation_info_
-            );
-	    Allotment ax(oldx.origin() + dx, oldx.span(), oldx.alignment());
-	    Allotment ay(oldy.origin() + dy, oldy.span(), oldy.alignment());
-            allocation_.allot_x(ax);
-            allocation_.allot_y(ay);
-            ext = extension_;
-        }
-    } else {
-        extension_ = ext;
-        redo_allocate(
-            c, a, extension_,
-            layout_, component_info_, allocation_info_
-        );
-        allocation_ = a;
-        allocated_ = true;
-	canvas_ = c;
-        ext = extension_;
-    }
-}
-
-void Box::draw(Canvas* canvas, const Allocation&) const {
-    boolean damaged = canvas->damaged(
-        extension_.left(), extension_.bottom(),
-        extension_.right(), extension_.top()
-    );
-    if (damaged) {
-        GlyphIndex count = component_info_->count();
-        for (GlyphIndex index = 0; index < count; ++index) {
-            Glyph* glyph = component_info_->item(index).glyph_;
-            Allocation& a = allocation_info_->item(index).allocation_;
-            if (glyph != nil) {
-                glyph->draw(canvas, a);
-            }
-        }
-    }
-}
-
-void Box::print(Printer* p, const Allocation&) const {
-    boolean damaged = p->damaged(
-        extension_.left(), extension_.bottom(),
-        extension_.right(), extension_.top()
-    );
-    if (damaged) {
-        GlyphIndex count = component_info_->count();
-        for (GlyphIndex index = 0; index < count; ++index) {
-            Glyph* glyph = component_info_->item(index).glyph_;
-            Allocation& a = allocation_info_->item(index).allocation_;
-            if (glyph != nil) {
-                glyph->print(p, a);
-            }
-        }
-    }
-}
-
-void Box::pick(Canvas* c, const Allocation&, int depth, Hit& h) {
-    Coord x = h.left();
-    Coord y = h.bottom();
-    GlyphIndex count = component_info_->count();
-    for (GlyphIndex index = 0; index < count; ++index) {
-        Glyph* glyph = component_info_->item(index).glyph_;
-        if (glyph != nil) {
-            Allocation& a = allocation_info_->item(index).allocation_;
-            if (
-                x >= a.left() && x < a.right()
-                && y >= a.bottom() && y < a.top()
-            ) {
-		h.begin(depth, this, index);
-		glyph->pick(c, a, depth + 1, h);
+	BoxImpl* b = impl_;
+	Extension ext;
+	ext.clear();
+	AllocationInfo& info = b->info(c, a, ext);
+	Allocation* aa = info.component_allocations();
+	GlyphIndex n = count();
+	for (GlyphIndex i = 0; i < n; i++) {
+	    Glyph* g = component(i);
+	    if (g != nil) {
+		h.begin(depth, this, i);
+		g->pick(c, aa[i], depth + 1, h);
 		h.end();
-            }
+	    }
+	}
+    }
+}
+
+void Box::undraw() {
+    AllocationTable* table = impl_->allocations_;
+    if (table != nil) {
+	table->flush();
+    }
+    PolyGlyph::undraw();
+}
+
+void Box::modified(GlyphIndex) {
+    impl_->invalidate();
+}
+
+void Box::allotment(GlyphIndex index, DimensionName d, Allotment& a) const {
+    AllocationTable* table = impl_->allocations_;
+    if (table != nil) {
+	AllocationInfo* info = table->most_recent();
+	if (info != nil) {
+	    Allocation* allocations = info->component_allocations();
+	    a = allocations[index].allotment(d);
+	}
+    }
+}
+
+/* class BoxImpl */
+
+void BoxImpl::request() {
+    GlyphIndex count = box_->count();
+    Requisition* r = new Requisition[count];
+    for (GlyphIndex i = 0; i < count; i++) {
+	Glyph* g = box_->component(i);
+	if (g != nil) {
+	    g->request(r[i]);
+	}
+    }
+    layout_->request(count, r, requisition_);
+    requested_ = true;
+    delete r;
+}
+
+AllocationInfo& BoxImpl::info(Canvas* c, const Allocation& a, Extension& ext) {
+    if (allocations_ == nil) {
+	allocations_ = new AllocationTable(box_->count());
+    }
+    AllocationInfo* info = allocations_->find(c, a);
+    if (info == nil) {
+	Coord dx, dy;
+	info = allocations_->find_same_size(c, a, dx, dy);
+	if (info != nil) {
+	    info->extension(ext);
+	    offset_allocate(*info, dx, dy);
+	} else {
+	    info = allocations_->allocate(c, a);
+	    info->extension(ext);
+	    full_allocate(*info);
+	}
+    }
+    ext = info->extension();
+    return *info;
+}
+
+void BoxImpl::offset_allocate(AllocationInfo& info, Coord dx, Coord dy) {
+    Canvas* c = info.canvas();
+    Allocation* a = info.component_allocations();
+    Extension& box = info.extension();
+    Extension child;
+    GlyphIndex n = box_->count();
+    for (GlyphIndex i = 0; i < n; i++) {
+        Glyph* g = box_->component(i);
+        if (g != nil) {
+	    Allocation& a_i = a[i];
+	    Allotment& ax = a_i.x_allotment();
+	    Allotment& ay = a_i.y_allotment();
+	    ax.offset(dx);
+	    ay.offset(dy);
+	    child.clear();
+            g->allocate(c, a_i, child);
+	    box.merge(child);
         }
     }
 }
 
-LRBox::LRBox(
-    GlyphIndex size
-) : Box(
-    new Superpose(new Tile(Dimension_X), new Align(Dimension_Y)),
-    size
-) { }
+void BoxImpl::full_allocate(AllocationInfo& info) {
+    Canvas* c = info.canvas();
+    GlyphIndex n = box_->count();
+    Allocation* a = info.component_allocations();
+    Requisition* r = new Requisition[n];
+    GlyphIndex i;
+    for (i = 0; i < n; i++) {
+        Glyph* g = box_->component(i);
+        if (g != nil) {
+            g->request(r[i]);
+        }
+    }
+    layout_->allocate(info.allocation(), n, r, a);
+    delete r;
 
-LRBox::LRBox(
-    Glyph* g1, Glyph* g2, Glyph* g3, Glyph* g4, Glyph* g5,
-    Glyph* g6, Glyph* g7, Glyph* g8, Glyph* g9, Glyph* g10
-) : Box(
-    new Superpose(new Tile(Dimension_X), new Align(Dimension_Y)),
-    g1, g2, g3, g4, g5, g6, g7, g8, g9, g10
-) { }
+    Extension& box = info.extension();
+    Extension child;
+    for (i = 0; i < n; i++) {
+        Glyph* g = box_->component(i);
+        if (g != nil) {
+	    child.clear();
+            g->allocate(c, a[i], child);
+	    box.merge(child);
+        }
+    }
+}
 
-LRBox::~LRBox() { }
-
-TBBox::TBBox(
-    GlyphIndex size
-) : Box(
-    new Superpose(new TileReversed(Dimension_Y), new Align(Dimension_X)),
-    size
-) { }
-
-TBBox::TBBox(
-    Glyph* g1, Glyph* g2, Glyph* g3, Glyph* g4, Glyph* g5,
-    Glyph* g6, Glyph* g7, Glyph* g8, Glyph* g9, Glyph* g10
-) : Box(
-    new Superpose(new TileReversed(Dimension_Y), new Align(Dimension_X)),
-    g1, g2, g3, g4, g5, g6, g7, g8, g9, g10
-) { }
-
-TBBox::~TBBox() { }
-
-Overlay::Overlay(
-    Glyph* g1, Glyph* g2, Glyph* g3, Glyph* g4, Glyph* g5,
-    Glyph* g6, Glyph* g7, Glyph* g8, Glyph* g9, Glyph* g10
-) : Box(
-    new Superpose(new Align(Dimension_X), new Align(Dimension_Y)),
-    g1, g2, g3, g4, g5, g6, g7, g8, g9, g10
-) { }
-
-Overlay::~Overlay() { }
+void BoxImpl::invalidate() {
+    requested_ = false;
+    delete allocations_;
+    allocations_ = nil;
+}

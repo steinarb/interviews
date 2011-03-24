@@ -22,7 +22,6 @@
 
 /*
  * Viewport component declarations.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibviewport.h,v 1.2 91/09/27 14:15:44 tang Exp $
  */
 
 #ifndef ibviewport_h
@@ -66,6 +65,7 @@ inline ViewportGraphic* ViewportComp::GetViewportGraphic() {
 class ViewportView : public MonoSceneView {
 public:
     ViewportView(ViewportComp* = nil);
+    virtual ~ViewportView();
 
     ViewportComp* GetViewportComp();
 
@@ -98,7 +98,13 @@ protected:
 
 class ViewportGraphic : public IBGraphic {
 public:
-    ViewportGraphic(CanvasVar* = nil, Graphic* = nil);
+    ViewportGraphic(
+        CanvasVar* = nil, Graphic* = nil, Alignment = Center
+    );
+
+    void SetAlignment(Alignment);
+    Alignment GetAlignment();
+
     virtual void Read(istream&);
     virtual void Write(ostream&);
     virtual Graphic* Copy();
@@ -109,6 +115,11 @@ protected:
     virtual void getExtent(float&, float&, float&, float&, float&, Graphic*);
     virtual void draw(Canvas*, Graphic*);
     virtual void drawClipped(Canvas*, Coord, Coord, Coord, Coord, Graphic*);
+protected:
+    Alignment _align;
 };
+
+inline void ViewportGraphic::SetAlignment (Alignment a) { _align = a; }
+inline Alignment ViewportGraphic::GetAlignment () { return _align; }
 
 #endif

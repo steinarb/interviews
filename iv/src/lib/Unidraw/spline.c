@@ -36,9 +36,11 @@
 #include <Unidraw/Tools/tool.h>
 
 #include <InterViews/event.h>
-#include <InterViews/rubcurve.h>
-#include <InterViews/rubverts.h>
+#include <IV-2_6/InterViews/rubcurve.h>
+#include <IV-2_6/InterViews/rubverts.h>
 #include <InterViews/transformer.h>
+
+#include <IV-2_6/_enter.h>
 
 #include <stream.h>
 

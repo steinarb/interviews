@@ -1,8 +1,8 @@
-/* $Header: /usr/people/sam/tiff/libtiff/RCS/tiffio.h,v 1.45 91/08/22 17:14:34 sam Exp $ */
+/* $Header: /usr/people/sam/tiff/libtiff/RCS/tiffio.h,v 1.53 92/02/19 14:24:20 sam Exp $ */
 
 /*
- * Copyright (c) 1988, 1989, 1990, 1991 Sam Leffler
- * Copyright (c) 1991 Silicon Graphics, Inc.
+ * Copyright (c) 1988, 1989, 1990, 1991, 1992 Sam Leffler
+ * Copyright (c) 1991, 1992 Silicon Graphics, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and 
  * its documentation for any purpose is hereby granted without fee, provided
@@ -56,8 +56,24 @@ typedef	struct tiff TIFF;
 #define	TIFFPRINT_JPEGACTABLES	0x200		/* JPEG AC tables */
 #define	TIFFPRINT_JPEGDCTABLES	0x200		/* JPEG DC tables */
 
+#if defined(__STDC__) || defined(__EXTENDED__) || USE_CONST
+extern const char TIFFVersion[];
+extern const unsigned char TIFFBitRevTable[256];
+extern const unsigned char TIFFNoBitRevTable[256];
+#else
+extern char TIFFVersion[];
 extern unsigned char TIFFBitRevTable[256];
 extern unsigned char TIFFNoBitRevTable[256];
+#endif
+
+/*
+ * Macros for extracting components from the
+ * packed ABGR form returned by TIFFReadRGBAImage.
+ */
+#define	TIFFGetR(abgr)	((abgr) & 0xff)
+#define	TIFFGetG(abgr)	(((abgr) >> 8) & 0xff)
+#define	TIFFGetB(abgr)	(((abgr) >> 16) & 0xff)
+#define	TIFFGetA(abgr)	(((abgr) >> 24) & 0xff)
 
 #if defined(c_plusplus) || defined(__cplusplus) || defined(__STDC__) || defined(__EXTENDED__) || USE_PROTOTYPES
 #include <stdio.h>
@@ -73,15 +89,20 @@ extern	int TIFFFlush(TIFF*);
 extern	int TIFFFlushData(TIFF*);
 extern	int TIFFGetField(TIFF*, int, ...);
 extern	int TIFFVGetField(TIFF*, int, va_list);
+extern	int TIFFGetFieldDefaulted(TIFF*, int, ...);
+extern	int TIFFVGetFieldDefaulted(TIFF*, int, va_list);
 extern	int TIFFReadDirectory(TIFF*);
 extern	int TIFFScanlineSize(TIFF*);
 extern	unsigned long TIFFStripSize(TIFF*);
+extern	unsigned long TIFFVStripSize(TIFF*, unsigned long);
 extern	unsigned long TIFFTileRowSize(TIFF*);
 extern	unsigned long TIFFTileSize(TIFF*);
+extern	unsigned long TIFFVTileSize(TIFF*, unsigned long);
 extern	int TIFFFileno(TIFF*);
 extern	int TIFFGetMode(TIFF*);
 extern	int TIFFIsTiled(TIFF*);
 extern	long TIFFCurrentRow(TIFF*);
+extern	int TIFFCurrentDirectory(TIFF*);
 extern	int TIFFCurrentStrip(TIFF*);
 extern	int TIFFCurrentTile(TIFF*);
 extern	int TIFFReadBufferSetup(TIFF*, char*, unsigned);
@@ -98,6 +119,7 @@ extern	void TIFFWarning(const char*, const char*, ...);
 extern	void TIFFPrintDirectory(TIFF*, FILE*, long = 0);
 extern	int TIFFReadScanline(TIFF*, unsigned char*, unsigned, unsigned = 0);
 extern	int TIFFWriteScanline(TIFF*, unsigned char*, unsigned, unsigned = 0);
+extern	int TIFFReadRGBAImage(TIFF*, unsigned long, unsigned long, unsigned long*, int stop = 0);
 #else
 extern	TIFF* TIFFOpen(char*, char*);
 extern	TIFF* TIFFFdOpen(int, char*, char*);
@@ -109,6 +131,7 @@ extern	TIFFErrorHandler TIFFSetWarningHandler(TIFFErrorHandler handler);
 extern	void TIFFPrintDirectory(TIFF*, FILE*, long);
 extern	int TIFFReadScanline(TIFF*, unsigned char*, unsigned, unsigned);
 extern	int TIFFWriteScanline(TIFF*, unsigned char*, unsigned, unsigned);
+extern	int TIFFReadRGBAImage(TIFF*, unsigned long, unsigned long, unsigned long*, int stop);
 #endif
 extern	unsigned int TIFFComputeTile(TIFF*, unsigned long, unsigned long, unsigned int, unsigned long);
 extern	int TIFFCheckTile(TIFF*, unsigned long, unsigned long, unsigned long, unsigned);
@@ -144,6 +167,7 @@ extern	int TIFFGetMode();
 extern	int TIFFIsTiled();
 extern	unsigned int TIFFComputeTile();
 extern	long TIFFCurrentRow();
+extern	int TIFFCurrentDirectory();
 extern	int TIFFCurrentStrip();
 extern	int TIFFCurrentTile();
 extern	void TIFFError();
@@ -152,6 +176,8 @@ extern	int TIFFFlush();
 extern	int TIFFFlushData();
 extern	int TIFFGetField();
 extern	int TIFFVGetField();
+extern	int TIFFGetFieldDefaulted();
+extern	int TIFFVGetFieldDefaulted();
 extern	unsigned int TIFFNumberOfTiles();
 extern	void TIFFPrintDirectory();
 extern	int TIFFReadDirectory();
@@ -163,11 +189,14 @@ extern	unsigned int TIFFNumberOfStrips();
 extern	int TIFFReadEncodedStrip();
 extern	int TIFFReadRawStrip();
 extern	int TIFFReadEncodedTile();
+extern	int TIFFReadRGBAImage();
 extern	int TIFFReadRawTile();
 extern	int TIFFScanlineSize();
 extern	unsigned long TIFFStripSize();
+extern	unsigned long TIFFVStripSize();
 extern	unsigned long TIFFTileRowSize();
 extern	unsigned long TIFFTileSize();
+extern	unsigned long TIFFVTileSize();
 extern	int TIFFSetDirectory();
 extern	int TIFFSetField();
 extern	int TIFFVSetField();

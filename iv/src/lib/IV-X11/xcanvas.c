@@ -22,7 +22,6 @@
  * OF THIS SOFTWARE.
  */
 
-#include "damagelist.h"
 #include <InterViews/bitmap.h>
 #include <InterViews/brush.h>
 #include <InterViews/canvas.h>
@@ -49,11 +48,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-declareList(TransformerStack,Transformer*);
-implementList(TransformerStack,Transformer*);
+#ifdef __DECCXX
+struct _XRegion;
+#endif
 
-declareList(ClippingStack,Region);
-implementList(ClippingStack,Region);
+declarePtrList(TransformerStack,Transformer)
+implementPtrList(TransformerStack,Transformer)
+
+declarePtrList(ClippingStack,_XRegion)
+implementPtrList(ClippingStack,_XRegion)
 
 /* class Canvas */
 
@@ -64,14 +67,14 @@ Canvas::Canvas() {
     TextRenderInfo* t = &CanvasRep::text_;
     PathRenderInfo* p = &CanvasRep::path_;
     if (t->text_ == nil) {
-        t->index_ = 0;
         t->text_ = new char[1000];
+        t->cur_text_ = t->text_;
         t->items_ = new XTextItem[100];
     }
     if (p->point_ == nil) {
-        p->index_ = 0;
-        p->size_ = 10;
         p->point_ = new XPoint[10];
+        p->cur_point_ = p->point_;
+	p->end_point_ = p->point_ + 10;
     }
     c->drawbuffer_ = CanvasRep::unbound;
     c->copybuffer_ = CanvasRep::unbound;
@@ -94,6 +97,7 @@ Canvas::Canvas() {
 
     Transformer* identity = new Transformer;
     c->transformers_->append(identity);
+    c->transformed_ = false;
 
     c->display_ = nil;
     c->window_ = nil;
@@ -106,6 +110,7 @@ Canvas::Canvas() {
 
     c->damaged_ = false;
     c->on_damage_list_ = false;
+    c->repairing_ = false;
 
     c->status_ = unmapped;
 }
@@ -119,6 +124,7 @@ Canvas::~Canvas() {
     }
     delete c->transformers_;
     XDestroyRegion(c->clipping_);
+    XDestroyRegion(c->empty_);
     delete c->clippers_;
     delete c;
     rep_ = nil;
@@ -135,27 +141,40 @@ void Canvas::size(Coord width, Coord height) {
     }
 }
 
-void Canvas::psize(unsigned int pwidth, unsigned int pheight) {
-    CanvasRep* c = rep();
-    c->pwidth_ = pwidth;
-    c->pheight_ = pheight;
-    Display* d = c->display_;
+void Canvas::psize(PixelCoord pwidth, PixelCoord pheight) {
+    CanvasRep& c = *rep();
+    c.pwidth_ = pwidth;
+    c.pheight_ = pheight;
+    Display* d = c.display_;
     if (d != nil) {
-	c->width_ = d->to_coord(pwidth);
-	c->height_ = d->to_coord(pheight);
+	c.width_ = d->to_coord(pwidth);
+	c.height_ = d->to_coord(pheight);
     }
 }
 
 Coord Canvas::width() const { return rep()->width_; }
 Coord Canvas::height() const { return rep()->height_; }
-unsigned int Canvas::pwidth() const { return rep()->pwidth_; }
-unsigned int Canvas::pheight() const { return rep()->pheight_; }
+PixelCoord Canvas::pwidth() const { return rep()->pwidth_; }
+PixelCoord Canvas::pheight() const { return rep()->pheight_; }
+
+PixelCoord Canvas::to_pixels(Coord p) const {
+    return rep()->display_->to_pixels(p);
+}
+
+Coord Canvas::to_coord(PixelCoord p) const {
+    return rep()->display_->to_coord(p);
+}
+
+Coord Canvas::to_pixels_coord(Coord p) const {
+    const Display& d = *rep()->display_;
+    return d.to_coord(d.to_pixels(p));
+}
 
 void Canvas::push_transform() {
     CanvasRep* c = rep();
     c->flush();
     TransformerStack& s = *c->transformers_;
-    Transformer* m = new Transformer(s.item(s.count() - 1));
+    Transformer* m = new Transformer(*s.item(s.count() - 1));
     s.append(m);
 }
 
@@ -174,12 +193,26 @@ void Canvas::pop_transform() {
     Transformer* m = s.item(i);
     delete m;
     s.remove(i);
+    c->transformed_ = !c->matrix().identity();
 }
 
 void Canvas::transform(const Transformer& t) {
     CanvasRep* c = rep();
     c->flush();
     c->matrix().premultiply(t);
+    c->transformed_ = !c->matrix().identity();
+}
+
+void Canvas::transformer(const Transformer& t) {
+    CanvasRep* c = rep();
+    c->flush();
+    c->matrix() = t;
+    c->transformed_ = !t.identity();
+}
+
+const Transformer& Canvas::transformer() const {
+    CanvasRep* c = rep();
+    return c->matrix();
 }
 
 /*
@@ -222,7 +255,19 @@ void Canvas::pop_clipping() {
     }
 }
 
-static const float epsilon = 0.1;
+void Canvas::front_buffer() {
+    CanvasRep& c = *rep();
+    if (c.copybuffer_ != CanvasRep::unbound) {
+	c.drawbuffer_ = c.copybuffer_;
+    }
+}
+
+void Canvas::back_buffer() {
+    CanvasRep& c = *rep();
+    if (c.copybuffer_ != CanvasRep::unbound) {
+	c.drawbuffer_ = c.xdrawable_;
+    }
+}
 
 static boolean rectangular(
     int x0, int y0, int x1, int y1, int x2, int y2, int x3, int y3
@@ -294,9 +339,10 @@ void Canvas::new_path() {
     PathRenderInfo* p = &CanvasRep::path_;
     p->curx_ = 0;
     p->cury_ = 0;
-    p->point_[0].x = 0;
-    p->point_[0].y = 0;
-    p->index_ = 0;
+    XPoint* xp = p->point_;
+    xp->x = 0;
+    xp->y = 0;
+    p->cur_point_ = xp;
 }
 
 void Canvas::move_to(Coord x, Coord y) {
@@ -305,11 +351,17 @@ void Canvas::move_to(Coord x, Coord y) {
     p->curx_ = x;
     p->cury_ = y;
     Coord tx, ty;
-    c->matrix().transform(x, y, tx, ty);
+    if (c->transformed_) {
+	c->matrix().transform(x, y, tx, ty);
+    } else {
+	tx = x;
+	ty = y;
+    }
     Display* d = c->display_;
-    p->point_[0].x = d->to_pixels(tx);
-    p->point_[0].y = d->to_pixels(height()) - d->to_pixels(ty);
-    p->index_ = 1;
+    XPoint* xp = p->point_;
+    xp->x = d->to_pixels(tx);
+    xp->y = c->pheight_ - d->to_pixels(ty);
+    p->cur_point_ = xp + 1;
 }
 
 void Canvas::line_to(Coord x, Coord y) {
@@ -318,21 +370,29 @@ void Canvas::line_to(Coord x, Coord y) {
     p->curx_ = x;
     p->cury_ = y;
     Coord tx, ty;
-    c->matrix().transform(x, y, tx, ty);
-    if (p->index_ == p->size_) {
-        int new_size = p->size_*2;
+    if (c->transformed_) {
+	c->matrix().transform(x, y, tx, ty);
+    } else {
+	tx = x;
+	ty = y;
+    }
+    if (p->cur_point_ == p->end_point_) {
+	int old_size = p->cur_point_ - p->point_;
+	int new_size = 2 * old_size;
         XPoint* new_path = new XPoint[new_size];
-        for (int i = 0; i < p->size_; ++i) {
+        for (int i = 0; i < old_size; i++) {
             new_path[i] = p->point_[i];
         }
         delete p->point_;
-        p->size_ = new_size;
         p->point_ = new_path;
+	p->cur_point_ = p->point_ + old_size;
+	p->end_point_ = p->point_ + new_size;
     }
     Display* d = c->display_;
-    p->point_[p->index_].x = d->to_pixels(tx);
-    p->point_[p->index_].y = d->to_pixels(height()) - d->to_pixels(ty);
-    ++p->index_;
+    XPoint* xp = p->cur_point_;
+    xp->x = d->to_pixels(tx);
+    xp->y = c->pheight_ - d->to_pixels(ty);
+    p->cur_point_ = xp + 1;
 }
 
 void Canvas::curve_to(
@@ -366,15 +426,17 @@ void Canvas::curve_to(
 
 void Canvas::close_path() {
     PathRenderInfo* p = &CanvasRep::path_;
-    p->point_[p->index_].x = p->point_[0].x;
-    p->point_[p->index_].y = p->point_[0].y;
-    ++p->index_;
+    XPoint* startp = p->point_;
+    XPoint* xp = p->cur_point_;
+    xp->x = startp->x;
+    xp->y = startp->y;
+    p->cur_point_ = xp + 1;
 }
 
 void Canvas::stroke(const Color* color, const Brush* b) {
     CanvasRep* c = rep();
     PathRenderInfo* p = &CanvasRep::path_;
-    int n = p->index_;
+    int n = p->cur_point_ - p->point_;
     if (n < 2) {
 	return;
     }
@@ -426,7 +488,7 @@ void Canvas::rect(
 void Canvas::fill(const Color* color) {
     CanvasRep* c = rep();
     PathRenderInfo* p = &CanvasRep::path_;
-    int n = p->index_;
+    int n = p->cur_point_ - p->point_;
     if (n <= 2) {
 	return;
     }
@@ -456,7 +518,7 @@ void Canvas::clip() {
     CanvasRep* c = rep();
     c->flush();
     PathRenderInfo* p = &CanvasRep::path_;
-    int n = p->index_;
+    int n = p->cur_point_ - p->point_;
     if (n <= 2) {
 	return;
     }
@@ -528,8 +590,8 @@ static const int adobe_to_iso8859[] = {
     0000, 0000, 0000, 0000, 0000, 0000, 0000, 0000
 };
 
-declareTable2(CharBitmapTable,const Font*,long,const Bitmap*);
-implementTable2(CharBitmapTable,const Font*,long,const Bitmap*);
+declareTable2(CharBitmapTable,const Font*,long,const Bitmap*)
+implementTable2(CharBitmapTable,const Font*,long,const Bitmap*)
 
 static CharBitmapTable* _char_bitmaps;
 
@@ -549,56 +611,55 @@ void Canvas::character(
     const Font* f, long ch, Coord width, const Color* color, Coord x, Coord y
 ) {
     CanvasRep* c = rep();
-    if (c->color_ != color || c->font_ != f) {
-	c->flush();
-    }
-    c->font(f);
-    c->color(color);
-    Transformer& m = c->matrix();
-    FontRep* info = f->rep(c->display_);
     int int_ch = int(ch);
-    boolean is_flush = !isascii(int_ch) || ispunct(int_ch);
-    boolean untransformed = m.identity();
-    if (
-        info->unscaled_ &&
-        (untransformed || tx_key(m, width, width) == 0)
+    boolean is_flush = !isprint(int_ch);
+    if (f != nil && f != c->font_) {
+	c->flush();
+	c->font(f);
+    }
+    if (color != nil && color != c->color_) {
+	c->flush();
+	c->color(color);
+    }
+    Transformer& m = c->matrix();
+    if (!c->font_is_scaled_ &&
+        (!c->transformed_ || tx_key(m, width, width) == 0)
     ) {
 	TextRenderInfo* tr = &CanvasRep::text_;
         if (is_flush || y != tr->cury_ ||
-	    !Math::equal(x, tr->curx_, epsilon)
+	    !Math::equal(x, tr->curx_, float(0.1))
 	) {
             c->flush();
         }
-        if (tr->index_ == 0) {
+	char* cp = tr->cur_text_;
+        if (cp == tr->text_) {
             Coord tx = x;
             Coord ty = y;
-            if (!untransformed) {
+            if (c->transformed_) {
                 m.transform(tx, ty);
             }
             tr->canvas_ = c;
             tr->drawgc_ = c->drawgc_;
 	    Display* d = c->display_;
             tr->x0_ = d->to_pixels(tx);
-            tr->y0_ = d->to_pixels(height()) - d->to_pixels(ty);
+            tr->y0_ = c->pheight_ - d->to_pixels(ty);
             tr->width_ = 0;
         }
         tr->width_ += width;
-        tr->curx_ = x + width;;
+        tr->curx_ = x + width;
         tr->cury_ = y;
         if (c->text_twobyte_) {
-            tr->text_[tr->index_] = char((ch & 0xff00) >> 8);
-            tr->text_[tr->index_ + 1] = char(ch & 0xff);
-            tr->index_ += 2;
+            *cp++ = char((ch & 0xff00) >> 8);
+	    *cp++ = char(ch & 0xff);
 	} else if (c->text_reencode_) {
-            tr->text_[tr->index_] = adobe_to_iso8859[ch & 0xff];
-            tr->index_ += 1;
+	    *cp++ = adobe_to_iso8859[ch & 0xff];
         } else {
-            tr->text_[tr->index_] = char(ch & 0xff);
-            tr->index_ += 1;
+	    *cp++ = char(ch & 0xff);
         }
+	tr->cur_text_ = cp;
         if (ch == ' ') {
             tr->spaces_ += 1;
-            if (tr->index_ > 1) {
+            if (cp > tr->text_ + 1) {
 		c->flush();
 	    }
         }
@@ -611,8 +672,8 @@ void Canvas::character(
     }
 }
 
-declareTable2(TxBitmapTable,const Bitmap*,int,BitmapRep*);
-implementTable2(TxBitmapTable,const Bitmap*,int,BitmapRep*);
+declareTable2(TxBitmapTable,const Bitmap*,int,BitmapRep*)
+implementTable2(TxBitmapTable,const Bitmap*,int,BitmapRep*)
 
 static TxBitmapTable* _tx_bitmaps;
 
@@ -725,19 +786,24 @@ static BitmapRep* tx_bitmap(const Bitmap* b, const Transformer& tx) {
 void Canvas::stencil(
     const Bitmap* mask, const Color* color, Coord x, Coord y
 ) {
-    CanvasRep* c = rep();
-    c->flush();
+    CanvasRep& c = *rep();
+    c.flush();
 
-    XDisplay* dpy = c->dpy();
-    XDrawable d = c->drawbuffer_;
-    Transformer& m = c->matrix();
+    XDisplay* dpy = c.dpy();
+    XDrawable d = c.drawbuffer_;
+    Transformer& m = c.matrix();
     mask->flush();
     BitmapRep* info = tx_bitmap(mask, m);
     Coord tx, ty;
-    m.transform(x, y, tx, ty);
-    Display* disp = c->display_;
+    if (c.transformed_) {
+	m.transform(x, y, tx, ty);
+    } else {
+	tx = x;
+	ty = y;
+    }
+    Display* disp = c.display_;
     int pleft = disp->to_pixels(tx + info->left_);
-    int ptop = disp->to_pixels(height()) - disp->to_pixels(ty + info->top_);
+    int ptop = c.pheight_ - disp->to_pixels(ty + info->top_);
 
     XGCValues gcv;
     unsigned long valuemask = 0;
@@ -752,7 +818,7 @@ void Canvas::stencil(
     gcv.graphics_exposures = False;
 
     GC xgc = XCreateGC(dpy, d, valuemask, &gcv);
-    XCopyGC(dpy, c->drawgc_, GCClipMask, xgc);
+    XCopyGC(dpy, c.drawgc_, GCClipMask, xgc);
 
     XCopyPlane(
 	dpy, info->pixmap_, d, xgc,
@@ -760,7 +826,7 @@ void Canvas::stencil(
     );
 
     gcv.function = GXxor;
-    gcv.foreground = color->rep(c->display_)->xcolor_.pixel;
+    gcv.foreground = color->rep(c.window_->rep()->visual_)->xcolor_.pixel;
     gcv.background = 0;
     valuemask &= ~GCGraphicsExposures;
     XChangeGC(dpy, xgc, valuemask, &gcv);
@@ -771,8 +837,8 @@ void Canvas::stencil(
     XFreeGC(dpy, xgc);
 }
 
-declareTable2(TxRasterTable,const Raster*,int,RasterRep*);
-implementTable2(TxRasterTable,const Raster*,int,RasterRep*);
+declareTable2(TxRasterTable,const Raster*,int,RasterRep*)
+implementTable2(TxRasterTable,const Raster*,int,RasterRep*)
 
 static TxRasterTable* _tx_rasters;
 
@@ -787,6 +853,7 @@ static RasterRep* tx_raster(const Raster* r, const Transformer& tx) {
         RasterRep* rep;
         if (!_tx_rasters->find(rep, r, key)) {
 	    Display* d = r->rep()->display_;
+	    DisplayRep& dr = *d->rep();
             rep = new RasterRep;
 
             Transformer v(tx);
@@ -817,7 +884,7 @@ static RasterRep* tx_raster(const Raster* r, const Transformer& tx) {
                 height = 1;
             }
 
-            XDisplay* dpy = d->rep()->display_;
+            XDisplay* dpy = dr.display_;
             RasterRep* srep = r->rep();
 
             XImage* source = XGetImage(
@@ -826,7 +893,7 @@ static RasterRep* tx_raster(const Raster* r, const Transformer& tx) {
             );
 
             Pixmap map = XCreatePixmap(
-                dpy, d->rep()->root_, width, height, d->rep()->depth_
+                dpy, dr.root_, width, height, dr.default_visual_->depth()
             );
             GC xgc = XCreateGC(dpy, map, 0, nil);
             XSetForeground(dpy, xgc, 0);
@@ -896,11 +963,16 @@ void Canvas::image(const Raster* image, Coord x, Coord y) {
     RasterRep* info = tx_raster(image, m);
 
     Coord tx, ty;
-    m.transform(x, y, tx, ty);
+    if (c->transformed_) {
+	m.transform(x, y, tx, ty);
+    } else {
+	tx = x;
+	ty = y;
+    }
 
     Display* d = c->display_;
     int pleft = d->to_pixels(tx + info->left_);
-    int ptop = d->to_pixels(height()) - d->to_pixels(ty + info->top_);
+    int ptop = c->pheight_ - d->to_pixels(ty + info->top_);
 
     /*
      * We assume that graphics exposures are off in the gc.
@@ -913,84 +985,79 @@ void Canvas::image(const Raster* image, Coord x, Coord y) {
 
 Window* Canvas::window() const { return rep()->window_; }
 
-void Canvas::damage(Coord left, Coord bottom, Coord right, Coord top) {
-    CanvasRep* c = rep();
-    Coord cx1, cy1, cx2, cy2;
-    Transformer& tx = c->matrix();
-    if (!tx.identity()) {
-	Coord x1, y1, x2, y2, x3, y3, x4, y4;
-	tx.transform(left, bottom, x1, y1);
-	tx.transform(left, top, x2, y2);
-	tx.transform(right, top, x3, y3);
-	tx.transform(right, bottom, x4, y4);
-	cx1 = Math::min(x1, x2, x3, x4);
-	cy1 = Math::min(y1, y2, y3, y4);
-	cx2 = Math::max(x1, x2, x3, x4);
-	cy2 = Math::max(y1, y2, y3, y4);
-    } else {
-	cx1 = left;
-	cy1 = bottom;
-	cx2 = right;
-	cy2 = top;
-    }
+/*
+ * Damage coordinates are always absolute with respect to the canvas,
+ * so they are not transformed.
+ */
 
-    CanvasDamage& damage = c->damage_;
-    if (c->damaged_) {
-	damage.left = Math::min(damage.left, cx1);
-	damage.bottom = Math::min(damage.bottom, cy1);
-	damage.right = Math::max(damage.right, cx2);
-	damage.top = Math::max(damage.top, cy2);
+void Canvas::damage(const Extension& ext) {
+    damage(ext.left(), ext.bottom(), ext.right(), ext.top());
+}
+
+void Canvas::damage(Coord left, Coord bottom, Coord right, Coord top) {
+    CanvasRep& c = *rep();
+    CanvasDamage& damage = c.damage_;
+    if (c.damaged_) {
+	damage.left = Math::min(damage.left, left);
+	damage.bottom = Math::min(damage.bottom, bottom);
+	damage.right = Math::max(damage.right, right);
+	damage.top = Math::max(damage.top, top);
     } else {
-	damage.left = cx1;
-	damage.bottom = cy1;
-	damage.right = cx2;
-	damage.top = cy2;
+	damage.left = left;
+	damage.bottom = bottom;
+	damage.right = right;
+	damage.top = top;
     }
-    c->new_damage();
+    c.new_damage();
+}
+
+boolean Canvas::damaged(const Extension& ext) const {
+    return damaged(ext.left(), ext.bottom(), ext.right(), ext.top());
 }
 
 boolean Canvas::damaged(
     Coord left, Coord bottom, Coord right, Coord top
 ) const {
-    CanvasRep* c = rep();
-    CanvasDamage& damage = c->damage_;
-    Coord cx1, cy1, cx2, cy2;
-    Transformer& tx = c->matrix();
-    if (!tx.identity()) {
-	Coord x1, y1, x2, y2, x3, y3, x4, y4;
-	tx.transform(left, bottom, x1, y1);
-	tx.transform(left, top, x2, y2);
-	tx.transform(right, top, x3, y3);
-	tx.transform(right, bottom, x4, y4);
-	cx1 = Math::min(x1, x2, x3, x4);
-	cy1 = Math::min(y1, y2, y3, y4);
-	cx2 = Math::max(x1, x2, x3, x4);
-	cy2 = Math::max(y1, y2, y3, y4);
-    } else {
-	cx1 = left;
-	cy1 = bottom;
-	cx2 = right;
-	cy2 = top;
-    }
+    CanvasRep& c = *rep();
+    CanvasDamage& damage = c.damage_;
     return (
-	c->damaged_ &&
-	cx1 < damage.right && cx2 > damage.left &&
-	cy1 < damage.top && cy2 > damage.bottom
+	c.damaged_ &&
+	left < damage.right && right > damage.left &&
+	bottom < damage.top && top > damage.bottom
     );
 }
 
-void Canvas::damage_all() {
-    CanvasRep* c = rep();
-    c->damage_.left = 0;
-    c->damage_.bottom = 0;
-    c->damage_.right = c->width_;
-    c->damage_.top = c->height_;
-    c->new_damage();
+void Canvas::damage_area(Extension& ext) {
+    CanvasRep& c = *rep();
+    CanvasDamage& damage = c.damage_;
+    ext.set_xy(nil, damage.left, damage.bottom, damage.right, damage.top);
 }
 
-boolean Canvas::any_damage() const {
-    CanvasRep* c = rep();
-    return c->damaged_;
+void Canvas::damage_all() {
+    CanvasRep& c = *rep();
+    CanvasDamage& damage = c.damage_;
+    damage.left = 0;
+    damage.bottom = 0;
+    damage.right = c.width_;
+    damage.top = c.height_;
+    c.new_damage();
+}
+
+boolean Canvas::any_damage() const { return rep()->damaged_; }
+
+void Canvas::restrict_damage(const Extension& ext) {
+    restrict_damage(ext.left(), ext.bottom(), ext.right(), ext.top());
+}
+
+void Canvas::restrict_damage(
+    Coord left, Coord bottom, Coord right, Coord top
+) {
+    CanvasRep& c = *rep();
+    c.clear_damage();
+    damage(left, bottom, right, top);
+    if (c.repairing_) {
+	c.start_repair();
+    }
 }
 
 /*
@@ -1001,16 +1068,16 @@ boolean Canvas::any_damage() const {
  */
 
 void Canvas::redraw(Coord left, Coord bottom, Coord right, Coord top) {
-    CanvasRep* c = rep();
-    if (!c->damaged_ && c->copybuffer_ != CanvasRep::unbound) {
-	Display* d = c->display_;
-	int ptop = d->to_pixels(top);
-	int x = d->to_pixels(left);
-	int y = c->pheight_ - ptop;
-	unsigned int w = d->to_pixels(right) - x;
-	unsigned int h = ptop - d->to_pixels(bottom);
+    CanvasRep& c = *rep();
+    if (!c.damaged_ && c.copybuffer_ != CanvasRep::unbound) {
+	Display& d = *c.display_;
+	int ptop = d.to_pixels(top);
+	int x = d.to_pixels(left);
+	int y = c.pheight_ - ptop;
+	unsigned int w = d.to_pixels(right) - x;
+	unsigned int h = ptop - d.to_pixels(bottom);
 	XCopyArea(
-	    c->dpy(), c->drawbuffer_, c->copybuffer_, c->copygc_,
+	    c.dpy(), c.drawbuffer_, c.copybuffer_, c.copygc_,
 	    x, y, w, h, x, y
 	);
     } else {
@@ -1019,8 +1086,8 @@ void Canvas::redraw(Coord left, Coord bottom, Coord right, Coord top) {
 }
 
 void Canvas::repair() {
-    CanvasRep* c = rep();
-    c->clear_damage();
+    CanvasRep& c = *rep();
+    c.clear_damage();
 }
 
 /* class CanvasRep */
@@ -1033,26 +1100,23 @@ void Canvas::repair() {
  */
 
 void CanvasRep::bind(boolean double_buffered) {
-    CanvasRep* c = this;
-    Display* d = c->display_;
-    DisplayRep* dr = d->rep();
-    XDisplay* dpy = dr->display_;
+    CanvasRep& c = *this;
+    XDisplay* dpy = c.display_->rep()->display_;
     XGCValues gcv;
     gcv.graphics_exposures = False;
-    if (double_buffered && d->style()->value_is_on("double_buffered")) {
-	c->drawbuffer_ = XCreatePixmap(
-	    dpy, dr->root_, c->pwidth_, c->pheight_, dr->depth_
+    if (double_buffered) {
+	c.drawbuffer_ = XCreatePixmap(
+	    dpy, c.xdrawable_, c.pwidth_, c.pheight_,
+	    c.window_->rep()->visual_->depth()
 	);
-	c->copybuffer_ = c->xdrawable_;
-	c->copygc_ = XCreateGC(
-	    dpy, c->copybuffer_, GCGraphicsExposures, &gcv
-	);
-	c->xdrawable_ = c->drawbuffer_;
+	c.copybuffer_ = c.xdrawable_;
+	c.copygc_ = XCreateGC(dpy, c.copybuffer_, GCGraphicsExposures, &gcv);
+	c.xdrawable_ = c.drawbuffer_;
     } else {
-	c->drawbuffer_ = c->xdrawable_;
-	c->copybuffer_ = CanvasRep::unbound;
+	c.drawbuffer_ = c.xdrawable_;
+	c.copybuffer_ = CanvasRep::unbound;
     }
-    c->drawgc_ = XCreateGC(dpy, c->drawbuffer_, GCGraphicsExposures, &gcv);
+    c.drawgc_ = XCreateGC(dpy, c.drawbuffer_, GCGraphicsExposures, &gcv);
 }
 
 /*
@@ -1061,30 +1125,30 @@ void CanvasRep::bind(boolean double_buffered) {
  */
 
 void CanvasRep::unbind() {
-    CanvasRep* c = this;
-    if (c->display_ != nil) {
-	XDisplay* dpy = c->dpy();
-	if (c->copybuffer_ != CanvasRep::unbound) {
-	    XFreePixmap(dpy, c->drawbuffer_);
-	    c->xdrawable_ = c->copybuffer_;
-	    c->copybuffer_ = CanvasRep::unbound;
-	    if (c->copygc_ != nil) {
-		XFreeGC(dpy, c->copygc_);
-		c->copygc_ = nil;
+    CanvasRep& c = *this;
+    if (c.display_ != nil) {
+	XDisplay* dpy = c.dpy();
+	if (c.copybuffer_ != CanvasRep::unbound) {
+	    XFreePixmap(dpy, c.drawbuffer_);
+	    c.xdrawable_ = c.copybuffer_;
+	    c.copybuffer_ = CanvasRep::unbound;
+	    if (c.copygc_ != nil) {
+		XFreeGC(dpy, c.copygc_);
+		c.copygc_ = nil;
 	    }
 	}
-	if (c->drawgc_ != nil) {
-	    XFreeGC(dpy, c->drawgc_);
-	    c->drawgc_ = nil;
+	if (c.drawgc_ != nil) {
+	    XFreeGC(dpy, c.drawgc_);
+	    c.drawgc_ = nil;
 	}
     }
-    c->drawbuffer_ = CanvasRep::unbound;
-    Resource::unref(c->brush_);
-    Resource::unref(c->color_);
-    Resource::unref(c->font_);
-    c->brush_ = nil;
-    c->color_ = nil;
-    c->font_ = nil;
+    c.drawbuffer_ = CanvasRep::unbound;
+    Resource::unref(c.brush_);
+    Resource::unref(c.color_);
+    Resource::unref(c.font_);
+    c.brush_ = nil;
+    c.color_ = nil;
+    c.font_ = nil;
 }
 
 static inline void restrict(int& c, int a, int b) {
@@ -1096,14 +1160,14 @@ static inline void restrict(int& c, int a, int b) {
 }
 
 boolean CanvasRep::start_repair() {
-    CanvasRep* c = this;
-    if (!c->damaged_) {
+    CanvasRep& c = *this;
+    if (!c.damaged_) {
 	return false;
     }
 
-    XRectangle& clip = c->clip_;
-    CanvasDamage& damage = c->damage_;
-    Display& d = *(c->display_);
+    XRectangle& clip = c.clip_;
+    CanvasDamage& damage = c.damage_;
+    Display& d = *c.display_;
     int d_left = d.to_pixels(damage.left);
     int d_bottom = d.to_pixels(damage.bottom);
     int d_right = d.to_pixels(damage.right);
@@ -1113,56 +1177,59 @@ boolean CanvasRep::start_repair() {
     restrict(d_right, 0, pwidth_);
     restrict(d_top, 0, pheight_);
     clip.x = d_left;
-    clip.y = c->pheight_ - d_top;
+    clip.y = c.pheight_ - d_top;
     clip.width = d_right - d_left;
     clip.height = d_top - d_bottom;
-    XUnionRectWithRegion(&clip, c->empty_, c->clipping_);
-    XSetClipRectangles(dpy(), c->drawgc_, 0, 0, &clip, 1, YXBanded);
+    XUnionRectWithRegion(&clip, c.empty_, c.clipping_);
+    XSetClipRectangles(dpy(), c.drawgc_, 0, 0, &clip, 1, YXBanded);
+    c.repairing_ = true;
     return true;
 }
 
 void CanvasRep::finish_repair() {
-    CanvasRep* c = this;
-    c->flush();
-    c->swapbuffers();
-    c->damaged_ = false;
-    c->on_damage_list_ = false;
+    CanvasRep& c = *this;
+    c.flush();
+    c.swapbuffers();
+    c.damaged_ = false;
+    c.on_damage_list_ = false;
+    c.repairing_ = false;
 }
 
 void CanvasRep::flush() {
     TextRenderInfo* t = &CanvasRep::text_;
-    if (t != nil && t->index_ > 0) {
-	CanvasRep* c = this;
-	XDisplay* dpy = c->dpy();
+    if (t == nil) {
+	return;
+    }
+    unsigned int nchars = t->cur_text_ - t->text_;
+    if (nchars != 0) {
+	CanvasRep& c = *this;
+	XDisplay* dpy = c.dpy();
 	XDrawable d = t->canvas_->drawbuffer_;
 	GC gc = t->drawgc_;
-        if (t->spaces_ == 0 || c->text_twobyte_) {
-            if (c->text_twobyte_) {
+        if (t->spaces_ == 0 || c.text_twobyte_) {
+            if (c.text_twobyte_) {
                 XDrawString16(
-                    dpy, d, gc, t->x0_, t->y0_,
-                    (XChar2b*)t->text_, t->index_/2
+                    dpy, d, gc, t->x0_, t->y0_, (XChar2b*)t->text_, nchars/2
                 );
             } else {
-                XDrawString(
-                    dpy, d, gc, t->x0_, t->y0_,
-                    t->text_, t->index_
-                );
+                XDrawString(dpy, d, gc, t->x0_, t->y0_, t->text_, nchars);
             }
         } else {
-            int width = XTextWidth(c->xfont_, t->text_, t->index_);
-            int delta = c->display_->to_pixels(t->width_) - width;
+            int width = XTextWidth(c.xfont_, t->text_, nchars);
+            int delta = c.display_->to_pixels(t->width_) - width;
             int item = 0;
             int count = 0;
             t->items_[item].chars = t->text_;
             t->items_[item].delta = 0;
             t->items_[item].font = None;
-            for (int index = 0; index < t->index_; ++index) {
-                if (t->text_[index] == ' ') {
+	    char* text_end = t->cur_text_;
+	    for (char* cp = t->text_; cp < text_end; cp++) {
+                if (*cp == ' ') {
                     int d = delta / (t->spaces_ - item);
                     delta -= d;
                     t->items_[item].nchars = count;
                     ++item;
-                    t->items_[item].chars = t->text_ + index;
+                    t->items_[item].chars = cp;
                     t->items_[item].delta = d;
                     t->items_[item].font = None;
                     count = 0;
@@ -1174,20 +1241,20 @@ void CanvasRep::flush() {
                 dpy, d, gc, t->x0_, t->y0_, t->items_, item + 1
             );
         }
-        t->index_ = 0;
+        t->cur_text_ = t->text_;
         t->spaces_ = 0;
     }
 }
 
 void CanvasRep::swapbuffers() {
-    CanvasRep* c = this;
-    if (c->copybuffer_ == CanvasRep::unbound) {
+    CanvasRep& c = *this;
+    if (c.copybuffer_ == CanvasRep::unbound) {
 	/* not double-buffering */
 	return;
     }
-    XRectangle& clip = c->clip_;
+    XRectangle& clip = c.clip_;
     XCopyArea(
-	c->dpy(), c->drawbuffer_, c->copybuffer_, c->copygc_,
+	c.dpy(), c.drawbuffer_, c.copybuffer_, c.copygc_,
 	clip.x, clip.y, clip.width, clip.height, clip.x, clip.y
     );
 }
@@ -1200,27 +1267,28 @@ Transformer& CanvasRep::matrix() const {
 }
 
 void CanvasRep::color(const Color* color) {
-    CanvasRep* c = this;
-    if (color != nil && color != c->color_) {
+    CanvasRep& c = *this;
+    if (color != nil && color != c.color_) {
 	Resource::ref(color);
-	Resource::unref(c->color_);
-	c->color_ = color;
-	XDisplay* dpy = c->dpy();
-	GC gc = c->drawgc_;
-	ColorRep* cr = color->rep(c->display_);
-        c->pixel_ = cr->xcolor_.pixel;
-        c->op_ = cr->op_;
-        c->stipple_ = cr->stipple_;
-	if (cr->masking_) {
+	Resource::unref(c.color_);
+	c.color_ = color;
+	XDisplay* dpy = c.dpy();
+	WindowVisual* wv = c.window_->rep()->visual_;
+	GC gc = c.drawgc_;
+	ColorRep& cr = *color->rep(wv);
+        c.pixel_ = cr.xcolor_.pixel;
+        c.op_ = cr.op_;
+        c.stipple_ = cr.stipple_;
+	if (cr.masking_) {
             XSetForeground(dpy, gc, 1);
-	} else if (c->op_ == GXxor) {
-            XSetForeground(dpy, gc, c->display_->rep()->xor_);
+	} else if (c.op_ == GXxor) {
+            XSetForeground(dpy, gc, wv->xor(c.window_->style()));
         } else {
-            XSetForeground(dpy, gc, c->pixel_);
+            XSetForeground(dpy, gc, c.pixel_);
         }
-        XSetFunction(dpy, gc, c->op_);
-        if (c->stipple_ != 0) {
-            XSetStipple(dpy, gc, c->stipple_);
+        XSetFunction(dpy, gc, c.op_);
+        if (c.stipple_ != 0) {
+            XSetStipple(dpy, gc, c.stipple_);
             XSetFillStyle(dpy, gc, FillStippled);
         } else {
             XSetFillStyle(dpy, gc, FillSolid);
@@ -1254,18 +1322,34 @@ void CanvasRep::brush(const Brush* b) {
 }
 
 void CanvasRep::font(const Font* f) {
-    CanvasRep* c = this;
-    if (f != nil && f != c->font_) {
+    CanvasRep& c = *this;
+    if (f != nil && f != c.font_) {
 	Resource::ref(f);
-	Resource::unref(c->font_);
-	FontRep* fr = f->rep(c->display_);
-	c->font_ = f;
+	Resource::unref(c.font_);
+	FontRep* fr = f->rep(c.display_);
+	c.font_ = f;
 	XFontStruct* xf = fr->font_;
-        c->xfont_ = xf;
-        c->text_twobyte_ = xf->min_byte1 > 0 || xf->max_byte1 > 0;
+        c.xfont_ = xf;
+        c.text_twobyte_ = xf->min_byte1 > 0 || xf->max_byte1 > 0;
 	const char* coding = f->Font::encoding();
-	c->text_reencode_ = coding != nil && strcmp(coding, "ISO8859") == 0;
-        XSetFont(c->dpy(), c->drawgc_, xf->fid);
+	c.text_reencode_ = coding != nil && strcmp(coding, "ISO8859") == 0;
+	if (fr->unscaled_) {
+	    c.font_is_scaled_ = false;
+	} else {
+	    c.font_is_scaled_ = true;
+	    float tolerance = 0.15;
+	    Window* w = c.window_;
+	    if (w != nil) {
+		Style* s = w->style();
+		if (s != nil) {
+		    s->find_attribute("fontScaleTolerance", tolerance);
+		}
+	    }
+	    c.font_is_scaled_ = (
+		fr->scale_ < (1 - tolerance) || fr->scale_ > (1 + tolerance)
+	    );
+	}
+        XSetFont(c.dpy(), c.drawgc_, xf->fid);
     }
 }
 
@@ -1274,7 +1358,7 @@ void CanvasRep::new_damage() {
     damaged_ = true;
     if (!on_damage_list_ && w != nil && w->bound()) {
 	on_damage_list_ = true;
-	display_->rep()->damage_list_->append(w);
+	display_->rep()->needs_repair(w);
     }
 }
 
@@ -1300,10 +1384,10 @@ CanvasLocation Canvas::status() const { return rep()->status_; }
 void Canvas::SetBackground(const Color* c) {
     Window* ww = window();
     if (ww != nil) {
-	WindowRep* w = ww->rep();
-	Display* d = w->display_;
+	WindowRep& w = *ww->rep();
 	XSetWindowBackground(
-	    d->rep()->display_, w->xwindow_, c->rep(d)->xcolor_.pixel
+	    w.display_->rep()->display_, w.xwindow_,
+	    c->rep(w.visual_)->xcolor_.pixel
 	);
     }
 }

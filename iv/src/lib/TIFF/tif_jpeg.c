@@ -1,10 +1,10 @@
 #ifndef lint
-static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_jpeg.c,v 1.3 91/07/16 16:30:55 sam Exp $";
+static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_jpeg.c,v 1.4 92/02/10 19:06:04 sam Exp $";
 #endif
 
 /*
- * Copyright (c) 1990, 1991 Sam Leffler
- * Copyright (c) 1991 Silicon Graphics, Inc.
+ * Copyright (c) 1990, 1991, 1992 Sam Leffler
+ * Copyright (c) 1991, 1992 Silicon Graphics, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and 
  * its documentation for any purpose is hereby granted without fee, provided

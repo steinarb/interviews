@@ -32,11 +32,8 @@
 class TabularItem;
 
 class Aggregate;
-class LRBox;
-class TBBox;
-class Overlay;
-class Sensor;
 class Patch;
+class Sensor;
 class XYMarker;
 
 class TabularView : public ItemView {
@@ -71,9 +68,9 @@ protected:
 
     TabularItem* _tabular;
     Aggregate* _cells;
-    LRBox* _columns;
-    TBBox* _rows;
-    Overlay* _table;
+    Glyph* _columns;
+    Glyph* _rows;
+    Glyph* _table;
     Patch* _patch;
     Patch* _row_patch;
     Patch* _column_patch;

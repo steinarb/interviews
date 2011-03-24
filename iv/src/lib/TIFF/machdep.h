@@ -1,4 +1,4 @@
-/* $Header: /usr/people/sam/tiff/libtiff/RCS/machdep.h,v 1.16 91/07/16 16:30:45 sam Exp $ */
+/* $Header: /usr/people/sam/tiff/libtiff/junk/machdep.h,v 1.16 91/07/16 16:30:45 sam Exp $ */
 
 /*
  * Copyright (c) 1988, 1989, 1990, 1991 Sam Leffler

@@ -27,9 +27,11 @@
 #include <Unidraw/globals.h>
 #include <Unidraw/Graphic/pspaint.h>
 
-#include <InterViews/world.h>
+#include <IV-2_6/InterViews/world.h>
 
 #include <OS/memory.h>
+
+#include <IV-2_6/_enter.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -62,9 +64,20 @@ PSColor::PSColor(
     ColorIntensity r, ColorIntensity g, ColorIntensity b, const char* name
 ) : Color(r, g, b) {
     _name = strnew(name);
+    _r = r;
+    _g = g;
+    _b = b;
 }
 
 PSColor::~PSColor () { delete _name; }
+
+void PSColor::GetIntensities(
+    ColorIntensity& r, ColorIntensity& g, ColorIntensity& b
+) {
+    r = _r;
+    g = _g;
+    b = _b;
+}
 
 /*****************************************************************************/
 

@@ -8,4 +8,4 @@ DEST = $(INCDIR)/Dispatch
 InstallMultipleFlags($(HEADERS),$(DEST),$(INSTINCFLAGS))
 
 gendefs:
-	./_gendefines
+	./_gendefs

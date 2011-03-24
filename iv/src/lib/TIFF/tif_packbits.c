@@ -1,10 +1,10 @@
 #ifndef lint
-static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_packbits.c,v 1.20 91/08/21 17:11:06 sam Exp $";
+static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_packbits.c,v 1.23 92/03/30 18:29:40 sam Exp $";
 #endif
 
 /*
- * Copyright (c) 1988, 1989, 1990, 1991 Sam Leffler
- * Copyright (c) 1991 Silicon Graphics, Inc.
+ * Copyright (c) 1988, 1989, 1990, 1991, 1992 Sam Leffler
+ * Copyright (c) 1991, 1992 Silicon Graphics, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and 
  * its documentation for any purpose is hereby granted without fee, provided
@@ -32,12 +32,18 @@ static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_packbits.c,
  * PackBits Compression Algorithm Support
  */
 #include "tiffioP.h"
+#include <stdio.h>
+#include <assert.h>
 
 #if USE_PROTOTYPES
+static	int PackBitsPreEncode(TIFF *);
 static	int PackBitsEncode(TIFF *, u_char *, int, u_int);
+static	int PackBitsEncodeChunk(TIFF *, u_char *, int, u_int);
 static	int PackBitsDecode(TIFF *, u_char *, int, u_int);
 #else
-static	int PackBitsEncode(), PackBitsDecode();
+static	int PackBitsPreEncode();
+static	int PackBitsEncode(), PackBitsEncodeChunk();
+static	int PackBitsDecode();
 #endif
 
 TIFFInitPackBits(tif)
@@ -46,14 +52,55 @@ TIFFInitPackBits(tif)
 	tif->tif_decoderow = PackBitsDecode;
 	tif->tif_decodestrip = PackBitsDecode;
 	tif->tif_decodetile = PackBitsDecode;
+	tif->tif_preencode = PackBitsPreEncode;
 	tif->tif_encoderow = PackBitsEncode;
-	tif->tif_encodestrip = PackBitsEncode;
-	tif->tif_encodetile = PackBitsEncode;
+	tif->tif_encodestrip = PackBitsEncodeChunk;
+	tif->tif_encodetile = PackBitsEncodeChunk;
+	return (1);
+}
+
+static int
+PackBitsPreEncode(tif)
+	TIFF *tif;
+{
+	/*
+	 * Calculate the scanline/tile-width size in bytes.
+	 */
+	if (isTiled(tif))
+		tif->tif_data = (char *) TIFFTileRowSize(tif);
+	else
+		tif->tif_data = (char *) TIFFScanlineSize(tif);
 	return (1);
 }
 
 /*
- * Encode a scanline of pixels.
+ * Encode a rectangular chunk of pixels.  We break it up
+ * into row-sized pieces to insure that encoded runs do
+ * not span rows.  Otherwise, there can be problems with
+ * the decoder if data is read, for example, by scanlines
+ * when it was encoded by strips.
+ */
+static int
+PackBitsEncodeChunk(tif, bp, cc, s)
+	TIFF *tif;
+	u_char *bp;
+	int cc;
+	u_int s;
+{
+	int rowsize = (int) tif->tif_data;
+
+	assert(rowsize > 0);
+	while (cc > 0) {
+		if (PackBitsEncode(tif, bp, rowsize, s) < 0)
+			return (-1);
+		bp += rowsize;
+		cc -= rowsize;
+	}
+	return (1);
+}
+
+/*
+ * Encode a run of pixels.
  */
 static int
 PackBitsEncode(tif, bp, cc, s)

@@ -28,8 +28,8 @@
 #include <IV-X11/xbrush.h>
 #include <OS/list.h>
 
-declareList(BrushRepList,BrushRep*);
-implementList(BrushRepList,BrushRep*);
+declarePtrList(BrushRepList,BrushRep)
+implementPtrList(BrushRepList,BrushRep)
 
 class BrushImpl {
 private:
@@ -54,9 +54,8 @@ Brush::Brush(int pat, Coord w) {
 
 Brush::~Brush() {
     BrushRepList& list = impl_->replist;
-    long n = list.count();
-    for (int i = 0; i < n; i++) {
-	BrushRep* r = list.item(i);
+    for (ListItr(BrushRepList) i(list); i.more(); i.next()) {
+	BrushRep* r = i.cur();
 	delete r;
     }
     delete impl_->dash_list;
@@ -135,9 +134,8 @@ void Brush::init(const int* pattern, int count, Coord w) {
 BrushRep* Brush::rep(Display* d) const {
     BrushRep* r;
     BrushRepList& list = impl_->replist;
-    long n = list.count();
-    for (long i = 0; i < n; i++) {
-	r = list.item(i);
+    for (ListItr(BrushRepList) i(list); i.more(); i.next()) {
+	r = i.cur();
 	if (r->display_ == d) {
 	    return r;
 	}
@@ -147,6 +145,7 @@ BrushRep* Brush::rep(Display* d) const {
     r->dash_list_ = impl_->dash_list;
     r->dash_count_ = impl_->dash_count;
     r->width_ = d->to_pixels(impl_->width);
+    list.append(r);
     return r;
 }
 

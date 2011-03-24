@@ -47,51 +47,33 @@ Border::~Border() {
     Resource::unref(color_);
 }
 
-void Border::allocate(Canvas* canvas, const Allocation& a, Extension& ext) {
-    MonoGlyph::allocate(canvas, a, ext);
-    ext.extend(a);
+void Border::allocate(Canvas* c, const Allocation& a, Extension& ext) {
+    MonoGlyph::allocate(c, a, ext);
+    ext.merge(c, a);
 }
 
-void Border::draw(Canvas* canvas, const Allocation& a) const {
-    if (canvas != nil) {
-        Coord left = a.left();
-        Coord bottom = a.bottom();
-        Coord right = a.right();
-        Coord top = a.top();
-        canvas->fill_rect(
-            left, bottom + thickness_, left + thickness_, top, color_
-        );
-        canvas->fill_rect(
-            left + thickness_, top - thickness_, right, top, color_
-        );
-        canvas->fill_rect(
-            right - thickness_, top - thickness_, right, bottom, color_
-        );
-        canvas->fill_rect(
-            right - thickness_, bottom + thickness_, left, bottom, color_
-        );
-    }
-    MonoGlyph::draw(canvas, a);
+void Border::draw(Canvas* c, const Allocation& a) const {
+    Coord left = a.left();
+    Coord bottom = a.bottom();
+    Coord right = a.right();
+    Coord top = a.top();
+    Coord t = thickness_;
+    c->fill_rect(left, bottom + t, left + t, top, color_);
+    c->fill_rect(left + t, top - t, right, top, color_);
+    c->fill_rect(right - t, top - t, right, bottom, color_);
+    c->fill_rect(right - t, bottom + t, left, bottom, color_);
+    MonoGlyph::draw(c, a);
 }
 
 void Border::print(Printer* p, const Allocation& a) const {
-    if (p != nil) {
-        Coord left = a.left();
-        Coord bottom = a.bottom();
-        Coord right = a.right();
-        Coord top = a.top();
-        p->fill_rect(
-            left, bottom + thickness_, left + thickness_, top, color_
-        );
-        p->fill_rect(
-            left + thickness_, top - thickness_, right, top, color_
-        );
-        p->fill_rect(
-            right - thickness_, top - thickness_, right, bottom, color_
-        );
-        p->fill_rect(
-            right - thickness_, bottom + thickness_, left, bottom, color_
-        );
-    }
+    Coord left = a.left();
+    Coord bottom = a.bottom();
+    Coord right = a.right();
+    Coord top = a.top();
+    Coord t = thickness_;
+    p->fill_rect(left, bottom + t, left + t, top, color_);
+    p->fill_rect(left + t, top - t, right, top, color_);
+    p->fill_rect(right - t, top - t, right, bottom, color_);
+    p->fill_rect(right - t, bottom + t, left, bottom, color_);
     MonoGlyph::print(p, a);
 }

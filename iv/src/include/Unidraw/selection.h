@@ -27,7 +27,10 @@
 #ifndef unidraw_selection_h
 #define unidraw_selection_h
 
-#include <InterViews/defs.h>
+#include <IV-2_6/InterViews/defs.h>
+#include <Unidraw/enter-scope.h>
+
+#include <IV-2_6/_enter.h>
 
 class GraphicView;
 class Iterator;
@@ -77,5 +80,7 @@ protected:
     UList* _ulist;
     int _count;
 };
+
+#include <IV-2_6/_leave.h>
 
 #endif

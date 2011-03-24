@@ -22,7 +22,6 @@
 
 /*
  * Message component declarations.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibmessage.h,v 1.2 91/09/27 14:14:39 tang Exp $
  */
 
 #ifndef ibmessage_h
@@ -80,7 +79,6 @@ public:
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
 protected:
-    void Align(Alignment, ostream&);
     virtual boolean CoreConstDecls(ostream&);
     virtual boolean CoreConstInits(ostream&);
     virtual boolean ConstDecls(ostream&);

@@ -35,11 +35,16 @@
 #include <Unidraw/manip.h>
 #include <InterViews/event.h>
 
+#include <IV-2_6/_enter.h>
+
 class ConnectorView;
 class GrowingVertices;
 class Iterator;
 class Painter;
 class Rubberband;
+class Selection;
+class TextBuffer;
+class TextDisplay;
 class Transformer;
 class UList;
 
@@ -184,7 +189,7 @@ public:
     virtual void GetPosition(Coord&, Coord&);
 
     const Event& GraspEvent();
-protected:
+
     virtual boolean HandleKey(Event&);
 
     int Dot();
@@ -226,14 +231,14 @@ private:
     boolean _selecting;
     Coord _xpos, _ypos;
     Viewer* _viewer;
-    class Selection* _selection;
+    Selection* _selection;
     Painter* _painter;
     Tool* _tool;
     PSFont* _font;
     Coord _lineHt, _tabWidth;
     boolean _multiline;
-    class TextBuffer* _text;
-    class TextDisplay* _display;
+    TextBuffer* _text;
+    TextDisplay* _display;
     char* _buf;
     int _bufsize;
     int _dot, _mark;
@@ -243,5 +248,7 @@ private:
 inline int TextManip::Dot () { return _dot; }
 inline int TextManip::Mark () { return _mark; }
 inline const Event& TextManip::GraspEvent () { return _grasp_e; }
+
+#include <IV-2_6/_leave.h>
 
 #endif

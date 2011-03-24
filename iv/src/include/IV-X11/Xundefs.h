@@ -7,6 +7,7 @@
 #undef Screen
 #undef Window
 
+#define boolean _lib_os(boolean)
 #define Bitmap _lib_iv(Bitmap)
 #define Colormap _lib_iv(Colormap)
 #define Cursor _lib_iv(Cursor)
@@ -17,5 +18,5 @@
 #define Window _lib_iv(Window)
 
 #ifdef iv__2_6_h
-#include <InterViews/2.6/_names.h>
+#include <IV-2_6/_names.h>
 #endif

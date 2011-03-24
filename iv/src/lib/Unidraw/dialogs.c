@@ -28,19 +28,21 @@
 #include <Unidraw/globals.h>
 #include <Unidraw/iterator.h>
 
-#include <InterViews/adjuster.h>
-#include <InterViews/border.h>
-#include <InterViews/box.h>
-#include <InterViews/button.h>
+#include <IV-2_6/InterViews/adjuster.h>
+#include <IV-2_6/InterViews/border.h>
+#include <IV-2_6/InterViews/box.h>
+#include <IV-2_6/InterViews/button.h>
 #include <InterViews/event.h>
-#include <InterViews/filebrowser.h>
-#include <InterViews/frame.h>
-#include <InterViews/glue.h>
-#include <InterViews/matcheditor.h>
-#include <InterViews/message.h>
-#include <InterViews/scroller.h>
-#include <InterViews/sensor.h>
-#include <InterViews/streditor.h>
+#include <IV-2_6/InterViews/filebrowser.h>
+#include <IV-2_6/InterViews/frame.h>
+#include <IV-2_6/InterViews/glue.h>
+#include <IV-2_6/InterViews/matcheditor.h>
+#include <IV-2_6/InterViews/message.h>
+#include <IV-2_6/InterViews/scroller.h>
+#include <IV-2_6/InterViews/sensor.h>
+#include <IV-2_6/InterViews/streditor.h>
+
+#include <IV-2_6/_enter.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -226,12 +228,12 @@ void UChooser::Init (const char* t, const char* subt) {
     if (*t == '\0') {
         _title = new MarginFrame(new VGlue(0, 0));
     } else {
-        _title = new MarginFrame(new Message(t));
+        _title = new MarginFrame(new class Message(t));
     }
     if (*subt == '\0') {
         _subtitle = new MarginFrame(new VGlue(0, 0));
     } else {
-        _subtitle = new MarginFrame(new Message(subt));
+        _subtitle = new MarginFrame(new class Message(subt));
     }
 }
 
@@ -418,7 +420,12 @@ Interactor* PrintDialog::Interior () {
                         "send to printer via a command, or ", _dest, true
                     ),
                     new VGlue(space/3, 0),
+#ifdef __DECCXX
+		    /* is passing an const unsigned 0 ambiguous here? */
+                    new RadioButton("save in file:", _dest, int(false))
+#else
                     new RadioButton("save in file:", _dest, false)
+#endif
                 )
             ),
             new VGlue(space, 0),

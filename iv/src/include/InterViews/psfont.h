@@ -29,10 +29,11 @@
 #ifndef iv_psfont_h
 #define iv_psfont_h
 
-#include <InterViews/boolean.h>
 #include <InterViews/font.h>
 
 #include <InterViews/_enter.h>
+
+class PSFontImpl;
 
 class PSFont : public Font {
 public:
@@ -48,7 +49,7 @@ public:
     virtual Coord width(long) const;
     virtual Coord width(const char*, int) const;
 private:
-    class PSFontImpl* impl_;
+    PSFontImpl* impl_;
 };
 
 #include <InterViews/_leave.h>

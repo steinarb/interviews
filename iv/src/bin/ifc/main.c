@@ -24,63 +24,70 @@
  * File chooser main program.
  */
 
-#include <InterViews/filechooser.h>
+#include <IV-look/dialogs.h>
+#include <InterViews/session.h>
+#include <InterViews/style.h>
 #include <InterViews/window.h>
-#include <InterViews/world.h>
+#include <OS/string.h>
+#include <stdio.h>
 #include <stdlib.h>
-#include <stream.h>
-#include <string.h>
 
-static PropertyData properties[] = {
-    { "*caption", "Please select a file:" },
-    { "*subcaption", "" },
-    { "*rows", "10" },
-    { "*cols", "24" },
-    { "*accept", " Open " },
-    { "*static", "false" },
+static PropertyData props[] = {
+    { "*font", "*times-medium-r-normal-*-140-*" },
+    { "Ifc*iconName", "Ifc" },
+    { "Ifc*title", "InterViews file chooser" },
+    { "Ifc*rows", "12" },
+    { "Ifc*separator", "\n" },
+    { "Ifc*static", "false" },
     { nil }
 };
 
 static OptionDesc options[] = {
     { "-caption", "*caption", OptionValueNext },
-    { "-subcaption", "*subcaption", OptionValueNext },
+    { "-nullsep", "*separator", OptionValueImplicit, "" },
+    { "-open", "*open", OptionValueNext },
     { "-rows", "*rows", OptionValueNext },
-    { "-cols", "*cols", OptionValueNext },
-    { "-accept", "*accept", OptionValueNext },
+    { "-separator", "*separator", OptionValueNext },
     { "-static", "*static", OptionValueImplicit, "true" },
+    { "-subcaption", "*subcaption", OptionValueNext },
     { nil }
 };
 
-int main (int argc, char** argv) {
-    World* world = new World("Ifc", argc, argv, options, properties);
-    const char* dir = (argc == 2) ? argv[1] : "~";
-    const char* _static = world->GetAttribute("static");
-    boolean transient = _static == nil || strcmp(_static, "true") != 0;
-    int status = 0;
-
-    FileChooser* chooser = new FileChooser(
-        world->GetAttribute("caption"),
-        world->GetAttribute("subcaption"),
-        dir,
-        atoi(world->GetAttribute("rows")),
-        atoi(world->GetAttribute("cols")),
-        world->GetAttribute("accept")
-    );
-
-    ApplicationWindow* w = new ApplicationWindow(chooser);
-    w->name("InterViews file chooser");
-    w->icon_name("ifc");
+int main(int argc, char** argv) {
+    Session* session = new Session("Ifc", argc, argv, options, props);
+    Style* s = session->style();
+    String sep;
+    s->find_attribute("separator", sep);
+    DialogKit& dialogs = *DialogKit::instance();
+    FileChooser* fc = dialogs.file_chooser(((argc == 2) ? argv[1] : "."), s);
+    ApplicationWindow* w = new ApplicationWindow(fc);
+    w->style(s);
     w->map();
-
-    chooser->SelectFile();
-    
-    do {
-        status = chooser->Accept() ? 0 : 1;
-        if (status == 0) {
-            cout << chooser->Choice() << "\n";
-            cout.flush();
-        }
-    } while (!transient && status == 0);
-
+    int status = 1;
+    for (;;) {
+	if (!fc->run()) {
+	    status = 1;
+	    break;
+	}
+	const String* name = fc->selected();
+	if (name != nil) {
+	    if (sep == "") {
+		printf("%.*s%c", name->length(), name->string(), '\0');
+	    } else {
+		printf(
+		    "%.*s%.*s", name->length(), name->string(),
+		    sep.length(), sep.string()
+		);
+	    }
+	    fflush(stdout);
+	    status = 0;
+	}
+	if (!s->value_is_on("static")) {
+	    break;
+	}
+    }
+    w->unmap();
+    delete w;
+    delete session;
     return status;
 }

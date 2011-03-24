@@ -33,8 +33,13 @@
 
 typedef float _lib_iv(Coord);
 typedef int _lib_iv(IntCoord);
+typedef int _lib_iv(PixelCoord);
 
-static const float fil = 10E12;
+/*
+ * Should be a static const float, but some compilers don't
+ * do a very good job on that.
+ */
+#define fil 10e6
 
 /*
  * Old definitions

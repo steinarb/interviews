@@ -54,4 +54,10 @@ public:
     virtual ~DocMenubar ();
 };
 
+class DocPopup : public DocMenu {
+public:
+    DocPopup (DocumentViewer*, const char* name);
+    virtual ~DocPopup ();
+};
+
 #endif

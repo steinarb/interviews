@@ -22,7 +22,6 @@
 
 /*
  * Implementation of IBHBox and ToolPanel.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibtoolpanel.c,v 1.2 91/09/27 14:12:12 tang Exp $
  */
 
 #include "ibadjuster.h"
@@ -540,8 +539,8 @@ void ToolPanel::InitCompTools () {
         ), "String_Editor.Tool"
     );
 
-    GrBlockComp* grblockComp = new GrBlockComp(new GrBlockGraphic(
-        nil, stdgraphic)
+    GrBlockComp* grblockComp = new GrBlockComp(
+        new GrBlockGraphic(nil, stdgraphic)
     );
     Include(
         new GraphicCompTool(
@@ -718,8 +717,10 @@ void ToolPanel::ReadCompTools () {
 
         sprintf(path, "%s/%s", toolspath, toolName);
         unidraw->GetCatalog()->Retrieve(path, tool);
-	GraphicCompTool* grtool = (GraphicCompTool*) tool;
-        Include(tool, toolName);
+	if (tool != nil) {
+	    GraphicCompTool* grtool = (GraphicCompTool*) tool;
+            Include(tool, toolName);
+	}
     }
 }
 

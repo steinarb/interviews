@@ -22,7 +22,6 @@
 
 /*
  * Scroller component definitions.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibscroller.c,v 1.2 91/09/27 14:11:39 tang Exp $
  */
 
 #include "ibclasses.h"
@@ -214,7 +213,15 @@ boolean ScrollerCode::IsA(ClassId id) {
 }
 
 ClassId ScrollerCode::GetClassId () { return SCROLLER_CODE; }
-ScrollerCode::ScrollerCode (ScrollerComp* subj) : CodeView(subj) { }
+
+ScrollerCode::ScrollerCode (ScrollerComp* subj) : CodeView(subj) {}
+
+void ScrollerCode::Update () {
+    CodeView::Update();
+    InteractorComp* subj = GetIntComp();
+    Graphic* gr = subj->GetGraphic();
+    gr->SetFont(nil);
+}
 
 ScrollerComp* ScrollerCode::GetScrollerComp () {
     return (ScrollerComp*) GetSubject();
@@ -263,23 +270,32 @@ boolean ScrollerCode::Definition (ostream& out) {
         const char* scrollee = mnamer->GetName();
 
 	if (*scrollee == '\0') {
-	    strcat(_errbuf, mname);
-            strcat(_errbuf, " has undefined scrolling target.\n");
+            if (_err_count < 10) {
+                strcat(_errbuf, mname);
+                strcat(_errbuf, " has undefined scrolling target.\n");
+                _err_count++;
+            } 
 	    return false;
 
         } else if (!Search(mnamer, ctarget)) {
-	    strcat(_errbuf, mname);
-            strcat(
-                _errbuf, "'s scrolling target is not in the same hierarchy.\n"
-            );
+            if (_err_count < 10) {
+                strcat(_errbuf, mname);
+                strcat(
+                    _errbuf, "'s scrolling target is not in the same hierarchy.\n"
+                );
+                _err_count++;
+            } 
 	    return false;
 
         } else if (ctarget != nil && !icomp->IsRelatableTo(ctarget)) {
-	    strcat(_errbuf, mname);
-            strcat(
-                _errbuf, 
-                "'s adjusting target is not subclassed nor adjustable.\n"
-            );
+            if (_err_count < 10) {
+                strcat(_errbuf, mname);
+                strcat(
+                    _errbuf, 
+                    "'s adjusting target is not subclassed nor adjustable.\n"
+                );
+                _err_count++;
+            }
 	    return false;
         }
 	if (_instancelist->Find((void*) scrollee)) {
@@ -326,10 +342,11 @@ boolean ScrollerCode::CoreConstInits(ostream& out) {
     InteractorComp* icomp = GetIntComp();
     SubclassNameVar* snamer = icomp->GetClassNameVar();
     const char* baseclass = snamer->GetBaseClass();
+    const char* subclass = snamer->GetName();
 
     out << "(\n    const char* name, Interactor* i\n) : " << baseclass;
     out << "(name, i) {\n";
-    out << "    perspective = new Perspective;\n";
+    out << "    SetClassName(\"" << subclass << "\");\n";
     out << "}\n\n";
     return out.good();
 }
@@ -363,8 +380,8 @@ boolean ScrollerCode::EmitIncludeHeaders(ostream& out) {
 ScrollerGraphic::ScrollerGraphic (
     Orientation o, CanvasVar* c, Graphic* g, int nat
 ) : HVGraphic(c, g) {
-    int fil = (o == Horizontal) ? hfil : vfil;
-    Init(nat, fil, fil, o);
+    int f = (o == Horizontal) ? hfil : vfil;
+    Init(nat, f, f, o);
 }
 
 int ScrollerGraphic::MinorAxisSize () { return round(.2*inch); }

@@ -31,6 +31,8 @@
 
 #include <InterViews/transformer.h>
 
+#include <IV-2_6/_enter.h>
+
 /*****************************************************************************/
 
 Picture::Picture (Graphic* gr) : FullGraphic(gr) {

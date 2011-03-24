@@ -26,12 +26,12 @@
  * Implementation of subject base class.
  */
 
-#include <InterViews/2.6/InterViews/interactor.h>
-#include <InterViews/2.6/InterViews/subject.h>
+#include <IV-2_6/InterViews/interactor.h>
+#include <IV-2_6/InterViews/subject.h>
 #include <OS/list.h>
 
-declareList(ViewList,Interactor*);
-implementList(ViewList,Interactor*);
+declarePtrList(ViewList,Interactor)
+implementPtrList(ViewList,Interactor)
 
 class SubjectRep {
 private:

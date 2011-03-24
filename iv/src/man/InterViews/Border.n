@@ -1,20 +1,25 @@
-.TH Border 3I "" "InterViews Reference Manual"
+.TH Border 3I "15 June 1987" "InterViews" "InterViews Reference Manual"
 .SH NAME
-Border \- solid area around a glyph
+Border, HBorder, VBorder \- visual separators
 .SH SYNOPSIS
 .B #include <InterViews/border.h>
 .SH DESCRIPTION
-A border glyph draws a thick solid area under the outside of a given glyph.
-The natural size of a border glyph is the natural size of the interior glyph,
-so it is necessary to use a margin to dedicate space to the border.
+.B Border
+is the base class for interactors that simply display
+a line of a given thickness, usually
+to separate other interactors in a scene.
+.B HBorder
+objects have a fixed height and
+are infinitely stretchable and shrinkable horizontally.
+.B VBorder
+objects have a fixed width and
+are infinitely stretchable and shrinkable vertically.
 .SH PUBLIC OPERATIONS
 .TP
-.B "Border(Glyph*, Color*)"
-Create a border around the given glyph of the given color.
-The border thickness will be one coordinate unit.
+.B "HBorder(int thickness = 1)"
+.ns
 .TP
-.B "Border(Glyph*, Color*, Coord thickness)"
-Create a border around the given glyph of the given color
-with the given thickness.
+.B "VBorder(int thickness = 1)"
+Construct a border with a given thickness (default is one pixel).
 .SH SEE ALSO
-Color(3I), Glyph(3I), Margin(3I)
+Interactor(3I)

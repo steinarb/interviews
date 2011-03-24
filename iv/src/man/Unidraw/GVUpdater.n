@@ -56,5 +56,10 @@ UpdateState.
 GVUpdater is a friend of GraphicViews.  These convenience operations
 provide an interface to the corresponding protected GraphicViews
 operations.
+.TP
+.B "virtual ClassId ViewCategory()"
+Returns the view category (see classes(3U)) GVUpdater will use to
+instantiate views of subjects.  ViewCategory returns COMPONENT_VIEW by
+default.
 .SH SEE ALSO
-GraphicComp(3U), GraphicView(3U)
+GraphicComp(3U), GraphicView(3U), classes(3U)

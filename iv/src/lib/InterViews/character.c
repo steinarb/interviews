@@ -39,11 +39,13 @@ Character::Character(long ch, const Font* f, const Color* c) : Glyph() {
     color_ = c;
     Resource::ref(color_);
     if (font_ != nil) {
-	left_bearing_ = font_->left_bearing(c_);
-	right_bearing_ = font_->right_bearing(c_);
-	width_ = font_->width(c_);
-	ascent_ = font_->ascent();
-	descent_ = font_->descent();
+	FontBoundingBox b;
+	font_->char_bbox(c_, b);
+	left_bearing_ = b.left_bearing();
+	right_bearing_ = b.right_bearing();
+	width_ = b.width();
+	ascent_ = b.font_ascent();
+	descent_ = b.font_descent();
 	height_ = ascent_ + descent_;
 	alignment_ = (height_ == 0) ? 0 : descent_ / height_;
     } else {
@@ -71,11 +73,11 @@ void Character::request(Requisition& requisition) const {
     requisition.require(Dimension_Y, ry);
 }
 
-void Character::allocate(Canvas*, const Allocation& a, Extension& ext) {
+void Character::allocate(Canvas* c, const Allocation& a, Extension& ext) {
     Coord x = a.x();
     Coord y = a.y();
-    ext.xy_extents(
-	x - left_bearing_, x + right_bearing_, y - descent_, y + ascent_
+    ext.set_xy(
+	c, x - left_bearing_, y - descent_, x + right_bearing_, y + ascent_
     );
 }
 

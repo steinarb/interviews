@@ -32,6 +32,7 @@
 #include <Unidraw/Components/grcomp.h>
 #include <Unidraw/Components/grview.h>
 
+#include <IV-2_6/_enter.h>
 
 /*****************************************************************************/
 

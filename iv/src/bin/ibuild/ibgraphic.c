@@ -22,7 +22,6 @@
 
 /*
  * User interface builder-specific structured graphics implementations.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibgraphic.c,v 1.2 91/09/27 14:10:37 tang Exp $
  */
 
 #include "ibgraphic.h"

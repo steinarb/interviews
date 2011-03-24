@@ -30,14 +30,16 @@
 #include <Unidraw/iterator.h>
 #include <Unidraw/uctrls.h>
 #include <Unidraw/Commands/command.h>
-#include <Unidraw/Graphic/label.h>
+#include <Unidraw/Graphic/ulabel.h>
 #include <Unidraw/Graphic/picture.h>
 #include <Unidraw/Graphic/polygons.h>
 
-#include <InterViews/painter.h>
-#include <InterViews/sensor.h>
-#include <InterViews/shape.h>
-#include <InterViews/world.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/sensor.h>
+#include <IV-2_6/InterViews/shape.h>
+#include <IV-2_6/InterViews/world.h>
+
+#include <IV-2_6/_enter.h>
 
 /*****************************************************************************/
 
@@ -206,7 +208,7 @@ void CommandInteractor::Resize () {
         bg->Align(CenterLeft, _label, CenterLeft);
         _label->Translate(HPAD, 0);
 
-	Graphic* klbl = new Label(keyLabel, bg);
+	Graphic* klbl = new ULabel(keyLabel, bg);
         klbl->SetFont(psstdfont);
 	_picture->Append(klbl);
 	bg->Align(CenterRight, klbl, CenterRight);
@@ -278,7 +280,7 @@ void PanelInteractor::Resize () {
     bg->Align(Center, _label, Center);
 
     if (*keyLabel != '\0') {
-	Graphic* klbl = new Label(keyLabel, bg);
+	Graphic* klbl = new ULabel(keyLabel, bg);
         klbl->SetFont(psstdfont);
 	_picture->Append(klbl);
 	_picture->Align(BottomRight, klbl, BottomRight);

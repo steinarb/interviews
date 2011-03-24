@@ -29,6 +29,7 @@
 #define unidraw_commands_data_h
 
 #include <InterViews/resource.h>
+#include <Unidraw/enter-scope.h>
 
 class Data : public Resource {
 protected:

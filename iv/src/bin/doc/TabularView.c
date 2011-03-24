@@ -26,29 +26,29 @@
 
 #include "TabularView.h"
 
+#include "Document.h"
 #include "DocViewer.h"
 #include "TabularItem.h"
 #include "TextItem.h"
 
+#include "doc-listener.h"
+#include "doc-target.h"
 #include "properties.h"
 
 #include <InterViews/aggr.h>
-#include <InterViews/box.h>
-#include <InterViews/center.h>
 #include <InterViews/group.h>
 #include <InterViews/hit.h>
-#include <InterViews/listener.h>
-#include <InterViews/margin.h>
+#include <InterViews/layout.h>
 #include <InterViews/patch.h>
 #include <InterViews/rule.h>
-#include <InterViews/target.h>
-#include <InterViews/world.h>
+#include <IV-2_6/InterViews/world.h>
 #include <InterViews/xymarker.h>
 #include <OS/math.h>
 #include <string.h>
 
-const Coord CELL_MARGIN = 4;
-const Coord TABULAR_MARGIN = 3;
+const char*  CELL_MARGIN = "cellmargin";
+const char* TABULAR_MARGIN = "tabularmargin";
+const char* TABULAR_SEPARATOR_THICKNESS = "tabularseparatorthickness";
 
 TabularView::TabularView (
     DocumentViewer* viewer, ItemView* parent, TabularItem* tabular
@@ -63,11 +63,15 @@ TabularView::TabularView (
     _column_patch = nil;
     _table = nil;
     _patch = new Patch(nil);
-    Color* overlay;
-    Color* underlay;
+    const Color* overlay;
+    const Color* underlay;
     _viewer->highlight_colors(SELECT_HIGHLIGHT_COLOR, overlay, underlay);
     _marker = new XYMarker(_patch, overlay, underlay);
-    _listener->body(new Margin(_marker, TABULAR_MARGIN));
+    _listener->body(
+        LayoutKit::instance()->margin(
+            _marker, _viewer->document()->document_metric(TABULAR_MARGIN)
+        )
+    );
     _listener->button(true, Event::left);
     _active = false;
     dot(0, 0);
@@ -153,6 +157,11 @@ void TabularView::mark_selection () {
 }
 
 void TabularView::rebuild () {
+    const LayoutKit& layout = *LayoutKit::instance();
+    float cell_margin = _viewer->document()->document_metric(CELL_MARGIN);
+    float separator_thickness = _viewer->document()->document_metric(
+        TABULAR_SEPARATOR_THICKNESS
+    );
     long rows = _tabular->row_count();
     long columns = _tabular->column_count();
     if (_cells != nil) {
@@ -163,7 +172,7 @@ void TabularView::rebuild () {
     if (_columns != nil) {
         _columns->unref();
     }
-    _columns = new LRBox();
+    _columns = layout.hbox_first_aligned();
     _columns->ref();
     if (_column_patch != nil) {
         _column_patch->unref();
@@ -173,7 +182,7 @@ void TabularView::rebuild () {
     if (_rows != nil) {
         _rows->unref();
     }
-    _rows = new TBBox();
+    _rows = layout.vbox_first_aligned();
     _rows->ref();
     if (_row_patch != nil) {
         _row_patch->unref();
@@ -183,9 +192,9 @@ void TabularView::rebuild () {
     if (_table != nil) {
         _table->unref();
     }
-    _table = new Overlay(
-        new VCenter(_column_patch, 0.0),
-        new VCenter(_row_patch, 0.0),
+    _table = layout.overlay(
+        layout.vcenter(_column_patch, 0.0),
+        layout.vcenter(_row_patch, 0.0),
         _cells
     );
     _table->ref();
@@ -198,20 +207,26 @@ void TabularView::rebuild () {
                 g = item->view(this, _viewer);
                 switch (_tabular->column_alignment(c)) {
                 case ColumnAlignLeft:
-                    g = new HCenter(
-                        new HMargin(g, CELL_MARGIN, 0, 0, CELL_MARGIN, fil, 0),
+                    g = layout.hcenter(
+                        layout.h_margin(
+			    g, cell_margin, 0, 0, cell_margin, fil, 0
+			),
                         0.0
                     );
                     break;
                 case ColumnAlignCenter:
-                    g = new HCenter(
-                        new HMargin(g, CELL_MARGIN, fil, 0, CELL_MARGIN, fil, 0),
+                    g = layout.hcenter(
+                        layout.h_margin(
+			    g, cell_margin, fil, 0, cell_margin, fil, 0
+			),
                         0.5
                     );
                     break;
                 case ColumnAlignRight:
-                    g = new HCenter(
-                        new HMargin(g, CELL_MARGIN, fil, 0, CELL_MARGIN, 0, 0),
+                    g = layout.hcenter(
+                        layout.h_margin(
+			    g, cell_margin, fil, 0, cell_margin, 0, 0
+			),
                         1.0
                     );
                     break;
@@ -227,7 +242,7 @@ void TabularView::rebuild () {
     const Color* fg = World::current()->foreground();
     for (c = 0; c < columns; ++c) {
         if (_tabular->column_separator(c) == ColumnSeparatorSingle) {
-            _columns->append(new VRule(fg, 1));
+            _columns->append(new VRule(fg, separator_thickness));
         } else {
             _columns->append(nil);
         }
@@ -235,16 +250,16 @@ void TabularView::rebuild () {
         for (r = 0; r < rows; ++r) {
             group->map(r * columns + c);
         }
-        _columns->append(new Target(group, TargetCharacterHit));
+        _columns->append(new DocTarget(group));
     }
     if (_tabular->column_separator(c) == ColumnSeparatorSingle) {
-        _columns->append(new VRule(fg, 1));
+        _columns->append(new VRule(fg, separator_thickness));
     } else {
         _columns->append(nil);
     }
     for (r = 0; r < rows; ++r) {
         if (_tabular->row_separator(r) == RowSeparatorSingle) {
-            _rows->append(new HRule(fg, 1));
+            _rows->append(new HRule(fg, separator_thickness));
         } else {
             _rows->append(nil);
         }
@@ -255,7 +270,7 @@ void TabularView::rebuild () {
         _rows->append(group);
     }
     if (_tabular->row_separator(r) == RowSeparatorSingle) {
-        _rows->append(new HRule(fg, 1));
+        _rows->append(new HRule(fg, separator_thickness));
     } else {
         _rows->append(nil);
     }

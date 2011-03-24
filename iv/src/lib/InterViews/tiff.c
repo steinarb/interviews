@@ -26,339 +26,1021 @@
 #include <InterViews/raster.h>
 #include <InterViews/tiff.h>
 #include <TIFF/tiffio.h>
-#include <math.h>
+#include <stdlib.h>
+
+#define	howmany(x, y)	(((x)+((y)-1))/(y))
+
+typedef	unsigned char u_char;
+typedef	unsigned short u_short;
+typedef	unsigned int u_int;
+typedef	unsigned long u_long;
+typedef unsigned char RGBvalue;
+
+class TIFFRasterImpl;
+
+typedef void (TIFFRasterImpl::*tileContigRoutine)(
+    u_long*, const u_char*, const RGBvalue*, u_long, u_long, int, int
+);
+
+typedef void (TIFFRasterImpl::*tileSeparateRoutine)(
+    u_long*, const u_char*, const u_char*, const u_char*,
+    const RGBvalue*, u_long, u_long, int, int
+);
 
 class TIFFRasterImpl {
 private:
     friend class TIFFRaster;
 
-    TIFF* tif_;
-    unsigned short bytes_per_row_;
-    unsigned short bits_per_sample_;
-    unsigned short samples_per_pixel_;
-    unsigned short max_sample_value_;
-    unsigned long height_;
-    unsigned long width_;
-    unsigned int colormapsize_;
-    unsigned char* imagedata_;
-    double* dred_;
-    double* dgreen_;
-    double* dblue_;
+    TIFF*	tif_;
+    u_long*	raster_;		/* packed image data */
+    u_short	bitspersample_;
+    u_short	samplesperpixel_;
+    u_short	photometric_;
+    u_short	orientation_;
+    u_short*	redcmap_;		/* colormap for pallete images */
+    u_short*	greencmap_;
+    u_short*	bluecmap_;
+
+    u_long**	BWmap_;			/* B&W mapping table */
+    u_long**	PALmap_;		/* palette image mapping table */
 
     TIFFRasterImpl();
     ~TIFFRasterImpl();
 
-    Raster* load(const char* filename, boolean make_gray);
-    unsigned short identify();
-    boolean build_colormap(unsigned short tiftype);
-    boolean photometric(int tifftag);
-    boolean gray_map(unsigned short tiftype);
-    boolean load_pallette();
-    boolean is_8bitmap();
-    void scale_map(float max);
-    void color_to_gray();
-    boolean load_rgb(unsigned short planarconfig);
-    Raster* colormap_raster();
-    Raster* rgb_raster();
+    Raster* load(const char* filename);
+
+    boolean gt(u_long w, u_long h);
+    boolean gtTileContig(const RGBvalue* Map, u_long h, u_long w);
+    boolean gtTileSeparate(const RGBvalue* Map, u_long h, u_long w);
+    boolean gtStripContig(const RGBvalue* Map, u_long h, u_long w);
+    boolean gtStripSeparate(const RGBvalue* Map, u_long h, u_long w);
+
+    u_long setorientation(u_long h);
+    boolean makebwmap(RGBvalue* Map);
+    boolean makecmap(
+	const u_short* rmap, const u_short* gmap, const u_short* bmap
+    );
+
+    void put8bitcmaptile(
+	u_long* dest, const u_char* src, const RGBvalue* Map,
+	u_long w, u_long h, int fromskew, int toskew
+    );
+    void put4bitcmaptile(
+	u_long* dest, const u_char* src, const RGBvalue* Map,
+	u_long w, u_long h, int fromskew, int toskew
+    );
+    void put2bitcmaptile(
+	u_long* dest, const u_char* src, const RGBvalue* Map,
+	u_long w, u_long h, int fromskew, int toskew
+    );
+    void put1bitcmaptile(
+	u_long* dest, const u_char* src, const RGBvalue* Map,
+	u_long w, u_long h, int fromskew, int toskew
+    );
+    void put1bitbwtile(
+	u_long* dest, const u_char* src, const RGBvalue* Map,
+	u_long w, u_long h, int fromskew, int toskew
+    );
+    void put2bitbwtile(
+	u_long* dest, const u_char* src, const RGBvalue* Map,
+	u_long w, u_long h, int fromskew, int toskew
+    );
+    void put4bitbwtile(
+	u_long* dest, const u_char* src, const RGBvalue* Map,
+	u_long w, u_long h, int fromskew, int toskew
+    );
+    void putRGBgreytile(
+	u_long* dest, const u_char* src, const RGBvalue* Map,
+	u_long w, u_long h, int fromskew, int toskew
+    );
+    void putRGBcontig8bittile(
+	u_long* dest, const u_char* src, const RGBvalue* Map,
+	u_long w, u_long h, int fromskew, int toskew
+    );
+    void putRGBcontig16bittile(
+	u_long* dest, const u_char* src, const RGBvalue* Map,
+	u_long w, u_long h, int fromskew, int toskew
+    );
+    void putRGBseparate8bittile(
+	u_long* dest,
+	const u_char* red, const u_char* green, const u_char* blue,
+	const RGBvalue* Map, u_long w, u_long h, int fromskew, int toskew
+    );
+    void putRGBseparate16bittile(
+	u_long* dest,
+	const u_char* red, const u_char* green, const u_char* blue,
+	const RGBvalue* Map, u_long w, u_long h, int fromskew, int toskew
+    );
+
+    tileContigRoutine pickTileContigCase(const RGBvalue* Map);
+    tileSeparateRoutine pickTileSeparateCase(const RGBvalue* Map);
 };
 
-TIFFRasterImpl::TIFFRasterImpl() {
-    imagedata_ = nil;
-    dred_ = nil;
-    dgreen_ = nil;
-    dblue_ = nil;
-}
+TIFFRasterImpl::TIFFRasterImpl() {}
+TIFFRasterImpl::~TIFFRasterImpl() {}
 
-TIFFRasterImpl::~TIFFRasterImpl() {
-    delete imagedata_;
-    delete dred_;
-    delete dgreen_;
-    delete dblue_;
-}
-
-Raster* TIFFRaster::load(const char* filename, boolean make_gray) {
+Raster* TIFFRaster::load(const char* filename, boolean) {
     TIFFRasterImpl impl;
-    return impl.load(filename, make_gray);
+    return impl.load(filename);
 }
 
-Raster* TIFFRasterImpl::load(const char* filename, boolean make_gray) {
+Raster* TIFFRasterImpl::load(const char* filename) {
     tif_ = TIFFOpen(filename, "r");
     if (tif_ == nil) {
 	return nil;
     }
-
-    TIFFGetField(tif_, TIFFTAG_IMAGEWIDTH, &width_);
-    TIFFGetField(tif_, TIFFTAG_IMAGELENGTH, &height_);
-
-    if (!TIFFGetField(tif_, TIFFTAG_BITSPERSAMPLE, &bits_per_sample_)) {
-	bits_per_sample_ = 1;
+    if (!TIFFGetField(tif_, TIFFTAG_BITSPERSAMPLE, &bitspersample_)) {
+	bitspersample_ = 1;
     }
-    if (bits_per_sample_ != 8) {
+    switch (bitspersample_) {
+    case 1: case 2: case 4:
+    case 8: case 16:
+	break;
+    default:
 	TIFFClose(tif_);
 	return nil;
     }
-
-    if (!TIFFGetField(tif_, TIFFTAG_SAMPLESPERPIXEL, &samples_per_pixel_)) {
-        samples_per_pixel_ = 1;
+    if (!TIFFGetField(tif_, TIFFTAG_SAMPLESPERPIXEL, &samplesperpixel_)) {
+	samplesperpixel_ = 1;
     }
-
-    unsigned short planarconfig;
-    if (!TIFFGetField(tif_, TIFFTAG_PLANARCONFIG, &planarconfig)) {
-        planarconfig=PLANARCONFIG_CONTIG;
-    }
-
-    if (!TIFFGetField(tif_, TIFFTAG_MAXSAMPLEVALUE, &max_sample_value_)) {
-        max_sample_value_ = 0xffff;
-    }
-    bytes_per_row_ = TIFFScanlineSize(tif_);
-    colormapsize_ = 1 << bits_per_sample_;
-    
-    unsigned short tifinterpretation = identify();
-    if (!build_colormap(tifinterpretation)) {
+    switch (samplesperpixel_) {
+    case 1: case 3: case 4:
+	break;
+    default:
 	TIFFClose(tif_);
 	return nil;
     }
-
-    Raster* r = nil;
-    switch (bits_per_sample_ * samples_per_pixel_) {
-    case 8:
-        if (load_pallette()) {
-	    if (make_gray) {
-		color_to_gray();
-	    }
-	    r = colormap_raster();
+    u_long width;
+    TIFFGetField(tif_, TIFFTAG_IMAGEWIDTH, &width);
+    u_long height;
+    TIFFGetField(tif_, TIFFTAG_IMAGELENGTH, &height);
+    if (!TIFFGetField(tif_, TIFFTAG_PHOTOMETRIC, &photometric_)) {
+	switch (samplesperpixel_) {
+	case 1:
+	    photometric_ = PHOTOMETRIC_MINISBLACK;
+	    break;
+	case 3: case 4:
+	    photometric_ = PHOTOMETRIC_RGB;
+	    break;
+	default:
+	    TIFFClose(tif_);
+	    return nil;
 	}
-        break;
-    case 24:
-    case 32:
-        if (load_rgb(planarconfig)) {
-	    r = rgb_raster();
-        }
-        break;
+    }
+    Raster* r = nil;
+    raster_ = new u_long[width * height];
+    BWmap_ = nil;
+    PALmap_ = nil;
+    if (raster_ != nil && gt(width, height)) {
+	/* create raster_ from packed image data */
+	r = new Raster(width, height);
+	for (long i = height - 1; i >= 0; i--) {
+	    u_char* c = (u_char*) (raster_ + i*width);
+	    /* should use a lookup table here */
+	    for (long j = 0; j < width; j++) {
+		r->poke(
+		    j, i,
+		    ColorIntensity(float(c[3]) / float(0xff)),
+		    ColorIntensity(float(c[2]) / float(0xff)),
+		    ColorIntensity(float(c[1]) / float(0xff)),
+		    1.0
+		);
+		c += sizeof (u_long);
+	    }
+	}
     }
     TIFFClose(tif_);
+    delete raster_;
+    delete BWmap_;
+    delete PALmap_;
     return r;
 }
 
-unsigned short TIFFRasterImpl::identify() {
-    unsigned short s;
-    unsigned short* redmap, * greenmap, * bluemap;
-    
-    if (!TIFFGetField(tif_, TIFFTAG_PHOTOMETRIC, &s)) {
-        if (samples_per_pixel_ != 1) {
-            s = PHOTOMETRIC_RGB;
-        } else if (bits_per_sample_ == 1) {
-            s = PHOTOMETRIC_MINISBLACK;
-    	} else if (
-	    TIFFGetField(tif_, TIFFTAG_COLORMAP, &redmap, &greenmap, &bluemap)
-	) {
-            s = PHOTOMETRIC_PALETTE;
-        } else {
-            s = PHOTOMETRIC_MINISBLACK;
-        }
+static int checkcmap(
+    int n, const u_short* r, const u_short* g, const u_short* b
+) {
+    while (n-- > 0) {
+	if (*r++ >= 256 || *g++ >= 256 || *b++ >= 256) {
+	    return 16;
+	}
     }
-    return s;
+    return 8;
 }
 
-boolean TIFFRasterImpl::build_colormap(unsigned short tiftype) {
-    dred_ = new double[colormapsize_];
-    dgreen_ = new double[colormapsize_];
-    dblue_ = new double[colormapsize_];
-    switch (tiftype) {
-    case PHOTOMETRIC_PALETTE:
-        if (!photometric(TIFFTAG_COLORMAP)) return false;
-        break;
+boolean TIFFRasterImpl::gt(u_long w, u_long h) {
+    u_short minsamplevalue;
+    u_short maxsamplevalue;
+    u_short planarconfig;
+    RGBvalue* Map = nil;
+
+    if (!TIFFGetField(tif_, TIFFTAG_MINSAMPLEVALUE, &minsamplevalue)) {
+	minsamplevalue = 0;
+    }
+    if (!TIFFGetField(tif_, TIFFTAG_MAXSAMPLEVALUE, &maxsamplevalue)) {
+	maxsamplevalue = (1<<bitspersample_)-1;
+    }
+    switch (photometric_) {
     case PHOTOMETRIC_RGB:
-        // if (!photometric(TIFFTAG_COLORRESPONSECURVE)) return false;
-        break;
-    case PHOTOMETRIC_MINISWHITE:
-        if (!gray_map(PHOTOMETRIC_MINISWHITE)) return false;
-        break;
+	if (minsamplevalue == 0 && maxsamplevalue == 255) {
+	    break;
+	}
+	/* fall thru... */
     case PHOTOMETRIC_MINISBLACK:
-        if (!gray_map(PHOTOMETRIC_MINISBLACK)) return false;
-        break;
+    case PHOTOMETRIC_MINISWHITE: {
+	register int x, range;
+
+	range = maxsamplevalue - minsamplevalue;
+	Map = new RGBvalue[range + 1];
+	if (Map == nil) {
+	    TIFFError(
+		TIFFFileName(tif_),
+		"No space for photometric conversion table"
+	    );
+	    return false;
+	}
+	if (photometric_ == PHOTOMETRIC_MINISWHITE) {
+	    for (x = 0; x <= range; x++) {
+		Map[x] = ((range - x) * 255) / range;
+	    }
+	} else {
+	    for (x = 0; x <= range; x++) {
+		Map[x] = (x * 255) / range;
+	    }
+	}
+	if (photometric_ != PHOTOMETRIC_RGB && bitspersample_ != 8) {
+	    /*
+	     * Use photometric mapping table to construct
+	     * unpacking tables for samples < 8 bits.
+	     */
+	    if (!makebwmap(Map)) {
+		return false;
+	    }
+	    delete Map;			/* no longer need Map, free it */
+	    Map = nil;
+	}
+	break;
+    }
+    case PHOTOMETRIC_PALETTE:
+	if (!TIFFGetField(
+	    tif_, TIFFTAG_COLORMAP, &redcmap_, &greencmap_, &bluecmap_)
+	) {
+	    TIFFError(TIFFFileName(tif_), "Missing required \"Colormap\" tag");
+	    return (false);
+	}
+	/*
+	 * Convert 16-bit colormap to 8-bit (unless it looks
+	 * like an old-style 8-bit colormap).
+	 */
+	if (
+	    checkcmap(
+		1 << bitspersample_, redcmap_, greencmap_, bluecmap_
+	    ) == 16
+	) {
+	    int i;
+	    for (i = (1 << bitspersample_) - 1; i > 0; i--) {
+#define	CVT(x)		(((x) * 255) / ((1L<<16)-1))
+		redcmap_[i] = (u_short) CVT(redcmap_[i]);
+		greencmap_[i] = (u_short) CVT(greencmap_[i]);
+		bluecmap_[i] = (u_short) CVT(bluecmap_[i]);
+	    }
+	}
+	if (bitspersample_ <= 8) {
+	    /*
+	     * Use mapping table and colormap to construct
+	     * unpacking tables for samples < 8 bits.
+	     */
+	    if (!makecmap(redcmap_, greencmap_, bluecmap_)) {
+		return false;
+	    }
+	}
+	break;
+    }
+    TIFFGetField(tif_, TIFFTAG_PLANARCONFIG, &planarconfig);
+    boolean e;
+    if (planarconfig == PLANARCONFIG_SEPARATE && samplesperpixel_ > 1) {
+	e = TIFFIsTiled(tif_) ?
+	    gtTileSeparate(Map, h, w) : gtStripSeparate(Map, h, w);
+    } else {
+	e = TIFFIsTiled(tif_) ? 
+	    gtTileContig(Map, h, w) : gtStripContig(Map, h, w);
+    }
+    delete Map;
+    return e;
+}
+
+u_long TIFFRasterImpl::setorientation(u_long h) {
+    u_long y;
+
+    if (!TIFFGetField(tif_, TIFFTAG_ORIENTATION, &orientation_)) {
+	orientation_ = ORIENTATION_TOPLEFT;
+    }
+    switch (orientation_) {
+    case ORIENTATION_BOTRIGHT:
+    case ORIENTATION_RIGHTBOT:	/* XXX */
+    case ORIENTATION_LEFTBOT:	/* XXX */
+	TIFFWarning(TIFFFileName(tif_), "using bottom-left orientation");
+	orientation_ = ORIENTATION_BOTLEFT;
+	/* fall thru... */
+    case ORIENTATION_BOTLEFT:
+	y = 0;
+	break;
+    case ORIENTATION_TOPRIGHT:
+    case ORIENTATION_RIGHTTOP:	/* XXX */
+    case ORIENTATION_LEFTTOP:	/* XXX */
     default:
-        return false;
+	TIFFWarning(TIFFFileName(tif_), "using top-left orientation");
+	orientation_ = ORIENTATION_TOPLEFT;
+	/* fall thru... */
+    case ORIENTATION_TOPLEFT:
+	y = h-1;
+	break;
+    }
+    return y;
+}
+
+/*
+ * Get an tile-organized image that has
+ *    PlanarConfiguration contiguous if SamplesPerPixel > 1
+ * or
+ *    SamplesPerPixel == 1
+ */    
+boolean TIFFRasterImpl::gtTileContig(const RGBvalue* Map, u_long h, u_long w) {
+    u_char* buf = new u_char[TIFFTileSize(tif_)];
+    if (buf == nil) {
+	TIFFError(TIFFFileName(tif_), "No space for tile buffer");
+	return false;
+    }
+    tileContigRoutine put = pickTileContigCase(Map);
+    u_long tw;
+    TIFFGetField(tif_, TIFFTAG_TILEWIDTH, &tw);
+    u_long th;
+    TIFFGetField(tif_, TIFFTAG_TILELENGTH, &th);
+    u_long y = setorientation(h);
+    int toskew = (int)(orientation_ == ORIENTATION_TOPLEFT ? -tw+-w : -tw+w);
+    for (u_long row = 0; row < h; row += th) {
+	u_long nrow = (row + th > h ? h - row : th);
+	for (u_long col = 0; col < w; col += tw) {
+	    if (TIFFReadTile(tif_, buf, col, row, 0, 0) < 0) {
+		break;
+	    }
+	    if (col + tw > w) {
+		/*
+		 * Tile is clipped horizontally.  Calculate
+		 * visible portion and skewing factors.
+		 */
+		u_long npix = w - col;
+		int fromskew = (int)(tw - npix);
+		(this->*put)(
+		    raster_ + y*w + col, buf, Map,
+		    npix, nrow, fromskew, toskew + fromskew
+		);
+	    } else
+		(this->*put)(
+		    raster_ + y*w + col, buf, Map, tw, nrow, 0, toskew
+		);
+	}
+	y += (orientation_ == ORIENTATION_TOPLEFT ? -nrow : nrow);
+    }
+    delete buf;
+    return true;
+}
+
+/*
+ * Get an tile-organized image that has
+ *     SamplesPerPixel > 1
+ *     PlanarConfiguration separated
+ * We assume that all such images are RGB.
+ */    
+boolean TIFFRasterImpl::gtTileSeparate(
+    const RGBvalue* Map, u_long h, u_long w
+) {
+    u_long tilesize = TIFFTileSize(tif_);
+    u_char* buf = new u_char[3*tilesize];
+    if (buf == nil) {
+	TIFFError(TIFFFileName(tif_), "No space for tile buffer");
+	return false;
+    }
+    u_char* r = buf;
+    u_char* g = r + tilesize;
+    u_char* b = g + tilesize;
+    tileSeparateRoutine put = pickTileSeparateCase(Map);
+    u_long tw;
+    TIFFGetField(tif_, TIFFTAG_TILEWIDTH, &tw);
+    u_long th;
+    TIFFGetField(tif_, TIFFTAG_TILELENGTH, &th);
+    u_long y = setorientation(h);
+    int toskew = (int)(orientation_ == ORIENTATION_TOPLEFT ? -tw+-w : -tw+w);
+    for (u_long row = 0; row < h; row += th) {
+	u_long nrow = (row + th > h ? h - row : th);
+	for (u_long col = 0; col < w; col += tw) {
+	    if (TIFFReadTile(tif_, r, col, row, 0, 0) < 0) {
+		break;
+	    }
+	    if (TIFFReadTile(tif_, g, col, row, 0, 1) < 0) {
+		break;
+	    }
+	    if (TIFFReadTile(tif_, b, col, row, 0, 2) < 0) {
+		break;
+	    }
+	    if (col + tw > w) {
+		/*
+		 * Tile is clipped horizontally.  Calculate
+		 * visible portion and skewing factors.
+		 */
+		u_long npix = w - col;
+		int fromskew = (int)(tw - npix);
+		(this->*put)(
+		    raster_ + y*w + col, r, g, b, Map,
+		    npix, nrow, fromskew, toskew + fromskew
+		);
+	    } else
+		(this->*put)(
+		    raster_ + y*w + col, r, g, b, Map,
+		    tw, nrow, 0, toskew
+		);
+	}
+	y += (orientation_ == ORIENTATION_TOPLEFT ? -nrow : nrow);
+    }
+    delete buf;
+    return true;
+}
+
+/*
+ * Get a strip-organized image that has
+ *    PlanarConfiguration contiguous if SamplesPerPixel > 1
+ * or
+ *    SamplesPerPixel == 1
+ */    
+boolean TIFFRasterImpl::gtStripContig(
+    const RGBvalue* Map, u_long h, u_long w
+) {
+    u_char* buf = new u_char[TIFFStripSize(tif_)];
+    if (buf == nil) {
+	TIFFError(TIFFFileName(tif_), "No space for strip buffer");
+	return (false);
+    }
+    tileContigRoutine put = pickTileContigCase(Map);
+    u_long y = setorientation(h);
+    int toskew = (int)(orientation_ == ORIENTATION_TOPLEFT ? -w + -w : -w + w);
+    u_long rowsperstrip = (u_long) -1L;
+    TIFFGetField(tif_, TIFFTAG_ROWSPERSTRIP, &rowsperstrip);
+    u_long imagewidth;
+    TIFFGetField(tif_, TIFFTAG_IMAGEWIDTH, &imagewidth);
+    int scanline = TIFFScanlineSize(tif_);
+    int fromskew = (int)(w < imagewidth ? imagewidth - w : 0);
+    for (u_long row = 0; row < h; row += rowsperstrip) {
+	u_int nrow = u_int(row + rowsperstrip > h ? h - row : rowsperstrip);
+	if (TIFFReadEncodedStrip(
+	    tif_, TIFFComputeStrip(tif_, row, 0), buf, nrow*scanline) < 0
+	) {
+	    break;
+	}
+	(this->*put)(raster_ + y*w, buf, Map, w, nrow, fromskew, toskew);
+	y += (orientation_ == ORIENTATION_TOPLEFT ? -nrow : nrow);
+    }
+    delete buf;
+    return true;
+}
+
+/*
+ * Get a strip-organized image with
+ *     SamplesPerPixel > 1
+ *     PlanarConfiguration separated
+ * We assume that all such images are RGB.
+ */
+boolean TIFFRasterImpl::gtStripSeparate(
+    const RGBvalue* Map, u_long h, u_long w
+) {
+    u_long stripsize = TIFFStripSize(tif_);
+    u_char* buf = new u_char[3*stripsize];
+    u_char* r = buf;
+    u_char* g = r + stripsize;
+    u_char* b = g + stripsize;
+    tileSeparateRoutine put = pickTileSeparateCase(Map);
+    u_long y = setorientation(h);
+    int toskew = (int)(orientation_ == ORIENTATION_TOPLEFT ? -w + -w : -w + w);
+    u_long rowsperstrip = (u_long) -1L;
+    TIFFGetField(tif_, TIFFTAG_ROWSPERSTRIP, &rowsperstrip);
+    u_long imagewidth;
+    TIFFGetField(tif_, TIFFTAG_IMAGEWIDTH, &imagewidth);
+    int scanline = TIFFScanlineSize(tif_);
+    int fromskew = (int)(w < imagewidth ? imagewidth - w : 0);
+    for (u_long row = 0; row < h; row += rowsperstrip) {
+	u_int nrow = u_int(row + rowsperstrip > h ? h - row : rowsperstrip);
+	if (TIFFReadEncodedStrip(
+	    tif_, TIFFComputeStrip(tif_, row, 0), r, nrow*scanline) < 0
+	) {
+	    break;
+	}
+	if (TIFFReadEncodedStrip(
+	    tif_, TIFFComputeStrip(tif_, row, 1), g, nrow*scanline) < 0
+	) {
+	    break;
+	}
+	if (TIFFReadEncodedStrip(
+	    tif_, TIFFComputeStrip(tif_, row, 2), b, nrow*scanline) < 0
+	) {
+	    break;
+	}
+	(this->*put)(raster_ + y*w, r, g, b, Map, w, nrow, fromskew, toskew);
+	y += (orientation_ == ORIENTATION_TOPLEFT ? -nrow : nrow);
+    }
+    delete buf;
+    return true;
+}
+
+#define	PACK(r,g,b)	((u_long)(r))|(((u_long)(g))<<8)|(((u_long)(b))<<16)
+
+/*
+ * Greyscale images with less than 8 bits/sample are handled
+ * with a table to avoid lots of shifts and masks.  The table
+ * is setup so that put*bwtile (below) can retrieve 8/bitspersample_
+ * pixel values simply by indexing into the table with one
+ * number.
+ */
+boolean TIFFRasterImpl::makebwmap(RGBvalue* Map) {
+    register int i;
+    int nsamples = 8 / bitspersample_;
+
+    BWmap_ = (u_long **)malloc(
+	256*sizeof (u_long *)+(256*nsamples*sizeof(u_long))
+    );
+    if (BWmap_ == nil) {
+	TIFFError(TIFFFileName(tif_), "No space for B&W mapping table");
+	return false;
+    }
+    register u_long* p = (u_long*)(BWmap_ + 256);
+    for (i = 0; i < 256; i++) {
+	BWmap_[i] = p;
+	switch (bitspersample_) {
+	    register RGBvalue c;
+#define	GREY(x)	c = Map[x]; *p++ = PACK(c,c,c);
+	case 1:
+	    GREY(i>>7);
+	    GREY((i>>6)&1);
+	    GREY((i>>5)&1);
+	    GREY((i>>4)&1);
+	    GREY((i>>3)&1);
+	    GREY((i>>2)&1);
+	    GREY((i>>1)&1);
+	    GREY(i&1);
+	    break;
+	case 2:
+	    GREY(i>>6);
+	    GREY((i>>4)&3);
+	    GREY((i>>2)&3);
+	    GREY(i&3);
+	    break;
+	case 4:
+	    GREY(i>>4);
+	    GREY(i&0xf);
+	    break;
+	}
+#undef	GREY
     }
     return true;
 }
 
-boolean TIFFRasterImpl::load_pallette() {
-    unsigned char* c = new unsigned char[height_ * bytes_per_row_];
-    imagedata_ = c;
-    for (unsigned int j = 0; j < height_; j++) {
-        if (TIFFReadScanline(tif_, c, j, 0) < 0) {
-            return false;
-        }
-        c += bytes_per_row_;
+/*
+ * Palette images with <= 8 bits/sample are handled
+ * with a table to avoid lots of shifts and masks.  The table
+ * is setup so that put*cmaptile (below) can retrieve 8/bitspersample_
+ * pixel values simply by indexing into the table with one
+ * number.
+ */
+boolean TIFFRasterImpl::makecmap(
+    const u_short* rmap, const u_short* gmap, const u_short* bmap
+) {
+    register int i;
+    int nsamples = 8 / bitspersample_;
+    register u_long *p;
+
+    PALmap_ = (u_long **)malloc(
+	256*sizeof (u_long *)+(256*nsamples*sizeof(u_long))
+    );
+    if (PALmap_ == nil) {
+	TIFFError(TIFFFileName(tif_), "No space for Palette mapping table");
+	return (false);
     }
-    return true;
+    p = (u_long *)(PALmap_ + 256);
+    for (i = 0; i < 256; i++) {
+	PALmap_[i] = p;
+#define	CMAP(x)	\
+c = x; *p++ = PACK(rmap[c]&0xff, gmap[c]&0xff, bmap[c]&0xff);
+	switch (bitspersample_) {
+	    register RGBvalue c;
+	case 1:
+	    CMAP(i>>7);
+	    CMAP((i>>6)&1);
+	    CMAP((i>>5)&1);
+	    CMAP((i>>4)&1);
+	    CMAP((i>>3)&1);
+	    CMAP((i>>2)&1);
+	    CMAP((i>>1)&1);
+	    CMAP(i&1);
+	    break;
+	case 2:
+	    CMAP(i>>6);
+	    CMAP((i>>4)&3);
+	    CMAP((i>>2)&3);
+	    CMAP(i&3);
+	    break;
+	case 4:
+	    CMAP(i>>4);
+	    CMAP(i&0xf);
+	    break;
+	case 8:
+	    CMAP(i);
+	    break;
+	}
+#undef CMAP
+    }
+    return (true);
 }
 
-boolean TIFFRasterImpl::load_rgb(unsigned short planarconfig) {
-    unsigned char* line =
-	new unsigned char[height_ * width_ * samples_per_pixel_];
-    imagedata_ = line;
-    if (planarconfig == PLANARCONFIG_CONTIG) {
-        for (unsigned int i = 0; i < height_; i++) {
-            if (TIFFReadScanline(tif_, line, i, 0) < 0) {
-                return false;
-            } 
-            line += bytes_per_row_;
-        }
+/*
+ * The following routines move decoded data returned
+ * from the TIFF library into rasters that are suitable
+ * for passing to lrecwrite.  They do the necessary
+ * conversions based on whether the drawing mode is RGB
+ * colormap and whether or not there is a mapping table.
+ *
+ * The routines have been created according to the most
+ * important cases and optimized.  pickTileContigCase and
+ * pickTileSeparateCase analyze the parameters and select
+ * the appropriate "put" routine to use.
+ */
+#define	REPEAT8(op)	REPEAT4(op); REPEAT4(op)
+#define	REPEAT4(op)	REPEAT2(op); REPEAT2(op)
+#define	REPEAT2(op)	op; op
+#define	CASE8(x,op)				\
+	switch (x) {				\
+	case 7: op; case 6: op; case 5: op;	\
+	case 4: op; case 3: op; case 2: op;	\
+	case 1: op;				\
+	}
+#define	CASE4(x,op)	switch (x) { case 3: op; case 2: op; case 1: op; }
+
+#define	UNROLL8(w, op1, op2) {		\
+	u_long x;			\
+	for (x = w; x >= 8; x -= 8) {	\
+	    op1;			\
+	    REPEAT8(op2);		\
+	}				\
+	if (x > 0) {			\
+	    op1;			\
+	    CASE8(x,op2);		\
+	}				\
+}
+#define	UNROLL4(w, op1, op2) {		\
+	u_long x;			\
+	for (x = w; x >= 4; x -= 4) {	\
+	    op1;			\
+	    REPEAT4(op2);		\
+	}				\
+	if (x > 0) {			\
+	    op1;			\
+	    CASE4(x,op2);		\
+	}				\
+}
+#define	UNROLL2(w, op1, op2) {		\
+	u_long x;			\
+	for (x = w; x >= 2; x -= 2) {	\
+	    op1;			\
+	    REPEAT2(op2);		\
+	}				\
+	if (x) {			\
+	    op1;			\
+	    op2;			\
+	}				\
+}
+			
+#define	SKEW(r,g,b,skew)	{ r += skew; g += skew; b += skew; }
+
+/*
+ * 8-bit palette => RGB
+ */
+void TIFFRasterImpl::put8bitcmaptile(
+    u_long* cp,
+    const u_char* pp,
+    const RGBvalue*,
+    u_long w, u_long h,
+    int fromskew, int toskew
+) {
+    while (h-- > 0) {
+	UNROLL8(w,, *cp++ = PALmap_[*pp++][0]);
+	cp += toskew;
+	pp += fromskew;
+    }
+}
+
+/*
+ * 4-bit palette => RGB
+ */
+void TIFFRasterImpl::put4bitcmaptile(
+    u_long* cp,
+    const u_char* pp,
+    const RGBvalue*,
+    u_long w, u_long h,
+    int fromskew, int toskew
+) {
+    u_long *bw;
+
+    fromskew /= 2;
+    while (h-- > 0) {
+	UNROLL2(w, bw = PALmap_[*pp++], *cp++ = *bw++);
+	cp += toskew;
+	pp += fromskew;
+    }
+}
+
+/*
+ * 2-bit palette => RGB
+ */
+void TIFFRasterImpl::put2bitcmaptile(
+    u_long* cp,
+    const u_char* pp,
+    const RGBvalue*,
+    u_long w, u_long h,
+    int fromskew, int toskew
+) {
+    u_long *bw;
+
+    fromskew /= 4;
+    while (h-- > 0) {
+	UNROLL4(w, bw = PALmap_[*pp++], *cp++ = *bw++);
+	cp += toskew;
+	pp += fromskew;
+    }
+}
+
+/*
+ * 1-bit palette => RGB
+ */
+void TIFFRasterImpl::put1bitcmaptile(
+    u_long* cp,
+    const u_char* pp,
+    const RGBvalue*,
+    u_long w, u_long h,
+    int fromskew, int toskew
+) {
+    u_long *bw;
+
+    fromskew /= 8;
+    while (h-- > 0) {
+	UNROLL8(w, bw = PALmap_[*pp++], *cp++ = *bw++);
+	cp += toskew;
+	pp += fromskew;
+    }
+}
+
+/*
+ * 1-bit bilevel => RGB
+ */
+void TIFFRasterImpl::put1bitbwtile(
+    u_long* cp,
+    const u_char* pp,
+    const RGBvalue*,
+    u_long w, u_long h,
+    int fromskew, int toskew
+) {
+    u_long* bw;
+
+    fromskew /= 8;
+    while (h-- > 0) {
+	UNROLL8(w, bw = BWmap_[*pp++], *cp++ = *bw++);
+	cp += toskew;
+	pp += fromskew;
+    }
+}
+
+/*
+ * 2-bit greyscale => RGB
+ */
+void TIFFRasterImpl::put2bitbwtile(
+    u_long* cp,
+    const u_char* pp,
+    const RGBvalue*,
+    u_long w, u_long h,
+    int fromskew, int toskew
+) {
+    u_long* bw;
+
+    fromskew /= 4;
+    while (h-- > 0) {
+	UNROLL4(w, bw = BWmap_[*pp++], *cp++ = *bw++);
+	cp += toskew;
+	pp += fromskew;
+    }
+}
+
+/*
+ * 4-bit greyscale => RGB
+ */
+void TIFFRasterImpl::put4bitbwtile(
+    u_long* cp,
+    const u_char* pp,
+    const RGBvalue*,
+    u_long w, u_long h,
+    int fromskew, int toskew
+) {
+    u_long* bw;
+
+    fromskew /= 2;
+    while (h-- > 0) {
+	UNROLL2(w, bw = BWmap_[*pp++], *cp++ = *bw++);
+	cp += toskew;
+	pp += fromskew;
+    }
+}
+
+/*
+ * 8-bit packed samples => RGB
+ */
+void TIFFRasterImpl::putRGBcontig8bittile(
+    u_long* cp,
+    const u_char* pp,
+    const RGBvalue* Map,
+    u_long w, u_long h,
+    int fromskew, int toskew
+) {
+    fromskew *= samplesperpixel_;
+    if (Map) {
+	while (h-- > 0) {
+	    u_long x;
+	    for (x = w; x-- > 0;) {
+		*cp++ = PACK(Map[pp[0]], Map[pp[1]], Map[pp[2]]);
+		pp += samplesperpixel_;
+	    }
+	    pp += fromskew;
+	    cp += toskew;
+	}
     } else {
-        unsigned char *ptr, *last;
-        unsigned char *scanline = new unsigned char[bytes_per_row_];
-        
-        for (unsigned int j = 0; j < 3; j++) {
-            for (unsigned int i = 0; i < height_; i++) {
-                if (TIFFReadScanline(tif_, scanline, i, j) < 0) {
-                    delete scanline;
-                    return false;
-                }
-                ptr = scanline;
-                line = imagedata_ + (samples_per_pixel_ * width_ * i) + j;
-                last = line + samples_per_pixel_ * width_;
-                while (line < last) {
-                    *line = *ptr++;
-                    line += samples_per_pixel_;
-                }
-            }
-        }
-        delete scanline;
-    }
-    return true;
-}
-
-Raster* TIFFRasterImpl::colormap_raster() {
-    Raster* r = new Raster(width_, height_);
-    unsigned char *c = imagedata_;
-    for (long i = height_ - 1; i >= 0; i--) {
-	for (long j = 0; j < width_; j++) {
-	    r->poke(
-		j, i,
-		ColorIntensity(dred_[*c] / double(0xffff)),
-		ColorIntensity(dgreen_[*c] / double(0xffff)),
-		ColorIntensity(dblue_[*c] / double(0xffff)),
-		1.0
-	    );
-	    c++;
+	while (h-- > 0) {
+	    UNROLL8(w,,
+		*cp++ = PACK(pp[0], pp[1], pp[2]);
+		pp += samplesperpixel_);
+	    cp += toskew;
+	    pp += fromskew;
 	}
     }
-    return r;
 }
 
-Raster* TIFFRasterImpl::rgb_raster() {
-    Raster* r = new Raster(width_, height_);
-    unsigned char *c = imagedata_;
-    for (long i = height_ - 1; i >= 0; i--) {
-	for (long j = 0; j < width_; j++) {
-	    r->poke(
-		j, i,
-		ColorIntensity(float(*c) / float(0xff)),
-		ColorIntensity(float(*(c+1)) / float(0xff)),
-		ColorIntensity(float(*(c+2)) / float(0xff)),
-		1.0
-	    );
-	    c += samples_per_pixel_;
+/*
+ * 16-bit packed samples => RGB
+ */
+void TIFFRasterImpl::putRGBcontig16bittile(
+    u_long* cp,
+    const u_char* pp,
+    const RGBvalue* Map,
+    u_long w, u_long h,
+    int fromskew, int toskew
+) {
+    u_long x;
+
+    fromskew *= samplesperpixel_;
+    if (Map) {
+	while (h-- > 0) {
+	    for (x = w; x-- > 0;) {
+		*cp++ = PACK(Map[pp[0]], Map[pp[1]], Map[pp[2]]);
+		pp += samplesperpixel_;
+	    }
+	    cp += toskew;
+	    pp += fromskew;
 	}
-    }
-    return r;
-}
-
-void TIFFRasterImpl::color_to_gray() {
-    double temp;
-    
-    for (int i = 0; i < colormapsize_ ; i++){
-    	temp = .299 * dred_[i] + .587 * dgreen_[i] + .114 * dblue_[i];
-        dred_[i] = dgreen_[i] = dblue_[i] = temp;
-    }
-}
-
-static float Scale(float x, float y) {
-    return (x * 0xffff / y);
-}
-
-static int Round(float x) {
-    return ((int)(x + .5));
-}
-
-boolean TIFFRasterImpl::is_8bitmap() {
-    for (int i = 0; i < colormapsize_; i++) {
-        if (dred_[i] > 255 || dgreen_[i] > 255 || dblue_[i] > 255) {
-            return false;
-	}
-    }
-    return true;
-}
-
-void TIFFRasterImpl::scale_map(float max) {
-    for (int i = 0; i < colormapsize_; i++) {
-	dred_[i] = (double) Scale(dred_[i], max);
-	dgreen_[i] = (double) Scale(dgreen_[i], max);
-	dblue_[i] = (double) Scale(dblue_[i], max);
-    }
-}
-
-boolean TIFFRasterImpl::photometric(int tifftag) {
-    unsigned short* redmap, * greenmap, * bluemap;
-    
-    if (!TIFFGetField(tif_, tifftag, &redmap, &greenmap, &bluemap)) {
-        for (int i = 0; i < colormapsize_; i++) {
-            dred_[i] = dblue_[i] = dgreen_[i] =
-                (double) Scale(i, colormapsize_ - 1);
-        }
     } else {
-	for (int i = 0; i < colormapsize_; i++) {
-	    dred_[i] = (double) redmap[i];
-	    dgreen_[i] = (double) greenmap[i];
-	    dblue_[i] = (double) bluemap[i];
-	}
-	if (max_sample_value_ <= 0xff || is_8bitmap()) {
-	    scale_map(0xff);
+	while (h-- > 0) {
+	    for (x = w; x-- > 0;) {
+		*cp++ = PACK(pp[0], pp[1], pp[2]);
+		pp += samplesperpixel_;
+	    }
+	    cp += toskew;
+	    pp += fromskew;
 	}
     }
-    return true;
 }
 
-boolean TIFFRasterImpl::gray_map(unsigned short tiftype) {
-    double unitmap;
-    unsigned short grayresponseunit, *graymap = NULL;
-    
-    if (!TIFFGetField(tif_, TIFFTAG_GRAYRESPONSECURVE, &graymap)) {
-        if (tiftype == PHOTOMETRIC_MINISBLACK) {
-            for (int i = 0; i < colormapsize_; i++) {
-                dred_[i] = dgreen_[i] = dblue_[i] =
-                    (i % 4 == 0) ?
-			(unsigned short)Scale(i, colormapsize_ - 1) :
-			dred_[i - 1];
-            }
-        } else {
-            for (int i = 0; i < colormapsize_; i++) {
-                dred_[i] = dgreen_[i] = dblue_[i] = (i % 4==0) ?
-                    Scale(colormapsize_ - 1 - i, colormapsize_ - 1) :
-		    dred_[i - 1];
-            }
-        }
-    } else {
-        if (!TIFFGetField(tif_, TIFFTAG_GRAYRESPONSEUNIT, &grayresponseunit)) {
-            grayresponseunit = 2;
+/*
+ * 8-bit unpacked samples => RGB
+ */
+void TIFFRasterImpl::putRGBseparate8bittile(
+    u_long* cp,
+    const u_char* r, const u_char* g, const u_char* b,
+    const RGBvalue* Map,
+    u_long w, u_long h,
+    int fromskew, int toskew
+)
+{
+    if (Map) {
+	while (h-- > 0) {
+	    u_long x;
+	    for (x = w; x > 0; x--)
+		*cp++ = PACK(Map[*r++], Map[*g++], Map[*b++]);
+	    SKEW(r, g, b, fromskew);
+	    cp += toskew;
 	}
-        unitmap = (-1) * (pow(10, grayresponseunit));
-        if (tiftype == PHOTOMETRIC_MINISBLACK) {
-            dred_[0] = dgreen_[0] = dblue_[0] = 0;
-            for (int i = 1; i < colormapsize_; i++) {
-                dred_[i] = dgreen_[i] = dblue_[i] =
-                    (0xffff * pow(10.0, (double) graymap[i]/unitmap));
-            }
-        } else {
-            int i = colormapsize_ - 1;
-            dred_[i] = dgreen_[i] = dblue_[i] = 0;
-            for (i = 0; i < colormapsize_ - 1; i++) {
-                dred_[i] = dgreen_[i] = dblue_[i]=
-                    (0xffff * (1-pow(10.0, (double) graymap[i]/unitmap)));
-            }
-        }
+    } else {
+	while (h-- > 0) {
+	    UNROLL8(w,, *cp++ = PACK(*r++, *g++, *b++));
+	    SKEW(r, g, b, fromskew);
+	    cp += toskew;
+	}
     }
-    return true;
+}
+
+/*
+ * 16-bit unpacked samples => RGB
+ */
+void TIFFRasterImpl::putRGBseparate16bittile(
+    u_long* cp,
+    const u_char* r, const u_char* g, const u_char* b,
+    const RGBvalue* Map,
+    u_long w, u_long h,
+    int fromskew, int toskew
+) {
+    u_long x;
+
+    if (Map) {
+	while (h-- > 0) {
+	    for (x = w; x > 0; x--)
+		*cp++ = PACK(Map[*r++], Map[*g++], Map[*b++]);
+	    SKEW(r, g, b, fromskew);
+	    cp += toskew;
+	}
+    } else {
+	while (h-- > 0) {
+	    for (x = 0; x < w; x++)
+		*cp++ = PACK(*r++, *g++, *b++);
+	    SKEW(r, g, b, fromskew);
+	    cp += toskew;
+	}
+    }
+}
+
+/*
+ * 8-bit greyscale => RGB
+ */
+void TIFFRasterImpl::putRGBgreytile(
+    u_long* cp,
+    const u_char* pp,
+    const RGBvalue* Map,
+    u_long w, u_long h,
+    int fromskew, int toskew
+) {
+    while (h-- > 0) {
+	u_long x;
+	for (x = w; x-- > 0;) {
+	    RGBvalue c = Map[*pp++];
+	    *cp++ = PACK(c,c,c);
+	}
+	cp += toskew;
+	pp += fromskew;
+    }
+}
+
+/*
+ * Select the appropriate conversion routine for packed data.
+ */
+tileContigRoutine TIFFRasterImpl::pickTileContigCase(const RGBvalue*) {
+    tileContigRoutine put = 0;
+    switch (photometric_) {
+    case PHOTOMETRIC_RGB:
+	if (bitspersample_ == 8) {
+	    put = &TIFFRasterImpl::putRGBcontig8bittile;
+	} else {
+	    put = &TIFFRasterImpl::putRGBcontig16bittile;
+	}
+	break;
+    case PHOTOMETRIC_PALETTE:
+	switch (bitspersample_) {
+	case 8:	put = &TIFFRasterImpl::put8bitcmaptile; break;
+	case 4: put = &TIFFRasterImpl::put4bitcmaptile; break;
+	case 2: put = &TIFFRasterImpl::put2bitcmaptile; break;
+	case 1: put = &TIFFRasterImpl::put1bitcmaptile; break;
+	}
+	break;
+    case PHOTOMETRIC_MINISWHITE:
+    case PHOTOMETRIC_MINISBLACK:
+	switch (bitspersample_) {
+	case 8:	put = &TIFFRasterImpl::putRGBgreytile; break;
+	case 4: put = &TIFFRasterImpl::put4bitbwtile; break;
+	case 2: put = &TIFFRasterImpl::put2bitbwtile; break;
+	case 1: put = &TIFFRasterImpl::put1bitbwtile; break;
+	}
+	break;
+    }
+    return (put);
+}
+
+/*
+ * Select the appropriate conversion routine for unpacked data.
+ *
+ * NB: we assume that unpacked single channel data is directed
+ *     to the "packed routines.
+ */
+tileSeparateRoutine TIFFRasterImpl::pickTileSeparateCase(const RGBvalue*) {
+    if (bitspersample_ == 8) {
+	return &TIFFRasterImpl::putRGBseparate8bittile;
+    }
+    return &TIFFRasterImpl::putRGBseparate16bittile;
 }

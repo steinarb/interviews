@@ -31,6 +31,21 @@
 
 #include <Unidraw/editor.h>
 
+class ArrowVar;
+class Box;
+class BrushVar;
+class ColorVar;
+class Command;
+class CompNameVar;
+class ControlState;
+class FontVar;
+class GravityVar;
+class MagnifVar;
+class ModifStatusVar;
+class PatternVar;
+class PulldownMenu;
+class Tray;
+
 class IdrawEditor : public Editor {
 public:
     IdrawEditor(GraphicComp* = nil);
@@ -60,8 +75,8 @@ private:
     Interactor* Commands();
     Interactor* Tools();
 
-    void Include(class Command*, class PulldownMenu* = nil);
-    void Include(Tool*, class Box*);
+    void Include(Command*, PulldownMenu* = nil);
+    void Include(Tool*, Box*);
 
     PulldownMenu* FileMenu();
     PulldownMenu* EditMenu();
@@ -75,7 +90,7 @@ private:
 private:
     GraphicComp* _comp;
     KeyMap* _keymap;
-    class ControlState* _curCtrl;
+    ControlState* _curCtrl;
     Viewer* _viewer;
     Selection* _selection;
     class Tray* _tray;

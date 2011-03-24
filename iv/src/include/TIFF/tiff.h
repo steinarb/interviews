@@ -1,8 +1,8 @@
-/* $Header: /usr/people/sam/tiff/libtiff/RCS/tiff.h,v 1.28 91/07/26 10:06:22 sam Exp $ */
+/* $Header: /usr/people/sam/tiff/libtiff/RCS/tiff.h,v 1.36 92/02/19 09:52:30 sam Exp $ */
 
 /*
- * Copyright (c) 1988, 1989, 1990, 1991 Sam Leffler
- * Copyright (c) 1991 Silicon Graphics, Inc.
+ * Copyright (c) 1988, 1989, 1990, 1991, 1992 Sam Leffler
+ * Copyright (c) 1991, 1992 Silicon Graphics, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and 
  * its documentation for any purpose is hereby granted without fee, provided
@@ -29,7 +29,7 @@
 /*
  * Tag Image File Format (TIFF)
  *
- * Based on Rev 5.0 from:
+ * Based on Rev 6.0 from:
  *    Developer's Desk
  *    Aldus Corporation
  *    411 First Ave. South
@@ -68,20 +68,36 @@ typedef	struct {
 	unsigned long  tdir_offset;	/* byte offset to field data */
 } TIFFDirEntry;
 
+/*
+ * NB: In the comments below,
+ *  - items marked with a + are obsoleted by revision 5.0,
+ *  - items marked with a ! are introduced in revision 6.0.
+ *  - items marked with a $ are obsoleted by revision 6.0.
+ */
+
+/*
+ * Tag data type information.
+ *
+ * Note: RATIONALs are the ratio of two 32-bit integer values.
+ */
 typedef	enum {
-	TIFF_NOTYPE = 0,	/* placeholder */
-	TIFF_BYTE = 1,		/* 8-bit unsigned integer */
-	TIFF_ASCII = 2,		/* 8-bit bytes w/ last byte null */
-	TIFF_SHORT = 3,		/* 16-bit unsigned integer */
-	TIFF_LONG = 4,		/* 32-bit unsigned integer */
-	TIFF_RATIONAL = 5	/* 64-bit fractional (numerator+denominator) */
+	TIFF_NOTYPE	= 0,	/* placeholder */
+	TIFF_BYTE	= 1,	/* 8-bit unsigned integer */
+	TIFF_ASCII	= 2,	/* 8-bit bytes w/ last byte null */
+	TIFF_SHORT	= 3,	/* 16-bit unsigned integer */
+	TIFF_LONG	= 4,	/* 32-bit unsigned integer */
+	TIFF_RATIONAL	= 5,	/* 64-bit unsigned fraction */
+	TIFF_SBYTE	= 6,	/* !8-bit signed integer */
+	TIFF_UNDEFINED	= 7,	/* !8-bit untyped data */
+	TIFF_SSHORT	= 8,	/* !16-bit signed integer */
+	TIFF_SLONG	= 9,	/* !32-bit signed integer */
+	TIFF_SRATIONAL	= 10,	/* !64-bit signed fraction */
+	TIFF_FLOAT	= 11,	/* !32-bit IEEE floating point */
+	TIFF_DOUBLE	= 12	/* !64-bit IEEE floating point */
 } TIFFDataType;
 
 /*
  * TIFF Tag Definitions.
- *
- * Those marked with a + are obsoleted by revision 5.0.
- * Those marked with a ! are proposed for revision 6.0.
  */
 #define	TIFFTAG_SUBFILETYPE		254	/* subfile data descriptor */
 #define	    FILETYPE_REDUCEDIMAGE	0x1	/* reduced resolution version */
@@ -100,29 +116,27 @@ typedef	enum {
 #define	    COMPRESSION_CCITTFAX3	3	/* CCITT Group 3 fax encoding */
 #define	    COMPRESSION_CCITTFAX4	4	/* CCITT Group 4 fax encoding */
 #define	    COMPRESSION_LZW		5	/* Lempel-Ziv  & Welch */
+#define	    COMPRESSION_JPEG		6	/* !JPEG compression */
 #define	    COMPRESSION_NEXT		32766	/* NeXT 2-bit RLE */
 #define	    COMPRESSION_CCITTRLEW	32771	/* #1 w/ word alignment */
 #define	    COMPRESSION_PACKBITS	32773	/* Macintosh RLE */
 #define	    COMPRESSION_THUNDERSCAN	32809	/* ThunderScan RLE */
-#define	    COMPRESSION_JPEG		32865	/* JPEG compression */
-#define	    COMPRESSION_PICIO		32900	/* old Pixar picio RLE */
-#define	    COMPRESSION_SGIRLE		32901	/* Silicon Graphics RLE */
 #define	TIFFTAG_PHOTOMETRIC		262	/* photometric interpretation */
 #define	    PHOTOMETRIC_MINISWHITE	0	/* min value is white */
 #define	    PHOTOMETRIC_MINISBLACK	1	/* min value is black */
 #define	    PHOTOMETRIC_RGB		2	/* RGB color model */
 #define	    PHOTOMETRIC_PALETTE		3	/* color map indexed */
-#define	    PHOTOMETRIC_MASK		4	/* holdout mask */
+#define	    PHOTOMETRIC_MASK		4	/* $holdout mask */
 #define	    PHOTOMETRIC_SEPARATED	5	/* !color separations */
-#define	    PHOTOMETRIC_YCBCR		6	/* CCIR 601 */
-#define	    PHOTOMETRIC_DEPTH		32768	/* z-depth data */
+#define	    PHOTOMETRIC_YCBCR		6	/* !CCIR 601 */
+#define	    PHOTOMETRIC_CIELAB		8	/* !1976 CIE L*a*b* */
 #define	TIFFTAG_THRESHHOLDING		263	/* +thresholding used on data */
 #define	    THRESHHOLD_BILEVEL		1	/* b&w art scan */
 #define	    THRESHHOLD_HALFTONE		2	/* or dithered scan */
 #define	    THRESHHOLD_ERRORDIFFUSE	3	/* usually floyd-steinberg */
 #define	TIFFTAG_CELLWIDTH		264	/* +dithering matrix width */
 #define	TIFFTAG_CELLLENGTH		265	/* +dithering matrix height */
-#define	TIFFTAG_FILLORDER		266	/* +data order within a byte */
+#define	TIFFTAG_FILLORDER		266	/* data order within a byte */
 #define	    FILLORDER_MSB2LSB		1	/* most significant -> least */
 #define	    FILLORDER_LSB2MSB		2	/* least significant -> most */
 #define	TIFFTAG_DOCUMENTNAME		269	/* name of doc. image is from */
@@ -143,7 +157,7 @@ typedef	enum {
 #define	TIFFTAG_ROWSPERSTRIP		278	/* rows per strip of data */
 #define	TIFFTAG_STRIPBYTECOUNTS		279	/* bytes counts for strips */
 #define	TIFFTAG_MINSAMPLEVALUE		280	/* +minimum sample value */
-#define	TIFFTAG_MAXSAMPLEVALUE		281	/* maximum sample value */
+#define	TIFFTAG_MAXSAMPLEVALUE		281	/* +maximum sample value */
 #define	TIFFTAG_XRESOLUTION		282	/* pixels/resolution in x */
 #define	TIFFTAG_YRESOLUTION		283	/* pixels/resolution in y */
 #define	TIFFTAG_PLANARCONFIG		284	/* storage organization */
@@ -154,13 +168,13 @@ typedef	enum {
 #define	TIFFTAG_YPOSITION		287	/* y page offset of image lhs */
 #define	TIFFTAG_FREEOFFSETS		288	/* +byte offset to free block */
 #define	TIFFTAG_FREEBYTECOUNTS		289	/* +sizes of free blocks */
-#define	TIFFTAG_GRAYRESPONSEUNIT	290	/* gray scale curve accuracy */
+#define	TIFFTAG_GRAYRESPONSEUNIT	290	/* $gray scale curve accuracy */
 #define	    GRAYRESPONSEUNIT_10S	1	/* tenths of a unit */
 #define	    GRAYRESPONSEUNIT_100S	2	/* hundredths of a unit */
 #define	    GRAYRESPONSEUNIT_1000S	3	/* thousandths of a unit */
 #define	    GRAYRESPONSEUNIT_10000S	4	/* ten-thousandths of a unit */
 #define	    GRAYRESPONSEUNIT_100000S	5	/* hundred-thousandths */
-#define	TIFFTAG_GRAYRESPONSECURVE	291	/* gray scale response curve */
+#define	TIFFTAG_GRAYRESPONSECURVE	291	/* $gray scale response curve */
 #define	TIFFTAG_GROUP3OPTIONS		292	/* 32 flag bits */
 #define	    GROUP3OPT_2DENCODING	0x1	/* 2-dimensional coding */
 #define	    GROUP3OPT_UNCOMPRESSED	0x2	/* data not compressed */
@@ -172,21 +186,22 @@ typedef	enum {
 #define	    RESUNIT_INCH		2	/* english */
 #define	    RESUNIT_CENTIMETER		3	/* metric */
 #define	TIFFTAG_PAGENUMBER		297	/* page numbers of multi-page */
-#define	TIFFTAG_COLORRESPONSEUNIT	300	/* color scale curve accuracy */
+#define	TIFFTAG_COLORRESPONSEUNIT	300	/* $color curve accuracy */
 #define	    COLORRESPONSEUNIT_10S	1	/* tenths of a unit */
 #define	    COLORRESPONSEUNIT_100S	2	/* hundredths of a unit */
 #define	    COLORRESPONSEUNIT_1000S	3	/* thousandths of a unit */
 #define	    COLORRESPONSEUNIT_10000S	4	/* ten-thousandths of a unit */
 #define	    COLORRESPONSEUNIT_100000S	5	/* hundred-thousandths */
-#define	TIFFTAG_COLORRESPONSECURVE	301	/* RGB response curve */
+#define	TIFFTAG_TRANSFERFUNCTION	301	/* !colorimetry info */
 #define	TIFFTAG_SOFTWARE		305	/* name & release */
 #define	TIFFTAG_DATETIME		306	/* creation date and time */
 #define	TIFFTAG_ARTIST			315	/* creator of image */
 #define	TIFFTAG_HOSTCOMPUTER		316	/* machine where created */
 #define	TIFFTAG_PREDICTOR		317	/* prediction scheme w/ LZW */
 #define	TIFFTAG_WHITEPOINT		318	/* image white point */
-#define	TIFFTAG_PRIMARYCHROMATICITIES	319	/* primary chromaticities */
+#define	TIFFTAG_PRIMARYCHROMATICITIES	319	/* !primary chromaticities */
 #define	TIFFTAG_COLORMAP		320	/* RGB map for pallette image */
+#define	TIFFTAG_HALFTONEHINTS		321	/* !highlight+shadow info */
 #define	TIFFTAG_TILEWIDTH		322	/* !rows/data tile */
 #define	TIFFTAG_TILELENGTH		323	/* !cols/data tile */
 #define TIFFTAG_TILEOFFSETS		324	/* !offsets to data tiles */
@@ -198,28 +213,41 @@ typedef	enum {
 #define	    CLEANFAXDATA_UNCLEAN	2	/* uncorrected errors exist */
 #define	TIFFTAG_CONSECUTIVEBADFAXLINES	328	/* max consecutive bad lines */
 #define	TIFFTAG_INKSET			332	/* !inks in separated image */
-#define	    INKSET_CMYK			1	/* cyan-magenta-yellow-black */
+#define	    INKSET_CMYK			1	/* !cyan-magenta-yellow-black */
+#define	TIFFTAG_INKNAMES		333	/* !ascii names of inks */
+#define	TIFFTAG_DOTRANGE		336	/* !0% and 100% dot codes */
+#define	TIFFTAG_TARGETPRINTER		337	/* !separation target */
+#define	TIFFTAG_EXTRASAMPLES		338	/* !info about extra samples */
+#define	    EXTRASAMPLE_UNSPECIFIED	0	/* !unspecified data */
+#define	    EXTRASAMPLE_ASSOCALPHA	1	/* !associated alpha data */
+#define	    EXTRASAMPLE_UNASSALPHA	2	/* !unassociated alpha data */
+#define	TIFFTAG_SAMPLEFORMAT		339	/* !data sample format */
+#define	    SAMPLEFORMAT_INT		1	/* !signed integer data */
+#define	    SAMPLEFORMAT_UINT		2	/* !unsigned integer data */
+#define	    SAMPLEFORMAT_IEEEFP		3	/* !IEEE floating point data */
+#define	    SAMPLEFORMAT_VOID		4	/* !untyped data */
+#define	TIFFTAG_SMINSAMPLEVALUE		340	/* !variable MinSampleValue */
+#define	TIFFTAG_SMAXSAMPLEVALUE		341	/* !variable MaxSampleValue */
+#define	TIFFTAG_JPEGPROC		512	/* !JPEG processing algorithm */
+#define	    JPEGPROC_BASELINE		1	/* !baseline sequential */
+#define	    JPEGPROC_LOSSLESS		14	/* !Huffman coded lossless */
+#define	TIFFTAG_JPEGIFOFFSET		513	/* !pointer to SOI marker */
+#define	TIFFTAG_JPEGIFBYTECOUNT		514	/* !JFIF stream length */
+#define	TIFFTAG_JPEGRESTARTINTERVAL	515	/* !restart interval length */
+#define	TIFFTAG_JPEGLOSSLESSPREDICTORS	517	/* !lossless proc predictor */
+#define	TIFFTAG_JPEGPOINTTRANSFORM	518	/* !lossless point transform */
+#define	TIFFTAG_JPEGQTABLES		519	/* !Q matrice offsets */
+#define	TIFFTAG_JPEGDCTABLES		520	/* !DCT table offsets */
+#define	TIFFTAG_JPEGACTABLES		521	/* !AC coefficient offsets */
+#define	TIFFTAG_YCBCRCOEFFICIENTS	529	/* !RGB -> YCbCr transform */
+#define	TIFFTAG_YCBCRSUBSAMPLING	530	/* !YCbCr subsampling factors */
+#define	TIFFTAG_YCBCRPOSITIONING	531	/* !subsample positioning */
+#define	    YCBCRPOSITION_CENTERED	1	/* !as in PostScript Level 2 */
+#define	    YCBCRPOSITION_COSITED	2	/* !as in CCIR 601-1 */
+#define	TIFFTAG_REFERENCEBLACKWHITE	532	/* !colorimetry info */
 /* tags 32995-32999 are private tags registered to SGI */
-#define	TIFFTAG_MATTEING		32995	/* alpha channel is present */
-#define	TIFFTAG_DATATYPE		32996	/* how to interpret data */
-#define	    DATATYPE_VOID		0	/* untyped data */
-#define	    DATATYPE_INT		1	/* signed integer data */
-#define	    DATATYPE_UINT		2	/* unsigned integer data */
-#define	    DATATYPE_IEEEFP		3	/* IEEE floating point data */
+#define	TIFFTAG_MATTEING		32995	/* $use ExtraSamples */
+#define	TIFFTAG_DATATYPE		32996	/* $use SampleFormat */
 #define	TIFFTAG_IMAGEDEPTH		32997	/* z depth of image */
 #define	TIFFTAG_TILEDEPTH		32998	/* z depth/data tile */
-/* tags 33603-33612 are private tags registered to C-Cube */
-#define	TIFFTAG_JPEGPROC		33603	/* JPEG processing algorithm */
-#define	    JPEGPROC_BASELINE		0	/* baseline algorithm */
-#define	TIFFTAG_JPEGQTABLEPREC		33605	/* quant. table precision */
-#define	    JPEGQTABLEPREC_8BIT		0	/* 8-bit precision */
-#define	    JPEGQTABLEPREC_16BIT	1	/* 16-bit precision */
-#define	TIFFTAG_JPEGQTABLES		33606	/* offsets to Q matrices */
-#define	TIFFTAG_JPEGDCTABLES		33607	/* offsets to DCT tables */
-#define	TIFFTAG_JPEGACTABLES		33608	/* offsets to AC coefficients */
-#define	TIFFTAG_LUMACOEFS		33611	/* RGB -> YCbCr transform */
-#define	    LUMACOEFS_CCIR601		0	/* CCIR recommendation 601-1 */
-#define	    LUMACOEFS_SMPTE		1	/* SMPTE standard 240M-1988 */
-#define	    LUMACOEFS_CCIR709		2	/* CCIR recommendation 709 */
-#define	TIFFTAG_YCBCRSAMPLING		33612	/* YCbCr encoding parameters */
 #endif /* _TIFF_ */

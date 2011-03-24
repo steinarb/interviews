@@ -42,31 +42,19 @@ Background::~Background() {
 
 void Background::allocate(Canvas* c, const Allocation& a, Extension& ext) {
     MonoGlyph::allocate(c, a, ext);
-    ext.extend(a);
+    ext.merge(c, a);
 }
 
 void Background::draw(Canvas* c, const Allocation& a) const {
-    if (c != nil) {
-        Coord left = a.left();
-        Coord bottom = a.bottom();
-        Coord right = a.right();
-        Coord top = a.top();
-	if (c->damaged(left, bottom, right, top)) {
-	    c->fill_rect(left, bottom, right, top, color_);
-	}
+    Extension ext;
+    ext.set(c, a);
+    if (c->damaged(ext)) {
+	c->fill_rect(a.left(), a.bottom(), a.right(), a.top(), color_);
     }
     MonoGlyph::draw(c, a);
 }
 
 void Background::print(Printer* p, const Allocation& a) const {
-    if (p != nil) {
-        Coord left = a.left();
-        Coord bottom = a.bottom();
-        Coord right = a.right();
-        Coord top = a.top();
-	if (p->damaged(left, bottom, right, top)) {
-	    p->fill_rect(left, bottom, right, top, color_);
-	}
-    }
+    p->fill_rect(a.left(), a.bottom(), a.right(), a.top(), color_);
     MonoGlyph::print(p, a);
 }

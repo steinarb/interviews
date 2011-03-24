@@ -27,13 +27,13 @@
  */
 
 #include <InterViews/canvas.h>
-#include <InterViews/world.h>
-#include <InterViews/2.6/InterViews/iwindow.h>
-#include <InterViews/2.6/InterViews/painter.h>
-#include <InterViews/2.6/InterViews/scene.h>
-#include <InterViews/2.6/InterViews/shape.h>
+#include <IV-2_6/InterViews/iwindow.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/scene.h>
+#include <IV-2_6/InterViews/shape.h>
+#include <IV-2_6/InterViews/world.h>
 
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/_enter.h>
 
 Scene::Scene() {
     propagate = true;

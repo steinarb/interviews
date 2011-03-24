@@ -27,7 +27,7 @@
  */
 
 #include <InterViews/regexp.h>
-#include <InterViews/2.6/InterViews/textbuffer.h>
+#include <IV-2_6/InterViews/textbuffer.h>
 #include <OS/math.h>
 #include <OS/memory.h>
 #include <ctype.h>

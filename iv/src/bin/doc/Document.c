@@ -37,6 +37,7 @@
 #include "TextItem.h"
 #include "FloatItem.h"
 #include "PagenoItem.h"
+#include "Leader.h"
 
 #include "codes.h"
 #include "properties.h"
@@ -44,15 +45,15 @@
 #include <InterViews/character.h>
 #include <InterViews/color.h>
 #include <InterViews/compositor.h>
-#include <InterViews/discretion.h>
 #include <InterViews/font.h>
-#include <InterViews/glue.h>
+#include <InterViews/layout.h>
 #include <InterViews/psfont.h>
 #include <InterViews/rule.h>
-#include <InterViews/shapeof.h>
-#include <InterViews/space.h>
-#include <InterViews/strut.h>
-#include <InterViews/world.h>
+#include <IV-2_6/InterViews/world.h>
+
+#include <OS/list.h>
+#include <OS/string.h>
+#include <OS/ustring.h>
 
 #include <fstream.h>
 #include <strstream.h>
@@ -106,18 +107,77 @@ void Alph_formatter (long value, char* buffer) {
     sprintf(buffer, "%c", 'A' + value - 1);
 }
 
+static const char* roman_hundreds[] = {
+    "", "c", "cc", "ccc", "cd", "d", "dc", "dcc", "dccc", "cm"
+};
+
+static const char* roman_tens[] = {
+    "", "x", "xx", "xxx", "xl", "l", "lx", "lxx", "lxxx", "xc"
+};
+
+static const char* roman_units[] = {
+    "", "i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix"
+};
+
+void roman_formatter (long value, char* buffer) {
+    sprintf(
+        buffer, "%s%s%s",
+        roman_hundreds[(value / 100) % 10],
+        roman_tens[(value / 10) % 10],
+        roman_units[value % 10]
+    );
+}
+
+static const char* Roman_hundreds[] = {
+    "", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM"
+};
+
+static const char* Roman_tens[] = {
+    "", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC"
+};
+
+static const char* Roman_units[] = {
+    "", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"
+};
+
+void Roman_formatter (long value, char* buffer) {
+    sprintf(
+        buffer, "%s%s%s",
+        Roman_hundreds[(value / 100) % 10],
+        Roman_tens[(value / 10) % 10],
+        Roman_units[value % 10]
+    );
+}
+
 CounterFormat counter_format [] = {
     {"arabic", &arabic_formatter },
     {"alph", &alph_formatter },
     {"Alph", &Alph_formatter },
+    {"roman", &roman_formatter },
+    {"Roman", &Roman_formatter },
     {"", &arabic_formatter },
     {nil, nil }
 };
 
+static long parse_octal_trigraph (const char* buffer) {
+    long i = 0;
+    for (int d = 0; d < 3; ++d) {
+        i = i * 8 + (buffer[d] - '0');
+    }
+    return i;
+}
+static void unparse_octal_trigraph (char* buffer, long code) {
+    long i = code;
+    for (int d = 2; d >= 0; --d) {
+        buffer[d] = char(i % 8) + '0';
+        i = i / 8;
+    }
+}
 class MetricUnit {
 public:
     const char* _name;
     float _conversion;
+    UniqueString* _uname;
 };
 
 MetricUnit metric_unit[] = {
@@ -179,6 +239,14 @@ DefaultParameterInfo default_parameter[] = {
     {"floatrepeltop", "0.15in"},
     {"floatrepelbottom", "0.15in"},
 
+    {"cellmargin", "4pt" },
+    {"tabularmargin", "3pt" },
+    {"tabularseparatorthickness", "1pt" },
+
+    {"rulethickness", "1pt" },
+
+    {"pagenumberformat", "arabic"},
+
     {nil, nil}
 };
 
@@ -210,6 +278,7 @@ public:
 TextParseInfo text_map[] = {
     {"hfil", hfil, -1},
     {"hfill", hfill, -1},
+    {"hleader", hleader, 0},
     {"vfil", vfil, -1},
     {"hrule", hrule, -1},
     {"smallskip", smallskip, -1},
@@ -221,7 +290,7 @@ TextParseInfo text_map[] = {
     {"newpage", newpage, -1},
     {"pagebreak", pagebreak, -1},
     {"parbreak", parbreak, -1},
-    {"linebreak", linebreak -1},
+    {"linebreak", linebreak, -1},
     {"nobreakspace", nobreakspace, 1},
     {"wordspace", wordspace, 0},
     {"sentencespace", sentencespace, 1},
@@ -277,6 +346,7 @@ public:
     Glyph* _interpar_glue;
     Glyph* _hfil_glue;
     Glyph* _hfill_glue;
+    Glyph* _hleader;
     Glyph* _vfil_glue;
     Glyph* _bigskip_glue;
     Glyph* _medskip_glue;
@@ -344,8 +414,6 @@ public:
     FontFamily* _family;
 };
 
-#include "list.h"
-
 declareList(StyleInfo_List,StyleInfo)
 implementList(StyleInfo_List,StyleInfo)
 
@@ -383,7 +451,7 @@ FontFamily* find_font_family (const char* name) {
     } else {
         long count = _families->count();
         for (long i = 0; i < count; ++i) {
-            FontFamilyInfo& info = _families->item(0);
+            FontFamilyInfo& info = _families->item_ref(0);
             if (strcmp(info._name, name) == 0) {
                 break;
             }
@@ -394,7 +462,7 @@ FontFamily* find_font_family (const char* name) {
             info._family = new FontFamily(name);
             _families->append(info);
         }
-        return _families->item(i)._family;
+        return _families->item_ref(i)._family;
     }
 }
 
@@ -492,11 +560,13 @@ const char* Document::name () {
 }
 
 void Document::name (const char* name) {
-    delete _name;
-    if (name != nil) {
-        _name = strcpy(new char[strlen(name)+1], name);
-    } else {
-        _name = nil;
+    if (name != _name) {
+	delete _name;
+	if (name != nil) {
+	    _name = strcpy(new char[strlen(name)+1], name);
+	} else {
+	    _name = nil;
+	}
     }
 }
 
@@ -512,7 +582,7 @@ void Document::insert_float (Item* item) {
     touch(true);
     long count = _viewer->count();
     for (long i = 0; i < count; ++i) {
-        DocumentViewerInfo& vinfo = _viewer->item(i);
+        DocumentViewerInfo& vinfo = _viewer->item_ref(i);
         vinfo._viewer->float_inserted(item);
     }
 }
@@ -521,7 +591,7 @@ void Document::remove_float (Item* item) {
     touch(true);
     long count = _viewer->count();
     for (long i = 0; i < count; ++i) {
-        DocumentViewerInfo& info = _viewer->item(i);
+        DocumentViewerInfo& info = _viewer->item_ref(i);
         info._viewer->float_removed(item);
     }
     i = find_float(item);
@@ -530,30 +600,30 @@ void Document::remove_float (Item* item) {
 }
 
 void Document::change_float (Item* item ) {
-    FloatInfo& info = _float->item(find_float(item));
+    FloatInfo& info = _float->item_ref(find_float(item));
     touch(true);
     long count = _viewer->count();
     for (long i = 0; i < count; ++i) {
-        DocumentViewerInfo& viewer = _viewer->item(i);
+        DocumentViewerInfo& viewer = _viewer->item_ref(i);
         viewer._viewer->float_changed(item);
     }
 }
 
 void Document::adjust_float (Item* item, float x, float y, long page) {
-    FloatInfo& info = _float->item(find_float(item));
+    FloatInfo& info = _float->item_ref(find_float(item));
     info._x = x;
     info._y = y;
     info._page = page;
     touch(true);
     long count = _viewer->count();
     for (long i = 0; i < count; ++i) {
-        DocumentViewerInfo& info = _viewer->item(i);
+        DocumentViewerInfo& info = _viewer->item_ref(i);
         info._viewer->float_adjusted(item, x, y, page);
     }
 }
 
 const char* Document::document_parameter (const char* name) {
-    DocumentParameterInfo& info = _parameter->item(find_parameter(name));
+    DocumentParameterInfo& info = _parameter->item_ref(find_parameter(name));
     const char* value = info._value;
     if (value != nil) {
         while (*value == ' ' || *value == '\t') ++value;
@@ -562,77 +632,95 @@ const char* Document::document_parameter (const char* name) {
 }
 
 float Document::document_metric (const char* name) {
-    DocumentParameterInfo& info = _parameter->item(find_parameter(name));
+    DocumentParameterInfo& info = _parameter->item_ref(find_parameter(name));
     return convert_metric(info._value);
 }
 
 float Document::convert_metric (const char* value) {
-    if (value == nil || strlen(value) == 0) {
+    if (value == nil || value[0] == '\0') {
         return 0;
     }
 
     float f;
-    char unit[100];
-    /* copy value into local buffer to workaround silly sscanf */
-    char buf[100];
-    strncpy(buf, value, sizeof(buf));
-    buf[sizeof(buf) - 1] = '\0';
-    if (sscanf(buf, "%g %s", &f, unit) == 2) {
-	int i = 0;
-	while (metric_unit[i]._name != nil) {
-	    if (strcmp(metric_unit[i]._name, unit) == 0) {
-		return f * metric_unit[i]._conversion;
+    float pts = 1.0;
+    String v(value);
+    String units(v);
+    const char* p = v.string();
+    const char* end = p + v.length();
+    for (; isspace(*p); p++);
+    if (*p == '-' || *p == '+') {
+	++p;
+    }
+    boolean dot = false;
+    for (; p < end; p++) {
+	if (!dot && *p == '.') {
+	    dot = true;
+	} else if (!isdigit(*p)) {
+	    int i = p - v.string();
+	    units.set_to_right(i);
+	    v.set_to_left(i);
+	    if (!v.convert(f)) {
+		return 0;
 	    }
-	    ++i;
+	    UniqueString u_units(units);
+	    for (MetricUnit* m = &metric_unit[0]; m->_name != nil; m++) {
+		if (m->_uname == nil) {
+		    m->_uname = new UniqueString(m->_name);
+		}
+		if (u_units == *m->_uname) {
+		    return f * m->_conversion;
+		}
+	    }
+	    return 0;
 	}
-	return 0;
-    } else if (sscanf(buf, "%g", &f) == 1) {
-	return f;
-    } else {
+    }
+    if (!v.convert(f)) {
 	return 0;
     }
+    return f;
 }
 
 TextStyle& Document::text_style (long index) {
-    return _style->item(index)._style;
+    return _style->item_ref(index)._style;
 }
 
 TextSource& Document::text_source (long index) {
-    return _source->item(index)._source;
+    return _source->item_ref(index)._source;
 }
 
 long Document::common_source (long s1, long s2) {
     while (
-        _source->item(s1)._source._depth
-        > _source->item(s2)._source._depth
+        _source->item_ref(s1)._source._depth
+        > _source->item_ref(s2)._source._depth
     ) {
-        s1 = _source->item(s1)._enclosing;
+        s1 = _source->item_ref(s1)._enclosing;
     }
     while (
-        _source->item(s2)._source._depth
-        > _source->item(s1)._source._depth
+        _source->item_ref(s2)._source._depth
+        > _source->item_ref(s1)._source._depth
     ) {
-        s2 = _source->item(s2)._enclosing;
+        s2 = _source->item_ref(s2)._enclosing;
     }
     while (s1 != s2) {
-        s1 = _source->item(s1)._enclosing;
-        s2 = _source->item(s2)._enclosing;
+        s1 = _source->item_ref(s1)._enclosing;
+        s2 = _source->item_ref(s2)._enclosing;
     }
     return s1;
 }
 
 Glyph* Document::character (long code, long style) {
-    StyleInfo& info = _style->item(style);
+    StyleInfo& info = _style->item_ref(style);
+    const LayoutKit& layout = *LayoutKit::instance();
     if (info._glyph[code] == nil) {
         switch (code) {
         case '\0':
             info._glyph[code] = info._line_strut;
             break;
         case '\n':
-            info._glyph[code] = new Discretionary(
+            info._glyph[code] = layout.discretionary(
                 PenaltyGood, info._end_par_strut,
                 info._end_par_strut,
-                new Discretionary(
+                layout.discretionary(
                     0, nil, info._vfil_glue, nil, nil
                 ),
                 info._begin_par_strut
@@ -644,8 +732,11 @@ Glyph* Document::character (long code, long style) {
         case hfill:
             info._glyph[code] = info._hfill_glue;
             break;
+        case hleader:
+            info._glyph[code] = info._hleader;
+            break;
         case visiblehyphen:
-            info._glyph[code] = new Discretionary(
+            info._glyph[code] = layout.discretionary(
                 int(document_metric("hyphenpenalty")), info._hyphen,
                 info._hyphen,
                 info._interline_glue,
@@ -653,7 +744,7 @@ Glyph* Document::character (long code, long style) {
             );
             break;
         case discretionaryhyphen:
-            info._glyph[code] = new Discretionary(
+            info._glyph[code] = layout.discretionary(
                 int(document_metric("hyphenpenalty")), info._line_strut,
                 info._hyphen,
                 info._interline_glue,
@@ -661,16 +752,18 @@ Glyph* Document::character (long code, long style) {
             );
             break;
         case hrule:
-            info._glyph[code] = new Discretionary(
+            info._glyph[code] = layout.discretionary(
                 PenaltyGood, nil,
-                nil, new HRule(info._color, 1), nil
+                nil,
+		new HRule(info._color, document_metric("rulethickness")),
+		nil
             );
             break;
         case parbreak:
-            info._glyph[code] = new Discretionary(
+            info._glyph[code] = layout.discretionary(
                 PenaltyGood, info._fil_strut,
                 info._end_par_strut,
-                new Discretionary(
+                layout.discretionary(
                     int(document_metric("parbreakpenalty")),
                     info._interpar_glue,
                     info._vfil_glue, nil, nil
@@ -679,7 +772,7 @@ Glyph* Document::character (long code, long style) {
             );
             break;
         case linebreak:
-            info._glyph[code] = new Discretionary(
+            info._glyph[code] = layout.discretionary(
                 PenaltyGood, info._line_strut,
                 info._end_line_strut,
                 info._interline_glue,
@@ -687,16 +780,16 @@ Glyph* Document::character (long code, long style) {
             );
             break;
         case bigvspace:
-            info._glyph[code] = new Discretionary(
+            info._glyph[code] = layout.discretionary(
                 PenaltyGood, nil,
                 nil, info._bigskip_glue, nil
             );
             break;
         case bigskip:
-            info._glyph[code] = new Discretionary(
+            info._glyph[code] = layout.discretionary(
                 PenaltyGood, info._fil_strut,
                 info._end_par_strut,
-                new Discretionary(
+                layout.discretionary(
                     int(document_metric("skippenalty")),
                     info._bigskip_glue,
                     info._vfil_glue, nil, nil
@@ -705,16 +798,16 @@ Glyph* Document::character (long code, long style) {
             );
             break;
         case medvspace:
-            info._glyph[code] = new Discretionary(
+            info._glyph[code] = layout.discretionary(
                 PenaltyGood, nil,
                 nil, info._medskip_glue, nil
             );
             break;
         case medskip:
-            info._glyph[code] = new Discretionary(
+            info._glyph[code] = layout.discretionary(
                 PenaltyGood, info._fil_strut,
                 info._end_par_strut,
-                new Discretionary(
+                layout.discretionary(
                     int(document_metric("skippenalty")),
                     info._medskip_glue,
                     info._vfil_glue, nil, nil
@@ -723,16 +816,16 @@ Glyph* Document::character (long code, long style) {
             );
             break;
         case smallvspace:
-            info._glyph[code] = new Discretionary(
+            info._glyph[code] = layout.discretionary(
                 PenaltyGood, nil,
                 nil, info._smallskip_glue, nil
             );
             break;
         case smallskip:
-            info._glyph[code] = new Discretionary(
+            info._glyph[code] = layout.discretionary(
                 PenaltyGood, info._fil_strut,
                 info._end_par_strut,
-                new Discretionary(
+                layout.discretionary(
                     int(document_metric("skippenalty")),
                     info._smallskip_glue,
                     info._vfil_glue, nil, nil
@@ -741,7 +834,7 @@ Glyph* Document::character (long code, long style) {
             );
             break;
         case vfil:
-            info._glyph[code] = new Discretionary(
+            info._glyph[code] = layout.discretionary(
                 PenaltyGood, info._line_strut,
                 info._end_par_strut,
                 info._vfil_glue,
@@ -749,10 +842,10 @@ Glyph* Document::character (long code, long style) {
             );
             break;
         case newpage:
-            info._glyph[code] = new Discretionary(
+            info._glyph[code] = layout.discretionary(
                 PenaltyGood, info._fil_strut,
                 info._end_par_strut,
-                new Discretionary(
+                layout.discretionary(
                     PenaltyGood, info._vfil_glue,
                     info._vfil_glue, nil, nil
                 ),
@@ -760,10 +853,10 @@ Glyph* Document::character (long code, long style) {
             );
             break;
         case pagebreak:
-            info._glyph[code] = new Discretionary(
+            info._glyph[code] = layout.discretionary(
                 PenaltyGood, info._fil_strut,
                 info._end_par_strut,
-                new Discretionary(
+                layout.discretionary(
                     PenaltyGood, nil,
                     nil, nil, nil
                 ),
@@ -771,10 +864,10 @@ Glyph* Document::character (long code, long style) {
             );
             break;
         case wordspace:
-            info._glyph[code] = new Discretionary(
+            info._glyph[code] = layout.discretionary(
                 0, info._word_space,
                 info._end_line_strut,
-                new Discretionary(
+                layout.discretionary(
                     0, info._interline_glue,
                     info._vfil_glue, nil, nil
                 ),
@@ -782,10 +875,10 @@ Glyph* Document::character (long code, long style) {
             );
             break;
         case sentencespace:
-            info._glyph[code] = new Discretionary(
+            info._glyph[code] = layout.discretionary(
                 0, info._sentence_space,
                 info._end_line_strut,
-                new Discretionary(
+                layout.discretionary(
                     0, info._interline_glue,
                     info._vfil_glue, nil, nil
                 ),
@@ -796,15 +889,15 @@ Glyph* Document::character (long code, long style) {
             info._glyph[code] = info._word_space;
             break;
         case quadspace:
-            info._glyph[code] = new ShapeOf(
+            info._glyph[code] = layout.shape_of(
                 new Character('M', info._font, info._color)
             );
             break;
         case thinspace:
-            info._glyph[code] = new HGlue(1, 0, 0);
+            info._glyph[code] = layout.hspace(1);
             break;
         case negthinspace:
-            info._glyph[code] = new HGlue(-1, 0, 0);
+            info._glyph[code] = layout.hspace(-1);
             break;
         default:
             info._glyph[code] = new Character(code, info._font, info._color);
@@ -997,14 +1090,14 @@ void Document::write (ostream& out) {
     long count, i;
     count = _parameter->count();
     for (i = 0; i < count; ++i) {
-        DocumentParameterInfo& info = _parameter->item(i);
+        DocumentParameterInfo& info = _parameter->item_ref(i);
         if (info._save && info._value != nil) {
             out << "%" << info._name << info._value << "\n";
         }
     }
     count = _macro->count();
     for (i = 0; i < count; ++i) {
-        MacroInfo& info = _macro->item(i);
+        MacroInfo& info = _macro->item_ref(i);
         if (info._save && info._def != nil) {
             out << "%macro{" << info._name << "}";
             out << "{" << info._def << "}\n";
@@ -1012,7 +1105,7 @@ void Document::write (ostream& out) {
     }
     count = _counter->count();
     for (i = 0; i < count; ++i) {
-        CounterInfo& info = _counter->item(i);
+        CounterInfo& info = _counter->item_ref(i);
         if (info._save) {
             out << "%counter{" << info._name << "}";
             if (info._within != nil && strlen(info._within) > 0) {
@@ -1029,7 +1122,7 @@ void Document::write (ostream& out) {
     }
     count = _label->count();
     for (i = 0; i < count; ++i) {
-        LabelInfo& info = _label->item(i);
+        LabelInfo& info = _label->item_ref(i);
         if (info._save) {
             out << "%label{" << info._name << "}";
             out << "{" << info._text << "}\n";
@@ -1046,7 +1139,7 @@ void Document::read (istream& in, TextItem* text, long style, long source) {
 }
 
 void Document::write (ostream& out, TextItem* text, long style, long source) {
-    SourceInfo& info = _source->item(source);
+    SourceInfo& info = _source->item_ref(source);
     if (info._source._editable) {
         out << "\\parbox{" << text->parameters() << "}{";
     }
@@ -1134,7 +1227,7 @@ void Document::read (
 void Document::write (
     ostream& out, TabularItem* tabular, long style, long source
 ) {
-    SourceInfo& info = _source->item(source);
+    SourceInfo& info = _source->item_ref(source);
     if (info._source._editable) {
         out << "\\begin{tabular}";
         long i;
@@ -1187,7 +1280,7 @@ void Document::read (istream& in, PSFigItem* psfig, long, long) {
 }
 
 void Document::write (ostream& out, PSFigItem* psfig, long, long source) {
-    SourceInfo& info = _source->item(source);
+    SourceInfo& info = _source->item_ref(source);
     if (info._source._editable) {
         if (column > 0) {
             out << "%\n";
@@ -1208,7 +1301,7 @@ void Document::read (istream& in, CounterItem* counter, long, long) {
 void Document::write (
     ostream& out, CounterItem* counter, long, long source
 ) {
-    SourceInfo& info = _source->item(source);
+    SourceInfo& info = _source->item_ref(source);
     if (info._source._editable) {
         out << "\\counter{";
         out << counter->name();
@@ -1225,7 +1318,7 @@ void Document::read (istream& in, LabelItem* label, long, long) {
 }
 
 void Document::write (ostream& out, LabelItem* label, long, long source) {
-    SourceInfo& info = _source->item(source);
+    SourceInfo& info = _source->item_ref(source);
     if (info._source._editable) {
         out << "\\label{";
         out << label->name();
@@ -1241,7 +1334,7 @@ void Document::read (istream& in, RefItem* ref, long, long) {
 }
 
 void Document::write (ostream& out, RefItem* ref, long, long source) {
-    SourceInfo& info = _source->item(source);
+    SourceInfo& info = _source->item_ref(source);
     if (info._source._editable) {
         out << "\\ref{";
         out << ref->name();
@@ -1261,7 +1354,7 @@ void Document::read (istream& in, FloatItem* f, long style, long source) {
 }
 
 void Document::write (ostream& out, FloatItem* f, long, long source) {
-    SourceInfo& info = _source->item(source);
+    SourceInfo& info = _source->item_ref(source);
     if (info._source._editable) {
         out << "\\float{" << f->context() << "}";
         out << "{";
@@ -1275,7 +1368,7 @@ void Document::write (ostream& out, FloatItem* f, long, long source) {
         out << "}";
         column += 1;
     }
-    FloatInfo& finfo = _float->item(find_float(f->item()));
+    FloatInfo& finfo = _float->item_ref(find_float(f->item()));
     out << "%" << finfo._x << " " << finfo._y << " " << finfo._page << "\n";
     column = 0;
 }
@@ -1287,7 +1380,7 @@ void Document::read (istream& in, PagenumberItem* p, long, long) {
 }
 
 void Document::write (ostream& out, PagenumberItem* p, long, long source) {
-    SourceInfo& info = _source->item(source);
+    SourceInfo& info = _source->item_ref(source);
     if (info._source._editable) {
         out << "\\pagenumber{";
         out << p->sample();
@@ -1306,21 +1399,14 @@ long Document::parse_text (const char* buffer) {
         }
     }
     if (isdigit(buffer[0])) {
-        int i = buffer[0] - '0';
-        if (isdigit(buffer[1])) {
-            i = i * 8 + (buffer[1] - '0');
-        }
-        if (isdigit(buffer[2])) {
-            i = i * 8 + (buffer[2] - '0');
-        }
-        return i;
+        return parse_octal_trigraph(buffer);
     } else {
         return 0;
     }
 }
 
 long Document::unparse_text (char* buffer, long code) {
-    char ch = char(code);
+    int ch = int(code);
     if (ch == '\\') {
         sprintf(buffer, "\\backslash");
         return 0;
@@ -1347,7 +1433,9 @@ long Document::unparse_text (char* buffer, long code) {
                 return text_map[i]._fold;
             }
         }
-        sprintf(buffer, "\\%0o", ch);
+        buffer[0] = '\\';
+        unparse_octal_trigraph(buffer+1, ch);
+        buffer[4] = '\0';
         return 1;
     }
 }
@@ -1381,7 +1469,7 @@ long Document::parse_style (const char* buffer, long current_style) {
             strcpy(color, "");
             strcpy(size, "");
             strcpy(alignment, "");
-            MacroInfo& info = _macro->item(find_macro(name));
+            MacroInfo& info = _macro->item_ref(find_macro(name));
             current_style = parse_style(info._def, current_style);
         } else {
             ;
@@ -1391,8 +1479,8 @@ long Document::parse_style (const char* buffer, long current_style) {
 }
 
 void Document::unparse_style (char* buffer, long style, long old) {
-    TextStyle& new_style = _style->item(style)._style;
-    TextStyle& old_style = _style->item(old)._style;
+    TextStyle& new_style = _style->item_ref(style)._style;
+    TextStyle& old_style = _style->item_ref(old)._style;
     buffer[0] = '\0';
     if (strcmp(new_style._font, old_style._font) != 0) {
         strcat(buffer, "\\font{");
@@ -1420,7 +1508,7 @@ long Document::read_verbatim_text (
     istream& in, TextItem* text, long index, long style, long source
 ) {
     source = find_source(source, style, "verbatim", "", true, true);
-    style = parse_style(_macro->item(find_macro("verbatim"))._def, style);
+    style = parse_style(_macro->item_ref(find_macro("verbatim"))._def, style);
     char line[1000];
     boolean done = false;
     const char* term = "\\end{verbatim}";
@@ -1448,7 +1536,7 @@ void Document::write_verbatim_text (
     ostream& out, TextItem* text,
     long index, long count, long style, long source
 ) {
-    SourceInfo& info = _source->item(source);
+    SourceInfo& info = _source->item_ref(source);
     if (info._source._editable) {
         if (info._style != style) {
             char buffer[100];
@@ -1474,7 +1562,7 @@ long Document::read_import_text (
     const char* filename
 ) {
     source = find_source(source, style, "import", filename, false, true);
-    style = parse_style(_macro->item(find_macro("verbatim"))._def, style);
+    style = parse_style(_macro->item_ref(find_macro("verbatim"))._def, style);
     boolean done = false;
     ifstream file(filename);
     char line[1000];
@@ -1495,7 +1583,7 @@ void Document::write_import_text (
     ostream& out, TextItem*, long, long,
     long style, long source, const char* filename
 ) {
-    SourceInfo& info = _source->item(source);
+    SourceInfo& info = _source->item_ref(source);
     if (info._source._editable) {
         if (info._style != style) {
             char buffer[100];
@@ -1516,7 +1604,7 @@ long Document::read_macro_text (
     const char* name
 ) {
     source = find_source(source, style, "macro", name, false, true);
-    istrstream def(_macro->item(find_macro(name))._def);
+    istrstream def(_macro->item_ref(find_macro(name))._def);
     parameter = &in;
     index = read_encoded_text(def, text, index, style, source, END);
     return index;
@@ -1526,14 +1614,14 @@ void Document::write_macro_text (
     ostream& out, TextItem* text, long index, long count,
     long, long source, const char* name
 ) {
-    SourceInfo& info = _source->item(source);
+    SourceInfo& info = _source->item_ref(source);
     if (info._source._editable) {
         out << "%\n%\n\\" << name << "{";
         column = strlen(name) + 2;
     }
     source = nested_source(source, text->item_source(index));
     write_encoded_text(
-        out, text, index, count, _source->item(source)._style, source
+        out, text, index, count, _source->item_ref(source)._style, source
     );
     if (info._source._editable) {
         out << "}%\n%\n";
@@ -1553,10 +1641,10 @@ void Document::write_parameter_text (
     ostream& out, TextItem* text, long index, long count,
     long, long source
 ) {
-    SourceInfo& info = _source->item(source);
+    SourceInfo& info = _source->item_ref(source);
     source = nested_source(source, text->item_source(index));
     write_encoded_text(
-        out, text, index, count, _source->item(source)._style, source
+        out, text, index, count, _source->item_ref(source)._style, source
     );
 }
 
@@ -1564,9 +1652,9 @@ void Document::write_styled_text (
     ostream& out, TextItem* text, long index, long count,
     long style, long source, const char* name
 ) {
-    SourceInfo& info = _source->item(source);
+    SourceInfo& info = _source->item_ref(source);
     source = nested_source(source, text->item_source(index));
-    style = parse_style(_macro->item(find_macro(name))._def, style);
+    style = parse_style(_macro->item_ref(find_macro(name))._def, style);
     if (info._source._editable) {
         out << "{\\" << name << " ";
         column += strlen(name) + 3;
@@ -1622,8 +1710,8 @@ long Document::read_encoded_text (
             if ((j = parse_text(buffer)) > 0) {
                 i = text->insert(i, j, style, source, nil);
             } else {
-                MacroInfo& info = _macro->item(find_macro(buffer));
-                SourceInfo& sourceinfo = _source->item(source);
+                MacroInfo& info = _macro->item_ref(find_macro(buffer));
+                SourceInfo& sourceinfo = _source->item_ref(source);
                 if (i == index && sourceinfo._source._editable) {
                     source = find_source(
                         source, style, "styled", buffer, true, false
@@ -1726,14 +1814,14 @@ void Document::write_encoded_text (
     long index, long count, long style, long source
 ) {
     long current_style = style;
-    boolean generated = !_source->item(source)._source._editable;
+    boolean generated = !_source->item_ref(source)._source._editable;
     char buffer[1000];
     long i = index;
     while (i < index + count) {
         long new_source = text->item_source(i);
         if (new_source != source) {
             long nested = nested_source(source, text->item_source(i));
-            long new_style = _source->item(nested)._style;
+            long new_style = _source->item_ref(nested)._style;
             if (!generated && new_style != current_style) {
                 out << "{";
                 column += 1;
@@ -1748,7 +1836,7 @@ void Document::write_encoded_text (
             ) {
                 ++j;
             }
-            TextSource& info = _source->item(nested)._source;
+            TextSource& info = _source->item_ref(nested)._source;
             if (strcmp(info._source, "document") == 0) {
                 write_encoded_text(
                     out, text, i, j - i, current_style, nested
@@ -1836,10 +1924,21 @@ void Document::relabel () {
     _relabel = true;
 }
 
+void Document::format_counter (long value, const char* format, char* buffer) {
+    long j = 0;
+    while (counter_format[j]._name != nil) {
+        if (strcmp(counter_format[j]._name, format) == 0) {
+            (*counter_format[j]._formatter)(value, buffer);
+            break;
+        }
+        ++j;
+    }
+}
+
 void Document::step (const char* counter, const char* context) {
     long count = _counter->count();
     for (long i = 0; i < count; ++i) {
-        CounterInfo& info = _counter->item(i);
+        CounterInfo& info = _counter->item_ref(i);
         if (strcmp(info._name, counter) == 0) {
             info._value += 1;
             char buffer[100];
@@ -1848,15 +1947,7 @@ void Document::step (const char* counter, const char* context) {
                 strcat(buffer, label(info._within));
                 strcat(buffer, ".");
             }
-            long j = 0;
-            while (counter_format[j]._name != nil) {
-                if (strcmp(counter_format[j]._name, info._format) == 0) {
-                    (*counter_format[j]._formatter)(
-                        info._value, strchr(buffer, '\0')
-                    );
-                }
-                ++j;
-            }
+            format_counter(info._value, info._format, strchr(buffer, '\0'));
             label(info._name, buffer);
             label(context, buffer);
         } else if (info._within != nil && strcmp(info._within, counter) == 0) {
@@ -1868,11 +1959,11 @@ void Document::step (const char* counter, const char* context) {
 
 void Document::label (const char* name, const char* text) {
     long label = find_label(name);
-    define_label(label, text, _label->item(label)._save);
+    define_label(label, text, _label->item_ref(label)._save);
 }
 
 const char* Document::label (const char* name) {
-    LabelInfo& info = _label->item(find_label(name));
+    LabelInfo& info = _label->item_ref(find_label(name));
     if (info._text != nil) {
         return info._text;
     } else {
@@ -1886,7 +1977,7 @@ void Document::attach (DocumentViewer* viewer) {
     _viewer->append(info);
     long count = _float->count();
     for (long i = 0; i < count; ++i) {
-        FloatInfo& info = _float->item(i);
+        FloatInfo& info = _float->item_ref(i);
         viewer->float_inserted(info._item);
         viewer->float_adjusted(info._item, info._x, info._y, info._page);
     }
@@ -1896,7 +1987,7 @@ void Document::attach (DocumentViewer* viewer) {
 void Document::detach (DocumentViewer* viewer) {
     long count = _viewer->count();
     for (long i = 0; i < count; ++i) {
-        DocumentViewerInfo& info = _viewer->item(i);
+        DocumentViewerInfo& info = _viewer->item_ref(i);
         if (info._viewer == viewer) {
             _viewer->remove(i);
             break;
@@ -1908,7 +1999,7 @@ void Document::notify () {
     while (_body != nil && _relabel) {
         long count = _counter->count();
         for (long i = 0; i < count; ++i) {
-            CounterInfo& info = _counter->item(i);
+            CounterInfo& info = _counter->item_ref(i);
             info._value = info._initial;
         }
         _relabel = false;
@@ -1916,7 +2007,7 @@ void Document::notify () {
     }
     long count = _viewer->count();
     for (long i = 0; i < count; ++i) {
-        DocumentViewerInfo& info = _viewer->item(i);
+        DocumentViewerInfo& info = _viewer->item_ref(i);
         info._viewer->update();
     }
 }
@@ -1929,14 +2020,14 @@ long Document::find_style (
     long count = _style->count();
     long i;
     if (oldstyle >= 0) {
-        TextStyle& info = _style->item(oldstyle)._style;
+        TextStyle& info = _style->item_ref(oldstyle)._style;
         if (strlen(font) == 0) font = info._font;
         if (strlen(color) == 0) color = info._color;
         if (strlen(size) == 0) size = info._size;
         if (strlen(alignment) == 0) alignment = info._alignment;
 
         for (i = 0; i < count; ++i) {
-            TextStyle& info = _style->item(i)._style;
+            TextStyle& info = _style->item_ref(i)._style;
             if (
                 strcmp(font, info._font) == 0
                 && strcmp(color, info._color) == 0
@@ -1967,7 +2058,7 @@ void Document::initialize_style (long index) {
     static FontFamily* helvetica;
     static FontFamily* courier;
 
-    StyleInfo& style = _style->item(index);
+    StyleInfo& style = _style->item_ref(index);
     char screenfont[100];
     strcpy(screenfont, style._style._font);
     long len = strlen(screenfont);
@@ -1988,7 +2079,7 @@ void Document::initialize_style (long index) {
     float pointsize;
     sscanf(style._style._size, "%g", &pointsize);
     float scale;
-    char* name;
+    const char* name;
     if (family != nil && family->font(
 	int(pointsize), screenstyle, name, scale)
     ) {
@@ -2025,62 +2116,68 @@ void Document::initialize_style (long index) {
     Coord small_skip = pointsize * document_metric("smallskip");
     Coord small_stretch = pointsize * document_metric("smallstretch");
 
+    const LayoutKit& layout = *LayoutKit::instance();
     if (strcmp(style._style._alignment, "left") == 0) {
-        style._begin_line_strut = new VStrut(0);
-        style._end_line_strut = new Strut(style._font, 0, fil, 0);
-        style._begin_par_strut = new VStrut(0);
-        style._end_par_strut = new Strut(style._font, 0, fil, 0);
+        style._begin_line_strut = layout.vstrut(0);
+        style._end_line_strut = layout.strut(style._font, 0, fil, 0);
+        style._begin_par_strut = layout.vstrut(0);
+        style._end_par_strut = layout.strut(style._font, 0, fil, 0);
     } else if(strcmp(style._style._alignment, "right") == 0) {
-        style._begin_line_strut = new VStrut(0, 0, 0, fil, 0);
-        style._end_line_strut = new Strut(style._font);
-        style._begin_par_strut = new VStrut(0, 0, 0, fil, 0);
-        style._end_par_strut = new Strut(style._font);
+        style._begin_line_strut = layout.vstrut(0, 0, 0, fil, 0);
+        style._end_line_strut = layout.strut(style._font);
+        style._begin_par_strut = layout.vstrut(0, 0, 0, fil, 0);
+        style._end_par_strut = layout.strut(style._font);
     } else if (strcmp(style._style._alignment, "center") == 0) {
-        style._begin_line_strut = new VStrut(0, 0, 0, fil, 0);
-        style._end_line_strut = new Strut(style._font, 0, fil, 0);
-        style._begin_par_strut = new VStrut(0, 0, 0, fil, 0);
-        style._end_par_strut = new Strut(style._font, 0, fil, 0);
+        style._begin_line_strut = layout.vstrut(0, 0, 0, fil, 0);
+        style._end_line_strut = layout.strut(style._font, 0, fil, 0);
+        style._begin_par_strut = layout.vstrut(0, 0, 0, fil, 0);
+        style._end_par_strut = layout.strut(style._font, 0, fil, 0);
     } else if (strcmp(style._style._alignment, "justify") == 0) {
-        style._begin_line_strut = new VStrut(0);
-        style._end_line_strut = new Strut(style._font);
-        style._begin_par_strut = new VStrut(0);
-        style._end_par_strut = new Strut(style._font, 0, fil, 0);
+        style._begin_line_strut = layout.vstrut(0);
+        style._end_line_strut = layout.strut(style._font);
+        style._begin_par_strut = layout.vstrut(0);
+        style._end_par_strut = layout.strut(style._font, 0, fil, 0);
     } else {
-        style._begin_line_strut = new VStrut(0);
-        style._end_line_strut = new Strut(style._font, 0, fil, 0);
-        style._begin_par_strut = new VStrut(0);
-        style._end_par_strut = new Strut(style._font, 0, fil, 0);
+        style._begin_line_strut = layout.vstrut(0);
+        style._end_line_strut = layout.strut(style._font, 0, fil, 0);
+        style._begin_par_strut = layout.vstrut(0);
+        style._end_par_strut = layout.strut(style._font, 0, fil, 0);
     }
     style._begin_line_strut->ref();
     style._end_line_strut->ref();
     style._begin_par_strut->ref();
     style._end_par_strut->ref();
 
-    style._line_strut = new Strut(style._font);
+    style._line_strut = layout.strut(style._font);
     style._line_strut->ref();
-    style._fil_strut = new Strut(style._font, 0, fil, 0);
+    style._fil_strut = layout.strut(style._font, 0, fil, 0);
     style._fil_strut->ref();
     style._hyphen = new Character('-', style._font, style._color);
     style._hyphen->ref();
-    style._interline_glue = new VGlue(baseline_skip, baseline_stretch, 0);
+    style._interline_glue = layout.vglue(baseline_skip, baseline_stretch, 0);
     style._interline_glue->ref();
-    style._interpar_glue = new VGlue(par_skip, par_stretch, 0);
+    style._interpar_glue = layout.vglue(par_skip, par_stretch, 0);
     style._interpar_glue->ref();
-    style._hfil_glue = new HGlue(0, fil, 0);
+    style._hfil_glue = layout.hglue(0, fil, 0);
     style._hfil_glue->ref();
-    style._hfill_glue = new HGlue(0, 1000000*fil, 0);
+    style._hfill_glue = layout.hglue(0, 1000000*fil, 0);
     style._hfill_glue->ref();
-    style._vfil_glue = new VGlue(0, fil, 0);
+    style._hleader = new HLeader(
+        0, fil, 0,
+        layout.h_margin(new Character('.', style._font, style._color), 3)
+    );
+    style._hleader->ref();
+    style._vfil_glue = layout.vglue(0, fil, 0);
     style._vfil_glue->ref();
-    style._bigskip_glue = new VGlue(big_skip, big_stretch, 0);
+    style._bigskip_glue = layout.vglue(big_skip, big_stretch, 0);
     style._bigskip_glue->ref();
-    style._medskip_glue = new VGlue(med_skip, med_stretch, 0);
+    style._medskip_glue = layout.vglue(med_skip, med_stretch, 0);
     style._medskip_glue->ref();
-    style._smallskip_glue = new VGlue(small_skip, small_stretch, 0);
+    style._smallskip_glue = layout.vglue(small_skip, small_stretch, 0);
     style._smallskip_glue->ref();
-    style._word_space = new Space(2, 0.5, style._font, style._color);
+    style._word_space = layout.spaces(2, 0.5, style._font, style._color);
     style._word_space->ref();
-    style._sentence_space = new Space(3, 0.5, style._font, style._color);
+    style._sentence_space = layout.spaces(3, 0.5, style._font, style._color);
     style._sentence_space->ref();
     for (int c = 0; c < 256; ++c) {
         style._glyph[c] = nil;
@@ -2088,7 +2185,7 @@ void Document::initialize_style (long index) {
 }
 
 void Document::cleanup_style (long index) {
-    StyleInfo& style = _style->item(index);
+    StyleInfo& style = _style->item_ref(index);
 
     delete style._style._font;
     delete style._style._color;
@@ -2107,6 +2204,7 @@ void Document::cleanup_style (long index) {
     style._interpar_glue->unref();
     style._hfil_glue->unref();
     style._hfill_glue->unref();
+    style._hleader->unref();
     style._vfil_glue->unref();
     style._bigskip_glue->unref();
     style._medskip_glue->unref();
@@ -2128,7 +2226,7 @@ long Document::find_source (
     long i;
     if (!unique) {
         for (i = 0; i < count; ++i) {
-            SourceInfo& info = _source->item(i);
+            SourceInfo& info = _source->item_ref(i);
             if (
                 info._enclosing == enclosing
                 && info._style == style
@@ -2148,7 +2246,8 @@ long Document::find_source (
         info._source._name = strcpy(new char[strlen(name) + 1], name);
         info._source._source = strcpy(new char[strlen(source) + 1], source);
         if (enclosing >= 0) {
-            info._source._depth = _source->item(enclosing)._source._depth + 1;
+            info._source._depth =
+		_source->item_ref(enclosing)._source._depth + 1;
         } else {
             info._source._depth = 0;
         }
@@ -2160,7 +2259,7 @@ long Document::find_source (
 
 long Document::nested_source (long enclosing, long source) {
     while (source != 0) {
-        SourceInfo& info = _source->item(source);
+        SourceInfo& info = _source->item_ref(source);
         if (info._enclosing == enclosing) {
             break;
         } else {
@@ -2171,7 +2270,7 @@ long Document::nested_source (long enclosing, long source) {
 }
 
 void Document::cleanup_source (long index) {
-    SourceInfo& info = _source->item(index);
+    SourceInfo& info = _source->item_ref(index);
     delete info._source._name;
     delete info._source._source;
 }
@@ -2179,7 +2278,7 @@ void Document::cleanup_source (long index) {
 long Document::find_macro (const char* name) {
     long count = _macro->count();
     for (long i = 0; i < count; ++i) {
-        MacroInfo& info = _macro->item(i);
+        MacroInfo& info = _macro->item_ref(i);
         if (strcmp(info._name, name) == 0) {
             break;
         }
@@ -2195,7 +2294,7 @@ long Document::find_macro (const char* name) {
 }
 
 void Document::define_macro (long index, const char* def, boolean save) {
-    MacroInfo& info = _macro->item(index);
+    MacroInfo& info = _macro->item_ref(index);
     if (info._def != nil) {
         delete info._def;
     }
@@ -2204,7 +2303,7 @@ void Document::define_macro (long index, const char* def, boolean save) {
 }
 
 void Document::cleanup_macro (long index) {
-    MacroInfo& info = _macro->item(index);
+    MacroInfo& info = _macro->item_ref(index);
     if (info._name != nil) {
         delete info._name;
     }
@@ -2216,7 +2315,7 @@ void Document::cleanup_macro (long index) {
 long Document::find_counter (const char* name) {
     long count = _counter->count();
     for (long i = 0; i < count; ++i) {
-        CounterInfo& info = _counter->item(i);
+        CounterInfo& info = _counter->item_ref(i);
         if (strcmp(info._name, name) == 0) {
             break;
         }
@@ -2238,7 +2337,7 @@ void Document::define_counter (
     long index, const char* within, const char* format,
     long initial, boolean save
 ) {
-    CounterInfo& info = _counter->item(index);
+    CounterInfo& info = _counter->item_ref(index);
     if (info._within != nil) {
         delete info._within;
     }
@@ -2252,7 +2351,7 @@ void Document::define_counter (
 }
 
 void Document::cleanup_counter (long index) {
-    CounterInfo& info = _counter->item(index);
+    CounterInfo& info = _counter->item_ref(index);
     if (info._name != nil) {
         delete info._name;
     }
@@ -2267,7 +2366,7 @@ void Document::cleanup_counter (long index) {
 long Document::find_parameter (const char* name) {
     long count = _parameter->count();
     for (long i = 0; i < count; ++i) {
-        DocumentParameterInfo& info = _parameter->item(i);
+        DocumentParameterInfo& info = _parameter->item_ref(i);
         if (strcmp(info._name, name) == 0) {
             break;
         }
@@ -2283,7 +2382,7 @@ long Document::find_parameter (const char* name) {
 }
 
 void Document::define_parameter (long index, const char* value, boolean save) {
-    DocumentParameterInfo& info = _parameter->item(index);
+    DocumentParameterInfo& info = _parameter->item_ref(index);
     if (info._value != nil) {
         delete info._value;
     }
@@ -2296,7 +2395,7 @@ void Document::define_parameter (long index, const char* value, boolean save) {
 }
 
 void Document::cleanup_parameter (long index) {
-    DocumentParameterInfo& info = _parameter->item(index);
+    DocumentParameterInfo& info = _parameter->item_ref(index);
     if (info._name != nil) {
         delete info._name;
     }
@@ -2308,7 +2407,7 @@ void Document::cleanup_parameter (long index) {
 long Document::find_label (const char* name) {
     long count = _label->count();
     for (long i = 0; i < count; ++i) {
-        LabelInfo& info = _label->item(i);
+        LabelInfo& info = _label->item_ref(i);
         if (strcmp(info._name, name) == 0) {
             break;
         }
@@ -2324,7 +2423,7 @@ long Document::find_label (const char* name) {
 }
 
 void Document::define_label (long index, const char* text, boolean save) {
-    LabelInfo& info = _label->item(index);
+    LabelInfo& info = _label->item_ref(index);
     if (info._text != nil) {
         delete info._text;
     }
@@ -2337,7 +2436,7 @@ void Document::define_label (long index, const char* text, boolean save) {
 }
 
 void Document::cleanup_label (long index) {
-    LabelInfo& info = _label->item(index);
+    LabelInfo& info = _label->item_ref(index);
     if (info._name != nil) {
         delete info._name;
     }
@@ -2349,7 +2448,7 @@ void Document::cleanup_label (long index) {
 long Document::find_float (Item* item) {
     long count = _float->count();
     for (long i = 0; i < count; ++i) {
-        FloatInfo& info = _float->item(i);
+        FloatInfo& info = _float->item_ref(i);
         if (info._item == item) {
             break;
         }
@@ -2367,7 +2466,7 @@ long Document::find_float (Item* item) {
 }
 
 void Document::cleanup_float (long index) {
-    FloatInfo& info = _float->item(index);
+    FloatInfo& info = _float->item_ref(index);
     info._item->unref();
 }
 

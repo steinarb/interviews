@@ -14,7 +14,7 @@ CPU:									@@\
 #define MakeNormalWorld(flags)						@@\
 World::									@@\
 	@echo ""							@@\
-	@echo "Building InterViews 3.0 on `date`"			@@\
+	@echo "Building InterViews 3.1 on `date`"			@@\
 	@echo ""							@@\
 	$(MAKE) Makefile XCONFIGDIR=$(XCONFIGDIR)			@@\
 	@echo ""							@@\
@@ -35,7 +35,7 @@ World::									@@\
 #define MakeSpecialWorld(special,flags)					@@\
 Concat(World,special)::							@@\
 	@echo ""							@@\
-	@echo "Building InterViews 3.0 on `date`"			@@\
+	@echo "Building InterViews 3.1 on `date`"			@@\
 	@echo ""							@@\
 	$(MAKE) Makefile XCONFIGDIR=$(XCONFIGDIR)			@@\
 	@echo ""							@@\
@@ -350,7 +350,15 @@ BACKWARD_CCINCLUDES = BackwardCompatibilityCCIncludes
 $(AOUT): dst.o								@@\
 dst.o: src.$(CCSUFFIX)							@@\
 	@$(RM) dst.o dst..c						@@\
-	$(CCDRIVER) $(CCFLAGS) flags -c src.$(CCSUFFIX)
+	$(CCDRIVER) flags $(CCFLAGS) -c src.$(CCSUFFIX)
+#endif
+
+#ifndef MakeObjectRule2
+#define MakeObjectRule2(dst,src,flags1,flags2)				@@\
+$(AOUT): dst.o								@@\
+dst.o: src.$(CCSUFFIX)							@@\
+	@$(RM) dst.o dst..c						@@\
+	$(CCDRIVER) flags1 $(CCFLAGS) flags2 -c src.$(CCSUFFIX)
 #endif
 
 /*
@@ -359,6 +367,11 @@ dst.o: src.$(CCSUFFIX)							@@\
 #ifndef MakeObjectFromSrcFlags
 #define MakeObjectFromSrcFlags(file,flags)				@@\
 MakeObjectRule(file,$(SRC)/file,flags)
+#endif
+
+#ifndef MakeObjectFromSrcFlags2
+#define MakeObjectFromSrcFlags2(file,flags1,flags2)			@@\
+MakeObjectRule2(file,$(SRC)/file,flags1,flags2)
 #endif
 
 #ifndef MakeObjectFromSrc
@@ -387,6 +400,7 @@ BackwardCompatibilityCCDefines BackwardCompatibilityCCIncludes)
  * Make a shared library.
  */
 #ifndef NormalSunOSSharedLibraryTarget
+#if OSMajorVersion < 5
 #define NormalSunOSSharedLibraryTarget(libname,rev,depobjs,ldobjs)	@@\
 AOUT = Concat(lib,libname.so.rev)					@@\
 SHARED_CCFLAGS = SharedCCFlags						@@\
@@ -402,6 +416,25 @@ Concat(lib,libname.so.rev): depobjs					@@\
 									@@\
 clean::									@@\
 	$(RM) Concat(lib,libname.so.rev)
+#else
+#define NormalSunOSSharedLibraryTarget(libname,rev,depobjs,ldobjs)	@@\
+AOUT = Concat(lib,libname.so.rev)					@@\
+SHARED_CCFLAGS = SharedCCFlags						@@\
+									@@\
+AllTarget(Concat(lib,libname.so.rev))					@@\
+									@@\
+Concat(lib,libname.so.rev): depobjs					@@\
+	@echo "building $@"						@@\
+	$(RM) $@~							@@\
+	$(LD) -o $@~ -ztext -G ldobjs					@@\
+	$(RM) $@							@@\
+	$(MV) $@~ $@							@@\
+	$(RM) Concat(lib,libname.so)					@@\
+	$(LN) -s $@ Concat(lib,libname.so)				@@\
+									@@\
+clean::									@@\
+	$(RM) Concat(lib,libname.so.rev)
+#endif
 #endif
 
 /*

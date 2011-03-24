@@ -22,7 +22,6 @@
 
 /*
  * Slider component declarations.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibslider.h,v 1.2 91/09/27 14:15:19 tang Exp $
  */
 
 #ifndef ibslider_h
@@ -88,6 +87,7 @@ class SliderCode : public CodeView {
 public:
     SliderCode(SliderComp* = nil);
 
+    virtual void Update();
     virtual boolean Definition(ostream&);
     SliderComp* GetSliderComp();
 

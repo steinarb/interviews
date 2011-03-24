@@ -33,8 +33,10 @@
 
 #include <InterViews/canvas.h>
 #include <InterViews/font.h>
-#include <InterViews/painter.h>
-#include <InterViews/shape.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/shape.h>
+
+#include <IV-2_6/_enter.h>
 
 #include <stdio.h>
 #include <string.h>

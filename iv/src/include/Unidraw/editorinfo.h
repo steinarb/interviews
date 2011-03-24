@@ -27,8 +27,10 @@
 #ifndef unidraw_editorinfo_h
 #define unidraw_editorinfo_h
 
-#include <InterViews/defs.h>
+#include <InterViews/enter-scope.h>
 #include <Unidraw/umap.h>
+
+#include <InterViews/_enter.h>
 
 class EditorInfo : public UMap {
 public:
@@ -48,5 +50,7 @@ private:
     virtual UMapElem* FindId(void*);
     virtual UMapElem* FindTag(void*);
 };
+
+#include <InterViews/_leave.h>
 
 #endif

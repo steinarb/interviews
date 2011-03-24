@@ -26,12 +26,12 @@
  * Implementation of Adjuster and derived classes.
  */
 
-#include <IV-look/2.6/InterViews/adjuster.h>
 #include <InterViews/bitmap.h>
-#include <InterViews/sensor.h>
-#include <InterViews/2.6/InterViews/painter.h>
-#include <InterViews/2.6/InterViews/perspective.h>
-#include <InterViews/2.6/InterViews/shape.h>
+#include <IV-2_6/InterViews/adjuster.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/perspective.h>
+#include <IV-2_6/InterViews/sensor.h>
+#include <IV-2_6/InterViews/shape.h>
 
 #include <InterViews/Bitmaps/enlargeHit.bm>
 #include <InterViews/Bitmaps/enlargeMask.bm>
@@ -54,7 +54,7 @@
 
 #include <OS/math.h>
 
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/_enter.h>
 
 Adjuster::Adjuster(Interactor* i, int d) {
     Init(i, d);
@@ -314,7 +314,7 @@ void Reducer::Init() {
     shape->Rigid(shape->width/2, hfil, shape->height/2);
 }
 
-typedef enum MoveType { 
+enum MoveType { 
     MOVE_LEFT, MOVE_RIGHT, MOVE_UP, MOVE_DOWN, MOVE_UNDEF
 };
 

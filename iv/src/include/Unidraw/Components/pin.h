@@ -31,7 +31,9 @@
 #include <Unidraw/Components/psview.h>
 #include <Unidraw/Graphic/graphic.h>
 
-#include <InterViews/rubcurve.h>
+#include <IV-2_6/InterViews/rubcurve.h>
+
+#include <IV-2_6/_enter.h>
 
 class PinGraphic;
 
@@ -129,5 +131,7 @@ protected:
     Coord _cx, _cy;
     int _rad;
 };
+
+#include <IV-2_6/_leave.h>
 
 #endif

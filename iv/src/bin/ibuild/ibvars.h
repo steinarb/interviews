@@ -22,7 +22,6 @@
 
 /*
  * User interface builder-specific state variables.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibvars.h,v 1.2 91/09/27 14:15:35 tang Exp $
  */
 
 #ifndef ibvars_h
@@ -35,6 +34,9 @@
 #include <Unidraw/umap.h>
 
 class InteractorComp;
+class IDVar;
+class SubclassNameVar;
+class MemberSharedName;
 
 class CanvasVar : public StateVar {
 public:
@@ -92,6 +94,95 @@ inline boolean IBNameVar::GetUniqueFlag () { return _unique; }
 inline void IBNameVar::SetUniqueFlag (boolean unique) { _unique = unique; }
 inline int& IBNameVar::GetSerial () { return _IBSerial; }
 
+class SharedName : public IBNameVar {
+public:
+    SharedName(const char*, boolean);
+    virtual ~SharedName();
+    void ref() const;
+    void unref() const;
+private:
+    unsigned _refcount;
+};
+
+class IDMap : public UMap {
+public:
+    IDMap();
+    void Add(MemberSharedName*);
+    void Add(IDVar*, SubclassNameVar*);
+    void Update(IDVar*);
+    void Delete(IDVar*);
+    int FindID(SubclassNameVar*);
+    int FindID(const char* subclass, const char* baseclass);
+};
+
+class IDVar : public IBNameVar {
+public:
+    IDVar(int id = -1, int origid = -1);
+    virtual ~IDVar();
+
+    int GetID();
+    void SetID(int);
+    int GetOrigID();
+    void SetOrigID(int);
+    void Update();
+
+    virtual StateVar& operator = (StateVar&);
+    virtual StateVar* Copy();
+    virtual ClassId GetClassId();
+    virtual boolean IsA(ClassId);
+    virtual void Read(istream&);
+
+    virtual void GenNewName();
+    virtual int& GetSerial();
+
+    static void CreateMap();
+    static IDMap* GetIDMap();
+protected:
+    static int _IDSerial;
+protected:
+    int _origid;
+private:
+    static IDMap* _idmap;
+};
+
+inline int& IDVar::GetSerial () { return _IDSerial; }
+inline int IDVar::GetOrigID () { return _origid; }
+inline void IDVar::SetOrigID (int origid) { _origid = origid; }
+inline IDMap* IDVar::GetIDMap () { return _idmap; }
+
+class SubclassNameVar : public SharedName {
+public:
+    SubclassNameVar(const char* = nil, boolean = true, boolean = false);
+    virtual ~SubclassNameVar();
+
+    void SetBaseClass(const char*);
+    const char* GetBaseClass();
+
+    boolean IsSubclass();
+
+    void SetAbstract(boolean);
+    boolean IsAbstract();
+
+    virtual StateVar& operator = (StateVar&);
+    virtual StateVar* Copy();
+    virtual void Read(istream&);
+    virtual void Write(ostream&);
+    virtual ClassId GetClassId();
+    virtual boolean IsA(ClassId);
+    virtual int& GetSerial();
+private:
+    char* _baseClass;
+    int _abstract;
+    static int _subclassSerial;
+};
+
+inline const char* SubclassNameVar::GetBaseClass () { return _baseClass; }
+inline void SubclassNameVar::SetAbstract (boolean abstract) {
+    _abstract = abstract;
+}
+inline boolean SubclassNameVar::IsAbstract () { return _abstract; }
+inline int& SubclassNameVar::GetSerial () { return _subclassSerial; }
+
 class InstanceNameVar : public IBNameVar {
 public:
     InstanceNameVar(const char* = "instance", boolean = true);
@@ -109,17 +200,21 @@ private:
 
 inline int& InstanceNameVar::GetSerial () { return _iSerial; }
 
-class SharedName : public IBNameVar, public Resource {
-public:
-    SharedName(const char*, boolean);
-};
-
 class MemberSharedName : public SharedName {
 public:
     MemberSharedName(const char* = nil, boolean = false, boolean = true);
+    ~MemberSharedName();
 
     boolean GetExport();
     void SetExport(boolean);
+
+    SubclassNameVar* GetSubclass();
+    void SetSubclass(SubclassNameVar*);
+
+    IDVar* GetIDVar();
+    void SetIDVar(IDVar*);
+
+    virtual void SetName(const char*);
     virtual int& GetSerial();
 
     virtual StateVar& operator = (StateVar&);
@@ -129,13 +224,17 @@ public:
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
 private:
+    SubclassNameVar* _subclass;
+    IDVar* _idVar;
     int _export;
     static int _mSerial;
 };
 
 inline boolean MemberSharedName::GetExport() { return _export; }
+inline SubclassNameVar* MemberSharedName::GetSubclass () { return _subclass; }
 inline void MemberSharedName::SetExport(boolean export) { _export = export;}
 inline int& MemberSharedName::GetSerial () { return _mSerial; }
+inline IDVar* MemberSharedName::GetIDVar () { return _idVar; }
 
 class MemberNameVar : public StateVar {
 public:
@@ -150,7 +249,13 @@ public:
 
     const char* GetName();
     void GenNewName();
-        
+
+    SubclassNameVar* GetSubclass();
+    void SetSubclass(SubclassNameVar*);
+
+    IDVar* GetIDVar();
+    void SetIDVar(IDVar*);
+
     virtual StateVar& operator = (StateVar&);
     virtual StateVar* Copy();
     virtual void Read(istream&);
@@ -170,10 +275,24 @@ inline void MemberNameVar::GenNewName () { _msharedname->GenNewName(); }
 inline MemberSharedName* MemberNameVar::GetMemberSharedName () {
     return _msharedname;
 }
+inline SubclassNameVar* MemberNameVar::GetSubclass () { 
+    return _msharedname->GetSubclass();
+}
+inline void MemberNameVar::SetSubclass (SubclassNameVar* svar) {
+    _msharedname->SetSubclass(svar);
+}
+inline IDVar* MemberNameVar::GetIDVar () { 
+    return _msharedname->GetIDVar();
+}
+inline void MemberNameVar::SetIDVar (IDVar* idvar) {
+    _msharedname->SetIDVar(idvar);
+}
 
 class ButtonSharedName : public SharedName {
 public:
-    ButtonSharedName(const char* = nil, const char* = nil, boolean = true);
+    ButtonSharedName(
+        const char* = nil, const char* = nil, boolean = true, const char* = nil
+    );
     virtual ~ButtonSharedName();
 
     int GetInitial();
@@ -184,6 +303,9 @@ public:
 
     const char* GetFuncName();
     void SetFuncName(const char*);
+
+    SubclassNameVar* GetSubclass();
+    void SetSubclass(SubclassNameVar*);
 
     virtual StateVar& operator = (StateVar&);
 
@@ -197,6 +319,7 @@ private:
     int _initial;
     int _export;
     char* _func;
+    SubclassNameVar* _subclass;
     static int _bsSerial;
 };
 
@@ -206,6 +329,7 @@ inline boolean ButtonSharedName::GetExport() { return _export; }
 inline void ButtonSharedName::SetExport(boolean export) { _export = export;}
 inline const char* ButtonSharedName::GetFuncName() { return _func; }
 inline int& ButtonSharedName::GetSerial() { return _bsSerial; }
+inline SubclassNameVar* ButtonSharedName::GetSubclass () { return _subclass; }
 
 class ButtonStateVar : public StateVar {
 public:
@@ -226,6 +350,11 @@ public:
 
     int GetSetting();
     void SetSetting(int);
+
+    const char* GetSubclassName();
+    void SetSubclassName(const char*);
+
+    boolean IsSubclass();
 
     ButtonSharedName* GetButtonSharedName();
     void SetButtonSharedName(ButtonSharedName*);
@@ -267,6 +396,15 @@ inline int ButtonStateVar::GetSetting () { return _setting; }
 inline ButtonSharedName* ButtonStateVar::GetButtonSharedName () {
     return _bsharedname;
 }
+inline const char* ButtonStateVar::GetSubclassName() { 
+    return _bsharedname->GetSubclass()->GetName();
+}
+inline void ButtonStateVar::SetSubclassName(const char* name) { 
+    _bsharedname->GetSubclass()->SetName(name);
+}
+inline boolean ButtonStateVar::IsSubclass () {
+    return _bsharedname->GetSubclass()->IsSubclass();
+}
 
 class IBShape : public Shape {
 public:
@@ -307,39 +445,6 @@ public:
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
 };
-
-class SubclassNameVar : public IBNameVar {
-public:
-    SubclassNameVar(const char* = nil, boolean = true, boolean = false);
-    virtual ~SubclassNameVar();
-
-    void SetBaseClass(const char*);
-    const char* GetBaseClass();
-
-    boolean IsSubclass();
-
-    void SetAbstract(boolean);
-    boolean IsAbstract();
-
-    virtual StateVar& operator = (StateVar&);
-    virtual StateVar* Copy();
-    virtual void Read(istream&);
-    virtual void Write(ostream&);
-    virtual ClassId GetClassId();
-    virtual boolean IsA(ClassId);
-    virtual int& GetSerial();
-private:
-    char* _baseClass;
-    int _abstract;
-    static int _subclassSerial;
-};
-
-inline const char* SubclassNameVar::GetBaseClass () { return _baseClass; }
-inline void SubclassNameVar::SetAbstract (boolean abstract) {
-    _abstract = abstract;
-}
-inline boolean SubclassNameVar::IsAbstract () { return _abstract; }
-inline int& SubclassNameVar::GetSerial () { return _subclassSerial; }
 
 class FBrowserVar : public StateVar {
 public:
@@ -390,4 +495,3 @@ inline void BooleanStateVar::SetBooleanState(boolean bstate) {
 inline boolean BooleanStateVar::GetBooleanState () { return _bstate; }
 
 #endif
-

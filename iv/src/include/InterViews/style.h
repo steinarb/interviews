@@ -29,7 +29,7 @@
 #ifndef iv_style_h
 #define iv_style_h
 
-#include <InterViews/boolean.h>
+#include <InterViews/coord.h>
 #include <InterViews/resource.h>
 
 #include <InterViews/_enter.h>
@@ -38,9 +38,10 @@ class Action;
 class Brush;
 class Color;
 class Font;
+class String;
 class StyleRep;
 
-class Style : virtual public Resource {
+class Style : public Resource {
 public:
     Style();
     Style(const String& name);
@@ -49,46 +50,48 @@ public:
     Style(const Style&);
     virtual ~Style();
 
-    virtual const String& name() const;
-    virtual Style* parent() const;
     virtual void name(const String&);
-    virtual void prefix(const String&);
+    virtual const String* name() const;
+    virtual void alias(const String&);
+    virtual long alias_count() const;
+    virtual const String* alias(long) const;
+    void name(const char*);
+    void alias(const char*);
 
+    virtual Style* parent() const;
     virtual void append(Style*);
     virtual void remove(Style*);
     virtual long children() const;
     virtual Style* child(long) const;
-    virtual Style* find_style(const String&) const;
 
-    virtual void attribute(
-	const String& name, const String& value, int priority = 0
-    );
+    virtual void attribute(const String& name, const String& value, int = 0);
     virtual void remove_attribute(const String& name);
-    virtual long attributes() const;
+    virtual long attribute_count() const;
     virtual boolean attribute(long, String& name, String& value) const;
+    void attribute(const char* name, const char* value, int = 0);
+    void remove_attribute(const char*);
+
+    virtual void load_file(const String& filename, int = 0);
+    virtual void load_list(const String&, int = 0);
+    virtual void load_property(const String&, int = 0);
 
     virtual void add_trigger(const String& name, Action*);
     virtual void remove_trigger(const String& name, Action* = nil);
+    virtual void add_trigger_any(Action*);
+    virtual void remove_trigger_any(Action*);
+    void add_trigger(const char*, Action*);
+    void remove_trigger(const char*, Action* = nil);
 
     virtual boolean find_attribute(const String& name, String& value) const;
-    virtual boolean find_attribute(const char* name, String& value) const;
-    virtual boolean find_attribute(const String& name, long&) const;
-    virtual boolean find_attribute(const char* name, long&) const;
-    virtual boolean find_attribute(const String& name, double&) const;
-    virtual boolean find_attribute(const char* name, double&) const;
-    virtual boolean find_attribute(const String& name, Coord&) const;
-    virtual boolean find_attribute(const char* name, Coord&) const;
-    virtual boolean value_is_on(const String& name) const;
-    virtual boolean value_is_on(const char* name) const;
-
-    virtual const Font* font() const;
-    virtual const Brush* brush() const;
-    virtual const Color* foreground() const;
-    virtual const Color* background() const;
-    virtual const Color* flat() const;
-    virtual const Color* light() const;
-    virtual const Color* dull() const;
-    virtual const Color* dark() const;
+    boolean find_attribute(const char* name, String& value) const;
+    boolean find_attribute(const String& name, long&) const;
+    boolean find_attribute(const char* name, long&) const;
+    boolean find_attribute(const String& name, double&) const;
+    boolean find_attribute(const char* name, double&) const;
+    boolean find_attribute(const String& name, Coord&) const;
+    boolean find_attribute(const char* name, Coord&) const;
+    boolean value_is_on(const String& name) const;
+    boolean value_is_on(const char* name) const;
 private:
     friend class StyleRep;
 

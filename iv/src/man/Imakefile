@@ -7,10 +7,8 @@ SUBDIRS	= \
 	commands \
 	refman \
 	Dispatch \
-	IV-look \
 	InterViews \
-	Unidraw \
-	graphic
+	Unidraw
 
 MakeInSubdirs($(SUBDIRS))
 FormatSubdirs($(SUBDIRS))

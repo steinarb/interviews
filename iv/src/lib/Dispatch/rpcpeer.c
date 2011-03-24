@@ -115,7 +115,7 @@ void RpcPeer::startListening() {
 // service, and delete it.
 
 void RpcPeer::stopListening() {
-    Dispatcher::instance().link(_service->fd(), Dispatcher::ReadMask, nil);
+    Dispatcher::instance().unlink(_service->fd());
 
     RpcRegistry::erase(_lPath);
 

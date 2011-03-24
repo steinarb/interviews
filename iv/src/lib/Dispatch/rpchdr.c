@@ -32,11 +32,6 @@ RpcHdr::RpcHdr(void* writer, int request) :
     _request(request),
     _ndata(0) {}
 
-RpcHdr::RpcHdr(int request) :
-    _writer(nil),
-    _request(request),
-    _ndata(0) {}
-
 // Initialize the header for an incoming RPC request.
 
 RpcHdr::RpcHdr() :

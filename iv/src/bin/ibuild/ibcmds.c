@@ -22,7 +22,6 @@
 
 /*
  * Implementation of user interface builder-specific commands.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibcmds.c,v 1.2 91/09/27 14:07:23 tang Exp $
  */
 
 #include "ibbitmap.h"
@@ -37,8 +36,11 @@
 #include "ibframe.h"
 #include "ibglobals.h"
 #include "ibgrblock.h"
+#include "ibgrcomp.h"
 #include "ibprocs.h"
+#include "ibraster.h"
 #include "ibscene.h"
+#include "ibstencil.h"
 #include "ibtoolpanel.h"
 #include "ibtools.h"
 #include "ibvars.h"
@@ -71,24 +73,29 @@
 
 #include <Unidraw/Tools/grcomptool.h>
 
-#include <InterViews/filechooser.h>
+#include <IV-look/dialogs.h>
 #include <InterViews/bitmap.h>
-#include <InterViews/frame.h>
-#include <InterViews/message.h>
-#include <InterViews/sensor.h>
-#include <InterViews/shape.h>
+#include <InterViews/session.h>
+#include <InterViews/style.h>
+#include <IV-2_6/InterViews/frame.h>
+#include <IV-2_6/InterViews/message.h>
+#include <IV-2_6/InterViews/sensor.h>
+#include <IV-2_6/InterViews/shape.h>
+#include <OS/types.h>
+
+#undef FileChooser
+#define FileChooser _lib_iv(FileChooser)
 
 #include <osfcn.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stream.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 
-#ifdef sgi
-/* SGI vfork is bogus */
+#if defined(sgi) || defined(sco)
+/* not all vforks are alike */
 #define vfork fork
 #endif
 
@@ -99,9 +106,26 @@ enum {Gen_File, Gen_Files, Gen_Make};
 /*****************************************************************************/
 
 // 4.2 -> hpux standard conversion of getwd
-#ifdef hpux
+#if defined(hpux) || defined(sco) || (defined(sun) && OSMajorVersion >= 5)
 #include <sys/param.h>
 #define  getwd(a) getcwd(a,MAXPATHLEN)
+#endif
+
+#ifdef __DECCXX
+extern "C" {
+    int getwd(char*);
+    int vfork();
+    int execlp(char*, ...);
+    int unlink(char*);
+    pid_t fork();
+    void _exit(int);
+}
+#endif
+
+#ifdef __GNUC__
+extern "C" {
+    char* getwd(char*);
+}
 #endif
 
 /*****************************************************************************/
@@ -119,6 +143,12 @@ char* GetDirName (const char* fullname) {
         tmp[1] = '\0';
     } else {
         strcpy(retval, "./");
+    }
+    if (retval[0] == '.' && retval[1] == '/') {
+        char buf[CHARBUFSIZE];
+        strcpy(buf, retval);
+        getwd(pathname);
+        sprintf(retval, "%s/%s", pathname, &buf[2]);
     }
     return retval;
 }
@@ -150,6 +180,218 @@ static boolean Abort (Editor* ed, int pid, const char* warning) {
     aborted = dialog.Abort();
     ed->RemoveDialog(&dialog);
     return aborted;
+}
+
+/*****************************************************************************/
+
+IDMapCmd::IDMapCmd (Editor* ed) : Command(ed) {}
+
+void IDMapCmd::Execute () {
+    IDVar::CreateMap();
+    GetEditor()->GetComponent()->GetRoot()->Interpret(this);
+}
+
+ClassId IDMapCmd::GetClassId () { return IDMAP_CMD; }
+
+boolean IDMapCmd::IsA (ClassId id) {
+    return IDMAP_CMD == id || Command::IsA(id);
+}
+
+/*****************************************************************************/
+
+ClassId IBImportCmd::GetClassId () { return IBIMPORT_CMD; }
+
+boolean IBImportCmd::IsA (ClassId id) {
+    return IBIMPORT_CMD == id || ImportCmd::IsA(id);
+}
+
+IBImportCmd::IBImportCmd (ControlInfo* c) : ImportCmd(c) {}
+IBImportCmd::IBImportCmd (Editor* ed) : ImportCmd(ed) {}
+
+Command* IBImportCmd::Copy () {
+    Command* copy = new IBImportCmd(CopyControlInfo());
+    InitCopy(copy);
+    return copy;
+}
+
+void IBImportCmd::Execute () {
+    IComp::SetRelease(false);
+    IBCreator::SetLock(false);
+    GraphicComp* comp = PostDialog();
+
+    if (comp != nil) {
+        if (comp->IsA(RASTER_COMP)) {
+            Graphic* gr = comp->GetGraphic()->Copy();
+            delete comp;
+            comp = new IRasterComp((RasterRect*) gr);
+        } else if (comp->IsA(STENCIL_COMP)) {
+            Graphic* gr = comp->GetGraphic()->Copy();
+            delete comp;
+            comp = new IStencilComp((UStencil*) gr);
+        }
+        IComp* icomp = (IComp*) comp;
+        icomp->Instantiate();
+    }
+    if (comp != nil) {
+        PasteCmd* paste_cmd = new PasteCmd(GetEditor(), new Clipboard(comp));
+        paste_cmd->Execute();
+        paste_cmd->Log();
+        GetEditor()->GetViewer()->Align(comp, Center);
+    }
+    IBCreator::SetLock(true);
+    IComp::SetRelease(true);
+}
+/*****************************************************************************/
+
+ClassId PreciseMoveCmd::GetClassId () { return PRECISEMOVE_CMD; }
+
+boolean PreciseMoveCmd::IsA (ClassId id) {
+    return PRECISEMOVE_CMD == id || Command::IsA(id);
+}
+
+PreciseMoveCmd::PreciseMoveCmd (ControlInfo* c) : Command(c) { _dialog = nil; }
+PreciseMoveCmd::PreciseMoveCmd (Editor* ed) : Command(ed) { _dialog = nil; }
+PreciseMoveCmd::~PreciseMoveCmd () { delete _dialog; }
+
+Command* PreciseMoveCmd::Copy () {
+    Command* copy = new PreciseMoveCmd(CopyControlInfo());
+    InitCopy(copy);
+    return copy;
+}
+
+void PreciseMoveCmd::Execute () {
+    float dx = 0.0, dy = 0.0;
+    Editor* ed = GetEditor();
+
+    if (_dialog == nil) {
+	_dialog = new MoveDialog();
+    }
+
+    ed->InsertDialog(_dialog);
+    boolean accepted = _dialog->Accept();
+    ed->RemoveDialog(_dialog);
+
+    if (accepted) {
+	_dialog->GetValues(dx, dy);
+
+	if (dx != 0.0 || dy != 0.0) {
+	    MoveCmd* moveCmd = new MoveCmd(ed, dx, dy);
+	    moveCmd->Execute();
+	    moveCmd->Log();
+	}
+    }
+}
+
+boolean PreciseMoveCmd::Reversible () { return false; }
+
+/*****************************************************************************/
+
+ClassId PreciseScaleCmd::GetClassId () { return PRECISESCALE_CMD; }
+
+boolean PreciseScaleCmd::IsA (ClassId id) {
+    return PRECISESCALE_CMD == id || Command::IsA(id);
+}
+
+PreciseScaleCmd::PreciseScaleCmd (ControlInfo* c) : Command(c) {_dialog = nil;}
+PreciseScaleCmd::PreciseScaleCmd (Editor* ed) : Command(ed) { _dialog = nil; }
+PreciseScaleCmd::~PreciseScaleCmd () { delete _dialog; }
+
+Command* PreciseScaleCmd::Copy () {
+    Command* copy = new PreciseScaleCmd(CopyControlInfo());
+    InitCopy(copy);
+    return copy;
+}
+
+void PreciseScaleCmd::Execute () {
+    float x = 0.0, y = 0.0;
+    Editor* ed = GetEditor();
+
+    if (_dialog == nil) {
+	_dialog = new ScaleDialog();
+    }
+
+    ed->InsertDialog(_dialog);
+    boolean accepted = _dialog->Accept();
+    ed->RemoveDialog(_dialog);
+
+    if (accepted) {
+	_dialog->GetValues(x, y);
+	if (x != 0.0 && y != 0.0) {
+	    ScaleCmd* scaleCmd = new ScaleCmd(ed, x, y);
+	    scaleCmd->Execute();
+	    scaleCmd->Log();
+	}
+    }
+}
+
+boolean PreciseScaleCmd::Reversible () { return false; }
+
+/*****************************************************************************/
+
+ClassId PreciseRotateCmd::GetClassId () { return PRECISEROTATE_CMD; }
+
+boolean PreciseRotateCmd::IsA (ClassId id) {
+    return PRECISEROTATE_CMD == id || Command::IsA(id);
+}
+
+PreciseRotateCmd::PreciseRotateCmd (ControlInfo* c) : Command(c) {_dialog=nil;}
+PreciseRotateCmd::PreciseRotateCmd (Editor* ed) : Command(ed) { _dialog = nil;}
+PreciseRotateCmd::~PreciseRotateCmd () { delete _dialog; }
+
+Command* PreciseRotateCmd::Copy () {
+    Command* copy = new PreciseRotateCmd(CopyControlInfo());
+    InitCopy(copy);
+    return copy;
+}
+
+void PreciseRotateCmd::Execute () {
+    float angle = 0.0;
+    Editor* ed = GetEditor();
+
+    if (_dialog == nil) {
+	_dialog = new RotateDialog();
+    }
+
+    ed->InsertDialog(_dialog);
+    boolean accepted = _dialog->Accept();
+    ed->RemoveDialog(_dialog);
+
+    if (accepted) {
+	_dialog->GetValue(angle);
+	if (angle != 0.0) {
+	    RotateCmd* rotateCmd = new RotateCmd(ed, angle);
+	    rotateCmd->Execute();
+	    rotateCmd->Log();
+	}
+    }
+}
+
+boolean PreciseRotateCmd::Reversible () { return false; }
+
+/*****************************************************************************/
+
+GetClonesCmd::GetClonesCmd (MonoSceneClass* orig) {
+    _orig = orig;
+    _clone = new UList;
+}
+
+GetClonesCmd::~GetClonesCmd () {
+    delete _clone;
+}
+
+void GetClonesCmd::Execute () {
+    Component* root = _orig->GetRoot();
+    root->Interpret(this);
+}
+
+Command* GetClonesCmd::Copy () {
+    return new GetClonesCmd(_orig);
+}
+
+ClassId GetClonesCmd::GetClassId () { return GETCLONES_CMD; }
+
+boolean GetClonesCmd::IsA (ClassId id) {
+    return GETCLONES_CMD == id || Command::IsA(id);
 }
 
 /*****************************************************************************/
@@ -238,8 +480,16 @@ GetNameVarsCmd::GetNameVarsCmd (GraphicComp* target) {
     _subclass = nil;
     _member = nil;
     _instance = nil;
+    _extras = new UList;
 }
 
+GetNameVarsCmd::~GetNameVarsCmd () {
+    delete _extras;
+}
+
+void GetNameVarsCmd::AppendExtras(StateVar* svar) {
+    _extras->Append(new UList(svar));
+}
 
 void GetNameVarsCmd::Execute () {
     if (_target != nil) {
@@ -512,9 +762,6 @@ void NavigateCmd::Execute () {
     CompNameVar* compNameVar = (CompNameVar*) ed->GetState("CompNameVar");
     if (compNameVar != nil) compNameVar->SetComponent(comp);
 
-    comp->Interpret(this);
-    _oparent->Interpret(this);
-
     ed->Update();
     comp->Notify();    // hack for menus
     unidraw->Update();
@@ -530,9 +777,6 @@ void NavigateCmd::Unexecute () {
     ed->SetComponent(_oparent);
     CompNameVar* compNameVar = (CompNameVar*) ed->GetState("CompNameVar");
     if (compNameVar != nil) compNameVar->SetComponent(_oparent);
-
-    comp->Uninterpret(this);
-    _oparent->Uninterpret(this);
 
     ed->Update();
     _oparent->Notify();
@@ -784,6 +1028,8 @@ public:
 
     void SwitchStates(UList*);
 private:
+    void SwitchStates(StateVar*, StateVar*);
+private:
     UList* _statelist;
 };
 
@@ -805,6 +1051,14 @@ InfoData::~InfoData () {
     delete _statelist;
 }
 
+void InfoData::SwitchStates(StateVar* src, StateVar* dest) {
+    StateVar* tmp = dest->Copy();
+    *tmp = *dest;
+    *dest = *src;
+    *src = *tmp;
+    delete tmp;
+}
+
 void InfoData::SwitchStates(UList* statelist) {
     UList* i = statelist->First();
     UList* j = _statelist->First(); 
@@ -812,13 +1066,7 @@ void InfoData::SwitchStates(UList* statelist) {
         i != statelist->End() && j != _statelist->End();
         i = i->Next(), j = j->Next()
     ) {
-        StateVar* src = (StateVar*) (*i)();
-        StateVar* dest = (StateVar*) (*j)();
-        StateVar* tmp = dest->Copy();
-        *tmp = *dest;
-        *dest = *src;
-        *src = *tmp;
-        delete tmp;
+        SwitchStates((StateVar*)(*i)(), (StateVar*)(*j)());
     }
 }
 
@@ -909,6 +1157,8 @@ void InfoCmd::Execute () {
     Iterator i;
     Clipboard* cb = GetClipboard();
     Editor* ed = GetEditor();
+    IDMapCmd idmapcmd(ed);
+    idmapcmd.Execute();
     if (cb == nil) {
 	SetClipboard(cb = new Clipboard);
 
@@ -951,6 +1201,8 @@ void InfoCmd::Execute () {
                 mfirewall->Clone(this);
             }
         }
+        delete _info;
+        _info = nil;
 
     } else {
         cb->First(i);
@@ -973,10 +1225,14 @@ void InfoCmd::Execute () {
 
 void InfoCmd::Unexecute () {
     Clipboard* cb = GetClipboard();
+    Editor* ed = GetEditor();
     
     if (_placeCmd != nil) {
 	_placeCmd->Unexecute();
     }
+    
+    IDMapCmd idmapcmd(ed);
+    idmapcmd.Execute();
     
     _infoData->SwitchStates(_iStates);
 
@@ -1006,10 +1262,12 @@ boolean PropsCmd::IsA (ClassId id) {
 
 PropsCmd::PropsCmd (ControlInfo* c, InteractorComp* icomp) : Command(c) {
     _icomp = icomp;
+    _reversible = false;
 }
 
 PropsCmd::PropsCmd (Editor* ed, InteractorComp* icomp) : Command(ed) { 
     _icomp = icomp;
+    _reversible = false;
 }
 
 Command* PropsCmd::Copy () {
@@ -1182,6 +1440,12 @@ Command* CodeCmd::Copy () {
 void CodeCmd::Execute () {
     InteractorComp* comps = (InteractorComp*) GetGraphicComp()->GetRoot();
     *_errbuf = '\0';
+     const char* ccsuffix = getenv("CCSUFFIX");
+     if (ccsuffix == nil) {
+         strcpy(_dotc, CC_SUFFIX);
+     } else {
+         sprintf(_dotc, ".%s", ccsuffix);
+     }
     DoIt(comps);
 }
 
@@ -1193,10 +1457,11 @@ void CodeCmd::DoIt (InteractorComp* comps) {
 
     if (name == nil) {
 	if (_save_cmd == nil) {
-	    FileChooser* fc = new FileChooser(
-		"", "Please save before generating.", ".", 10, 24, "  OK  "
+	    Style* style = new Style(Session::instance()->style());
+	    style->attribute("caption", "Please save before generating.");
+	    _save_cmd = new SaveCompAsCmd(
+		ed, DialogKit::instance()->file_chooser(".", style)
 	    );
-	    _save_cmd = new SaveCompAsCmd(ed, fc);
 	}
 	_save_cmd->Execute();
     }
@@ -1255,32 +1520,48 @@ boolean CodeCmd::GenFiles (const char* name, CodeView* ev) {
     boolean ok = GenMultipleFiles(name, ev);
 
     if (ok) {
+        boolean skipped;
         Catalog* catalog = unidraw->GetCatalog();
         ConflictDialog* conflict = nil;
-        char cext[8];
-        const char* app_ccdefine = getenv("APP_CCDEFINE");
-        if (app_ccdefine == nil) {
-            strcpy(cext, CC_SUFFIX);
-        } else {
-            strcpy(cext, app_ccdefine);
-        }
         
         char makefile[CHARBUFSIZE];
         char imakefile[CHARBUFSIZE];
         char properties[CHARBUFSIZE];
         char mainfile[CHARBUFSIZE];
+        char creatorh[CHARBUFSIZE];
+        char creatorc[CHARBUFSIZE];
         
         sprintf(properties, "%s-props", name);
-        sprintf(mainfile, "%s-main%s", name, cext);
+        sprintf(mainfile, "%s-main%s", name, _dotc);
         sprintf(makefile, "%s-make", name);
         sprintf(imakefile, "%s-imake", name);
+        sprintf(creatorh, "%s-creator.h", name);
+        sprintf(creatorc, "%s-creator%s", name, _dotc);
         
-        ok = ok && CheckConflicts(
+        if (ev->IsSubUnidraw()) {
+            ok = ok && CheckConflicts(
+                conflict, creatorh, true, creatorc, true
+            );
+            skipped = conflict->Skipped();
+            if (
+                (skipped || ok) && !catalog->Exists(creatorh) || 
+                ok && conflict->Checked(creatorh) &&catalog->Writable(creatorh)
+            ) {
+                ok = GenCreatorh(name, ev) && ok;
+            }
+            if (
+                (skipped || ok) && !catalog->Exists(creatorc) || 
+                ok && conflict->Checked(creatorc) &&catalog->Writable(creatorc)
+            ) {
+                ok = GenCreatorc(name, ev) && ok;
+            }
+        }
+        ok = (ok || skipped) && CheckConflicts(
             conflict, properties, true, mainfile, true, 
             imakefile, true, makefile, true
         );
 
-        boolean skipped = conflict->Skipped();
+        skipped = conflict->Skipped();
         
         if (
             (skipped || ok) && !catalog->Exists(properties) || 
@@ -1321,19 +1602,23 @@ boolean CodeCmd::GenFile (const char* name, CodeView* ev) {
         
         char properties[CHARBUFSIZE];
         char mainfile[CHARBUFSIZE];
-        char cext[8];
-        const char* app_ccdefine = getenv("APP_CCDEFINE");
-        if (app_ccdefine == nil) {
-            strcpy(cext, CC_SUFFIX);
-        } else {
-            strcpy(cext, app_ccdefine);
-        }
+        char creatorh[CHARBUFSIZE];
+        char creatorc[CHARBUFSIZE];
         
         sprintf(properties, "%s-props", name);
-        sprintf(mainfile, "%s-main%s", name, cext);
+        sprintf(mainfile, "%s-main%s", name, _dotc);
+
+        if (ev->IsSubUnidraw()) {
+            sprintf(creatorh, "%s-creator.h", name);
+            sprintf(creatorc, "%s-creator%s", name, _dotc);
+        } else {
+            *creatorh = '\0';
+            *creatorc = '\0';
+        }
         
         ok = ok && CheckConflicts(
-            conflict, properties, true, mainfile, true
+            conflict, properties, true, mainfile, true,
+            creatorh, true, creatorc, true
         );
         
         boolean skipped = conflict->Skipped();
@@ -1349,6 +1634,20 @@ boolean CodeCmd::GenFile (const char* name, CodeView* ev) {
             ok && conflict->Checked(mainfile) && catalog->Writable(mainfile)
         ) {
             ok = GenMainFile(name, ev) && ok;
+        }
+        if (ev->IsSubUnidraw()) {
+            if (
+                (skipped || ok) && !catalog->Exists(creatorh) || 
+                ok && conflict->Checked(creatorh) &&catalog->Writable(creatorh)
+            ) {
+                ok = GenCreatorh(name, ev) && ok;
+            }
+            if (
+                (skipped || ok) && !catalog->Exists(creatorc) || 
+                ok && conflict->Checked(creatorc) &&catalog->Writable(creatorc)
+            ) {
+                ok = GenCreatorc(name, ev) && ok;
+            }
         }
         
         ok = ok || skipped;
@@ -1366,14 +1665,6 @@ boolean CodeCmd::GenMultipleFiles (const char* name, CodeView* ev) {
     char fcorehfile[CHARBUFSIZE];
     char fcorecfile[CHARBUFSIZE];
     char forig[CHARBUFSIZE];
-    char cext[8];
-    const char* cname;
-    const char* app_ccdefine = getenv("APP_CCDEFINE");
-    if (app_ccdefine == nil) {
-        strcpy(cext, CC_SUFFIX);
-    } else {
-        strcpy(cext, app_ccdefine);
-    }
 
     char* dir =GetDirName(name);
     
@@ -1382,11 +1673,11 @@ boolean CodeCmd::GenMultipleFiles (const char* name, CodeView* ev) {
 
     for (UList* i = classlist->First(); i != classlist->End(); i = i->Next()) {
         SubclassNameVar* subclass = (SubclassNameVar*) (*i) ();
-        cname = subclass->GetName();
+        const char* cname = subclass->GetName();
         sprintf(fheaderfile, "%s%s.h", dir, cname);
-        sprintf(fsrcfile, "%s%s%s", dir, cname, cext);
+        sprintf(fsrcfile, "%s%s%s", dir, cname, _dotc);
         sprintf(fcorehfile, "%s%s-core.h", dir, cname);
-        sprintf(fcorecfile, "%s%s-core%s", dir, cname, cext);
+        sprintf(fcorecfile, "%s%s-core%s", dir, cname, _dotc);
         sprintf(forig, "%s%s", dir, cname);
 
         ok = CheckConflicts(
@@ -1505,7 +1796,8 @@ boolean CodeCmd::GenIMakeFile(const char* filename, CodeView* ev) {
     char* dir = GetDirName(filename);
     char* orig = GetOrigName(filename);
     
-    sprintf(cmd, "cd %s; ibmkmf -m %s", dir, orig);
+    sprintf(cmd, "cd %s; ibmkmf -m %s %s", dir, &_dotc[1], orig);
+
     UList* classlist = new UList;
     ev->GetClassList(classlist);
 
@@ -1514,10 +1806,19 @@ boolean CodeCmd::GenIMakeFile(const char* filename, CodeView* ev) {
         const char* cname = subclass->GetName();
         strcat(cmd, " ");
         strcat(cmd, cname);
+        strcat(cmd, " ");
+        strcat(cmd, cname);
+        strcat(cmd, "-core");
     }
+    if (ev->IsSubUnidraw()) {
+        strcat(cmd, " ");
+        strcat(cmd, orig);
+        strcat(cmd, "-creator");
+    }
+
     int retcode = system(cmd);
     if (retcode != 0) {
-	strcat(_errbuf, "IMakefile generation failed!!\n");
+	strcat(_errbuf, "IMakefile generation failed\n");
 	return false;
     }
     delete classlist;
@@ -1531,7 +1832,7 @@ boolean CodeCmd::GenMakeFile(const char* filename, CodeView*) {
     sprintf(cmd, "ibmkmf %s", filename);
     int retcode = system(cmd);
     if (retcode != 0) {
-	strcat(_errbuf, "Makefile generation failed!!\n");
+	strcat(_errbuf, "Makefile generation failed\n");
 	ok = false;
     } else {
         Catalog* catalog = unidraw->GetCatalog();
@@ -1550,7 +1851,7 @@ boolean CodeCmd::GenMakeFile(const char* filename, CodeView*) {
         char buf[CHARBUFSIZE];
         int pid = fork();
         if (pid == -1) {
-            sprintf(buf, "Cannot fork to make %s!!", orig);
+            sprintf(buf, "Cannot fork to make %s", orig);
             Warning(GetEditor(), buf);
             ok = false;
             
@@ -1596,7 +1897,55 @@ boolean CodeCmd::GenPropFile(const char* filename, CodeView* ev) {
     } else {
 	strcat(_errbuf, "Cannot open property file ");
 	strcat(_errbuf, fullfile);
-	strcat(_errbuf, "!!\n");
+	strcat(_errbuf, "\n");
+    }
+    return ok;
+}
+
+boolean CodeCmd::GenCreatorh(const char* filename, CodeView* ev) {
+    filebuf fbuf;
+    char* orig = GetOrigName(filename);
+    char fullfile[CHARBUFSIZE];
+    sprintf(fullfile, "%s-main.o", filename);
+    unlink(fullfile);
+    sprintf(fullfile, "%s-creator.h", filename);
+
+    boolean ok = fbuf.open(fullfile, output) != 0;
+
+    if (ok) {
+        ostream* pout = new ostream(&fbuf);
+        ok = ok && ev->GenCreatorh(orig, *pout);
+	pout->flush();
+	fbuf.sync();
+        delete pout;
+    } else {
+	strcat(_errbuf, "Cannot open creator header file ");
+	strcat(_errbuf, fullfile);
+	strcat(_errbuf, "\n");
+    }
+    return ok;
+}
+
+boolean CodeCmd::GenCreatorc(const char* filename, CodeView* ev) {
+    filebuf fbuf;
+    char* orig = GetOrigName(filename);
+    char fullfile[CHARBUFSIZE];
+    sprintf(fullfile, "%s-creator.o", filename);
+    unlink(fullfile);
+    sprintf(fullfile, "%s-creator%s", filename, _dotc);
+
+    boolean ok = fbuf.open(fullfile, output) != 0;
+
+    if (ok) {
+        ostream* pout = new ostream(&fbuf);
+        ok = ok && ev->GenCreatorc(orig, *pout);
+	pout->flush();
+	fbuf.sync();
+        delete pout;
+    } else {
+	strcat(_errbuf, "Cannot open creator source file ");
+	strcat(_errbuf, fullfile);
+	strcat(_errbuf, "\n");
     }
     return ok;
 }
@@ -1605,16 +1954,10 @@ boolean CodeCmd::GenMainFile(const char* filename, CodeView* ev) {
     filebuf fbuf;
     char* orig = GetOrigName(filename);
     char fullfile[CHARBUFSIZE];
-    char cext[8];
-    const char* app_ccdefine = getenv("APP_CCDEFINE");
-    if (app_ccdefine == nil) {
-        strcpy(cext, CC_SUFFIX);
-    } else {
-        strcpy(cext, app_ccdefine);
-    }
+
     sprintf(fullfile, "%s-main.o", filename);
     unlink(fullfile);
-    sprintf(fullfile, "%s-main%s", filename, cext);
+    sprintf(fullfile, "%s-main%s", filename, _dotc);
 
     boolean ok = fbuf.open(fullfile, output) != 0;
 
@@ -1627,7 +1970,7 @@ boolean CodeCmd::GenMainFile(const char* filename, CodeView* ev) {
     } else {
 	strcat(_errbuf, "Cannot open main file ");
 	strcat(_errbuf, fullfile);
-	strcat(_errbuf, "!!\n");
+	strcat(_errbuf, "\n");
     }
     return ok;
 }
@@ -1651,7 +1994,7 @@ boolean CodeCmd::GenDothFile(const char* filename, CodeView* ev) {
     } else {
 	strcat(_errbuf, "Cannot open header file ");
 	strcat(_errbuf, fullfile);
-	strcat(_errbuf, "!!\n");
+	strcat(_errbuf, "\n");
     }
     return ok;
 }
@@ -1660,16 +2003,10 @@ boolean CodeCmd::GenDotcFile(const char* filename, CodeView* ev) {
     filebuf fbuf;
     char* orig = GetOrigName(filename);
     char fullfile[CHARBUFSIZE];
-    char cext[8];
-    const char* app_ccdefine = getenv("APP_CCDEFINE");
-    if (app_ccdefine == nil) {
-        strcpy(cext, CC_SUFFIX);
-    } else {
-        strcpy(cext, app_ccdefine);
-    }
+
     sprintf(fullfile, "%s.o", filename);
     unlink(fullfile);
-    sprintf(fullfile, "%s%s", filename, cext);
+    sprintf(fullfile, "%s%s", filename, _dotc);
 
     boolean ok = fbuf.open(fullfile, output) != 0;
 
@@ -1682,7 +2019,7 @@ boolean CodeCmd::GenDotcFile(const char* filename, CodeView* ev) {
     } else {
 	strcat(_errbuf, "Cannot open source file ");
 	strcat(_errbuf, fullfile);
-	strcat(_errbuf, "!!\n");
+	strcat(_errbuf, "\n");
     }
     return ok;
 }
@@ -1708,7 +2045,7 @@ boolean CodeCmd::GenCorehFile(const char* filename, CodeView* ev) {
     } else {
 	strcat(_errbuf, "Cannot open template header file ");
 	strcat(_errbuf, fullfile);
-	strcat(_errbuf, "!!\n");
+	strcat(_errbuf, "\n");
     }
     return ok;
 }
@@ -1717,16 +2054,10 @@ boolean CodeCmd::GenCorecFile(const char* filename, CodeView* ev) {
     filebuf fbuf;
     char* orig = GetOrigName(filename);
     char fullfile[CHARBUFSIZE];
-    char cext[8];
-    const char* app_ccdefine = getenv("APP_CCDEFINE");
-    if (app_ccdefine == nil) {
-        strcpy(cext, CC_SUFFIX);
-    } else {
-        strcpy(cext, app_ccdefine);
-    }
+
     sprintf(fullfile, "%s-core.o", filename);
     unlink(fullfile);
-    sprintf(fullfile, "%s-core%s", filename, cext);
+    sprintf(fullfile, "%s-core%s", filename, _dotc);
 
     boolean ok = fbuf.open(fullfile, output) != 0;
 
@@ -1739,7 +2070,7 @@ boolean CodeCmd::GenCorecFile(const char* filename, CodeView* ev) {
     } else {
 	strcat(_errbuf, "Cannot open template source file ");
 	strcat(_errbuf, fullfile);
-	strcat(_errbuf, "!!\n");
+	strcat(_errbuf, "\n");
     }
     return ok;
 }
@@ -1750,7 +2081,7 @@ void CodeCmd::Make(const char* file) {
     char buf[CHARBUFSIZE];
     int pid = fork();
     if (pid == -1) {
-	sprintf(buf, "Cannot fork to make %s!!", orig);
+	sprintf(buf, "Cannot fork to make %s", orig);
 	Warning(GetEditor(), buf);
 
     } else if (pid == 0) {
@@ -1773,10 +2104,10 @@ boolean CodeCmd::Reversible () { return false; }
 /*****************************************************************************/
 
 ClassId ExeCmd::GetClassId () { return EXE_CMD; }
-boolean ExeCmd::IsA (ClassId id) { return EXE_CMD==id || ViewCompCmd::IsA(id);}
+boolean ExeCmd::IsA (ClassId id) { return EXE_CMD==id || Command::IsA(id);}
 
-ExeCmd::ExeCmd (ControlInfo* c) : ViewCompCmd(c) { }
-ExeCmd::ExeCmd (Editor* ed) : ViewCompCmd(ed) { }
+ExeCmd::ExeCmd (ControlInfo* c) : Command(c) { _dialog = nil; }
+ExeCmd::ExeCmd (Editor* ed) : Command(ed) { _dialog = nil; }
 
 Command* ExeCmd::Copy () {
     Command* newCmd = new ExeCmd(CopyControlInfo());
@@ -1861,14 +2192,13 @@ void NewToolCmd::Execute () {
 
     if (name == nil) {
         if (_scmd == nil) {
-            char subtitle[CHARBUFSIZE];
-            sprintf(
-                subtitle, "Please save before creating the tool."
-            );
-            FileChooser* fc = new FileChooser(
-                "", subtitle, ".", 10,24,"  OK  "
-            );
-            _scmd = new SaveCompAsCmd(ed, fc);
+	    Style* style = new Style(Session::instance()->style());
+	    style->attribute(
+		"caption", "Please save before creating the tool."
+	    );
+            _scmd = new SaveCompAsCmd(
+		ed, DialogKit::instance()->file_chooser(".", style)
+	    );
         }
         _scmd->Execute();
     }
@@ -1968,7 +2298,7 @@ boolean NewToolCmd::CreateCtrlInfo (
                 if (!aborted) {
                     if (
                         stat(bitmapfile, &st) == 0 && 
-                        (st.st_mode & S_IRUSR) != 0
+                        (st.st_mode & S_IREAD) != 0
                     ) {
                         success = true;
                         BitmapGraphic* bitmapgr= new BitmapGraphic(
@@ -2094,6 +2424,19 @@ void ToolsCmd::Execute () {
 }
 
 boolean ToolsCmd::Reversible () { return false; }
+
+/*****************************************************************************/
+boolean IBViewCompCmd::_executing = false;
+
+IBViewCompCmd::IBViewCompCmd (
+    ControlInfo* info, FileChooser* fc
+) : ViewCompCmd (info, fc) {}
+
+void IBViewCompCmd::Execute () {
+    _executing = true;
+    ViewCompCmd::Execute();
+    _executing = false;
+}
 
 /*****************************************************************************/
 class CloneMapElem : public UMapElem {
@@ -2338,3 +2681,34 @@ void ReorderCmd::Unexecute() {
     GetEditor()->GetComponent()->Uninterpret(this);
 }
 
+/*****************************************************************************/
+
+ClassId CompCheckCmd::GetClassId () { return COMPCHECK_CMD; }
+boolean CompCheckCmd::IsA (ClassId id) {
+    return COMPCHECK_CMD==id || Command::IsA(id);
+}
+
+CompCheckCmd::CompCheckCmd (
+    IComp* target, const char* c, const char* v, const char* g
+) {
+    _c = strnew(c);
+    _v = strnew(v);
+    _g = strnew(g);
+    _target = target;
+    _ok = true;
+}
+
+CompCheckCmd::~CompCheckCmd () {
+    delete _c;
+    delete _v;
+    delete _g;
+}
+
+Command* CompCheckCmd::Copy () {
+    Command* copy = new CompCheckCmd(_target, _c, _v, _g);
+    return copy;
+}
+
+void CompCheckCmd::Execute () {
+    _target->GetRoot()->Interpret(this);
+}

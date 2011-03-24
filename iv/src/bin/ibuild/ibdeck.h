@@ -22,7 +22,6 @@
 
 /*
  * Deck component declarations.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibdeck.h,v 1.2 91/09/27 14:13:32 tang Exp $
  */
 
 #ifndef ibdeck_h
@@ -59,6 +58,7 @@ class DeckCode : public CodeView {
 public:
     DeckCode(DeckComp* = nil);
 
+    virtual void Update();
     virtual boolean Definition(ostream&);
     DeckComp* GetDeckComp();
 

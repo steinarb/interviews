@@ -26,9 +26,9 @@
  * Basic composite object for interaction.
  */
 
-#include <InterViews/2.6/InterViews/box.h>
-#include <InterViews/2.6/InterViews/shape.h>
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/InterViews/box.h>
+#include <IV-2_6/InterViews/shape.h>
+#include <IV-2_6/_enter.h>
 #include <OS/math.h>
 
 class BoxElement {

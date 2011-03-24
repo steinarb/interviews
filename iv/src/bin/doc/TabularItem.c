@@ -30,6 +30,7 @@
 #include "TabularView.h"
 #include "TextItem.h"
 #include "DocViewer.h"
+#include <OS/list.h>
 
 #include <string.h>
 
@@ -65,8 +66,6 @@ static void initialize_text (TextItem* text, const char* contents) {
     }
 }
 
-#include "list.h"
-
 declareList(CellInfo_List,CellInfo)
 implementList(CellInfo_List,CellInfo)
 
@@ -96,7 +95,7 @@ TabularItem::TabularItem (
 
 TabularItem::~TabularItem () {
     while (_cell->count() > 0) {
-        CellInfo& cell = _cell->item(0);
+        CellInfo& cell = _cell->item_ref(0);
         cell._text->unref();
         _cell->remove(0);
     }
@@ -105,7 +104,7 @@ TabularItem::~TabularItem () {
     delete _row;
     if (_view != nil) {
         while (_view->count() > 0) {
-            TabularViewInfo& view = _view->item(0);
+            TabularViewInfo& view = _view->item_ref(0);
             _view->remove(0);
         }
         delete _view;
@@ -116,7 +115,7 @@ void TabularItem::style (long style) {
     Item::style(style);
     long c = _cell->count();
     for (long i = 0; i < c; ++i) {
-        CellInfo& cell = _cell->item(i);
+        CellInfo& cell = _cell->item_ref(i);
         cell._text->style(style);
     }
 }
@@ -144,7 +143,7 @@ Glyph* TabularItem::view (ItemView* parent, DocumentViewer* viewer) {
 void TabularItem::label (const char* context) {
     long c = _cell->count();
     for (long i = 0; i < c; ++i) {
-        CellInfo& cell = _cell->item(i);
+        CellInfo& cell = _cell->item_ref(i);
         cell._text->label(context);
     }
 }
@@ -152,12 +151,12 @@ void TabularItem::label (const char* context) {
 void TabularItem::change (Item* component) {
     long c = _cell->count();
     for (long i = 0; i < c; ++i) {
-        CellInfo& cell = _cell->item(i);
+        CellInfo& cell = _cell->item_ref(i);
         if (cell._text == component) {
             if (_view != nil) {
                 long c = _view->count();
                 for (long j = 0; j < c; ++j) {
-                    TabularViewInfo& info = _view->item(j);
+                    TabularViewInfo& info = _view->item_ref(j);
                     info._view->cell_changed(cell._row, cell._column);
                 }
             }
@@ -179,7 +178,7 @@ void TabularItem::detach (TabularView* view) {
     if (_view != nil) {
         long count = _view->count();
         for (long i = 0; i < count; ++i) {
-            TabularViewInfo& info = _view->item(i);
+            TabularViewInfo& info = _view->item_ref(i);
             if (info._view == view) {
                 _view->remove(i);
                 break;
@@ -192,7 +191,7 @@ void TabularItem::notify () {
     if (_view != nil) {
         long count = _view->count();
         for (long i = 0; i < count; ++i) {
-            TabularViewInfo& info = _view->item(i);
+            TabularViewInfo& info = _view->item_ref(i);
             info._view->update();
         }
     }
@@ -211,7 +210,7 @@ void TabularItem::insert_row (long index, const char* text) {
     long count;
     count = _cell->count();
     for (long i = 0; i < count; ++i) {
-        CellInfo& info = _cell->item(i);
+        CellInfo& info = _cell->item_ref(i);
         if (info._row >= index) {
             info._row += 1;
         }
@@ -228,7 +227,7 @@ void TabularItem::insert_row (long index, const char* text) {
     }
     RowInfo row;
     if (index > 0) {
-        row._separator = _row->item(index-1)._separator;
+        row._separator = _row->item_ref(index-1)._separator;
     } else {
         row._separator = RowSeparatorSingle;
     }
@@ -236,7 +235,7 @@ void TabularItem::insert_row (long index, const char* text) {
     if (_view != nil) {
         count = _view->count();
         for (long v = 0; v < count; ++v) {
-            TabularViewInfo& view = _view->item(v);
+            TabularViewInfo& view = _view->item_ref(v);
             view._view->row_inserted(index);
         }
     }
@@ -249,7 +248,7 @@ void TabularItem::remove_row (long index) {
     long count;
     count = _cell->count();
     for (long i = 0; i < count; ++i) {
-        CellInfo& info = _cell->item(i);
+        CellInfo& info = _cell->item_ref(i);
         if (info._row > index) {
             info._row -= 1;
         } else if (info._row == index) {
@@ -261,7 +260,7 @@ void TabularItem::remove_row (long index) {
     if (_view != nil) {
         count = _view->count();
         for (long v = 0; v < count; ++v) {
-            TabularViewInfo& view = _view->item(v);
+            TabularViewInfo& view = _view->item_ref(v);
             view._view->row_removed(index);
         }
     }
@@ -276,7 +275,7 @@ void TabularItem::insert_column (
     long count;
     count = _cell->count();
     for (long i = 0; i < count; ++i) {
-        CellInfo& info = _cell->item(i);
+        CellInfo& info = _cell->item_ref(i);
         if (info._column >= index) {
             info._column += 1;
         }
@@ -293,7 +292,7 @@ void TabularItem::insert_column (
     }
     ColumnInfo column;
     if (index > 0) {
-        column._separator = _column->item(index-1)._separator;
+        column._separator = _column->item_ref(index-1)._separator;
     } else {
         column._separator = ColumnSeparatorSingle;
     }
@@ -302,7 +301,7 @@ void TabularItem::insert_column (
     if (_view != nil) {
         count = _view->count();
         for (long v = 0; v < count; ++v) {
-            TabularViewInfo& view = _view->item(v);
+            TabularViewInfo& view = _view->item_ref(v);
             view._view->column_inserted(index);
         }
     }
@@ -315,7 +314,7 @@ void TabularItem::remove_column (long index) {
     long count;
     count = _cell->count();
     for (long i = 0; i < count; ++i) {
-        CellInfo& info = _cell->item(i);
+        CellInfo& info = _cell->item_ref(i);
         if (info._column > index) {
             info._column -= 1;
         } else if (info._column == index) {
@@ -327,7 +326,7 @@ void TabularItem::remove_column (long index) {
     if (_view != nil) {
         count = _view->count();
         for (long v = 0; v < count; ++v) {
-            TabularViewInfo& view = _view->item(v);
+            TabularViewInfo& view = _view->item_ref(v);
             view._view->column_removed(index);
         }
     }
@@ -337,25 +336,25 @@ void TabularItem::remove_column (long index) {
 }
 
 RowSeparator TabularItem::row_separator (long index) {
-    return _row->item(index)._separator;
+    return _row->item_ref(index)._separator;
 }
 
 ColumnAlignment TabularItem::column_alignment (long index) {
-    return _column->item(index)._alignment;
+    return _column->item_ref(index)._alignment;
 }
 
 ColumnSeparator TabularItem::column_separator (long index) {
-    return _column->item(index)._separator;
+    return _column->item_ref(index)._separator;
 }
 
 void TabularItem::change_row_separator (long index, RowSeparator separator) {
-    RowInfo& row = _row->item(index);
+    RowInfo& row = _row->item_ref(index);
     if (row._separator != separator) {
         row._separator = separator;
         if (_view != nil) {
             long count = _view->count();
             for (long v = 0; v < count; ++v) {
-                TabularViewInfo& view = _view->item(v);
+                TabularViewInfo& view = _view->item_ref(v);
                 view._view->row_separator_changed(index);
             }
         }
@@ -368,13 +367,13 @@ void TabularItem::change_row_separator (long index, RowSeparator separator) {
 void TabularItem::change_column_separator (
     long index, ColumnSeparator separator
 ) {
-    ColumnInfo& column = _column->item(index);
+    ColumnInfo& column = _column->item_ref(index);
     if (column._separator != separator) {
         column._separator = separator;
         if (_view != nil) {
             long count = _view->count();
             for (long v = 0; v < count; ++v) {
-                TabularViewInfo& view = _view->item(v);
+                TabularViewInfo& view = _view->item_ref(v);
                 view._view->column_separator_changed(index);
             }
         }
@@ -387,7 +386,7 @@ void TabularItem::change_column_separator (
 TextItem* TabularItem::cell (long row, long column) {
     long count = _cell->count();
     for (long i = 0; i < count; ++i) {
-        CellInfo& cell = _cell->item(i);
+        CellInfo& cell = _cell->item_ref(i);
         if (cell._row == row && cell._column == column) {
             return cell._text;
         }

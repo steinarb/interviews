@@ -28,8 +28,10 @@
 #include <Unidraw/Graphic/splines.h>
 #include <Unidraw/Graphic/util.h>
 
-#include <InterViews/painter.h>
+#include <IV-2_6/InterViews/painter.h>
 #include <InterViews/transformer.h>
+
+#include <IV-2_6/_enter.h>
 
 /*****************************************************************************/
 
@@ -146,7 +148,9 @@ PSBrush* S_OpenBSpline::GetBrush () { return _br; }
 
 Graphic* S_OpenBSpline::Copy () {
     Coord* x, *y;
-    int count = GetOriginal(x, y);
+    const Coord* cx, * cy;
+    int count = GetOriginal(cx, cy);
+    x = (Coord*)cx; y = (Coord*)cy;
 
     return new S_OpenBSpline(x, y, count, this);
 }
@@ -195,7 +199,9 @@ PSPattern* F_OpenBSpline::GetPattern () { return _pat; }
 
 Graphic* F_OpenBSpline::Copy () {
     Coord* x, *y;
-    int count = GetOriginal(x, y);
+    const Coord* cx, * cy;
+    int count = GetOriginal(cx, cy);
+    x = (Coord*)cx; y = (Coord*)cy;
 
     return new F_OpenBSpline(x, y, count, this);
 }
@@ -261,7 +267,9 @@ PSPattern* SF_OpenBSpline::GetPattern () { return _pat; }
 
 Graphic* SF_OpenBSpline::Copy () {
     Coord* x, *y;
-    int count = GetOriginal(x, y);
+    const Coord* cx, * cy;
+    int count = GetOriginal(cx, cy);
+    x = (Coord*)cx; y = (Coord*)cy;
 
     return new SF_OpenBSpline(x, y, count, this);
 }
@@ -302,13 +310,15 @@ SFH_OpenBSpline::SFH_OpenBSpline(
 
 Graphic* SFH_OpenBSpline::Copy () {
     Coord* x, *y;
-    int count = GetOriginal(x, y);
+    const Coord* cx, * cy;
+    int count = GetOriginal(cx, cy);
+    x = (Coord*)cx; y = (Coord*)cy;
 
     return new SFH_OpenBSpline(x, y, count, this);
 }
 
 boolean SFH_OpenBSpline::contains (PointObj& po, Graphic* gs) {
-    Coord *x, *y;
+    const Coord *x, *y;
     int count = GetOriginal(x, y);
     Transformer* t = gs->GetTransformer();
 
@@ -326,7 +336,7 @@ boolean SFH_OpenBSpline::contains (PointObj& po, Graphic* gs) {
 
 boolean SFH_OpenBSpline::intersects (BoxObj& userb, Graphic* gs) {
     PointObj po;
-    Coord *x, *y;
+    const Coord *x, *y;
     int count = GetOriginal(x, y);
     Transformer* t = gs->GetTransformer();
 
@@ -589,13 +599,15 @@ SFH_ClosedBSpline::SFH_ClosedBSpline(
 
 Graphic* SFH_ClosedBSpline::Copy () {
     Coord* x, *y;
-    int count = GetOriginal(x, y);
+    const Coord* cx, * cy;
+    int count = GetOriginal(cx, cy);
+    x = (Coord*)cx; y = (Coord*)cy;
 
     return new SFH_ClosedBSpline(x, y, count, this);
 }
 
 boolean SFH_ClosedBSpline::contains (PointObj& po, Graphic* gs) {
-    Coord *x, *y;
+    const Coord *x, *y;
     int count = GetOriginal(x, y);
     Transformer* t = gs->GetTransformer();
 
@@ -613,7 +625,7 @@ boolean SFH_ClosedBSpline::contains (PointObj& po, Graphic* gs) {
 
 boolean SFH_ClosedBSpline::intersects (BoxObj& userb, Graphic* gs) {
     PointObj po;
-    Coord *x, *y;
+    const Coord *x, *y;
     int count = GetOriginal(x, y);
     Transformer* t = gs->GetTransformer();
 

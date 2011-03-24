@@ -30,6 +30,8 @@
 
 #include <Unidraw/Graphic/graphic.h>
 
+#include <IV-2_6/_enter.h>
+
 class Vertices : public Graphic {
 public:
     virtual ~Vertices();
@@ -56,5 +58,7 @@ protected:
     int _count;
     Extent* _extent;
 };
+
+#include <IV-2_6/_leave.h>
 
 #endif

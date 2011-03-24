@@ -61,7 +61,7 @@ public:
     virtual boolean case_insensitive_equal(const String&) const;
     virtual boolean case_insensitive_equal(const char*) const;
 
-    char operator [](int index) const;
+    u_char operator [](int index) const;
     virtual String substr(int start, int length) const;
     String left(int length) const;
     String right(int start) const;
@@ -70,9 +70,9 @@ public:
     void set_to_left(int length);
     void set_to_right(int start);
 
-    virtual int search(int start, char) const;
-    int index(char) const;
-    int rindex(char) const;
+    virtual int search(int start, u_char) const;
+    int index(u_char) const;
+    int rindex(u_char) const;
 
     virtual boolean convert(int&) const;
     virtual boolean convert(long&) const;
@@ -81,8 +81,8 @@ public:
 
     virtual boolean null_terminated() const;
 protected:
-    virtual void set(const char*);
-    virtual void set(const char*, int);
+    virtual void set_value(const char*);
+    virtual void set_value(const char*, int);
 private:
     const char* data_;
     int length_;
@@ -94,6 +94,7 @@ public:
     CopyString(const char*);
     CopyString(const char*, int length);
     CopyString(const String&);
+    CopyString(const CopyString&);
     virtual ~CopyString();
 
     virtual String& operator =(const String&);
@@ -101,8 +102,8 @@ public:
 
     virtual boolean null_terminated() const;
 protected:
-    virtual void set(const char*);
-    virtual void set(const char*, int);
+    virtual void set_value(const char*);
+    virtual void set_value(const char*, int);
 private:
     void free();
 };
@@ -111,6 +112,7 @@ class NullTerminatedString : public String {
 public:
     NullTerminatedString();
     NullTerminatedString(const String&);
+    NullTerminatedString(const NullTerminatedString&);
     virtual ~NullTerminatedString();
 
     virtual String& operator =(const String&);
@@ -126,7 +128,9 @@ private:
 
 inline const char* String::string() const { return data_; }
 inline int String::length() const { return length_; }
-inline char String::operator [](int index) const { return data_[index]; }
+inline u_char String::operator [](int index) const {
+    return ((u_char*)data_)[index];
+}
 
 inline String String::left(int length) const { return substr(0, length); }
 inline String String::right(int start) const { return substr(start, -1); }
@@ -134,7 +138,7 @@ inline String String::right(int start) const { return substr(start, -1); }
 inline void String::set_to_left(int length) { set_to_substr(0, length); }
 inline void String::set_to_right(int start) { set_to_substr(start, -1); }
 
-inline int String::index(char c) const { return search(0, c); }
-inline int String::rindex(char c) const { return search(-1, c); }
+inline int String::index(u_char c) const { return search(0, c); }
+inline int String::rindex(u_char c) const { return search(-1, c); }
 
 #endif

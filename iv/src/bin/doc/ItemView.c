@@ -29,7 +29,7 @@
 #include "Item.h"
 #include "DocViewer.h"
 
-#include <InterViews/listener.h>
+#include "doc-listener.h"
 
 ItemView::ItemView (
     DocumentViewer* viewer, ItemView* parent
@@ -42,7 +42,7 @@ ItemView::ItemView (
 
 ItemView::~ItemView () { }
 
-void ItemView::event (Event& e) {
+boolean ItemView::event (Event& e) {
     if (_viewer->focus() != this) {
         if (
             e.type() == Event::down && e.pointer_button() == Event::left
@@ -66,6 +66,7 @@ void ItemView::event (Event& e) {
             _listener->motion(false);
         }
     }
+    return true;
 }
 
 void ItemView::allocate (

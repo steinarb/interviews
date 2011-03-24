@@ -22,7 +22,6 @@
 
 /*
  * FBrowser component declarations.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibfbrowser.h,v 1.2 91/09/27 14:13:56 tang Exp $
  */
 
 #ifndef ibfbrowser_h
@@ -63,7 +62,7 @@ public:
     virtual boolean IsA(ClassId);
 };
 
-class FBrowserCode : public CodeView {
+class FBrowserCode : public ButtonCode {
 public:
     FBrowserCode(FBrowserComp* = nil);
 

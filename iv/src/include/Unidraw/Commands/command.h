@@ -34,10 +34,12 @@ class Clipboard;
 class Component;
 class ControlInfo;
 class Data;
+class DataCache;
 class Editor;
 class GraphicComp;
 class Iterator;
 class Selection;
+
 class istream;
 class ostream;
 
@@ -63,7 +65,7 @@ public:
     virtual void Last(Iterator&);
     virtual void Next(Iterator&);
     virtual void Prev(Iterator&);
-    virtual boolean Done(Iterator);
+    virtual boolean Done(Iterator&);
 
     virtual ~Command();
     virtual Command* Copy();
@@ -88,7 +90,7 @@ protected:
     Editor* _editor;
     Clipboard* _clipboard;
 private:
-    class DataCache* CopyData();
+    DataCache* CopyData();
     void SetData(DataCache*);
 private:
     DataCache* _cache;

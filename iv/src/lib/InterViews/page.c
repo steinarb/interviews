@@ -56,8 +56,8 @@ PageInfo::PageInfo() {
     status_ = 0;
 }
 
-declareList(PageInfo_List,PageInfo);
-implementList(PageInfo_List,PageInfo);
+declareList(PageInfo_List,PageInfo)
+implementList(PageInfo_List,PageInfo)
 
 static const float epsilon = 0.1;
 
@@ -71,7 +71,7 @@ Page::Page(Glyph* bg) : Glyph() {
 Page::~Page() {
     GlyphIndex count = info_->count();
     for (GlyphIndex i = 0; i < count; ++i) {
-        PageInfo& info = info_->item(i);
+        PageInfo& info = info_->item_ref(i);
 	Resource::unref(info.glyph_);
     }
     delete info_;
@@ -88,13 +88,10 @@ Coord Page::x() const { return allocation_.x(); }
 Coord Page::y() const { return allocation_.y(); }
 
 void Page::show(GlyphIndex index, boolean showing) {
-    PageInfo& info = info_->item(index);
+    PageInfo& info = info_->item_ref(index);
     if (((info.status_ & PageInfoHidden) == 0) != showing) {
         if (canvas_ != nil) {
-            Extension& b = info.extension_;
-            canvas_->damage(
-                b.left(), b.bottom(), b.right(), b.top()
-            );
+            canvas_->damage(info.extension_);
         }
         if (showing) {
             info.status_ &= ~PageInfoHidden;
@@ -105,11 +102,11 @@ void Page::show(GlyphIndex index, boolean showing) {
 }
 
 boolean Page::showing(GlyphIndex index) const {
-    return (info_->item(index).status_ & PageInfoHidden) == 0;
+    return (info_->item_ref(index).status_ & PageInfoHidden) == 0;
 }
 
 void Page::move(GlyphIndex index, Coord x, Coord y) {
-    PageInfo& info = info_->item(index);
+    PageInfo& info = info_->item_ref(index);
     if (
         (info.status_ & PageInfoAllocated)
         && (info.x_ != x || info.y_ != y)
@@ -125,16 +122,12 @@ void Page::move(GlyphIndex index, Coord x, Coord y) {
         a.allot(Dimension_X, n_ax);
         a.allot(Dimension_Y, n_ay);
         if (canvas_ != nil) {
-            canvas_->damage(
-                b.left(), b.bottom(), b.right(), b.top()
-            );
+            canvas_->damage(b);
         }
-	b.xy_extents(fil, -fil, fil, -fil);
+	b.clear();
         info.glyph_->allocate(canvas_, a, b);
         if (canvas_ != nil) {
-            canvas_->damage(
-                b.left(), b.bottom(), b.right(), b.top()
-            );
+            canvas_->damage(b);
         }
     }
     info.x_ = x;
@@ -142,7 +135,7 @@ void Page::move(GlyphIndex index, Coord x, Coord y) {
 }
 
 void Page::location(GlyphIndex index, Coord& x, Coord& y) {
-    PageInfo& info = info_->item(index);
+    PageInfo& info = info_->item_ref(index);
     x = info.x_;
     y = info.y_;
 }
@@ -152,15 +145,15 @@ GlyphIndex Page::count() const {
 }
 
 Glyph* Page::component(GlyphIndex index) const {
-    return info_->item(index).glyph_;
+    return info_->item_ref(index).glyph_;
 }
 
 void Page::allotment(GlyphIndex index, DimensionName res, Allotment& a) const {
-    a = info_->item(index).allocation_.allotment(res);
+    a = info_->item_ref(index).allocation_.allotment(res);
 }
 
 void Page::change(GlyphIndex index) {
-    PageInfo& info = info_->item(index);
+    PageInfo& info = info_->item_ref(index);
     info.status_ &= ~(PageInfoAllocated);
 }
 
@@ -195,22 +188,18 @@ void Page::insert(GlyphIndex index, Glyph* glyph) {
 }
 
 void Page::remove(GlyphIndex index) {
-    PageInfo& info = info_->item(index);
+    PageInfo& info = info_->item_ref(index);
     if (canvas_ != nil && (info.status_ & PageInfoAllocated)) {
-        Extension b = info.extension_;
-        canvas_->damage(b.left(), b.bottom(), b.right(), b.top());
+        canvas_->damage(info.extension_);
     }
     Resource::unref(info.glyph_);
     info_->remove(index);
 }
 
 void Page::replace(GlyphIndex index, Glyph* glyph) {
-    PageInfo& info = info_->item(index);
+    PageInfo& info = info_->item_ref(index);
     if (canvas_ != nil && (info.status_ & PageInfoAllocated)) {
-        Extension& b = info.extension_;
-        canvas_->damage(
-            b.left(), b.bottom(), b.right(), b.top()
-        );
+        canvas_->damage(info.extension_);
     }
     Resource::ref(glyph);
     Resource::unref(info.glyph_);
@@ -232,7 +221,7 @@ void Page::allocate(Canvas* c, const Allocation& allocation, Extension& ext) {
     }
     GlyphIndex count = info_->count();
     for (GlyphIndex index = 0; index < count; ++index) {
-        PageInfo& info = info_->item(index);
+        PageInfo& info = info_->item_ref(index);
         if (info.glyph_ != nil) {
             Allocation& a = info.allocation_;
             Extension& b = info.extension_;
@@ -254,20 +243,18 @@ void Page::allocate(Canvas* c, const Allocation& allocation, Extension& ext) {
                 || !ay.equals(a.allotment(Dimension_Y), epsilon)
             ) {
                 if (c != nil && (info.status_ & PageInfoExtended)) {
-                    c->damage(
-                        b.left(), b.bottom(), b.right(), b.top()
-                    );
+                    c->damage(b);
                 }
                 a.allot(Dimension_X, ax);
                 a.allot(Dimension_Y, ay);
-		b.xy_extents(fil, -fil, fil, -fil);
+		b.clear();
                 info.glyph_->allocate(c, a, b);
                 if (c != nil) {
-                    c->damage(b.left(), b.bottom(), b.right(), b.top());
+                    c->damage(b);
                 }
             }
             info.status_ |= PageInfoAllocated|PageInfoExtended;
-            ext.extend(b);
+            ext.merge(b);
         }
     }
 }
@@ -278,11 +265,11 @@ void Page::draw(Canvas* canvas, const Allocation& a) const {
     }
     GlyphIndex count = info_->count();
     for (GlyphIndex index = 0; index < count; ++index) {
-        PageInfo& info = info_->item(index);
+        PageInfo& info = info_->item_ref(index);
         if (info.glyph_ != nil && !(info.status_ & PageInfoHidden)) {
             Allocation& a = info.allocation_;
             Extension& b = info.extension_;
-            if (canvas->damaged(b.left(), b.bottom(), b.right(), b.top())) {
+            if (canvas->damaged(b)) {
                 info.glyph_->draw(canvas, a);
             }
         }
@@ -295,32 +282,43 @@ void Page::print(Printer* p, const Allocation& a) const {
     }
     GlyphIndex count = info_->count();
     for (GlyphIndex index = 0; index < count; ++index) {
-        PageInfo& info = info_->item(index);
+        PageInfo& info = info_->item_ref(index);
         if (info.glyph_ != nil && !(info.status_ & PageInfoHidden)) {
             Allocation& a = info.allocation_;
             Extension& b = info.extension_;
-            if (p->damaged(b.left(), b.bottom(), b.right(), b.top())) {
+            if (p->damaged(b)) {
                 info.glyph_->print(p, a);
             }
         }
     }
 }
 
+void Page::undraw() {
+    if (background_ != nil) {
+	background_->undraw();
+    }
+    GlyphIndex count = info_->count();
+    for (GlyphIndex i = 0; i < count; i++) {
+        const PageInfo& info = info_->item_ref(i);
+	Glyph* g = info.glyph_;
+	if (g != nil) {
+	    g->undraw();
+	}
+    }
+    canvas_ = nil;
+}
+
 void Page::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
     if (background_ != nil) {
         background_->pick(c, a, depth, h);
     }
-    Coord x = h.left();
-    Coord y = h.bottom();
     GlyphIndex count = info_->count();
     for (GlyphIndex index = 0; index < count; ++index) {
-        PageInfo& info = info_->item(index);
+        PageInfo& info = info_->item_ref(index);
         if (info.glyph_ != nil && !(info.status_ & PageInfoHidden)) {
-            Extension& b = info.extension_;
             Allocation& a = info.allocation_;
-            if (
-                x >= b.left() && x < b.right()
-                && y >= b.bottom() && y < b.top()
+            if (h.right() >= a.left() && h.left() < a.right() &&
+                h.top() >= a.bottom() && h.bottom() < a.top()
             ) {
 		h.begin(depth, this, index);
                 info.glyph_->pick(c, a, depth + 1, h);

@@ -22,7 +22,6 @@
 
 /*
  * User interface builder-specific tools.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibtools.h,v 1.2 91/09/27 14:15:33 tang Exp $
  */
 
 #ifndef ibtools_h
@@ -75,6 +74,7 @@ public:
     virtual boolean IsA(ClassId);
 private:
     Selection* _selPath;
+    boolean _shift;
 };
 
 inline Selection* ExamineTool::GetSelPath () { return _selPath; }

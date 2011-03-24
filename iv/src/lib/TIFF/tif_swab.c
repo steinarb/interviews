@@ -1,10 +1,10 @@
 #ifndef lint
-static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_swab.c,v 1.9 91/07/16 16:31:01 sam Exp $";
+static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_swab.c,v 1.12 92/02/10 19:06:03 sam Exp $";
 #endif
 
 /*
- * Copyright (c) 1988, 1989, 1990, 1991 Sam Leffler
- * Copyright (c) 1991 Silicon Graphics, Inc.
+ * Copyright (c) 1988, 1989, 1990, 1991, 1992 Sam Leffler
+ * Copyright (c) 1991, 1992 Silicon Graphics, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and 
  * its documentation for any purpose is hereby granted without fee, provided
@@ -101,7 +101,11 @@ TIFFSwabArrayOfLong(lp, n)
  * for algorithms that want an equivalent table that
  * do not reverse bit values.
  */
+#if defined(__STDC__) || defined(__EXTENDED__) || USE_CONST
+const unsigned char TIFFBitRevTable[256] = {
+#else
 unsigned char TIFFBitRevTable[256] = {
+#endif
     0x00, 0x80, 0x40, 0xc0, 0x20, 0xa0, 0x60, 0xe0,
     0x10, 0x90, 0x50, 0xd0, 0x30, 0xb0, 0x70, 0xf0,
     0x08, 0x88, 0x48, 0xc8, 0x28, 0xa8, 0x68, 0xe8,
@@ -135,7 +139,11 @@ unsigned char TIFFBitRevTable[256] = {
     0x0f, 0x8f, 0x4f, 0xcf, 0x2f, 0xaf, 0x6f, 0xef,
     0x1f, 0x9f, 0x5f, 0xdf, 0x3f, 0xbf, 0x7f, 0xff
 };
+#if defined(__STDC__) || defined(__EXTENDED__) || USE_CONST
+const unsigned char TIFFNoBitRevTable[256] = {
+#else
 unsigned char TIFFNoBitRevTable[256] = {
+#endif
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 
     0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 
     0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 
@@ -174,6 +182,17 @@ TIFFReverseBits(cp, n)
 	register unsigned char *cp;
 	register int n;
 {
+	for (; n > 8; n -= 8) {
+		cp[0] = TIFFBitRevTable[cp[0]];
+		cp[1] = TIFFBitRevTable[cp[1]];
+		cp[2] = TIFFBitRevTable[cp[2]];
+		cp[3] = TIFFBitRevTable[cp[3]];
+		cp[4] = TIFFBitRevTable[cp[4]];
+		cp[5] = TIFFBitRevTable[cp[5]];
+		cp[6] = TIFFBitRevTable[cp[6]];
+		cp[7] = TIFFBitRevTable[cp[7]];
+		cp += 8;
+	}
 	while (n-- > 0)
 		*cp = TIFFBitRevTable[*cp], cp++;
 }

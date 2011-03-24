@@ -31,8 +31,10 @@
 #include <Unidraw/Components/grview.h>
 #include <Unidraw/Graphic/picture.h>
 
-#include <InterViews/painter.h>
-#include <InterViews/rubband.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/rubband.h>
+
+#include <IV-2_6/_enter.h>
 
 #include <stream.h>
 

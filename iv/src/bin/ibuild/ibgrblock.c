@@ -20,6 +20,9 @@
  * WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+/*
+ *  GraphicBlock component implementation
+ */
 
 #include "ibclasses.h"
 #include "ibcmds.h"
@@ -46,6 +49,7 @@
 #include <Unidraw/ulist.h>
 #include <Unidraw/unidraw.h>
 #include <Unidraw/viewer.h>
+#include <Unidraw/Commands/align.h>
 #include <Unidraw/Commands/colorcmd.h>
 #include <Unidraw/Commands/datas.h>
 #include <Unidraw/Commands/edit.h>
@@ -101,28 +105,9 @@ GrBlockData::~GrBlockData () {
     delete _tf;
 }
 
-class GrBlockPicture : public IBGraphic {
-public:
-    GrBlockPicture(CanvasVar* = nil, Graphic* = nil);
-
-    virtual void SetCanvasVar(CanvasVar*);
-    virtual void SetColors(PSColor* f, PSColor* b);
-    virtual PSColor* GetBgColor();
-    void SetGrBlockGraphic(GrBlockGraphic*);
-
-protected:
-    virtual void getExtent(float&, float&, float&, float&, float&, Graphic*);
-    virtual void draw(Canvas*, Graphic*);
-    virtual void drawClipped(Canvas*, Coord, Coord, Coord, Coord, Graphic*);
-    virtual void concatGS(Graphic*, Graphic*, Graphic*);
-
-protected:
-    GrBlockGraphic* _grblockgr;
-    boolean _damage;
-};
-
 GrBlockPicture::GrBlockPicture (CanvasVar* c, Graphic* g) : IBGraphic(c, g) {
     _grblockgr = nil;
+    _clipped = true;
     _damage = false;
 }
 
@@ -135,11 +120,15 @@ PSColor* GrBlockPicture::GetBgColor () {
     return nil;
 }
 
-void GrBlockPicture::SetGrBlockGraphic(GrBlockGraphic* grblockgr) {
+void GrBlockPicture::SetClip (boolean clipped) { _clipped = clipped; }
+
+boolean GrBlockPicture::GetClip () { return _clipped; } 
+
+void GrBlockPicture::SetGrBlockGraphic (GrBlockGraphic* grblockgr) {
     _grblockgr = grblockgr;
 }
 
-void GrBlockPicture::SetCanvasVar(CanvasVar* cvar) {
+void GrBlockPicture::SetCanvasVar (CanvasVar* cvar) {
     IBGraphic::SetCanvasVar(cvar);
     if (_grblockgr != nil) {
         _grblockgr->SetCanvasVar(cvar);
@@ -149,7 +138,7 @@ void GrBlockPicture::SetCanvasVar(CanvasVar* cvar) {
 void GrBlockPicture::getExtent (
     float& l, float& b, float& cx, float& cy, float& tol, Graphic* gs
 ) {
-    if (_grblockgr != nil) {
+    if (_grblockgr != nil && _clipped) {
 	FullGraphic gstemp;
         concat(_grblockgr, gs, &gstemp);
         getExtentGraphic(_grblockgr, l, b, cx, cy, tol, &gstemp);
@@ -163,7 +152,7 @@ void GrBlockPicture::getExtent (
 void GrBlockPicture::draw (Canvas* c, Graphic* gs) {
     Coord l, b, r, t;
 
-    if (_grblockgr != nil) {
+    if (_grblockgr != nil && _clipped) {
 	getBox(l, b, r, t, gs);
 
 	if (_clipping != nil) {
@@ -265,6 +254,19 @@ void GrBlockComp::Interpret(Command* cmd) {
             Propagate(cmd);
         }
 
+    } else if (cmd->IsA(ALIGN_CMD)) {
+        AlignCmd* alignCmd = (AlignCmd*) cmd;
+        Alignment al;
+	GrBlockGraphic* gg = GetGrBlockGraphic();
+	cmd->Store(this, new VoidData((void*) gg->GetAlignment()));
+        alignCmd->GetAlignment(al, al);
+	gg->SetAlignment(al);
+
+        Picture* topgr = (Picture*) _top->GetGraphic();
+        _grblockgr->Align(al, topgr, al);
+        SubNotify();
+        Propagate(cmd);
+
     } else if (cmd->IsA(UNGROUP_CMD)) {
         Component* comp = cmd->GetEditor()->GetComponent();
         if (comp == (Component*) this) {
@@ -292,10 +294,16 @@ void GrBlockComp::Interpret(Command* cmd) {
                 cb->Next(i);
             }
         }
-        InteractorComp::Interpret(cmd);
+        GraphicComps::Interpret(cmd);
+        for (cb->First(i); !cb->Done(i); cb->Next(i)) {
+            IComp* kid = (IComp*)cb->GetComp(i);
+            kid->Instantiate();
+        }
         Propagate(cmd);
 
-    } else if (cmd->IsA(SCAN_CMD) || cmd->IsA(GETCONFLICT_CMD)) {
+    } else if (
+        cmd->IsA(SCAN_CMD) || cmd->IsA(GETCONFLICT_CMD) || cmd->IsA(IDMAP_CMD)
+    ) {
         MonoSceneComp::Interpret(cmd);
 
     } else if (cmd->IsA(COLOR_CMD)) {
@@ -316,6 +324,12 @@ void GrBlockComp::Interpret(Command* cmd) {
     } else if (cmd->IsA(INFO_CMD)) {
         MonoSceneComp::Interpret(cmd);
 
+    } else if (cmd->IsA(COMPCHECK_CMD)) {
+        CompCheckCmd* ccmd = (CompCheckCmd*) cmd;
+        Iterator i;
+        for (First(i); !Done(i) && ccmd->IsOK(); Next(i)) {
+            GetComp(i)->Interpret(cmd);
+        }
     } else if (!cmd->IsA(FONT_CMD) && !cmd->IsA(PLACE_CMD)) {
         InteractorComp::Interpret(cmd);
     }
@@ -330,6 +344,19 @@ void GrBlockComp::Uninterpret(Command* cmd) {
             idata->_void = _top;
             _top = top;
             MonoSceneComp::Append(_top);
+            Unpropagate(cmd);
+        }
+
+    } else if (cmd->IsA(ALIGN_CMD)) {
+        VoidData* vd = (VoidData*) cmd->Recall(this);
+	Alignment al = (Alignment) vd->_void;
+	GrBlockGraphic* gg = GetGrBlockGraphic();
+	gg->SetAlignment(al);
+
+        Picture* topgr = (Picture*) _top->GetGraphic();
+        _grblockgr->Align(al, topgr, al);
+        SubNotify();
+        if (cmd->GetClipboard()->Includes(this)) {
             Unpropagate(cmd);
         }
 
@@ -451,9 +478,10 @@ void GrBlockComp::Reconfig() {
 
 void GrBlockComp::Resize () {
     Picture* topgr = (Picture*) _top->GetGraphic();
+    Alignment al = _grblockgr->GetAlignment();
 
-    if (!topgr->IsEmpty()) {
-        topgr->Align(Center, _grblockgr, Center);
+     if (!topgr->IsEmpty()) {
+        topgr->Align(al, _grblockgr, al);
     }
     SubNotify();
 }
@@ -543,6 +571,11 @@ GrBlockComp* GrBlockView::GetGrBlockComp() {
 
 GrBlockView::GrBlockView (GrBlockComp* subj) : MonoSceneView(subj) { }
 
+GrBlockView::~GrBlockView () {
+    GetGraphic()->Remove(_grblockgr);
+    delete _grblockgr;
+}
+
 ClassId GrBlockView::GetClassId () { return GRBLOCK_VIEW; }
 
 boolean GrBlockView::IsA (ClassId id) {
@@ -568,16 +601,26 @@ Graphic* GrBlockView::GetGraphic () {
 void GrBlockView::Update () {
     GrBlockPicture* grbcomp = (GrBlockPicture*) GetGrBlockComp()->GetGraphic();
     GrBlockPicture* grbview = (GrBlockPicture*) GetGraphic();
-
     GrBlockGraphic* grblockgr = GetGrBlockComp()->GetGrBlockGraphic();
-    if (
-        Different(grbcomp, grbview) || Different(grblockgr, _grblockgr)
-    ) {
-        IncurDamage(grbview);
-        *(Graphic*)grbview = *(Graphic*)grbcomp;
-        *(Graphic*)_grblockgr = *(Graphic*)grblockgr;
-        UpdateCanvasVar();
-        IncurDamage(grbview);
+
+    Viewer* viewer = GetViewer();
+    if (viewer != nil && viewer->GetGraphicView() == this) {
+        boolean clipped = grbview->GetClip();
+        if (clipped) {
+            grbview->SetClip(false);
+            IncurDamage(grbview);
+            grbview->Remove(_grblockgr);
+        }
+    } else {
+        if (
+            Different(grbcomp, grbview) || Different(grblockgr, _grblockgr)
+        ) {
+            IncurDamage(grbview);
+            *(Graphic*)grbview = *(Graphic*)grbcomp;
+            *(Graphic*)_grblockgr = *(Graphic*)grblockgr;
+            UpdateCanvasVar();
+            IncurDamage(grbview);
+        }
     }
     GraphicViews::Update();
 }
@@ -692,9 +735,9 @@ GraphicComp* GrBlockView::CreateProtoComp (
     Editor* ed, Coord x0, Coord y0, Coord x1, Coord y1
 ) {
     ColorVar* colVar = (ColorVar*) ed->GetState("ColorVar");
-    
+
     GrBlockComp* gcomp = (GrBlockComp*) GetGrBlockComp()->Copy();
-    Graphic* grblockgr = gcomp->GetGrBlockGraphic();
+    GrBlockGraphic* grblockgr = gcomp->GetGrBlockGraphic();
     grblockgr->SetColors(nil, colVar->GetBgColor());
 
     SF_Rect* rect = new SF_Rect(x0, y0, x1, y1, stdgraphic);
@@ -711,7 +754,15 @@ boolean GrBlockCode::IsA (ClassId id) {
 }
 
 ClassId GrBlockCode::GetClassId () { return GRBLOCK_CODE; }
-GrBlockCode::GrBlockCode (GrBlockComp* subj) : MonoSceneCode(subj) { }
+GrBlockCode::GrBlockCode (GrBlockComp* subj) : MonoSceneCode(subj) {}
+
+void GrBlockCode::Update () {
+    MonoSceneCode::Update();
+    InteractorComp* subj = GetIntComp();
+    Graphic* gr = subj->GetGraphic();
+    gr->SetColors(nil, gr->GetBgColor());
+    gr->SetFont(nil);
+}
 
 GrBlockComp* GrBlockCode::GetGrBlockComp () {
     return (GrBlockComp*) GetSubject();
@@ -766,10 +817,13 @@ boolean GrBlockCode::Definition (ostream& out) {
 
             ok = ok && EmitGraphicState(out);
 
+            Alignment al = grbcomp->GetGrBlockGraphic()->GetAlignment();
             BeginInstantiate(out);
             out << "(";
             InstanceName(out);
-            out << "nil)";
+            out << "nil, 0, ";
+            ok = ok && Align(al, out);
+            out << ")";
             EndInstantiate(out);
 
             for(First(i); !Done(i); Next(i)) {
@@ -808,7 +862,7 @@ boolean GrBlockCode::Definition (ostream& out) {
 }
 
 boolean GrBlockCode::CoreConstDecls(ostream& out) { 
-    out << "(const char*, Graphic*);\n";
+    out << "(const char*, Graphic*, Coord pad, Alignment);\n";
     return out.good();
 }
 
@@ -816,15 +870,19 @@ boolean GrBlockCode::CoreConstInits(ostream& out) {
     InteractorComp* icomp = GetIntComp();
     SubclassNameVar* snamer = icomp->GetClassNameVar();
     const char* baseclass = snamer->GetBaseClass();
+    const char* subclass = snamer->GetName();
 
-    out << "(\n    const char* name, Graphic* gr\n) : ";
-    out << baseclass << "(name, gr) {}\n\n";
+    out << "(\n    const char* name, Graphic* gr, Coord pad, Alignment al\n)";
+    out << " : ";
+    out << baseclass << "(name, gr, pad, al) {\n";
+    out << "    SetClassName(\"" << subclass << "\");\n";
+    out << "}\n\n";
 
     return out.good();
 }
 
 boolean GrBlockCode::ConstDecls(ostream& out) {
-    out << "(const char*, Graphic*);\n";
+    out << "(const char*, Graphic*, Coord pad, Alignment);\n";
     return out.good();
 }
 
@@ -832,8 +890,9 @@ boolean GrBlockCode::ConstInits(ostream& out) {
     char coreclass[CHARBUFSIZE];
     GetCoreClassName(coreclass);
 
-    out << "(\n    const char* name, Graphic* gr\n) : ";
-    out << coreclass << "(name, gr) {}\n\n";
+    out << "(\n    const char* name, Graphic* gr, Coord pad, Alignment al\n)";
+    out << " : ";
+    out << coreclass << "(name, gr, pad, al) {}\n\n";
 
     return out.good();
 }
@@ -844,15 +903,17 @@ boolean GrBlockCode::EmitIncludeHeaders(ostream& out) {
     if (!snamer->IsSubclass() && !_namelist->Search("grblock")) {
         _namelist->Append("grblock");
     }
-    if (
-        strcmp(snamer->GetName(), _classname) != 0 && 
-        !_namelist->Search("transformer")
-    ) {
-        _namelist->Append("transformer");
-        out << "#include <InterViews/transformer.h> \n";
-        out << "#include <Unidraw/Graphic/grblock.h> \n";
-        out << "#include <Unidraw/Graphic/picture.h> \n";
-        out << "#include <Unidraw/Graphic/pspaint.h> \n";
+    if (strcmp(snamer->GetName(), _classname) != 0) {
+        if (!_namelist->Search("transformer")) {
+            _namelist->Append("transformer");
+            out << "#include <InterViews/transformer.h> \n";
+            out << "#include <Unidraw/Graphic/grblock.h> \n";
+            out << "#include <Unidraw/Graphic/pspaint.h> \n";
+        }
+        if (!_namelist->Search("picture")) {
+            _namelist->Append("picture");
+            out << "#include <Unidraw/Graphic/picture.h> \n";
+        }
     }
     return out.good();
 }
@@ -863,29 +924,35 @@ boolean GrBlockCode::EmitGraphicState(ostream& out) {
     _emitGraphicState = true;
     ok = ok && Iterate(out);
     _emitGraphicState = false;
-    if (!ok) {
+    if (!ok && _err_count < 10) {
         strcat(_errbuf, "GraphicState initialization failed.\n");
+        _err_count++;
     }
     return ok;
 }
 
 /*****************************************************************************/
 
-GrBlockGraphic::GrBlockGraphic (CanvasVar* c, Graphic* g) : IBGraphic(c, g) {}
+GrBlockGraphic::GrBlockGraphic (
+    CanvasVar* c, Graphic* g, Alignment align
+) : IBGraphic(c, g) {
+    _align = align;
+}
 
 void GrBlockGraphic::getExtent (
     float& l, float& b, float& cx, float& cy, float& tol, Graphic* gs
 ) {
     CanvasVar* cvar = GetCanvasVar();
-
+    l = b = cx = cy = 0.0;
     if (cvar != nil) {
         CalcExtent(cvar->Width(), cvar->Height(), l,b,cx,cy,tol,gs);
+
     }
     tol = 0;
 }
 
 Graphic* GrBlockGraphic::Copy () {
-    Graphic* copy = new GrBlockGraphic(nil, this);
+    Graphic* copy = new GrBlockGraphic(nil, this, _align);
     return copy;
 }
 
@@ -894,10 +961,15 @@ boolean GrBlockGraphic::IsA (ClassId id) { return GRBLOCK_GRAPHIC == id; }
 
 void GrBlockGraphic::Read (istream& in) {
     ReadGS(in);
+    float version = unidraw->GetCatalog()->FileVersion();
+    if (version > 1.05) {
+        in >> _align;
+    }
 }
 
 void GrBlockGraphic::Write (ostream& out) {
     WriteGS(out);
+    out << _align << " ";
 }
 
 void GrBlockGraphic::draw (Canvas* c, Graphic* gs) {

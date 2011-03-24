@@ -6,7 +6,7 @@
 #include <InterViews/canvas.h>
 #include <InterViews/event.h>
 #include "VMouse.h"
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/_enter.h>
 
 static port_id = 1040;
 

@@ -33,10 +33,10 @@
 #include <Unidraw/keymap.h>
 #include <Unidraw/kybd.h>
 #include <Unidraw/manips.h>
-#include <Unidraw/page.h>
 #include <Unidraw/selection.h>
 #include <Unidraw/statevars.h>
 #include <Unidraw/uctrl.h>
+#include <Unidraw/upage.h>
 #include <Unidraw/viewer.h>
 
 #include <Unidraw/Commands/transforms.h>
@@ -49,13 +49,15 @@
 
 #include <Unidraw/Tools/tool.h>
 
-#include <InterViews/painter.h>
-#include <InterViews/perspective.h>
-#include <InterViews/rubband.h>
-#include <InterViews/sensor.h>
-#include <InterViews/shape.h>
-#include <InterViews/textdisplay.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/perspective.h>
+#include <IV-2_6/InterViews/rubband.h>
+#include <IV-2_6/InterViews/sensor.h>
+#include <IV-2_6/InterViews/shape.h>
+#include <IV-2_6/InterViews/textdisplay.h>
 #include <InterViews/transformer.h>
+
+#include <IV-2_6/_enter.h>
 
 #include <OS/math.h>
 
@@ -146,7 +148,7 @@ void ViewerGraphic::totalGSGraphic (Graphic* g, Graphic& gs) {
 
 class ViewerView : public GraphicView {
 public:
-    ViewerView(GraphicView*, Page*, Grid*, Viewer*);
+    ViewerView(GraphicView*, UPage*, Grid*, Viewer*);
     virtual ~ViewerView();
 
     virtual void Update();
@@ -156,7 +158,7 @@ private:
     ViewerGraphic* _vg;
 };
 
-ViewerView::ViewerView (GraphicView* g, Page* page, Grid* grid, Viewer* v) {
+ViewerView::ViewerView (GraphicView* g, UPage* page, Grid* grid, Viewer* v) {
     Picture* p = new Picture;
 
     if (grid != nil) {
@@ -191,22 +193,24 @@ Viewer* ViewerView::GetViewer () { return _viewer; }
 /*****************************************************************************/
 
 Viewer::Viewer (
-    Editor* ed, GraphicView* gv, Page* page, Grid* grid, 
-    Coord w, Coord h, Orientation orientation
-) : GraphicBlock(nil, 0, Center, Binary) {
+    Editor* ed, GraphicView* gv, UPage* page, Grid* grid, 
+    Coord w, Coord h, Orientation orientation,
+    Alignment align, Zooming zoom
+) : GraphicBlock(nil, 0, align, zoom) {
     Init(ed, gv, page, grid, w, h, orientation);
 }
 
 Viewer::Viewer (
     const char* instance,
-    Editor* ed, GraphicView* gv, Page* page, Grid* grid, 
-    Coord w, Coord h, Orientation orientation
-) : GraphicBlock(instance, nil, 0, Center, Binary) {
+    Editor* ed, GraphicView* gv, UPage* page, Grid* grid, 
+    Coord w, Coord h, Orientation orientation,
+    Alignment align, Zooming zoom
+) : GraphicBlock(instance, nil, 0, align, zoom) {
     Init(ed, gv, page, grid, w, h, orientation);
 }
 
 void Viewer::Init(
-    Editor* ed, GraphicView* gv, Page* page, Grid* grid,
+    Editor* ed, GraphicView* gv, UPage* page, Grid* grid,
     Coord w, Coord h, Orientation orientation
 ) {    
     SetClassName("Viewer");
@@ -224,7 +228,7 @@ void Viewer::Init(
     SetCanvasType(CanvasSaveContents);
 }
 
-void Viewer::Init (Editor* ed, GraphicView* gview, Page* page, Grid* grid) {
+void Viewer::Init (Editor* ed, GraphicView* gview, UPage* page, Grid* grid) {
     _editor = ed;
     _gview = gview;
     _page = page;
@@ -256,7 +260,7 @@ void Viewer::Update () {
     Component* edComp = _editor->GetComponent();
 
     if (viewComp != edComp) {
-        ComponentView* newView = edComp->Create(COMPONENT_VIEW);
+        ComponentView* newView = edComp->Create(ViewCategory());
 
         if (newView->IsA(GRAPHIC_VIEW)) {
             edComp->Attach(newView);
@@ -384,7 +388,7 @@ void Viewer::SetGraphicView (GraphicView* gv) {
     }
 }
 
-void Viewer::SetPage (Page* page) {
+void Viewer::SetPage (UPage* page) {
     if (_page != page) {
         delete _viewerView;
         delete _page;
@@ -459,7 +463,7 @@ void Viewer::SetOrientation (Orientation o) {
 
 Graphic* Viewer::GetGraphic () { return _gview->GetGraphic(); }
 GraphicView* Viewer::GetGraphicView () { return _gview; }
-Page* Viewer::GetPage () { return _page; }
+UPage* Viewer::GetPage () { return _page; }
 Grid* Viewer::GetGrid () { return _grid; }
 Orientation Viewer::GetOrientation () { return _orientation; }
 Editor* Viewer::GetEditor () { return _editor; }
@@ -508,9 +512,14 @@ void Viewer::Manipulate (Manipulator* m, Event& e) {
     Listen(allEvents);
     m->Grasp(e);
 
+    /*
+     * boolean b is just here to workaround a cfront 3.0 bug.
+     */
+    boolean b = false;
     do {
         Read(e);
-    } while (m->Manipulating(e));
+	b = m->Manipulating(e);
+    } while (b);
 
     m->Effect(e);
     Listen(input);
@@ -544,6 +553,8 @@ void Viewer::UseTool (Tool* t, Event& e) {
 
             if (cmd->Reversible()) {
                 cmd->Log();
+	    } else {
+		delete cmd;
             }
         }
         delete m;
@@ -582,6 +593,8 @@ float Viewer::LimitMagnification (float desired) {
 
     return (desired < lo) ? lo : (desired > hi) ? hi : desired;
 }
+
+ClassId Viewer::ViewCategory () { return COMPONENT_VIEW; }
 
 void Viewer::Align (GraphicComp* comp, Alignment a) {
     Graphic* g = comp->GetGraphic();

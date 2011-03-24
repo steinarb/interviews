@@ -32,6 +32,8 @@
 #include <Unidraw/Components/grview.h>
 #include <Unidraw/Components/psview.h>
 
+#include <IV-2_6/_enter.h>
+
 class Vertices;
 
 class VerticesComp : public GraphicComp {
@@ -75,5 +77,7 @@ protected:
 
     virtual const char* Name();
 };
+
+#include <IV-2_6/_leave.h>
 
 #endif

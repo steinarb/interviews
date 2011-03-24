@@ -27,6 +27,8 @@
 #ifndef unidraw_uarray_h
 #define unidraw_uarray_h
 
+#include <Unidraw/enter-scope.h>
+
 class UArray {
 public:
     UArray(int = 16);

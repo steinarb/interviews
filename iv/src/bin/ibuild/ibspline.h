@@ -21,7 +21,7 @@
  */
 
 /*
- * ISplineComp
+ * ISplineComp declarations
  */
 
 #ifndef ibspline_h
@@ -40,7 +40,7 @@ public:
     virtual boolean IsA(ClassId);
 };
 
-class SplineCode : public CodeView {
+class SplineCode : public GraphicCodeView {
 public:
     SplineCode(ISplineComp* = nil);
 
@@ -51,14 +51,16 @@ public:
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
 protected:
-    virtual boolean CoreConstDecls(ostream&);
-    virtual boolean CoreConstInits(ostream&);
-    virtual boolean ConstDecls(ostream&);
-    virtual boolean ConstInits(ostream&);
-    virtual boolean EmitIncludeHeaders(ostream&);
+    virtual boolean GCoreConstDecls(ostream&);
+    virtual boolean GCoreConstInits(ostream&);
+    virtual boolean GConstDecls(ostream&);
+    virtual boolean GConstInits(ostream&);
+
+    virtual const char* GetGHeader();
+    virtual const char* GetCVHeader();
 };
 
-class IClosedSplineComp : public IComp {
+class IClosedSplineComp : public ISplineComp {
 public:
     IClosedSplineComp(SFH_ClosedBSpline* = nil);
 
@@ -67,7 +69,7 @@ public:
     virtual boolean IsA(ClassId);
 };
 
-class ClosedSplineCode : public CodeView {
+class ClosedSplineCode : public SplineCode {
 public:
     ClosedSplineCode(IClosedSplineComp* = nil);
 
@@ -78,11 +80,10 @@ public:
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
 protected:
-    virtual boolean CoreConstDecls(ostream&);
-    virtual boolean CoreConstInits(ostream&);
-    virtual boolean ConstDecls(ostream&);
-    virtual boolean ConstInits(ostream&);
-    virtual boolean EmitIncludeHeaders(ostream&);
+    virtual boolean GCoreConstDecls(ostream&);
+    virtual boolean GCoreConstInits(ostream&);
+    virtual boolean GConstDecls(ostream&);
+    virtual boolean GConstInits(ostream&);
 };
 
 #endif

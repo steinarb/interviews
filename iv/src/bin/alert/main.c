@@ -24,15 +24,12 @@
  *  alert - displays a message in a dialog box
  */
 
-#include <IV-look/button.h>
+#include <Dispatch/dispatcher.h>
+#include <Dispatch/iohandler.h>
 #include <IV-look/kit.h>
 #include <InterViews/background.h>
-#include <InterViews/box.h>
-#include <InterViews/center.h>
 #include <InterViews/display.h>
-#include <InterViews/glue.h>
-#include <InterViews/label.h>
-#include <InterViews/margin.h>
+#include <InterViews/layout.h>
 #include <InterViews/session.h>
 #include <InterViews/style.h>
 #include <InterViews/window.h>
@@ -40,57 +37,78 @@
 #include <stdio.h>
 
 static PropertyData props[] = {
-    { "*quitbutton", "OK, OK ..." },
-    { "*font", "9x15" },
-    { "*transient", "on" },
+    { "Alert*font", "9x15" },
+    { "Alert*delay", "12" },
+    { "Alert*quitbutton", "OK, OK ..." },
+    { "Alert*transient", "on" },
     { nil }
 };
 
 static OptionDesc options[] = {
     { "font=", "*font", OptionValueAfter },
     { "button=", "*quitbutton", OptionValueAfter },
+    { "-delay", "*delay", OptionValueNext },
     { "-top", "*transient", OptionValueImplicit, "off" },
     { nil }
 };
 
-static Glyph* make_message(Glyph*, Kit*, Style*);
+static Glyph* make_message(Glyph*, const WidgetKit&, const LayoutKit&);
+
+class Timeout : public IOHandler {
+public:
+    Timeout(Session*);
+    virtual ~Timeout();
+
+    virtual void timerExpired(long sec, long usec);
+private:
+    Session* session_;
+};
+
+Timeout::Timeout(Session* s) { session_ = s; }
+Timeout::~Timeout() { }
+
+void Timeout::timerExpired(long, long) {
+    session_->quit();
+}
 
 int main(int argc, char** argv) {
     Session* session = new Session("Alert", argc, argv, options, props);
-    Style* style = session->style();
-    Kit* kit = Kit::instance();
+    const WidgetKit& kit = *WidgetKit::instance();
+    Style* style = kit.style();
+    const LayoutKit& layout = *LayoutKit::instance();
     String button_label;
     style->find_attribute("quitbutton", button_label);
+    float delay;
+    style->find_attribute("delay", delay);
+    /* convert from hours to seconds */
+    delay *= 60*60;
+    long delay_sec = long(delay);
+    long delay_usec = long((delay - float(delay_sec)) * 1000000);
 
-    Glyph* vspace = new VGlue(18.0);
-    Glyph* hspace = new HGlue(36.0);
-    Glyph* dialog = new Background(
-	new TBBox(
-	    new VCenter(vspace, 1.0),
-	    new LRBox(
+    Glyph* vspace = layout.vglue(18.0, fil, 16.0);
+    Glyph* hspace = layout.hglue(36.0, fil, 34.0);
+    Glyph* dialog = kit.outset_frame(
+	layout.vbox(
+	    vspace,
+	    layout.hbox(
 		hspace,
-		new TBBox(
-		    new VCenter(make_message(new TBBox, kit, style), 1.0),
+		layout.vbox(
+		    make_message(layout.vbox(), kit, layout),
 		    vspace,
-		    new LMargin(
-			kit->simple_push_button(
-			    button_label, style, kit->quit()
-			),
+		    layout.l_margin(
+			kit.push_button(button_label, kit.quit()),
 			0.0, fil, 0.0
 		    )
 		),
 		hspace
 	    ),
 	    vspace
-	),
-	style->flat()
+	)
     );
 
     Window* w;
     if (style->value_is_on("transient")) {
-	TransientWindow* t = new TransientWindow(
-	    kit->outset_frame(new Margin(dialog, 2.0), style)
-	);
+	TransientWindow* t = new TransientWindow(dialog);
 	t->transient_for(t);
 	w = t;
     } else {
@@ -100,13 +118,18 @@ int main(int argc, char** argv) {
     w->place(d->width() / 2, d->height() / 2);
     w->align(0.5, 0.5);
     d->ring_bell(0);
+    Dispatcher::instance().startTimer(
+	delay_sec, delay_usec, new Timeout(session)
+    );
     session->run_window(w);
     delete w;
     delete session;
     return 0;
 }
 
-static Glyph* make_message(Glyph* container, Kit* kit, Style* style) {
+static Glyph* make_message(
+    Glyph* container, const WidgetKit& kit, const LayoutKit& layout
+) {
     char buffer[1024];
     /* guarantee null-termination */
     buffer[sizeof(buffer) - 1] = '\0';
@@ -117,7 +140,9 @@ static Glyph* make_message(Glyph* container, Kit* kit, Style* style) {
 	if (s[n - 1] == '\n') {
 	    s.set_to_left(n - 1);
 	}
-	container->append(new RMargin(kit->label(s, style), 0.0, fil, 0.0));
+	container->append(
+	    layout.r_margin(kit.label(s), 0.0, fil, 0.0)
+	);
     }
     return container;
 }

@@ -31,14 +31,20 @@
 
 #include <InterViews/regexp.h>
 #include <InterViews/textbuffer.h>
+#include <OS/types.h>
+#include <OS/leave-scope.h>
+#define boolean _lib_os(boolean)
 
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/param.h>
-#include <sys/types.h>
 #include <sys/stat.h>
+
+#ifndef S_ISDIR
+#define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
+#endif
 
 /*****************************************************************************/
 
@@ -97,12 +103,12 @@ ClassInfo* Classes::Find (const char* className) {
 }
 
 void Classes::Insert (ClassInfo* info, int index) {
-    BufInsert(info, index, (void**&) _buf, _bufsize, _count);
+    BufInsert(info, index, (const void**&) _buf, _bufsize, _count);
 }
 
 void Classes::Remove (int index) {
     if (0 <= index && index < _count) {
-        BufRemove(index, (void**) _buf, _count);
+        BufRemove(index, (const void**) _buf, _count);
     }
 }
 
@@ -258,6 +264,7 @@ void ClassBuffer::SearchDirs (const char* path) {
 
 #include <OS/file.h>
 #include <OS/memory.h>
+#include <OS/string.h>
 
 void ClassBuffer::SearchFile (const char* path, struct stat&) {
     InputFile* f = InputFile::open(path);
@@ -289,8 +296,6 @@ void ClassBuffer::SearchFile (const char* path, struct stat&) {
     f->close();
     delete f;
 }
-
-#include <OS/leave-scope.h>
 
 void ClassBuffer::SearchTextBuffer (TextBuffer* tb, const char* path) {
     int beg = 0;

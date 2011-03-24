@@ -66,6 +66,16 @@ protected:
     virtual boolean ConstDecls(ostream&);
     virtual boolean ConstInits(ostream&);
     virtual boolean EmitIncludeHeaders(ostream&);
+    virtual boolean EmitCommonHeaders(const char*, ostream&);
+    virtual boolean EmitParameters(const char*, ostream&);
+
+    virtual boolean ToolCoreConstDecls(ostream&);
+    virtual boolean ToolCoreConstInits(ostream&);
+    virtual boolean ToolConstDecls(ostream&);
+    virtual boolean ToolConstInits(ostream&);
+protected:
+    boolean _emitToolInits;
+    boolean _emitBaseclass;
 };
 
 #endif

@@ -25,8 +25,6 @@
  * if necessary) that automatically includes a default set of controls
  * for engaging the current tool.  ToolPanel also provides convenience 
  * functions for installing and removing tools.
- *
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibtoolpanel.h,v 1.2 91/09/27 14:15:32 tang Exp $
  */
 
 #ifndef ibtoolpanel_h

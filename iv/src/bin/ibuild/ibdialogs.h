@@ -22,7 +22,6 @@
 
 /*
  * User interface builder-specific dialog boxes.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibdialogs.h,v 1.2 91/09/27 14:13:40 tang Exp $
  */
 
 #ifndef ibdialogs_h
@@ -36,15 +35,61 @@ class ButtonStateVarView;
 class ButtonSharedName;
 class CtrlStateVarView;
 class Deck;
+class Displayer;
 class EditorInfo;
+class IDVarView;
 class InteractorComp;
 class InstanceNameVarView;
 class Iterator;
 class IBVarView;
+class SMemberNameVarView;
 class Props;
 class PropsEditor;
 class UList;
 class VBox;
+
+class MoveDialog : public BasicDialog {
+public:
+    MoveDialog();
+    virtual void GetValues(float& x, float& y);
+
+    virtual boolean Accept();
+    virtual void Handle(Event&);
+
+    void SelectMessage();
+private:
+    Interactor* Interior();
+    class MatchEditor* _medit;
+    ButtonState* _units;
+};
+
+class ScaleDialog : public BasicDialog {
+public:
+    ScaleDialog();
+    virtual void GetValues(float& x, float& y);
+
+    virtual boolean Accept();
+    virtual void Handle(Event&);
+
+    void SelectMessage();
+private:
+    Interactor* Interior();
+    class MatchEditor* _medit;
+};
+
+class RotateDialog : public BasicDialog {
+public:
+    RotateDialog();
+    virtual void GetValue(float& angle);
+
+    virtual boolean Accept();
+    virtual void Handle(Event&);
+
+    void SelectMessage();
+private:
+    Interactor* Interior();
+    class MatchEditor* _medit;
+};
 
 class InfoDialog : public BasicDialog {
 public:
@@ -89,24 +134,49 @@ private:
 
 class BSDialog : public BasicDialog {
 public:
-    BSDialog(ButtonStateVarView*);
+    BSDialog(ButtonStateVarView* = nil);
     virtual boolean Accept();
     virtual void Handle(Event&);
-    boolean ChangeBS();
-    boolean Init();
+    virtual boolean ChangeBS();
+    virtual boolean Init();
 protected:
-    Interactor* Interior();
     Interactor* Buttons(int);
     boolean NameNotChanged();
 protected:
     ButtonStateVarView* _bsvarview;
-    MatchEditor* _bs, *_funcname, *_initial;
+    MatchEditor* _bs, *_funcname, *_initial, *_subclass;
     ButtonState* _exporter;
+private:
+    Interactor* Interior();
 };
 
 class CtrlDialog : public BSDialog {
 public:
     CtrlDialog(CtrlStateVarView*);
+private:
+    Interactor* Interior();
+};
+
+class SMemberDialog : public BSDialog {
+public:
+    SMemberDialog(SMemberNameVarView*, const char* = nil, const int* = nil);
+    virtual ~SMemberDialog();
+
+    void SMemberUpdate();
+    virtual boolean Accept();
+    virtual boolean ChangeBS();
+    virtual boolean Init();
+    void Append (const char*);
+protected:
+    virtual boolean NameNotChanged();
+protected:
+    SMemberNameVarView* _mvarview;
+    MatchEditor* _smember, *_subclass, *_baseclass;
+    IDVarView* _idvarview;
+    ButtonState* _exporter;
+    StringBrowser* _sb;
+    const int* _array;
+    char* _str;
 private:
     Interactor* Interior();
 };

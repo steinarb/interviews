@@ -35,6 +35,8 @@
 
 #include <InterViews/event.h>
 
+#include <IV-2_6/_enter.h>
+
 /*****************************************************************************/
 
 ClassId ReshapeTool::GetClassId () { return RESHAPE_TOOL; }

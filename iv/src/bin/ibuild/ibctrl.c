@@ -22,7 +22,6 @@
 
 /*
  * ToolPanelControl implementation.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibctrl.c,v 1.2 91/09/27 14:07:50 tang Exp $
  */
 
 #include "ibctrl.h"

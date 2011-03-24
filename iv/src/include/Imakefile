@@ -4,6 +4,7 @@ XCOMM
 
 SUBDIRS = \
 	Dispatch \
+	IV-2_6 \
 	IV-X11 \
 	IV-look \
 	InterViews \

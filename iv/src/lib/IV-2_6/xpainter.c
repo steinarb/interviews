@@ -39,8 +39,8 @@
 #include <InterViews/session.h>
 #include <InterViews/style.h>
 #include <InterViews/transformer.h>
-#include <InterViews/2.6/InterViews/iwindow.h>
-#include <InterViews/2.6/InterViews/painter.h>
+#include <IV-2_6/InterViews/iwindow.h>
+#include <IV-2_6/InterViews/painter.h>
 #include <IV-X11/Xlib.h>
 #include <IV-X11/xbitmap.h>
 #include <IV-X11/xbrush.h>
@@ -109,14 +109,14 @@ void PainterRep::PrepareDash(const Brush* b) {
  * allocate/deallocate off the heap.
  */
 
-static const XPointListSize = 200;
+static const int XPointListSize = 200;
 static XPoint xpoints[XPointListSize];
 
-inline XPoint* AllocPts(int n) {
+static XPoint* AllocPts(int n) {
     return (n <= XPointListSize) ? xpoints : new XPoint[n];
 }
 
-inline void FreePts(XPoint* v) {
+static void FreePts(XPoint* v) {
     if (v != xpoints) {
 	delete v;
     }
@@ -365,8 +365,9 @@ void Painter::MapList(
 void Painter::Begin_xor() {
     if (!rep->xor) {
 	rep->xor = true;
-	XDisplay* dpy = rep->display->rep()->display_;
-	unsigned long xor_pixel = rep->display->rep()->xor_;
+	DisplayRep& d = *rep->display->rep();
+	XDisplay* dpy = d.display_;
+	unsigned long xor_pixel = d.default_visual_->xor(*d.style_);
 	XSetFunction(dpy, rep->fillgc, GXxor);
 	XSetForeground(dpy, rep->fillgc, xor_pixel);
 	XSetFillStyle(dpy, rep->fillgc, FillSolid);
@@ -429,11 +430,11 @@ static int TxKey(Transformer* t, int x, int y) {
 
 class Bitmap;
 
-declareTable2(BitmapTable,XFont,int,Bitmap*);
-implementTable2(BitmapTable,XFont,int,Bitmap*);
+declareTable2(BitmapTable,XFont,int,Bitmap*)
+implementTable2(BitmapTable,XFont,int,Bitmap*)
 
-declareTable2(RasterTable,const Raster*,int,RasterRep*);
-implementTable2(RasterTable,const Raster*,int,RasterRep*);
+declareTable2(RasterTable,const Raster*,int,RasterRep*)
+implementTable2(RasterTable,const Raster*,int,RasterRep*)
 
 class PainterDpyInfoList;
 
@@ -460,8 +461,8 @@ public:
 
 PainterDpyInfoList* PainterDpyInfo::info_list_;
 
-declareList(PainterDpyInfoList,PainterDpyInfo*);
-implementList(PainterDpyInfoList,PainterDpyInfo*);
+declarePtrList(PainterDpyInfoList,PainterDpyInfo);
+implementPtrList(PainterDpyInfoList,PainterDpyInfo);
 
 PainterDpyInfo* PainterDpyInfo::find(Display* d) {
     if (info_list_ == nil) {
@@ -535,7 +536,7 @@ Bitmap* PainterDpyInfo::get_char_bitmap(
     if (!txtable_->find(tx, mapid, k)) {
         tx = new Bitmap(*basic);
 	Resource::ref(tx);
-        tx->transform(t);
+        tx->Transform(&t);
         txtable_->insert(mapid, k, tx);
     }
     return tx;
@@ -583,7 +584,8 @@ RasterRep* PainterDpyInfo::tx_raster(
                 height = 1;
             }
 
-            XDisplay* dpy = d->rep()->display_;
+	    DisplayRep& dr = *d->rep();
+            XDisplay* dpy = dr.display_;
             RasterRep* srep = r->rep();
 
             XImage* source = XGetImage(
@@ -592,7 +594,7 @@ RasterRep* PainterDpyInfo::tx_raster(
             );
 
             Pixmap map = XCreatePixmap(
-                dpy, d->rep()->root_, width, height, d->rep()->depth_
+                dpy, dr.root_, width, height, dr.default_visual_->depth()
             );
             GC xgc = XCreateGC(dpy, map, 0, nil);
             XSetForeground(dpy, xgc, 0);
@@ -754,7 +756,7 @@ void Painter::RasterRect(Canvas* c, IntCoord x, IntCoord y, Raster* r) {
     }
     r->flush();
     PainterDpyInfo& p = *PainterDpyInfo::find(rep->display);
-    RasterRep* info = p.tx_raster(r, matrix);
+    RasterRep* info = (matrix == nil) ? r->rep() : p.tx_raster(r, *matrix);
 
     IntCoord rw = (unsigned int)r->pwidth();
     IntCoord rh = (unsigned int)r->pheight();
@@ -786,6 +788,7 @@ void Painter::RasterRect(Canvas* c, IntCoord x, IntCoord y, Raster* r) {
 	0, 0, info->pwidth_, info->pheight_, xmin, ymin
     );
     XSetGraphicsExposures(dpy, rep->fillgc, True);
+    XDestroyRegion(rg);
 
     if (rep->clipped) {
 	XSetClipRectangles(dpy, rep->fillgc, 0, 0, rep->xclip, 1, Unsorted);
@@ -830,12 +833,13 @@ void Painter::Text(Canvas* c, const char* s, int len, IntCoord x, IntCoord y) {
     } else {
         IntCoord curx = x;
         float fx0, fy0;
-        Transformer notrans(matrix);
+        Transformer notrans(*matrix);
         notrans.Transform(0.0, 0.0, fx0, fy0);
         notrans.Translate(-fx0, -fy0);
         int txchar = TxKey(matrix, font->Width("M"), font->Height());
         Bitmap* bits;
 	PainterDpyInfo& p = *PainterDpyInfo::find(rep->display);
+	Transformer* oldmatrix;
         for (int i = 0; i < len; ++i) {
             IntCoord nextx = curx + font->Width(s+i, 1);
             if (rep->fillbg) {
@@ -863,7 +867,7 @@ void Painter::Text(Canvas* c, const char* s, int len, IntCoord x, IntCoord y) {
             case PainterDpyInfo::TxFontsCache:
             case PainterDpyInfo::TxFontsDefault:
                 bits = p.get_char_bitmap(font, s[i], txchar, notrans);
-                Transformer* oldmatrix = matrix;
+                oldmatrix = matrix;
                 matrix = nil;
                 oldmatrix->Transform(curx, ybase, x0, y0);
                 Stencil(c, x0, y0, bits, bits);
@@ -1036,9 +1040,15 @@ void Painter::Circle(Canvas* c, IntCoord x, IntCoord y, int r) {
     if (matrix != nil && (matrix->Stretched() || matrix->Rotated())) {
 	Ellipse(c, x, y, r, r);
     } else {
-	IntCoord left, top, right, bottom;
+	IntCoord left, top, right, bottom, tmp;
 	Map(c, x-r, y+r, left, top);
         Map(c, x+r, y-r, right, bottom);
+	if (left > right) {
+	    tmp = left; left = right; right = tmp;
+	}
+	if (top > bottom) {
+	    tmp = bottom; bottom = top; top = tmp;
+	}
 	XDrawArc(
 	    cr->dpy(), cr->xdrawable_, rep->dashgc,
             left, top, right-left, bottom-top, 0, 360*64
@@ -1057,9 +1067,15 @@ void Painter::FillCircle(Canvas* c, IntCoord x, IntCoord y, int r) {
     if (matrix != nil && (matrix->Stretched() || matrix->Rotated())) {
 	FillEllipse(c, x, y, r, r);
     } else {
-	IntCoord left, top, right, bottom;
+	IntCoord left, top, right, bottom, tmp;
 	Map(c, x-r, y+r, left, top);
         Map(c, x+r, y-r, right, bottom);
+	if (left > right) {
+	    tmp = left; left = right; right = tmp;
+	}
+	if (top > bottom) {
+	    tmp = bottom; bottom = top; top = tmp;
+	}
 	XFillArc(
 	    cr->dpy(), cr->xdrawable_, rep->fillgc,
             left, top, right-left, bottom-top, 0, 360*64
@@ -1171,13 +1187,21 @@ void Painter::Copy(
 	return;
     }
     IntCoord sx1, sy1, sx2, sy2, sx3, sy3, sx4, sy4, dx1, dy1;
-    Transformer t(matrix);
+    if (matrix == nil) {
+	sx1 = x1; sy1 = y1;
+	sx2 = x1; sy2 = y2;
+	sx3 = x2; sy3 = y2;
+	sx4 = x2; sy4 = y1;
+	dx1 = x0; dy1 = y0;
+    } else {
+	Transformer t(*matrix);
 
-    t.Transform(x1, y1, sx1, sy1);
-    t.Transform(x1, y2, sx2, sy2);
-    t.Transform(x2, y2, sx3, sy3);
-    t.Transform(x2, y1, sx4, sy4);
-    t.Transform(x0, y0, dx1, dy1);
+	t.Transform(x1, y1, sx1, sy1);
+	t.Transform(x1, y2, sx2, sy2);
+	t.Transform(x2, y2, sx3, sy3);
+	t.Transform(x2, y1, sx4, sy4);
+	t.Transform(x0, y0, dx1, dy1);
+    }
 
     int minx = Math::min(sx1, sx2, sx3, sx4);
     int maxx = Math::max(sx1, sx2, sx3, sx4);

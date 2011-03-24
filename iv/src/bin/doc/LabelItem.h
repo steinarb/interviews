@@ -30,6 +30,7 @@
 #include "Item.h"
 
 class LabelView;
+class LabelViewInfo_List;
 
 class LabelItem : public Item {
 public:
@@ -51,7 +52,7 @@ protected:
     virtual ~LabelItem ();
 
     char* _name;
-    class LabelViewInfo_List* _view;
+    LabelViewInfo_List* _view;
 };
 
 #endif

@@ -49,9 +49,10 @@ Raster::Raster(unsigned long w, unsigned long h) {
     r->bottom_ = 0;
     r->right_ = r->width_;
     r->top_ = r->height_;
-    XDisplay* dpy = d->rep()->display_;
+    DisplayRep* dr = r->display_->rep();
+    XDisplay* dpy = dr->display_;
     r->pixmap_ = XCreatePixmap(
-	dpy, d->rep()->root_, r->pwidth_, r->pheight_, d->rep()->depth_
+	dpy, dr->root_, r->pwidth_, r->pheight_, dr->default_visual_->depth()
     );
     r->gc_ = XCreateGC(dpy, r->pixmap_, 0, nil);
     r->image_ = XGetImage(
@@ -62,9 +63,10 @@ Raster::Raster(unsigned long w, unsigned long h) {
 Raster::Raster(const Raster& raster) {
     RasterRep* r = new RasterRep;
     rep_ = r;
+    raster.flush();
     RasterRep& rr = *(raster.rep());
     r->display_ = rr.display_;
-    r->modified_ = rr.modified_;
+    r->modified_ = true;
     r->width_ = rr.width_;
     r->height_ = rr.height_;
     r->left_ = rr.left_;
@@ -76,7 +78,7 @@ Raster::Raster(const Raster& raster) {
     DisplayRep* dr = r->display_->rep();
     XDisplay* dpy = dr->display_;
     r->pixmap_ = XCreatePixmap(
-	dpy, dr->root_, r->pwidth_, r->pheight_, dr->depth_
+	dpy, dr->root_, r->pwidth_, r->pheight_, dr->default_visual_->depth()
     );
     r->gc_ = XCreateGC(dpy, r->pixmap_, 0, nil);
     XCopyArea(
@@ -119,7 +121,7 @@ void Raster::peek(
 	r->image_, (unsigned int)x, r->pheight_ - (unsigned int)y - 1
     );
     XColor xc;
-    r->display_->rep()->find_color(pixel, xc);
+    r->display_->rep()->default_visual_->find_color(pixel, xc);
     red = float(xc.red) / 0xffff;
     green = float(xc.green) / 0xffff;
     blue = float(xc.blue) / 0xffff;
@@ -135,7 +137,7 @@ void Raster::poke(
     unsigned short sg = (unsigned short)(green * 0xffff);
     unsigned short sb = (unsigned short)(blue * 0xffff);
     XColor xc;
-    r->display_->rep()->find_color(sr, sg, sb, xc);
+    r->display_->rep()->default_visual_->find_color(sr, sg, sb, xc);
     XPutPixel(
 	r->image_, (unsigned int)x, r->pheight_ - (unsigned int)y - 1, xc.pixel
     );

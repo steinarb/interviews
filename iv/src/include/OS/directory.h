@@ -27,21 +27,29 @@
 
 #include <OS/enter-scope.h>
 
-class DirectoryInfo;
+class DirectoryImpl;
+class String;
 
 class Directory {
+protected:
+    Directory();
 public:
-    Directory(DirectoryInfo*);
     virtual ~Directory();
 
-    static DirectoryInfo* current();
-    static DirectoryInfo* open(const char* name);
-    virtual int count() const;
-    virtual const char* name(int i) const;
-    virtual int index(const char*) const;
+    static Directory* current();
+    static Directory* open(const String&);
     virtual void close();
+
+    virtual const String* path() const;
+    virtual int count() const;
+    virtual const String* name(int index) const;
+    virtual int index(const String&) const;
+    virtual boolean is_directory(int index) const;
+
+    static String* canonical(const String&);
+    static boolean match(const String& name, const String& pattern);
 private:
-    DirectoryInfo* rep_;
+    DirectoryImpl* impl_;
 private:
     /* not allowed */
     Directory(const Directory&);

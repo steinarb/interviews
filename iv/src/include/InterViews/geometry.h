@@ -25,14 +25,25 @@
 #ifndef iv_geometry_h
 #define iv_geometry_h
 
-#include <InterViews/boolean.h>
 #include <InterViews/coord.h>
-#include <OS/math.h>
 
 #include <InterViews/_enter.h>
 
-enum DimensionName {
-    Dimension_X, Dimension_Y, Dimension_Z, Dimension_Undefined
+/*
+ * Can't make DimensionName an enum because we want to be able
+ * to iterate from 0 to number_of_dimensions.  Alas,
+ * C++ does not allow arithmetic on enums.
+ */
+
+typedef unsigned int DimensionName;
+
+enum {
+    Dimension_X = 0, Dimension_Y, Dimension_Z, Dimension_Undefined
+};
+
+class CoordinateSpace {
+public:
+    enum { x = 0, y, z, dimensions };
 };
 
 class Requirement {
@@ -77,8 +88,14 @@ public:
     boolean equals(const Requisition&, float epsilon) const;
 
     void require(DimensionName, const Requirement&);
+    void require_x(const Requirement&);
+    void require_y(const Requirement&);
     const Requirement& requirement(DimensionName) const;
+    const Requirement& x_requirement() const;
+    const Requirement& y_requirement() const;
     Requirement& requirement(DimensionName);
+    Requirement& x_requirement();
+    Requirement& y_requirement();
 private:
     int penalty_;
     Requirement x_;
@@ -137,19 +154,26 @@ private:
     Allotment y_;
 };
 
+class Canvas;
+
 class Extension {
 public:
     Extension();
     Extension(const Extension&);
 
-    void extend(const Extension&);
-    void extend(const Allocation&);
+    void operator =(const Extension&);
 
-    void extent(DimensionName, Coord begin, Coord end);
-    void get_extent(DimensionName, Coord& begin, Coord& end) const;
+    static void transform_xy(
+	Canvas*, Coord& left, Coord& bottom, Coord& right, Coord& top
+    );
 
-    void xy_extents(Coord x_begin, Coord x_end, Coord y_begin, Coord y_end);
-    void xy_extents(const Allocation&);
+    void set(Canvas*, const Allocation&);
+    void set_xy(Canvas*, Coord left, Coord bottom, Coord right, Coord top);
+    void clear();
+
+    void merge(const Extension&);
+    void merge(Canvas*, const Allocation&);
+    void merge_xy(Canvas*, Coord left, Coord bottom, Coord right, Coord top);
 
     Coord left() const;
     Coord bottom() const;
@@ -201,6 +225,13 @@ inline float Requirement::alignment() const { return alignment_; }
 inline int Requisition::penalty() const { return penalty_; }
 inline void Requisition::penalty(int penalty) { penalty_ = penalty; }
 
+inline void Requisition::require_x(const Requirement& r) { x_ = r; }
+inline void Requisition::require_y(const Requirement& r) { y_ = r; }
+inline const Requirement& Requisition::x_requirement() const { return x_; }
+inline const Requirement& Requisition::y_requirement() const { return y_; }
+inline Requirement& Requisition::x_requirement() { return x_; }
+inline Requirement& Requisition::y_requirement() { return y_; }
+
 inline Allotment::Allotment() {
     origin_ = 0;
     span_ = 0;
@@ -243,34 +274,6 @@ inline Coord Allocation::left() const { return x_.begin(); }
 inline Coord Allocation::right() const { return x_.end(); }
 inline Coord Allocation::bottom() const { return y_.begin(); }
 inline Coord Allocation::top() const { return y_.end(); }
-
-inline void Extension::xy_extents(Coord x0, Coord x1, Coord y0, Coord y1) {
-    x_begin_ = x0;
-    x_end_ = x1;
-    y_begin_ = y0;
-    y_end_ = y1;
-}
-
-inline void Extension::xy_extents(const Allocation& a) {
-    x_begin_ = a.left();
-    x_end_ = a.right();
-    y_begin_ = a.bottom();
-    y_end_ = a.top();
-}
-
-inline void Extension::extend(const Extension& ext) {
-    x_begin_ = Math::min(x_begin_, ext.x_begin_);
-    x_end_ = Math::max(x_end_, ext.x_end_);
-    y_begin_ = Math::min(y_begin_, ext.y_begin_);
-    y_end_ = Math::max(y_end_, ext.y_end_);
-}
-
-inline void Extension::extend(const Allocation& a) {
-    x_begin_ = Math::min(x_begin_, a.left());
-    x_end_ = Math::max(x_end_, a.right());
-    y_begin_ = Math::min(y_begin_, a.bottom());
-    y_end_ = Math::max(y_end_, a.top());
-}
 
 inline Coord Extension::left() const { return x_begin_; }
 inline Coord Extension::bottom() const { return y_begin_; }

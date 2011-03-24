@@ -24,17 +24,39 @@
 
 // Dispatcher provides an interface to the "select" system call.
 
+#if defined(sun) && OSMajorVersion >= 5
+#define Solaris_2 YES
+#endif
+
 #include <Dispatch/dispatcher.h>
 #include <Dispatch/iohandler.h>
 #include <OS/memory.h>
-#include <stdlib.h>
+#include <OS/types.h>
 #include <errno.h>
-#include <osfcn.h>
+#include <stdio.h>
+#include <stdlib.h>
 #undef NULL
 #include <sys/param.h>
-#include <sys/types.h>
+#if defined(AIXV3) || defined(Solaris_2)
+#include <sys/select.h>
+#endif
 #include <sys/time.h>
 #include <time.h>
+
+/* no standard place for this */
+extern "C" {
+#if defined(hpux)
+    extern int select(size_t, int*, int*, int*, const struct timeval*);
+#else
+#if !defined(AIXV3) && !defined(Solaris_2) && !defined(__lucid)
+    extern int select(int, fd_set*, fd_set*, fd_set*, const struct timeval*);
+#endif
+#endif
+#ifdef __DECCXX
+    extern int gettimeofday(struct timeval*, struct timezone*);
+    extern void perror(char*);
+#endif
+}
 
 Dispatcher* Dispatcher::_instance;
 
@@ -200,8 +222,12 @@ inline timeval TimerQueue::earliestTime() const {
 
 timeval TimerQueue::currentTime() {
     timeval curTime;
+#if defined(Solaris_2)
+    gettimeofday(&curTime);
+#else
     struct timezone curZone;
     gettimeofday(&curTime, &curZone);
+#endif
     return curTime;
 }
 
@@ -362,6 +388,22 @@ void Dispatcher::stopTimer(IOHandler* handler) {
     _queue->remove(handler);
 }
 
+boolean Dispatcher::setReady(int fd, DispatcherMask mask) {
+    if (handler(fd, mask) == nil) {
+	return false;
+    }
+    if (mask == ReadMask) {
+	_rmaskready->setBit(fd);
+    } else if (mask == WriteMask) {
+	_wmaskready->setBit(fd);
+    } else if (mask == ExceptMask) {
+	_emaskready->setBit(fd);
+    } else {
+	return false;
+    }
+    return true;
+}
+
 void Dispatcher::dispatch() {
     dispatch(nil);
 }
@@ -434,7 +476,13 @@ int Dispatcher::waitFor(
 	emaskret = *_emask;
 	howlong = calculateTimeout(howlong);
 
+#if defined(hpux)
+ 	nfound = select(
+	    _nfds, (int*)&rmaskret, (int*)&wmaskret, (int*)&emaskret, howlong
+	);
+#else
  	nfound = select(_nfds, &rmaskret, &wmaskret, &emaskret, howlong);
+#endif
 
 	if (nfound < 0) {
 	    handleError();
@@ -523,7 +571,11 @@ void Dispatcher::checkConnections() {
     for (int fd = 0; fd < _nfds; fd++) {
 	if (_rtable[fd] != nil) {
 	    rmask.setBit(fd);
+#if defined(hpux)
+	    if (select(fd+1, (int*)&rmask, nil, nil, &poll) < 0) {
+#else
 	    if (select(fd+1, &rmask, nil, nil, &poll) < 0) {
+#endif
 		detach(fd);
 	    }
 	    rmask.clrBit(fd);

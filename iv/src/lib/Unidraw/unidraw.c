@@ -40,8 +40,10 @@
 #include <Unidraw/Commands/macro.h>
 
 #include <InterViews/event.h>
-#include <InterViews/iwindow.h>
-#include <InterViews/world.h>
+#include <InterViews/window.h>
+#include <IV-2_6/InterViews/world.h>
+
+#include <IV-2_6/_enter.h>
 
 #include <stdlib.h>
 
@@ -73,7 +75,7 @@ History::History (Component* comp) {
 History::~History () {
     delete _past;
     delete _future;
-};
+}
 
 void* History::id () { return _comp; }
 void* History::tag () { return this; }
@@ -197,8 +199,9 @@ void Unidraw::Init (Catalog* c, World* w) {
 
     _editors = new UList;
     _deadEditors = new UList;
-    _alive = true;
-    _updated = false;
+
+    alive(true);
+    updated(false);
 
     _histories = new HistoryMap;
 
@@ -233,7 +236,7 @@ void Unidraw::Sweep () {
 
 	Editor* ed = editor(doomed);
 	Component* comp = ed->GetComponent();
-        editor(doomed)->Unref();
+        Resource::unref(editor(doomed));
         delete doomed;
 
 	DeleteComponent(comp);
@@ -255,17 +258,19 @@ void Unidraw::DeleteComponent (Component* comp) {
 void Unidraw::Run () {
     Session* session = GetWorld()->session();
     Event e;
+    alive(true);
 
-    while (_alive && !session->done()) {
-	_updated = false;
+    while (alive() && !session->done()) {
+	updated(false);
 
 	session->read(e);
 	e.handle();
 
+	Process();
 	Sweep();
 
-	if (_updated) {
-	    DoUpdate();
+	if (updated()) {
+	    Update(true);
 	}
     }
 }
@@ -281,37 +286,28 @@ void Unidraw::DoUpdate () {
 void Unidraw::Update (boolean immediate) {
     if (immediate) {
         DoUpdate();
-        _updated = false;
-    } else {
-        _updated = true; 
     }
+    updated(!immediate);
 }
 
-void Unidraw::Quit () { _alive = false; }
+void Unidraw::Quit () { alive(false); }
 
 void Unidraw::Open (Editor* editor) {
-    ManagedWindow* window = editor->GetWindow();
-
-    if (window == nil) {
-        editor->SetWindow(window = new ApplicationWindow(editor));
+    ManagedWindow* w = editor->GetWindow();
+    if (w == nil) {
+	w = new ApplicationWindow(editor);
+	editor->SetWindow(w);
     }
-    window->display(GetWorld()->display());
-    window->map();
-
+    w->map();
     _editors->Append(new UList(editor));
-    editor->Ref();
+    Resource::ref(editor);
     editor->Open();
 }
 
 void Unidraw::Close (Editor* editor) {
     editor->Close();
     Mark(editor);
-    ManagedWindow* window = editor->GetWindow();
-
-    if (window != nil) {
-	window->unmap();
-	editor->GetCanvas()->window()->unbind();
-    }
+    editor->GetWindow()->unmap();
 }
 
 void Unidraw::CloseDependents (Component* comp) {
@@ -429,7 +425,7 @@ void Unidraw::ClearHistory (UList* hist, int start) {
             Command* cmd = command(doomed);
             Editor* ed = cmd->GetEditor();
 
-            if (ed != nil) ed->Unref();
+	    Resource::unref(ed);
 
             delete cmd;
             delete doomed;
@@ -446,7 +442,7 @@ void Unidraw::Log (Command* cmd) {
         UList* past, *future;
         GetHistory(comp, past, future);
 
-        ed->Ref();
+        Resource::ref(ed);
         ClearHistory(future);
 
 	if (IsClean(ed)) {
@@ -458,6 +454,10 @@ void Unidraw::Log (Command* cmd) {
         past->Prepend(new UList(cmd));
         ClearHistory(past, _histlen+1);
     }
+}
+
+void Unidraw::Process () {
+    /* do nothing by default */
 }
 
 boolean Unidraw::IsClean (Editor* ed) {

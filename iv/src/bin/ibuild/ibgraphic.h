@@ -22,7 +22,6 @@
 
 /*
  * User interface builder-specific structured graphics objects.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibgraphic.h,v 1.2 91/09/27 14:14:10 tang Exp $
  */
 
 #ifndef ibgraphic_h

@@ -33,13 +33,14 @@ class Color;
 
 class PageBorder : public MonoGlyph {
 public:
-    PageBorder(Glyph* body, const Color*);
+    PageBorder(Glyph* body, const Color* fg, const Color* bg);
 
     virtual void draw(Canvas*, const Allocation&) const;
 protected:
     virtual ~PageBorder();
 private:
-    const Color* color_;
+    const Color* fg_;
+    const Color* bg_;
 };
 
 #endif

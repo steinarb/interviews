@@ -29,8 +29,12 @@
 
 #include "Item.h"
 
-class TextItem;
+class CellInfo_List;
+class ColumnInfo_List;
+class RowInfo_List;
 class TabularView;
+class TabularViewInfo_List;
+class TextItem;
 
 enum ColumnAlignment {
     ColumnAlignLeft, ColumnAlignCenter, ColumnAlignRight
@@ -80,10 +84,10 @@ public:
 protected:
     virtual ~TabularItem ();
 
-    class CellInfo_List* _cell;
-    class ColumnInfo_List* _column;
-    class RowInfo_List* _row;
-    class TabularViewInfo_List* _view;
+    CellInfo_List* _cell;
+    ColumnInfo_List* _column;
+    RowInfo_List* _row;
+    TabularViewInfo_List* _view;
 };
 
 #endif

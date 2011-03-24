@@ -24,8 +24,10 @@
  * CGlue implementation.
  */
 
-#include <InterViews/shape.h>
+#include <IV-2_6/InterViews/shape.h>
 #include <Unidraw/Components/cglue.h>
+
+#include <IV-2_6/_enter.h>
 
 /*****************************************************************************/
 

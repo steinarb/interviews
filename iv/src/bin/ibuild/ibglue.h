@@ -22,7 +22,6 @@
 
 /*
  * Glue component declarations.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibglue.h,v 1.2 91/09/27 14:14:07 tang Exp $
  */
 
 #ifndef ibglue_h
@@ -69,6 +68,7 @@ class GlueCode : public CodeView {
 public:
     GlueCode(GlueComp* = nil);
 
+    virtual void Update();
     virtual boolean Definition(ostream&);
     GlueComp* GetGlueComp();
 

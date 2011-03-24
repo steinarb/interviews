@@ -21,14 +21,14 @@
  */
 
 /*
- * Button component definitions.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibpanner.c,v 1.2 91/09/27 14:11:14 tang Exp $
+ * Panner component definitions.
  */
 
 #include "ibadjuster.h"
 #include "ibborder.h"
 #include "ibclasses.h"
 #include "ibcmds.h"
+#include "ibdeck.h"
 #include "ibdialogs.h"
 #include "ibed.h"
 #include "ibglue.h"
@@ -147,7 +147,7 @@ boolean PannerComp::IsRelatableTo (InteractorComp* comp) {
 }
 
 void PannerComp::Interior (int w, int h) {
-    GlueGraphic* hglue, *vglue;
+    GlueGraphic* hglue, *vglue, *backgr;
     HBoxComp* hbox1 = new HBoxComp();
 
     hglue = new GlueGraphic(0, Horizontal, nil, nil);
@@ -218,7 +218,14 @@ void PannerComp::Interior (int w, int h) {
     BorderGraphic* bogr = new BorderGraphic(Horizontal, nil, nil);
     BorderComp* border = new BorderComp(bogr);
 
-    Append(hbox2);
+    backgr = new GlueGraphic(0, Horizontal, nil, nil);
+    backgr->SetBrush(psnonebr);
+
+    DeckComp* deck = new DeckComp;
+    deck->Append(new GlueComp(backgr));
+    deck->Append(hbox2);
+
+    Append(deck);
     Append(border);
     Append(slider);
 }
@@ -381,7 +388,14 @@ boolean PannerCode::IsA(ClassId id) {
     return PANNER_CODE==id || CodeView::IsA(id);
 }
 
-PannerCode::PannerCode (PannerComp* subj) : CodeView(subj) { }
+PannerCode::PannerCode (PannerComp* subj) : CodeView(subj) {}
+
+void PannerCode::Update () {
+    CodeView::Update();
+    InteractorComp* subj = GetIntComp();
+    Graphic* gr = subj->GetGraphic();
+    gr->SetFont(nil);
+}
 
 PannerComp* PannerCode::GetPannerComp () {
     return (PannerComp*) GetSubject(); 
@@ -428,23 +442,33 @@ boolean PannerCode::Definition (ostream& out) {
         const char* pannee = mnamer->GetName();
 
 	if (*pannee == '\0') {
-	    strcat(_errbuf, mname);
-            strcat(_errbuf, " has undefined panning target.\n");
+            if (_err_count < 10) {
+                strcat(_errbuf, mname);
+                strcat(_errbuf, " has undefined panning target.\n");
+                _err_count++;
+            } 
 	    return false;
 
         } else if (!Search(mnamer, ctarget)) {
-	    strcat(_errbuf, mname);
-            strcat(
-                _errbuf, "'s panning target is not in the same hierarchy.\n"
-            );
+            if (_err_count < 10) {
+                strcat(_errbuf, mname);
+                strcat(
+                    _errbuf, 
+                    "'s panning target is not in the same hierarchy.\n"
+                );
+                _err_count++;
+            }
 	    return false;
 
         } else if (ctarget != nil && !icomp->IsRelatableTo(ctarget)) {
-	    strcat(_errbuf, mname);
-            strcat(
-                _errbuf, 
-                "'s adjusting target is not subclassed nor adjustable.\n"
-            );
+            if (_err_count < 10) {
+                strcat(_errbuf, mname);
+                strcat(
+                    _errbuf, 
+                    "'s adjusting target is not subclassed nor adjustable.\n"
+                );
+                _err_count++;
+            }
 	    return false;
         }
         if (_instancelist->Find((void*) pannee)) {
@@ -491,10 +515,11 @@ boolean PannerCode::CoreConstInits(ostream& out) {
     InteractorComp* icomp = GetIntComp();
     SubclassNameVar* snamer = icomp->GetClassNameVar();
     const char* baseclass = snamer->GetBaseClass();
+    const char* subclass = snamer->GetName();
 
     out << "(\n    const char* name, Interactor* i, int w\n) : " << baseclass;
     out << "(name, i, w) {\n";
-    out << "    perspective = new Perspective;\n";
+    out << "    SetClassName(\"" << subclass << "\");\n";
     out << "}\n\n";
     return out.good();
 }

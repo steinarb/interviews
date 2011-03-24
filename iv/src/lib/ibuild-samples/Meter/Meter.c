@@ -5,7 +5,7 @@
 #include <InterViews/event.h>
 #include <InterViews/canvas.h>
 #include "Meter.h"
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/_enter.h>
 
 static int inc = 5;
 

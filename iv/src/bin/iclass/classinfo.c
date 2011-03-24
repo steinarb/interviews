@@ -91,12 +91,12 @@ ClassInfo* ClassInfo::Parent (int index) {
 void ClassInfo::Insert (
     ClassInfo* info, int index, ClassInfo**& buf, int& bufsize, int& count
 ) {
-    BufInsert(info, index, (void**&) buf, bufsize, count);
+    BufInsert(info, index, (const void**&) buf, bufsize, count);
 }
 
 void ClassInfo::Remove (int index, ClassInfo** buf, int& count) {
     if (0 <= index && index < count) {
-        BufRemove(index, (void**) buf, count);
+        BufRemove(index, (const void**) buf, count);
     }
 }
 

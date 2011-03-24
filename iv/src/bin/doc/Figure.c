@@ -112,15 +112,12 @@ void Figure::request(Requisition& requisition) const {
     }
 }
 
-void Figure::allocate(Canvas*, const Allocation& a, Extension& ext) {
+void Figure::allocate(Canvas* c, const Allocation& a, Extension& ext) {
     if (_count > 0) {
         Coord w = _brush == nil ? 0 : _brush->width();
         Coord x = a.x();
         Coord y = a.y();
-	ext.xy_extents(
-	    x + _xmin - w, x + _xmax + w,
-	    y + _ymin - w, y + _ymax + w
-	);
+	ext.set_xy(c, x+_xmin-w, y+_ymin-w, x+_xmax+w, y+_ymax+w);
     }
 }
 
@@ -177,11 +174,11 @@ Rectangle::Rectangle (
 
 Rectangle::~Rectangle () { }
 
-static float p0 = 1.01422100;
-static float p1 = 0.90932667;
-static float p2 = 0.70710678;
-static float p3 = 0.52500000;
-static float p4 = 0.27176000;
+static float p0 = 1.00000000;
+static float p1 = 0.89657547;   // cos 30 * sqrt(1 + tan 15 * tan 15)
+static float p2 = 0.70710678;   // cos 45 
+static float p3 = 0.51763809;   // cos 60 * sqrt(1 + tan 15 * tan 15)
+static float p4 = 0.26794919;   // tan 15
 
 Circle::Circle (
     const Brush* brush, const Color* stroke, const Color* fill,

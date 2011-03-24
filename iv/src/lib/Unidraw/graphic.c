@@ -29,8 +29,10 @@
 #include <Unidraw/Graphic/graphic.h>
 #include <Unidraw/Graphic/util.h>
 
-#include <InterViews/painter.h>
+#include <IV-2_6/InterViews/painter.h>
 #include <InterViews/transformer.h>
+
+#include <IV-2_6/_enter.h>
 
 /*****************************************************************************/
 

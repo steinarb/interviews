@@ -22,7 +22,6 @@
 
 /*
  * Implementation of user interface builder-specific state variable views.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibvarviews.c,v 1.2 91/09/27 14:12:22 tang Exp $
  */
 
 #include "ibadjuster.h"
@@ -65,6 +64,28 @@ static char buf[CHARBUFSIZE];
 
 /*****************************************************************************/
 
+class Shaper : public MonoScene {
+public:
+    Shaper(int, int, int, int);
+    void Reconfig();
+private:
+    int _hstr, _vstr;
+    int _hshr, _vshr;
+};
+
+Shaper::Shaper (int hstr, int vstr, int hshr, int vshr) {
+    _hstr = hstr, _vstr = vstr;
+    _hshr = hshr, _vshr = vshr;
+}
+
+void Shaper::Reconfig () {
+    MonoScene::Reconfig();
+    shape->hstretch = _hstr;
+    shape->vstretch = _vstr;
+    shape->hshrink = _hshr;
+    shape->vshrink = _vshr;
+}
+
 static const char* IntToString (int i) {
     sprintf(buf, "%d", i);
     return strnew(buf);
@@ -73,6 +94,15 @@ static const char* IntToString (int i) {
 static Message* IntToMsg (int i) {
     sprintf(buf, "%d", i);
     return new Message(buf);
+}
+
+static Interactor* FixedLength(Interactor* i, const char* len) {
+    Shaper* shaper = new Shaper(hfil, vfil, hfil, vfil);
+    shaper->Insert(i);
+    Deck* deck = new Deck;
+    deck->Insert(shaper);
+    deck->Insert(new Message(len));
+    return deck;
 }
 
 inline Interactor* PaddedFrame (Interactor* i) {
@@ -85,6 +115,36 @@ inline Interactor* RightJustified (Interactor* i) {
 
 inline Interactor* LeftJustified (Interactor* i) {
     return new HBox(i, new HGlue);
+}
+
+/*****************************************************************************/
+
+class Displayer : public Message {
+public:
+    Displayer(const char* msg);
+    const char* Text();
+    void DMessage(const char* msg);
+};
+
+Displayer::Displayer (const char* msg) : Message(msg) {}
+
+void Displayer::DMessage (const char* msg) {
+    delete text;
+    text = nil;
+    if (msg != nil) {
+        text = strnew(msg);
+        if (canvas != nil) {
+            Reconfig();
+            Scene* parent = Parent();
+            if (parent != nil) {
+                parent->Change(this);
+            }
+        }
+    }
+}
+
+const char* Displayer::Text () {
+    return text;
 }
 
 /*****************************************************************************/
@@ -109,6 +169,176 @@ void IBVarView::SetAffectedStates(UList* ilist) {
 }
 
 /*****************************************************************************/
+class IDMatchEditor : public MatchEditor {
+public:
+    IDMatchEditor(ButtonState*, const char* sample);
+    boolean Touched();
+protected:
+    virtual boolean HandleChar(char);
+private:
+    boolean _touched;
+};
+
+inline boolean IDMatchEditor::Touched () { return _touched; }
+
+IDMatchEditor::IDMatchEditor(
+    ButtonState* bs, const char* sample
+) : MatchEditor(bs, sample) {
+    _touched = false;
+}
+
+boolean IDMatchEditor::HandleChar (char a) {
+    boolean ok = MatchEditor::HandleChar(a);
+    _touched = true;
+    return ok;
+}
+
+/*****************************************************************************/
+
+IDVarView::IDVarView (
+    IDVar* idvar, ButtonState* bs, const char* msg
+) : IBVarView(idvar) {
+    _subvarview = nil;
+    _tochange = false;
+    Insert(Interior(bs, msg));
+}
+
+boolean IDVarView::ChangedSubject (const char*& errors) {
+    errors = nil;
+    const char* id = _ided->Text(); 
+    const char* origid = _displayer->Text();
+    
+    IDVar* idvar = (IDVar*) GetSubject();
+    
+    if (_tochange) {
+        if (strcmp(origid, "Invalid") != 0) {
+            idvar->SetOrigID(atoi(origid));
+        }
+        if (strcmp(idvar->GetName(), id) != 0) {
+            idvar->SetName(id);
+            idvar->SetMachGen(false);
+            idvar->Update();
+            int& serial = idvar->GetSerial();
+            serial = max(serial, atoi(id));
+        }
+    } else {
+        if (strcmp(origid, "Invalid") == 0) {
+            sprintf(buf, "Class id %s has been used by a different class", id);
+            errors = buf;
+        }
+    }
+    return errors == nil;
+}
+
+void IDVarView::IDUpdate () {
+    if (_subvarview != nil) {
+        if (_subvarview->IsSubclass()) {
+            SubclassNameVar* subclass = (SubclassNameVar*) 
+                _subvarview->GetSubject();
+            IDUpdate(_subvarview->GetSubclassName(), subclass->GetBaseClass());
+        } else {
+            ShowStred(false);
+        }
+    }
+}
+
+void IDVarView::IDUpdate (const char* subclass, const char* baseclass) {
+    IDVar* idvar = (IDVar*) GetSubject();
+    IDMap* idmap = idvar->GetIDMap();
+    int ok = idmap->FindID(subclass, baseclass);
+    if (ok == 0) {
+        ShowStred(true);
+        
+    } else if (ok < 0) {
+        DMessage(ok);
+        ShowStred(false);
+
+    } else if (!_ided->Touched()) {
+        char buf[CHARBUFSIZE];
+        sprintf(buf, "%d", ok);
+        _ided->Message(buf);
+        ShowStred(true);
+    }
+}
+
+void IDVarView::DMessage (int id) {
+    if (id > 0) {
+        char msg[CHARBUFSIZE];
+        sprintf(msg, "%d", id);
+        const char* text = _displayer->Text();
+        if (strcmp(text, msg) != 0) {
+            _displayer->DMessage(msg);
+        }
+    } else {
+        const char* text = _displayer->Text();
+        if (strcmp(text, "Invalid") != 0) {
+            _displayer->DMessage("Invalid");
+        }
+    }
+}
+
+void IDVarView::ShowStred (boolean flag) {
+    if (flag) {
+        if (strcmp(_ided->Text(), "-1") == 0) {
+            IDVar* idvar = (IDVar*) GetSubject();
+            char msg[CHARBUFSIZE];
+            sprintf(msg, "%d", idvar->GetSerial()+1);
+            _ided->Message(msg);
+        }
+        _iddeck->FlipTo(1);
+        _tochange = true;
+    } else {
+        _iddeck->FlipTo(2);
+        _tochange = false;
+    }
+}
+
+void IDVarView::Init () { 
+    IDVar* idvar = (IDVar*) GetSubject();
+    const char* id = idvar->GetName();
+    if( id != nil) {
+	_ided->Message(id);
+    }
+    IDUpdate();
+}
+
+Interactor* IDVarView::Interior (ButtonState* bs, const char* msg) {
+    const int gap = round(.1*cm);
+    IDVar* idvar = (IDVar*) GetSubject();
+    int id = idvar->GetOrigID();
+    char origid[CHARBUFSIZE];
+    char classid[CHARBUFSIZE];
+
+    sprintf(origid, "%d", id);
+    sprintf(classid, "%s Class ID: ", msg);
+
+    _iddeck = new Deck;
+    _iddeck->Insert(
+        new HBox(
+            PaddedFrame(_ided = new IDMatchEditor(bs, "99999")),
+            new HGlue(0, 10*hfil, 10*hfil)
+        )
+    );
+    _iddeck->Insert(
+        new HBox(
+            new HGlue(3, 0, 0),
+            _displayer = new Displayer(origid),
+            new HGlue(20)
+        )
+    );
+    _iddeck->Propagate(false);
+
+    HBox* hbox = new HBox(
+        new Message(classid),
+        _iddeck,
+        new HGlue(0, hfil*100, hfil*100)
+    );
+    hbox->Align(Center);
+    _ided->Match("%[0-9]", true);
+    return hbox;
+}
+
+/*****************************************************************************/
 
 CanvasVarView::CanvasVarView (CanvasVar* canvasVar) : IBVarView(canvasVar){}
 
@@ -124,18 +354,24 @@ void CanvasVarView::Init () {
 
 class InfoButtonState : public ButtonState {
 public:
-    InfoButtonState(int, BSDialog* = nil, IBEditor* = nil);
+    InfoButtonState(
+        int, BSDialog* = nil, IBEditor* = nil, IComp* = nil,StringEditor* = nil
+    );
     virtual void Notify ();
 private:
-    BSDialog* _dialog;
+    BSDialog* _bsdialog;
     IBEditor* _ed;
+    IComp* _icomp;
+    StringEditor* _istred;
 };
 
 InfoButtonState::InfoButtonState (
-    int i, BSDialog* dialog, IBEditor* ed
+    int i, BSDialog* bsdialog, IBEditor* ed, IComp* icomp, StringEditor* istred
 ) : ButtonState(i) {
-    _dialog = dialog;
+    _bsdialog = bsdialog;
+    _icomp = icomp;
     _ed = ed;
+    _istred = istred;
 }
 
 void InfoButtonState::Notify () {
@@ -143,14 +379,246 @@ void InfoButtonState::Notify () {
     int value;
     GetValue(value);
     if (value == 1) {
-        if (_dialog->Init()) {
-            _ed->InsertDialog(_dialog);
-            while(_dialog->Accept() && !_dialog->ChangeBS());
-            _ed->RemoveDialog(_dialog);
+        if (_bsdialog != nil) {
+            if (_bsdialog->Init()) {
+                _ed->InsertDialog(_bsdialog);
+                while(_bsdialog->Accept() && !_bsdialog->ChangeBS());
+                _ed->RemoveDialog(_bsdialog);
+            }
+        } else {
+            MemberNameVar* mnamer = _icomp->GetMemberNameVar();
+            mnamer->GetMemberSharedName()->SetName(_istred->Text());
+            IView* iview = (IView*) _icomp->Create(COMPONENT_VIEW);
+            _icomp->Attach(iview);
+            iview->Update();
+            
+            InfoCmd* infocmd = new InfoCmd(_ed, iview);
+            infocmd->Execute();
+            if (infocmd->Reversible()) {
+                infocmd->Log();
+            } else {
+                delete infocmd;
+            }
+            delete iview;
+            _istred->Message(mnamer->GetMemberSharedName()->GetName());
         }
         SetValue(0);
     }
 }       
+
+/*****************************************************************************/
+        
+SMemberNameVarView::SMemberNameVarView (
+    MemberNameVar* mvar, ButtonState* bs, GraphicComp* icomp, IBEditor* ibed,
+    const char* str, const int* i
+) : IBVarView(mvar, icomp) {
+    _ibed = ibed;
+    _namechange = false;
+    _msnamer = (MemberSharedName*) mvar->GetMemberSharedName()->Copy();
+    _msnamer->ref();
+    _subject = nil;
+    _scomp = nil;
+    _smemberdialog = new SMemberDialog(this, str, i);
+    Insert(Interior(bs, str));
+}
+
+SMemberNameVarView::SMemberNameVarView (
+    IComp* scomp, ButtonState* bs, GraphicComp* icomp, IBEditor* ibed,
+    const char* str
+) : IBVarView(scomp->GetMemberNameVar(), icomp) {
+    _ibed = ibed;
+    _namechange = false;
+    _subject = scomp;
+    _scomp = (IComp*) scomp->Copy();
+    *(IComp*)_scomp = *(IComp*)_subject;
+    _icomp->GetGraphic()->Append(_scomp->GetGraphic());    /* another magic */
+    _msnamer = nil;
+    _smemberdialog = nil;
+    Insert(Interior(bs, str));
+}
+
+SMemberNameVarView::~SMemberNameVarView () {
+    delete _smemberdialog;
+    if (_msnamer != nil) {
+        _msnamer->unref();
+    }
+    if (_scomp != nil) {
+        _icomp->GetGraphic()->Remove(_scomp->GetGraphic()); /* another magic */
+        delete _scomp;
+    }
+}
+
+static MemberSharedName* FindFirstMSConflict(UList* ulist, const char* name) {
+    MemberSharedName* mname = nil;
+    for (UList* i = ulist->First(); i != ulist->End(); i = i->Next()) {
+        StateVar* state = (StateVar*) (*i)();
+        if (state->IsA(MEMBERSHAREDNAME)) {
+            MemberSharedName* mtmp = (MemberSharedName*) state;
+            if (strcmp(mtmp->GetName(), name) == 0) {
+                mname = (MemberSharedName*) state;
+                break;
+            }
+        }
+    }
+    return mname;
+}
+
+void SMemberNameVarView::SetAffectedStates(UList* ilist) {
+    if (_scomp != nil) {
+        Iterator i;
+        IView* iview = (IView*) _scomp->Create(COMPONENT_VIEW);
+        _scomp->Attach(iview);
+        iview->Update();
+        InfoDialog* infodialog = iview->GetInfoDialog();
+        for (infodialog->First(i); !infodialog->Done(i); infodialog->Next(i)) {
+            infodialog->GetStateView(i)->SetAffectedStates(ilist);
+        }
+        delete infodialog;
+        delete iview;
+    } else {
+        IBVarView::SetAffectedStates(ilist);
+        MemberNameVar* mnamer = (MemberNameVar*) GetSubject();
+        MemberSharedName* msnamer = mnamer->GetMemberSharedName();
+        ilist->Append(new UList(msnamer));
+        ilist->Append(new UList(msnamer->GetSubclass()));
+    } 
+}
+
+boolean SMemberNameVarView::ChangedSubject (const char*& errors) {
+    errors = nil;
+    if (*_smember->Text() != '\0') {
+        MemberNameVar* mnamer = (MemberNameVar*) GetSubject();
+        MemberSharedName* msnamer = mnamer->GetMemberSharedName();
+
+        GetFirewallCmd firewallCmd(_icomp);
+        firewallCmd.Execute();
+        GetConflictCmd conflictCmd(firewallCmd.GetFirewall(),_smember->Text());
+        conflictCmd.Execute();
+        UList* ulist = conflictCmd.GetConflict();
+        for (UList* i = ulist->First(); i != ulist->End(); i = i->Next()) {
+	    StateVar* state = (StateVar*) (*i)();
+            if (!state->IsA(INSTANCENAME_VAR) && state != msnamer) {
+		sprintf(
+		    buf,"Member name %s has been used", _smember->Text()
+		);
+        	errors = buf;
+		return false;
+            }
+	}
+        if (_scomp != nil) {
+            if (strcmp(_smember->Text(), msnamer->GetName()) != 0) {
+                msnamer->SetName(_smember->Text());
+                msnamer->SetMachGen(false);
+            }
+            *(IComp*)_subject = *(IComp*)_scomp;
+            return true;
+
+        } else if (strcmp(_msnamer->GetName(), msnamer->GetName()) == 0) {
+            msnamer->SetExport(_msnamer->GetExport());
+            msnamer->SetSubclass(_msnamer->GetSubclass());
+            msnamer->SetIDVar(_msnamer->GetIDVar());
+            if (strcmp(_smember->Text(), msnamer->GetName()) != 0) {
+                msnamer = FindFirstMSConflict(ulist, _smember->Text());
+                if (msnamer != nil) {
+                    mnamer->SetMemberSharedName(msnamer);
+                } else {
+                    msnamer = new MemberSharedName(
+                        _smember->Text(), false , false
+                    );
+                    msnamer->SetSubclass(_msnamer->GetSubclass());
+                    msnamer->SetIDVar(_msnamer->GetIDVar());
+                    mnamer->SetMemberSharedName(msnamer);
+                }
+            }
+	} else {
+            if (strcmp(_smember->Text(), _msnamer->GetName()) != 0) {
+                if (_namechange) {
+                    *msnamer = *_msnamer;
+                    msnamer->SetMachGen(false);
+                }
+                msnamer = FindFirstMSConflict(ulist, _smember->Text());
+                if (msnamer != nil) {
+                    mnamer->SetMemberSharedName(msnamer);
+                } else {
+                    msnamer = new MemberSharedName(
+                        _smember->Text(), false, false
+                    );
+                    msnamer->SetSubclass(_msnamer->GetSubclass());
+                    msnamer->SetIDVar(_msnamer->GetIDVar());
+                    mnamer->SetMemberSharedName(msnamer);
+                }
+            } else {
+                if (_namechange) {
+                    *msnamer = *_msnamer;
+                    msnamer->SetMachGen(false);
+                } else {
+                    msnamer = FindFirstMSConflict(ulist, _smember->Text());
+                    if (msnamer != nil) {
+                        mnamer->SetMemberSharedName(msnamer);
+                    } else {
+                        msnamer = new MemberSharedName(
+                            _smember->Text(), false, false
+                        );
+                        mnamer->SetMemberSharedName(msnamer);
+                    }
+                    *msnamer = *_msnamer;
+                    msnamer->SetMachGen(false);
+                }
+            }
+        }
+    
+    } else {
+	sprintf(buf, "Null Member name is invalid");
+        errors = buf;
+    }
+    return errors == nil;
+}
+
+void SMemberNameVarView::Init () {
+    MemberNameVar* mnamer;
+    if (_scomp == nil) {
+        mnamer = (MemberNameVar*) GetSubject();
+    } else {
+        mnamer = _scomp->GetMemberNameVar();
+    }
+    MemberSharedName* msnamer = mnamer->GetMemberSharedName();
+    _smember->Message(msnamer->GetName());
+}
+
+Interactor* SMemberNameVarView::Interior (
+    ButtonState* bs, const char* str
+) {
+    const char* sample = "999";
+    const int gap = round(.1*cm);
+    char colon[CHARBUFSIZE];
+    char dotdotdot[CHARBUFSIZE];
+    sprintf(colon, "%s: ", str);
+    sprintf(dotdotdot, "%s...", str);
+        
+    _smember = new MatchEditor(bs, "a rather long name");
+    _smember->Match("%[_a-zA-Z]%[_a-zA-Z0-9_]", true);
+
+    Message* nameMsg = new Message(colon);
+
+    PushButton* pbutton = new PushButton(
+        dotdotdot, new InfoButtonState(0, _smemberdialog, _ibed, _scomp, 
+        _smember),1
+    );
+    Interactor* bsname= PaddedFrame(_smember);
+
+    HBox* namer = new HBox(
+        bsname,
+        new HGlue(2*gap, 0, 0),
+        FixedLength(pbutton, "MMMMMMMMMM")
+    );
+    namer->Align(Center);
+
+    Tray* t = new Tray;
+    t->HBox(t, nameMsg, namer, t);
+    t->VBox(t, new VGlue(gap), nameMsg, new VGlue(gap), t);
+
+    return t;
+}
 
 /*****************************************************************************/
         
@@ -170,7 +638,7 @@ ButtonStateVarView::~ButtonStateVarView () {
     delete _bsname;
 }
 
-static ButtonSharedName* FindFirstConflict(UList* ulist, const char* name) {
+static ButtonSharedName* FindFirstBSConflict(UList* ulist, const char* name) {
     ButtonSharedName* bsname = nil;
     for (UList* i = ulist->First(); i != ulist->End(); i = i->Next()) {
         StateVar* state = (StateVar*) (*i)();
@@ -198,6 +666,7 @@ boolean ButtonStateVarView::ChangedSubject (const char*& errors) {
     if (*_bs->Text() != '\0') {
         ButtonStateVar* button = (ButtonStateVar*) GetSubject();
         ButtonSharedName* bsname = button->GetButtonSharedName();
+        const char* baseclass = _bsname->GetSubclass()->GetBaseClass();
 
         GetFirewallCmd firewallCmd(_icomp);
         firewallCmd.Execute();
@@ -223,7 +692,7 @@ boolean ButtonStateVarView::ChangedSubject (const char*& errors) {
         	errors = buf;
 		return false;
             }
-  	}
+	}
         if (_showsetting && _setting->Text() != '\0') {
             int setting = atoi(_setting->Text());
             button->SetSetting(setting);
@@ -232,12 +701,15 @@ boolean ButtonStateVarView::ChangedSubject (const char*& errors) {
             bsname->SetInitial(_bsname->GetInitial());
             bsname->SetExport(_bsname->GetExport());
             bsname->SetFuncName(_bsname->GetFuncName());
+            bsname->SetSubclass(_bsname->GetSubclass());
             if (strcmp(_bs->Text(), bsname->GetName()) != 0) {
-                bsname = FindFirstConflict(ulist, _bs->Text());
+                bsname = FindFirstBSConflict(ulist, _bs->Text());
                 if (bsname != nil) {
                     button->SetButtonSharedName(bsname);
                 } else {
-                    bsname = new ButtonSharedName(_bs->Text(), "", false);
+                    bsname = new ButtonSharedName(
+                        _bs->Text(), "", false, baseclass
+                    );
                     button->SetButtonSharedName(bsname);
                 }
             }
@@ -249,12 +721,15 @@ boolean ButtonStateVarView::ChangedSubject (const char*& errors) {
                     bsname->SetInitial(_bsname->GetInitial());
                     bsname->SetExport(_bsname->GetExport());
                     bsname->SetFuncName(_bsname->GetFuncName());
+                    bsname->SetSubclass(_bsname->GetSubclass());
                 }
-                bsname = FindFirstConflict(ulist, _bs->Text());
+                bsname = FindFirstBSConflict(ulist, _bs->Text());
                 if (bsname != nil) {
                     button->SetButtonSharedName(bsname);
                 } else {
-                    bsname = new ButtonSharedName(_bs->Text(), "", false);
+                    bsname = new ButtonSharedName(
+                        _bs->Text(), "", false, baseclass
+                    );
                     button->SetButtonSharedName(bsname);
                 }
             } else {
@@ -264,18 +739,22 @@ boolean ButtonStateVarView::ChangedSubject (const char*& errors) {
                     bsname->SetInitial(_bsname->GetInitial());
                     bsname->SetExport(_bsname->GetExport());
                     bsname->SetFuncName(_bsname->GetFuncName());
+                    bsname->SetSubclass(_bsname->GetSubclass());
                 } else {
-                    bsname = FindFirstConflict(ulist, _bs->Text());
+                    bsname = FindFirstBSConflict(ulist, _bs->Text());
                     if (bsname != nil) {
                         button->SetButtonSharedName(bsname);
                     } else {
-                        bsname = new ButtonSharedName(_bs->Text(), "", false);
+                        bsname = new ButtonSharedName(
+                            _bs->Text(), "", false, baseclass
+                        );
                         button->SetButtonSharedName(bsname);
                     }
                     bsname->SetMachGen(false);
                     bsname->SetInitial(_bsname->GetInitial());
                     bsname->SetExport(_bsname->GetExport());
                     bsname->SetFuncName(_bsname->GetFuncName());
+                    bsname->SetSubclass(_bsname->GetSubclass());
                 }
             }
         }
@@ -307,7 +786,7 @@ Interactor* ButtonStateVarView::Interior (ButtonState* bs) {
     _bs = new MatchEditor(bs, "a rather long name");
     _bs->Match("%[_a-zA-Z]%[_a-zA-Z0-9_]", true);
 
-    Message* nameMsg = new Message("ButtonState Name: ");
+    Message* nameMsg = new Message("ButtonState: ");
 
     PushButton* pbutton = new PushButton(
         "ButtonState...", new InfoButtonState(0, _bsdialog, _ibed), 1
@@ -317,7 +796,7 @@ Interactor* ButtonStateVarView::Interior (ButtonState* bs) {
     HBox* namer = new HBox(
         bsname,
         new HGlue(2*gap, 0, 0),
-        pbutton
+        FixedLength(pbutton, "MMMMMMMMMM")
     );
     namer->Align(Center);
 
@@ -366,7 +845,7 @@ Interactor* CtrlStateVarView::Interior (ButtonState* bs) {
     _bs = new MatchEditor(bs, "a rather long name");
     _bs->Match("%[_a-zA-Z]%[_a-zA-Z0-9_]", true);
 
-    Message* nameMsg = new Message("ControlState Name: ");
+    Message* nameMsg = new Message("ControlState: ");
 
     PushButton* pbutton = new PushButton(
         "ControlState...", new InfoButtonState(0, _bsdialog, _ibed), 1
@@ -376,14 +855,14 @@ Interactor* CtrlStateVarView::Interior (ButtonState* bs) {
     HBox* namer = new HBox(
         bsname,
         new HGlue(2*gap, 0, 0),
-        pbutton
+        FixedLength(pbutton, "MMMMMMMMMM")
     );
     namer->Align(Center);
 
     Tray* t = new Tray;
 
     t->HBox(t, nameMsg, namer, t);
-    t->Align(VertCenter, nameMsg, namer);
+    t->VBox(t, new VGlue(gap), nameMsg, new VGlue(gap), t);
 
     return t;
 }
@@ -394,11 +873,8 @@ InstanceNameVarView::InstanceNameVarView (
     InstanceNameVar* inv, ButtonState* bs, GraphicComp* icomp, 
     const char* msg
 ) : IBVarView(inv, icomp) {
-    _msg = strnew(msg);
-    Insert(Interior(bs));
+    Insert(Interior(bs, msg));
 }
-
-InstanceNameVarView::~InstanceNameVarView () { delete _msg; }
 
 boolean InstanceNameVarView::ChangedSubject (const char*&) {
     const char* name = _name->Text(); 
@@ -419,11 +895,11 @@ void InstanceNameVarView::Init () {
     }
 }
 
-Interactor* InstanceNameVarView::Interior (ButtonState* bs) {
+Interactor* InstanceNameVarView::Interior (ButtonState* bs, const char* msg) {
     const int gap = round(.1*cm);
 
     HBox* hbox = new HBox(
-        new Message(_msg),
+        new Message(msg),
         PaddedFrame(_name = new MatchEditor(bs, "a rather long name"))
     );
     hbox->Align(Center);
@@ -433,162 +909,18 @@ Interactor* InstanceNameVarView::Interior (ButtonState* bs) {
 
 /*****************************************************************************/
 
-class NameChooserDialog : public StringChooser {
-public:
-    NameChooserDialog(
-        ButtonState*, int rows, int cols, const char*, const char*
-    );
-    void Append(const char*);
-private:
-    Interactor* AddScroller(Interactor* i);
-    Interactor* Interior(const char*);
-};
-
-NameChooserDialog::NameChooserDialog(
-    ButtonState* bs, int rows, int cols, const char* sample, const char* title
-) : StringChooser(bs, rows, cols, sample) {
-    Insert(Interior(title));
-}
-
-void NameChooserDialog::Append(const char* string) {
-    _browser->Append(string);
-}
-
-Interactor* NameChooserDialog::AddScroller(Interactor* i) {
-    return new HBox(
-        new MarginFrame(i, 2),
-        new VBorder,
-	new VScrollBar(i)
-    );
-}
-
-Interactor* NameChooserDialog::Interior(const char* title) {
-    const int space = round(.5*cm);
-    HBox* titleblock = new HBox(
-        new MarginFrame(new class Message(title)),
-        new HGlue
-    );
-
-    return new MarginFrame(
-        new VBox(
-            titleblock,
-            new VGlue(space, 0),
-            new Frame(new MarginFrame(_sedit, 2)),
-            new VGlue(space, 0),
-            new Frame(AddScroller(_browser)),
-            new VGlue(space, 0),
-            new HBox(
-                new VGlue(space, 0),
-                new HGlue,
-                new PushButton("Cancel", state, '\007'),
-                new HGlue(space, 0),
-                new PushButton("  OK  ", state, '\r')
-            )
-        ), space, space/2, 0
-    );
-}
-
-/*****************************************************************************/
-
-class NameChooserState : public ButtonState {
-public:
-    NameChooserState(int, NameChooserView*);
-    virtual void Notify ();
-
-private:
-    NameChooserView* _chooserView;
-};
-
-NameChooserState::NameChooserState (
-    int i, NameChooserView* chooserView
-) : ButtonState(i) {
-    _chooserView = chooserView;
-}
-
-void NameChooserState::Notify () {
-    ButtonState::Notify();
-    int value;
-    GetValue(value);
-    if (value == 1) {
-        _chooserView->Accept();
-        SetValue(0);
-    }
-}       
-
-/*****************************************************************************/
-
-NameChooserView::NameChooserView (
-    IBNameVar* nvar, ButtonState* bs,
-    IBEditor* ibed, const char* title, const char* msg 
-) : IBVarView(nvar, nil) {
-    _msg = strnew(msg);
-    _chooser = new NameChooserDialog(
-        new ButtonState, 10, 24, nvar->GetName(), title
-    );
-    _ibed = ibed;
-    Insert(Interior(bs));
-}
-    
-NameChooserView::~NameChooserView () { 
-    delete _chooser;
-    delete _msg;
-}
-
-void NameChooserView::Append(const char* msg) {
-    _chooser->Append(msg);
-}
-
-void NameChooserView::Accept () {
-    boolean ok;
-    _ibed->InsertDialog(_chooser);
-    ok = _chooser->Accept();
-    _ibed->RemoveDialog(_chooser);
-    if (ok) {
-        _name->Message(_chooser->Choice());
-    }
-}
-
-boolean NameChooserView::ChangedSubject (const char*&) {
-    const char* name = _name->Text(); 
-    IBNameVar* chooser = (IBNameVar*) GetSubject();
-
-    if (name != nil) {
-	chooser->SetName(name);
-        chooser->SetMachGen(false);
-    }
-    return true;
-}
-
-void NameChooserView::Init () { 
-    IBNameVar* chooser = (IBNameVar*) GetSubject();
-    const char* name = chooser->GetName();
-    if( name != nil) {
-	_name->Message(name);
-    }
-}
-
-Interactor* NameChooserView::Interior (ButtonState* bs) {
-    const int gap = round(.1*cm);
-
-    HBox* hbox = new HBox(
-        new Message(_msg),
-        PaddedFrame(_name = new MatchEditor(bs, "a rather long name")),
-	new HGlue(2*gap, 0, 0),
-        new PushButton("Library...", new NameChooserState(0, this), 1)
-    );
-    hbox->Align(Center);
-
-    return hbox;
-}
-
-/*****************************************************************************/
-
 MemberNameVarView::MemberNameVarView (
-    MemberNameVar* inv, ButtonState* bs, GraphicComp* icomp, const char* msg
+    MemberNameVar* inv, ButtonState* bs, GraphicComp* icomp, const char* msg,
+    boolean show_exp
 ) : IBVarView(inv, icomp) {
     MemberNameVar* iname = (MemberNameVar*) GetSubject();
-    _export = new ButtonState((int) iname->GetExport());
     _msg = strnew(msg);
+    _show_exp = show_exp;
+    if (_show_exp) {
+        _export = new ButtonState((int) iname->GetExport());
+    } else {
+        _export = new ButtonState(1);
+    }        
     Insert(Interior(bs));
 }
 
@@ -655,13 +987,21 @@ void MemberNameVarView::Init () {
 
 Interactor* MemberNameVarView::Interior (ButtonState* bs) {
     const int gap = round(.1*cm);
+    HBox* hbox;
 
-    HBox* hbox = new HBox(
-        new Message(_msg),
-        PaddedFrame(_name = new MatchEditor(bs, "a rather long name")),
-	new HGlue(2*gap, 0, 0),
-	new CheckBox("Export", _export, 1, 0)
-    );
+    if (_show_exp) {
+        hbox = new HBox(
+            new Message(_msg),
+            PaddedFrame(_name = new MatchEditor(bs, "a rather long name")),
+            new HGlue(2*gap, 0, 0),
+            new CheckBox("Export", _export, 1, 0)
+        );
+    } else {
+        hbox = new HBox(
+            new Message(_msg),
+            PaddedFrame(_name = new MatchEditor(bs, "a rather long name"))
+        );
+    }
     hbox->Align(Center);
 
     _name->Match("%[_a-zA-Z]%[_a-zA-Z0-9_]", true);
@@ -988,9 +1328,40 @@ Interactor* RelatedVarView::Interior (ButtonState* bs) {
 /*****************************************************************************/
 
 SubclassNameVarView::SubclassNameVarView (
-    SubclassNameVar* inv, ButtonState* bs, GraphicComp* icomp
+    SubclassNameVar* inv, ButtonState* bs, GraphicComp* icomp, const char* msg
 ) : IBVarView(inv, icomp) {
-    Insert(Interior(bs));
+    _idvarview = nil;
+    Insert(Interior(bs, msg));
+}
+
+void SubclassNameVarView::IDUpdate () {
+    if (_idvarview != nil) {
+        _idvarview->IDUpdate();
+    }
+}
+
+boolean SubclassNameVarView::IsSubclass () {
+    boolean flag;
+    const char* subclass = _subclass->Text(); 
+
+    SubclassNameVar* subvar = (SubclassNameVar*) GetSubject();
+    const char* baseclass = subvar->GetBaseClass();
+    if (strcmp(subclass, baseclass) != 0) {
+        flag = true;
+
+    } else {
+        flag = false;
+    }
+    return flag;
+}
+
+const char* SubclassNameVarView::GetSubclassName () {
+    return _subclass->Text();
+}
+
+void SubclassNameVarView::SetIDVarView (IDVarView* i) { 
+    _idvarview = i;
+    _idvarview->SetSubclassNameVarView(this);
 }
 
 boolean SubclassNameVarView::ChangedSubject (const char*& errors) {
@@ -1046,7 +1417,7 @@ boolean SubclassNameVarView::ChangedSubject (const char*& errors) {
                     }
                 }
             } else if (subvar->IsAbstract()) {
-                sprintf(buf, "Base class %s is abstract!!", subclass);
+                sprintf(buf, "Base class %s is abstract", subclass);
                 errors = buf;
                 return false;
             }
@@ -1070,19 +1441,55 @@ void SubclassNameVarView::Init () {
     }
 }
 
-Interactor* SubclassNameVarView::Interior (ButtonState* bs) {
+SubMatchEditor::SubMatchEditor (
+    SMemberDialog* d, ButtonState* bs, const char* sample, 
+    const char* done
+) : MatchEditor (bs, sample, done) {
+    _d = d;
+    _s = nil;
+}
+
+SubMatchEditor::SubMatchEditor (
+    SubclassNameVarView* s, ButtonState* bs, const char* sample, 
+    const char* done
+) : MatchEditor (bs, sample, done) {
+    _s = s;
+    _d = nil;
+}
+
+boolean SubMatchEditor::HandleChar (char a) {
+    boolean flag = MatchEditor::HandleChar(a);
+    if (_d != nil) {
+        _d->SMemberUpdate();
+    } else if (_s != nil) {
+        _s->IDUpdate();
+    }
+    return flag;
+}
+
+Interactor* SubclassNameVarView::Interior (ButtonState* bs, const char* msg) {
     const int gap = round(.1*cm);
     SubclassNameVar* subvar = (SubclassNameVar*) GetSubject();
     const char* baseclass = subvar->GetBaseClass();
 
+    char msg1[CHARBUFSIZE];
+    char msg2[CHARBUFSIZE];
+
+    if (msg != nil) {
+        sprintf(msg1, "%s Class: ", msg);
+        sprintf(msg2, "%s Base Class: ", msg);
+    } else {
+        sprintf(msg1, "Class Name: ");
+        sprintf(msg2, "Base Class Name: ");
+    }
     HBox* hbox1 = new HBox(
-	new Message("Class Name: "),
+	new Message(msg1),
         PaddedFrame(
-	    _subclass = new MatchEditor(bs, "a rather long name")
+	    _subclass = new SubMatchEditor(this, bs, "a rather long name")
 	)
     );
     HBox* hbox2 = new HBox(
-	new Message("Base Class Name: "),
+	new Message(msg2),
 	new Message(baseclass),
 	new HGlue
     );
@@ -1093,6 +1500,34 @@ Interactor* SubclassNameVarView::Interior (ButtonState* bs) {
     _subclass->Match("%[_a-zA-Z]%[_a-zA-Z0-9_]", true);
     return vbox;
 }
+/*****************************************************************************/
+
+ICompNameVarView::ICompNameVarView (
+    SubclassNameVar* inv, ButtonState* bs, GraphicComp* icomp, const char* msg
+) : SubclassNameVarView(inv, bs, icomp, msg) {}
+
+boolean ICompNameVarView::ChangedSubject (const char*& errors) {
+    errors = nil;
+    boolean ok = true;
+    CompCheckCmd compcheck(
+        (IComp*) _icomp, GetSubclassName(), _view->GetSubclassName(),
+        _graphic->GetSubclassName()
+    );
+    compcheck.Execute();
+    if (!compcheck.IsOK()) {
+        const char* subclass = _subclass->Text(); 
+        sprintf(
+            buf, 
+            "\"%s\" has been used with a different GraphicView or Graphic subclass.", subclass
+        );
+        errors = buf;
+        ok = false;
+    } else {
+        ok = SubclassNameVarView::ChangedSubject(errors);
+    }
+    return ok;
+}
+
 /*****************************************************************************/
 
 BooleanStateVarView::BooleanStateVarView (

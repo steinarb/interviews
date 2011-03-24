@@ -55,6 +55,7 @@ protected:
     PF* _function;		/* function array indexed by request number */
     rpcstream* _client;		/* source of RPC requests coming from client */
     boolean _delete;		/* should the destructor delete _client? */
+    int _fd;			/* file number of connection with client */
 private:
     /* deny access since unimplemented and member-wise won't work */
     RpcReader(const RpcReader&);

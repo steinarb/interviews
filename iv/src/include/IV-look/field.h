@@ -29,35 +29,96 @@
 #ifndef ivlook_field_h
 #define ivlook_field_h
 
-#include <InterViews/monoglyph.h>
+#include <InterViews/input.h>
+#include <InterViews/resource.h>
 
-class Action;
+class FieldEditor;
 class FieldEditorImpl;
 class String;
 class Style;
+class WidgetKit;
 
-class FieldEditor : public MonoGlyph {
+class FieldEditorAction : public Resource {
+protected:
+    FieldEditorAction();
+    virtual ~FieldEditorAction();
+public:
+    virtual void accept(FieldEditor*);
+    virtual void cancel(FieldEditor*);
+};
+
+#if defined(__STDC__) || defined(__ANSI_CPP__)
+#define __FieldEditorCallback(T) T##_FieldEditorCallback
+#define FieldEditorCallback(T) __FieldEditorCallback(T)
+#define __FieldEditorMemberFunction(T) T##_FieldEditorMemberFunction
+#define FieldEditorMemberFunction(T) __FieldEditorMemberFunction(T)
+#else
+#define __FieldEditorCallback(T) T/**/_FieldEditorCallback
+#define FieldEditorCallback(T) __FieldEditorCallback(T)
+#define __FieldEditorMemberFunction(T) T/**/_FieldEditorMemberFunction
+#define FieldEditorMemberFunction(T) __FieldEditorMemberFunction(T)
+#endif
+
+#define declareFieldEditorCallback(T) \
+typedef void (T::*FieldEditorMemberFunction(T))(FieldEditor*); \
+class FieldEditorCallback(T) : public FieldEditorAction { \
+public: \
+    FieldEditorCallback(T)( \
+	T*, FieldEditorMemberFunction(T) accept, \
+	FieldEditorMemberFunction(T) cancel \
+    ); \
+    virtual ~FieldEditorCallback(T)(); \
+\
+    virtual void accept(FieldEditor*); \
+    virtual void cancel(FieldEditor*); \
+private: \
+    T* obj_; \
+    FieldEditorMemberFunction(T) accept_; \
+    FieldEditorMemberFunction(T) cancel_; \
+};
+
+#define implementFieldEditorCallback(T) \
+FieldEditorCallback(T)::FieldEditorCallback(T)( \
+    T* obj, FieldEditorMemberFunction(T) accept, \
+    FieldEditorMemberFunction(T) cancel \
+) { \
+    obj_ = obj; \
+    accept_ = accept; \
+    cancel_ = cancel; \
+} \
+\
+FieldEditorCallback(T)::~FieldEditorCallback(T)() { } \
+\
+void FieldEditorCallback(T)::accept(FieldEditor* f) { (obj_->*accept_)(f); } \
+void FieldEditorCallback(T)::cancel(FieldEditor* f) { (obj_->*cancel_)(f); }
+
+class FieldEditor : public InputHandler {
 public:
     FieldEditor(
-	const char* sample, Style*, Action* ok = nil, Action* cancel = nil
-    );
-    FieldEditor(
-	const String& sample, Style*, Action* ok = nil, Action* cancel = nil
+	const String& sample, WidgetKit*, Style*, FieldEditorAction* = nil
     );
     virtual ~FieldEditor();
 
-    void field(const char*);
-    void field(const String&);
+    virtual void undraw();
 
-    void select(int pos);
-    void select(int left, int right);
+    virtual void press(const Event&);
+    virtual void drag(const Event&);
+    virtual void release(const Event&);
+    virtual void keystroke(const Event&);
+    virtual InputHandler* focus_in();
+    virtual void focus_out();
 
-    void edit();
-    void edit(const char*, int left, int right);
-    void edit(const String&, int left, int right);
+    virtual void field(const char*);
+    virtual void field(const String&);
 
-    const char* text() const;
-    void text(String&) const;
+    virtual void select(int pos);
+    virtual void select(int left, int right);
+
+    virtual void edit();
+    virtual void edit(const char*, int left, int right);
+    virtual void edit(const String&, int left, int right);
+
+    virtual const String* text() const;
 private:
     FieldEditorImpl* impl_;
 };

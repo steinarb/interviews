@@ -291,6 +291,15 @@
 #define MacroFile InterViews/iv-ibm.cf
 #endif /* ibm */
 
+#ifdef linux
+#undef linux
+#define LinuxArchitecture
+#define ArchitectureName LINUX
+#define architectureName linux
+#define MacroIncludeFile <InterViews/iv-linux.cf>
+#define MacroFile InterViews/iv-linux.cf
+#endif
+
 #ifdef luna
 #undef luna
 #ifdef mc68000

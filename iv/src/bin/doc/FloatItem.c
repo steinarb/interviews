@@ -30,6 +30,7 @@
 #include "Document.h"
 #include "DocViewer.h"
 #include "TextItem.h"
+#include <OS/list.h>
 
 #include <string.h>
 
@@ -37,8 +38,6 @@ class FloatViewInfo {
 public:
     FloatView* _view;
 };
-
-#include "list.h"
 
 declareList(FloatViewInfo_List,FloatViewInfo)
 implementList(FloatViewInfo_List,FloatViewInfo)
@@ -63,7 +62,7 @@ FloatItem::~FloatItem () {
     }
     if (_view != nil) {
         while (_view->count() > 0) {
-            FloatViewInfo& view = _view->item(0);
+            FloatViewInfo& view = _view->item_ref(0);
             _view->remove(0);
         }
         delete _view;
@@ -153,7 +152,7 @@ void FloatItem::detach (FloatView* view) {
     if (_view != nil) {
         long count = _view->count();
         for (long i = 0; i < count; ++i) {
-            FloatViewInfo& info = _view->item(i);
+            FloatViewInfo& info = _view->item_ref(i);
             if (info._view == view) {
                 _view->remove(i);
                 break;
@@ -166,7 +165,7 @@ void FloatItem::notify () {
     if (_view != nil) {
         long count = _view->count();
         for (long i = 0; i < count; ++i) {
-            FloatViewInfo& info = _view->item(i);
+            FloatViewInfo& info = _view->item_ref(i);
             info._view->update();
         }
     }

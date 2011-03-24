@@ -30,12 +30,12 @@
 #include "DocViewer.h"
 #include "PSFigItem.h"
 
+#include "doc-listener.h"
 #include "properties.h"
 
-#include <InterViews/listener.h>
-#include <InterViews/margin.h>
+#include <InterViews/layout.h>
 #include <InterViews/patch.h>
-#include <InterViews/world.h>
+#include <IV-2_6/InterViews/world.h>
 #include <InterViews/xymarker.h>
 
 #include <string.h>
@@ -55,8 +55,8 @@ PSFigView::PSFigView (
         _mode = PSDraft;
     }
     _patch = new Patch(nil);
-    Color* overlay;
-    Color* underlay;
+    const Color* overlay;
+    const Color* underlay;
     _viewer->highlight_colors(ACTIVE_HIGHLIGHT_COLOR, overlay, underlay);
     _active_marker = new XYMarker(_patch, overlay, underlay);
     _listener->body(_active_marker);
@@ -84,7 +84,9 @@ void PSFigView::update () {
 }
 
 void PSFigView::build () {
-    _patch->body(new Margin(_figure->graphic(_mode, this), 5, 5));
+    _patch->body(
+	LayoutKit::instance()->margin(_figure->graphic(_mode, this), 5, 5)
+    );
 }
 
 void PSFigView::repair () {

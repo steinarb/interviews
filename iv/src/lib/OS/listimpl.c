@@ -30,6 +30,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+implementList(__AnyPtrList,__AnyPtr)
+
 static long ListImpl_best_new_sizes[] = {
     48, 112, 240, 496, 1008, 2032, 4080, 8176,
     16368, 32752, 65520, 131056, 262128, 524272, 1048560,
@@ -37,7 +39,7 @@ static long ListImpl_best_new_sizes[] = {
 };
 
 long ListImpl_best_new_count(long count, unsigned int size) {
-    for (int i = 0; i < sizeof(ListImpl_best_new_sizes)/sizeof(int); ++i) {
+    for (int i = 0; i < sizeof(ListImpl_best_new_sizes)/sizeof(long); i++) {
         if (count * size < ListImpl_best_new_sizes[i]) {
             return ListImpl_best_new_sizes[i] / size;
         }

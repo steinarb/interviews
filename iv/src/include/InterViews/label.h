@@ -52,6 +52,14 @@ private:
     String* text_;
     const Font* font_;
     const Color* color_;
+    Coord left_;
+    Coord right_;
+    Coord ascent_;
+    Coord descent_;
+    Coord width_;
+    Coord* char_widths_;
+
+    void compute_metrics();
 };
 
 #include <InterViews/_leave.h>

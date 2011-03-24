@@ -27,6 +27,8 @@
 #include <Unidraw/Commands/datas.h>
 #include <Unidraw/Graphic/graphic.h>
 
+#include <IV-2_6/_enter.h>
+
 /*****************************************************************************/
 
 VoidData::VoidData (void* v) {

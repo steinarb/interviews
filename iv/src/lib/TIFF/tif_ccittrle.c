@@ -1,10 +1,10 @@
 #ifndef lint
-static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_ccittrle.c,v 1.12 91/07/16 16:30:47 sam Exp $";
+static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_ccittrle.c,v 1.14 92/02/10 19:06:10 sam Exp $";
 #endif
 
 /*
- * Copyright (c) 1988, 1989, 1990, 1991 Sam Leffler
- * Copyright (c) 1991 Silicon Graphics, Inc.
+ * Copyright (c) 1988, 1989, 1990, 1991, 1992 Sam Leffler
+ * Copyright (c) 1991, 1992 Silicon Graphics, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and 
  * its documentation for any purpose is hereby granted without fee, provided
@@ -41,9 +41,9 @@ TIFFInitCCITTRLE(tif)
 	TIFFInitCCITTFax3(tif);		/* reuse G3 compression */
 	tif->tif_preencode = NULL;
 	tif->tif_postencode = NULL;
-	tif->tif_encoderow = TIFFNoEncode;
-	tif->tif_encodestrip = TIFFNoEncode;
-	tif->tif_encodetile = TIFFNoEncode;
+	tif->tif_encoderow = TIFFNoRowEncode;
+	tif->tif_encodestrip = TIFFNoStripEncode;
+	tif->tif_encodetile = TIFFNoTileEncode;
 	tif->tif_close = NULL;
 	/*
 	 * This magic causes the regular G3 decompression
@@ -61,9 +61,9 @@ TIFFInitCCITTRLEW(tif)
 	TIFFInitCCITTFax3(tif);		/* reuse G3 compression */
 	tif->tif_preencode = NULL;
 	tif->tif_postencode = NULL;
-	tif->tif_encoderow = TIFFNoEncode;
-	tif->tif_encodestrip = TIFFNoEncode;
-	tif->tif_encodetile = TIFFNoEncode;
+	tif->tif_encoderow = TIFFNoRowEncode;
+	tif->tif_encodestrip = TIFFNoStripEncode;
+	tif->tif_encodetile = TIFFNoTileEncode;
 	tif->tif_close = NULL;
 	/*
 	 * This magic causes the regular G3 decompression

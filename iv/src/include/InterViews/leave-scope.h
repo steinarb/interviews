@@ -33,9 +33,13 @@
 #undef iv__2_6_h
 #endif
 
+#ifndef MAKEDEPEND
+
 #include <InterViews/_undefs.h>
 
 #undef nil
 #undef String
+
+#endif
 
 #endif

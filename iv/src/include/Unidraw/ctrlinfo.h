@@ -27,7 +27,10 @@
 #ifndef unidraw_ctrlinfo_h
 #define unidraw_ctrlinfo_h
 
-#include <InterViews/defs.h>
+#include <InterViews/enter-scope.h>
+#include <Unidraw/enter-scope.h>
+
+#include <IV-2_6/_enter.h>
 
 class GraphicComp;
 
@@ -68,5 +71,7 @@ inline GraphicComp* ControlInfo::GetLabel () { return _label; }
 inline const char* ControlInfo::GetKeyLabel () { return _keyLabel; }
 inline const char* ControlInfo::GetKeyCode () { return _keyCode; }
 inline void* ControlInfo::GetOwner() { return _owner; }
+
+#include <IV-2_6/_leave.h>
 
 #endif

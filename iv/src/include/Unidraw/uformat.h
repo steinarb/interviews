@@ -27,6 +27,8 @@
 #ifndef unidraw_uformat_h
 #define unidraw_uformat_h
 
+#include <Unidraw/enter-scope.h>
+
 static const float UV_ORIGINAL		=  1;   // original 3.0 release
 static const float UV_PRERELEASE	=  0;   // pre-3.0 release
 

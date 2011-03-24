@@ -25,21 +25,23 @@
 #include <InterViews/color.h>
 #include <InterViews/display.h>
 #include <InterViews/session.h>
+#include <InterViews/window.h>
 #include <IV-X11/xcolor.h>
 #include <IV-X11/xdisplay.h>
+#include <IV-X11/xwindow.h>
 #include <OS/list.h>
 #include <OS/math.h>
 #include <OS/string.h>
 #include <OS/ustring.h>
 #include <OS/table2.h>
 
-declareList(ColorRepList,ColorRep*);
-implementList(ColorRepList,ColorRep*);
+declarePtrList(ColorRepList,ColorRep)
+implementPtrList(ColorRepList,ColorRep)
 
 inline unsigned long key_to_hash(String& s) { return s.hash(); }
 
-declareTable2(NameToColor,Display*,UniqueString,const Color*);
-implementTable2(NameToColor,Display*,UniqueString,const Color*);
+declareTable2(NameToColor,Display*,UniqueString,const Color*)
+implementTable2(NameToColor,Display*,UniqueString,const Color*)
 
 class ColorImpl {
 private:
@@ -135,23 +137,27 @@ void Color::intensities(
     intensities(Session::instance()->default_display(), r, g, b);
 }
 
-ColorRep* Color::rep(Display* d) const {
+float Color::alpha() const {
+    return impl_->alpha;
+}
+
+ColorRep* Color::rep(WindowVisual* wv) const {
     for (ListItr(ColorRepList) i(impl_->replist); i.more(); i.next()) {
 	ColorRep* c = i.cur();
-	if (c->display_ == d) {
+	if (c->visual_ == wv) {
 	    return c;
 	}
     }
     ColorImpl* c = impl_;
-    ColorRep* r = create(d, c->red, c->green, c->blue, c->alpha, c->op);
+    ColorRep* r = create(wv, c->red, c->green, c->blue, c->alpha, c->op);
     impl_->replist.append(r);
     return r;
 }
 
-void Color::remove(Display* d) const {
-    for (ListItr(ColorRepList) i(impl_->replist); i.more(); i.next()) {
+void Color::remove(WindowVisual* wv) const {
+    for (ListUpdater(ColorRepList) i(impl_->replist); i.more(); i.next()) {
 	ColorRep* c = i.cur();
-	if (c->display_ == d) {
+	if (c->visual_ == wv) {
 	    i.remove_cur();
 	    break;
 	}
@@ -179,27 +185,27 @@ static char stipple_data[][4] = {
 
 static Pixmap stipple[16];
 
-static Pixmap make_stipple(Display* d, float alpha) {
-    DisplayRep* r = d->rep();
+static Pixmap make_stipple(WindowVisual* wv, float alpha) {
     int index = Math::max(0, Math::min(int(alpha * 16), 15));
     if (stipple[index] == None) {
         stipple[index] = XCreateBitmapFromData(
-            r->display_, r->root_, stipple_data[index], 4, 4
+            wv->display(), RootWindow(wv->display(), wv->screen()),
+	    stipple_data[index], 4, 4
         );
     }
     return stipple[index];
 }
 
 ColorRep* Color::create(
-    Display* d, ColorIntensity r, ColorIntensity g, ColorIntensity b,
+    WindowVisual* wv, ColorIntensity r, ColorIntensity g, ColorIntensity b,
     float alpha, ColorOp op
 ) const {
     unsigned short red = (unsigned short)Math::round(r * float(0xffff));
     unsigned short green = (unsigned short)Math::round(g * float(0xffff));
     unsigned short blue = (unsigned short)Math::round(b * float(0xffff));
     register ColorRep* c = new ColorRep;
-    d->rep()->find_color(red, green, blue, c->xcolor_);
-    c->display_ = d;
+    wv->find_color(red, green, blue, c->xcolor_);
+    c->visual_ = wv;
     switch (op) {
     case Copy:
 	c->op_ = GXcopy;
@@ -214,8 +220,9 @@ ColorRep* Color::create(
 	c->masking_ = false;
 	break;
     }
-    c->stipple_ =
-	(alpha > 0.9999 && alpha < 1.0001) ? None : make_stipple(d, alpha);
+    c->stipple_ = ((alpha > 0.9999 && alpha < 1.0001) ?
+	None : make_stipple(wv, alpha)
+    );
     return c;
 }
 
@@ -225,8 +232,10 @@ boolean Color::find(
 ) {
     NullTerminatedString ns(name);
     XColor xc;
-    DisplayRep* d = display->rep();
-    if (XParseColor(d->display_, d->cmap_, ns.string(), &xc)) {
+    DisplayRep& d = *display->rep();
+    if (XParseColor(
+	d.display_, d.default_visual_->colormap(), ns.string(), &xc)
+    ) {
 	r = float(xc.red) / float(0xffff);
 	g = float(xc.green) / float(0xffff);
 	b = float(xc.blue) / float(0xffff);
@@ -247,8 +256,9 @@ void Color::destroy(ColorRep* r) {
 }
 
 boolean Color::distinguished(Display* d, const Color* color) const {
-    XColor& xc = rep(d)->xcolor_;
-    ColorRep* c = color->rep(d);
+    WindowVisual* wv = d->rep()->default_visual_;
+    XColor& xc = rep(wv)->xcolor_;
+    ColorRep* c = color->rep(wv);
     XColor& color_xc = c->xcolor_;
     return (
 	xc.red != color_xc.red ||
@@ -260,7 +270,8 @@ boolean Color::distinguished(Display* d, const Color* color) const {
 void Color::intensities(
     Display* d, ColorIntensity& r, ColorIntensity& g, ColorIntensity& b
 ) const {
-    XColor& xc = rep(d)->xcolor_;
+    WindowVisual* wv = d->rep()->default_visual_;
+    XColor& xc = rep(wv)->xcolor_;
     r = float(xc.red) / float(0xffff);
     g = float(xc.green) / float(0xffff);
     b = float(xc.blue) / float(0xffff);
@@ -303,5 +314,7 @@ void Color::Intensities(int& ir, int& ig, int& ib) const {
 }
 
 int Color::PixelValue() const {
-    return rep(Session::instance()->default_display())->xcolor_.pixel;
+    Display& d = *Session::instance()->default_display();
+    WindowVisual* wv = d.rep()->default_visual_;
+    return rep(wv)->xcolor_.pixel;
 }

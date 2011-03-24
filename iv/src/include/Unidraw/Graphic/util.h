@@ -27,9 +27,12 @@
 #ifndef unidraw_graphic_util_h
 #define unidraw_util_h
 
-#include <InterViews/defs.h>
+#include <IV-2_6/InterViews/defs.h>
+#include <Unidraw/enter-scope.h>
 #include <OS/memory.h>
 #include <math.h>
+
+#include <IV-2_6/_enter.h>
 
 inline void exch (int& a, int& b) {
     int temp = a;
@@ -77,5 +80,6 @@ inline void ThirdPoint (
     ty = (2*y0 + y1) / 3.0;
 }
 
+#include <IV-2_6/_leave.h>
 
 #endif

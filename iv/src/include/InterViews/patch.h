@@ -30,23 +30,35 @@
 #define iv_patch_h
 
 #include <InterViews/monoglyph.h>
+#include <InterViews/transformer.h>
 
 class Patch : public MonoGlyph {
 public:
     Patch(Glyph*);
     virtual ~Patch();
 
-    virtual Canvas* canvas() const;
-    virtual const Allocation& allocation() const;
+    Canvas* canvas() const;
+    const Transformer& transformer() const;
+    const Allocation& allocation() const;
+    const Extension& extension() const;
+
     virtual void redraw() const;
     virtual void reallocate();
     virtual void repick(int depth, Hit&);
 
     virtual void allocate(Canvas*, const Allocation&, Extension&);
+    virtual void draw(Canvas*, const Allocation&) const;
+    virtual void undraw();
 private:
     Canvas* canvas_;
+    Transformer transformer_;
     Allocation allocation_;
     Extension extension_;
 };
+
+inline Canvas* Patch::canvas() const { return canvas_; }
+inline const Transformer& Patch::transformer() const { return transformer_; }
+inline const Allocation& Patch::allocation() const { return allocation_; }
+inline const Extension& Patch::extension() const { return extension_; }
 
 #endif

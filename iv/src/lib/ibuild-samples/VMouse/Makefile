@@ -21,7 +21,7 @@ CRTN = /usr/lib/crtn.o
 		      $(SPECIAL_IMAKEFLAGS)
  SPECIAL_IMAKEFLAGS =
              DEPEND = makedepend
-     DEPEND_CCFLAGS = $(CCDEFINES) $(CCINCLUDES) -I/usr/include/CC
+     DEPEND_CCFLAGS = -DMAKEDEPEND $(CCDEFINES) $(CCINCLUDES) -I/usr/include/CC
                MAKE = make
            PASSARCH = ARCH="$(ARCH)" SPECIAL_IMAKEFLAGS="$(SPECIAL_IMAKEFLAGS)"
           ARCHORCPU = $$CPU
@@ -93,7 +93,7 @@ NONSHARED_CCLDFLAGS =
 		      $(LDLIBX11)\
 		      $(LDLIBM)\
 		      $(ABSLIBDIRPATH)
-     EXTRA_CCLDLIBS = -lrpcsvc -lsun -lC -lmalloc -lc_s
+     EXTRA_CCLDLIBS = -lC -lsun -lmalloc -lc_s
 
             INSTALL = $(SHELL) $(SCRIPTSRC)/bsdinst.sh
        INSTPGMFLAGS = -s

@@ -29,9 +29,14 @@
 
 #include <Unidraw/globals.h>
 
+class CCnxn;
+class CCnxn_HashTable;
 class CGlue;
-class CSolverState;
+class CNet;
+class ConnInfo;
 class Connector;
+class CSolverState;
+
 class istream;
 class ostream;
 
@@ -55,8 +60,8 @@ private:
     friend class Connector;
     void Wrote(Connector*);
 
-    class CNet* Network(UList*);
-    class ConnInfo* Info(Connector*, Orientation);
+    CNet* Network(UList*);
+    ConnInfo* Info(Connector*, Orientation);
     void SolveAll(UList*, Orientation);
     void Solve(CNet*, Orientation);
     void DestroyCnxns();
@@ -64,7 +69,7 @@ private:
 
     void GetState(Connector*, ConnInfo*, Orientation, CSolverState*);
     void Update();
-    void UpdateInfo(class CCnxn*, Orientation);
+    void UpdateInfo(CCnxn*, Orientation);
     void UpdateInfo(CCnxn*, ConnInfo*, ConnInfo*, UList*);
 
     void CreateNetwork(CCnxn*, ConnInfo*, ConnInfo*, UList*);
@@ -77,7 +82,7 @@ private:
 
     void ReadConnectors(istream&, CNet*);
     void InitConnectors(CNet*, CNet*);
-    void WriteConnectors(ostream&, class CCnxn_HashTable*);
+    void WriteConnectors(ostream&, CCnxn_HashTable*);
     void Wrote(Connector*, CNet* cl, CCnxn_HashTable* written);
 
     boolean FoundFixed(CNet*, CNet*&);

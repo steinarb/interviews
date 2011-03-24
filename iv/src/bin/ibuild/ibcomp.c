@@ -21,14 +21,14 @@
  */
 
 /*
- * Shared Interactor component definitions.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibcomp.c,v 1.2 91/09/27 14:07:39 tang Exp $
+ * Graphical component definitions.
  */
 
 #include "ibclasses.h"
+#include "ibcmds.h"
+#include "ibcreator.h"
 #include "ibdialogs.h"
 #include "ibcomp.h"
-#include "ibcmds.h"
 #include "ibgrblock.h"
 #include "ibmanips.h"
 #include "ibscene.h"
@@ -53,6 +53,7 @@
 #include <InterViews/event.h>
 #include <InterViews/transformer.h>
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <stream.h>
 #include <string.h>
@@ -64,17 +65,27 @@ boolean IComp::_release = 1;
 /*****************************************************************************/
 
 IComp::IComp (Graphic* gr) : GraphicComps (gr) {
-    _classNameVar = new SubclassNameVar("Graphic", false);
+    _gclassNameVar = new SubclassNameVar("Picture", false);
+    _gclassNameVar->ref();
+    _cclassNameVar = new SubclassNameVar("GraphicComps", false);
+    _cclassNameVar->ref();
+    _vclassNameVar = new SubclassNameVar("GraphicViews", false);
+    _vclassNameVar->ref();
+    _compid = new IDVar;
     _memberVar = nil;
     _target = nil;
+
     if (gr == nil) {
         SetGraphic(new Picture);
     }
 }
 
 IComp::~IComp () {
-    delete _classNameVar;
     delete _memberVar;
+    delete _compid;
+    _gclassNameVar->unref();
+    _cclassNameVar->unref();
+    _vclassNameVar->unref();
 }
 
 ClassId IComp::GetClassId () {
@@ -96,15 +107,44 @@ boolean IComp::IsA (ClassId id) {
     return (ikid == nil) ? GraphicComps::IsA(id) : ikid->IsA(id);
 }
 
+IComp& IComp::operator = (IComp& icomp) {
+    _gclassNameVar->unref();
+    _cclassNameVar->unref();
+    _vclassNameVar->unref();
+
+    _gclassNameVar = icomp.GetGClassNameVar();
+    _cclassNameVar = icomp.GetCClassNameVar();
+    _vclassNameVar = icomp.GetVClassNameVar();
+
+    _gclassNameVar->ref();
+    _cclassNameVar->ref();
+    _vclassNameVar->ref();
+
+    *_memberVar = *icomp.GetMemberNameVar();
+    *(IBNameVar*)_compid = *(IBNameVar*)icomp.GetCIDVar();
+
+    return *this;
+}
+
 void IComp::Instantiate() {
     Catalog* catalog = unidraw->GetCatalog();
     if (_memberVar == nil) {
 	char buf[CHARBUFSIZE];
-	sprintf(buf, "_%s_0", _classNameVar->GetName());
+	sprintf(buf, "_%s_0", GetClassNameVar()->GetName());
 	_memberVar = new MemberNameVar(buf);
         _memberVar->GenNewName();
     }
     catalog->Forget(this);    /* this is magic */
+}
+
+void IComp::SetTarget (GraphicComp* grcomp) {
+    GetTarget();
+    if (_target != nil) {
+        Remove(_target);
+        delete _target;
+    }
+    Append(grcomp);
+    _target = grcomp;
 }
 
 GraphicComp* IComp::GetTarget () {
@@ -125,24 +165,47 @@ void IComp::Interpret (Command* cmd) {
         const char* cname = gcmd->GetCName();
         UList* conflictlist = gcmd->GetConflict();
         const char* member = _memberVar->GetName();
-        const char* classname = _classNameVar->GetName();
+        const char* classname = _gclassNameVar->GetName();
         if (strcmp(member, cname) == 0) {
             conflictlist->Append(new UList(_memberVar->GetMemberSharedName()));
         }
         if (strcmp(classname, cname) == 0) {
-            conflictlist->Append(new UList(_classNameVar));
+            conflictlist->Append(new UList(_gclassNameVar));
         }
-        
+        if (IsAComponent()) {
+            if (strcmp(_cclassNameVar->GetName(), cname) == 0) {
+                conflictlist->Append(new UList(_cclassNameVar));
+            }
+            if (strcmp(_vclassNameVar->GetName(), cname) == 0) {
+                conflictlist->Append(new UList(_vclassNameVar));
+            }
+        }
+    } else if (cmd->IsA(COMPCHECK_CMD)) {
+        CompCheckCmd* ccmd = (CompCheckCmd*) cmd;
+        IComp* icomp = ccmd->GetTarget();
+        if (icomp != this) {
+            if (strcmp(ccmd->GetCName(), _cclassNameVar->GetName()) == 0) {
+                if (
+                    strcmp(ccmd->GetVName(), _vclassNameVar->GetName()) != 0 ||
+                    strcmp(ccmd->GetGName(), _gclassNameVar->GetName()) != 0 
+                ) {
+                    ccmd->Check(false);
+                }
+            }
+        }
     } else if (cmd->IsA(INFO_CMD)) {
         
     } else if (cmd->IsA(GETNAMEVARS_CMD)) {
         GetNameVarsCmd* gcmd = (GetNameVarsCmd*) cmd;
-        gcmd->SetClassNameVar(_classNameVar);
+        gcmd->SetClassNameVar(GetClassNameVar());
         gcmd->SetMemberNameVar(_memberVar);
-        
+        if (IsAComponent()) {
+            gcmd->AppendExtras(_gclassNameVar);
+            gcmd->AppendExtras(_vclassNameVar);
+        }
+
     } else if (cmd->IsA(SCAN_CMD)) {
         ScanCmd* scmd = (ScanCmd*) cmd;
-        const char* iclass = _classNameVar->GetName();
         const char* sclass = scmd->GetClassName();
         if (*sclass == '\0' || scmd->GetScope()) {
             if (IsA(scmd->GetTargetId())) {
@@ -157,6 +220,11 @@ void IComp::Interpret (Command* cmd) {
         Notify();
         Propagate(cmd);
 
+    } else if (cmd->IsA(IDMAP_CMD)) {
+        if (IsAComponent()) {
+            IDMap* idmap = IDVar::GetIDMap();
+            idmap->Add(_compid, _cclassNameVar);
+        }
     } else if (
         !cmd->IsA(SCENE_CMD) && !cmd->IsA(MONOSCENE_CMD) && 
         !cmd->IsA(NAVIGATE_CMD)
@@ -229,8 +297,16 @@ GrBlockComp* IComp::GetGrBlockComp () {
 
 void IComp::SetState(const char* name, StateVar* stateVar) { 
     if (strcmp(name, "ClassNameVar") == 0) {
-        _classNameVar = (SubclassNameVar*) stateVar;
-
+        SubclassNameVar* classNameVar = (SubclassNameVar*) stateVar;
+        classNameVar->ref();
+        GetClassNameVar()->unref();
+        if (IsAComponent()) {
+            _cclassNameVar = classNameVar;
+            _cclassNameVar->ref();
+        } else {
+            _gclassNameVar = classNameVar;
+            _gclassNameVar->ref();
+        }
     } else if (strcmp(name, "MemberNameVar") == 0) {
         MemberNameVar* memberVar = (MemberNameVar*) stateVar;
         *_memberVar = *memberVar;
@@ -241,12 +317,36 @@ StateVar* IComp::GetState (const char* name) {
     StateVar* stateVar = nil;
 
     if (strcmp(name, "ClassNameVar") == 0) {
-        stateVar = _classNameVar;
+        stateVar = GetClassNameVar();
+
     } else if (strcmp(name, "MemberNameVar") == 0) {
         stateVar = _memberVar;
     }
 
     return stateVar;
+}
+
+boolean IComp::IsAComponent () {
+    boolean flag = false;
+    Component* grbcomp = GetGrBlockComp();
+    if (
+        grbcomp != nil &&
+        (
+            grbcomp->IsA(IBVIEWER_COMP) || grbcomp->IsA(PANELCONTROL_COMP) ||
+            grbcomp->IsA(COMMANDCONTROL_COMP) || grbcomp->IsA(EDITOR_COMP)
+        )
+    ) {
+        flag = true;
+    }
+    return flag;
+}
+        
+SubclassNameVar* IComp::GetClassNameVar () {
+    if (IsAComponent()) {
+        return _cclassNameVar;
+    } else {
+        return _gclassNameVar;
+    }
 }
 
 void IComp::Read (istream& in) {
@@ -276,12 +376,26 @@ void IComp::ReadStateVars(istream& in) {
     Catalog* catalog = unidraw->GetCatalog();
     in >> hint;
     if (hint == tag) {
-        delete _classNameVar;
         delete _memberVar;
-        
-        _classNameVar = (SubclassNameVar*) catalog->ReadStateVar(in);
+        _gclassNameVar->unref();
+        _gclassNameVar = (SubclassNameVar*) catalog->ReadStateVar(in);
         _memberVar = (MemberNameVar*) catalog->ReadStateVar(in);
+        _gclassNameVar->ref();
 
+        float version = unidraw->GetCatalog()->FileVersion();
+        if (version > 1.05 || !IBCreator::GetLock()) {
+            _cclassNameVar->unref();
+            _cclassNameVar = (SubclassNameVar*) catalog->ReadStateVar(in);
+            _cclassNameVar->ref();
+            _vclassNameVar->unref();
+            _vclassNameVar = (SubclassNameVar*) catalog->ReadStateVar(in);
+            _vclassNameVar->ref();
+            int origid = _compid->GetOrigID();
+            delete _compid;
+            _compid = (IDVar*) catalog->ReadStateVar(in);
+            _compid->SetOrigID(origid);
+
+        }
     } else {
         in.putback(hint);
     }
@@ -290,8 +404,11 @@ void IComp::ReadStateVars(istream& in) {
 void IComp::WriteStateVars(ostream& out) {
     Catalog* catalog = unidraw->GetCatalog();
     out << " " << tag << " ";
-    catalog->WriteStateVar(_classNameVar, out);
+    catalog->WriteStateVar(_gclassNameVar, out);
     catalog->WriteStateVar(_memberVar, out);
+    catalog->WriteStateVar(_cclassNameVar, out);
+    catalog->WriteStateVar(_vclassNameVar, out);
+    catalog->WriteStateVar(_compid, out);
 }
 
 /*****************************************************************************/
@@ -301,15 +418,51 @@ IView::IView (IComp* subj) : GraphicViews (subj) {}
 IComp* IView::GetIComp () { return (IComp*) GetSubject(); }
 
 InfoDialog* IView::GetInfoDialog () {
-    InfoDialog* info = new InfoDialog("Graphic Information");
-    ButtonState* state = info->GetState();
-
+    InfoDialog* info;
     IComp* icomp = GetIComp();
+    boolean iscomp = icomp->IsAComponent();
+    
+    if (iscomp) {
+        info = new InfoDialog("Component Information");
+    } else {
+        info = new InfoDialog("Graphic Information");
+    }
+    ButtonState* state = info->GetState();
     SubclassNameVar* classNameVar = icomp->GetClassNameVar();
     MemberNameVar* memberVar = icomp->GetMemberNameVar();
 
-    info->Include(new SubclassNameVarView(classNameVar, state, icomp));
-    info->Include(new MemberNameVarView(memberVar, state, icomp));
+    if (iscomp) {
+        IDVar* cidvar = icomp->GetCIDVar();
+        SubclassNameVar* vclassNameVar = icomp->GetVClassNameVar();
+        SubclassNameVar* gclassNameVar = icomp->GetGClassNameVar();
+
+        ICompNameVarView* s = new ICompNameVarView(
+            classNameVar, state, icomp, "Component"
+        );
+        SubclassNameVarView* v = new SubclassNameVarView(
+            vclassNameVar, state, icomp, "ComponentView"
+        );
+        SubclassNameVarView* g = new SubclassNameVarView(
+            gclassNameVar, state, icomp, "Graphic"
+        );
+        s->SetViewNameVarView(v);
+        s->SetGraphicNameVarView(g);
+        
+        IDVarView* i = new IDVarView(cidvar, state, "Component");
+        s->SetIDVarView(i);
+
+        info->Include(s);
+        info->Include(i);
+        info->Include(new MemberNameVarView(memberVar, state, icomp));
+        info->Include(v);
+        info->Include(g);
+
+   } else {
+        info->Include(
+            new SubclassNameVarView(classNameVar, state, icomp, "Graphic")
+        );
+        info->Include(new MemberNameVarView(memberVar, state, icomp));
+    }
     return info;
 }
 
@@ -441,7 +594,18 @@ Command* IView::InterpretManipulator (Manipulator* m) {
 
     } else if (kidview != nil) {
         cmd = kidview->InterpretManipulator(m);
-
+        if (cmd != nil && cmd->IsA(PASTE_CMD)) {
+            Iterator i;
+            Catalog* catalog = unidraw->GetCatalog();
+            ClassId id = GetIComp()->GetClassId();
+            Clipboard* cb = cmd->GetClipboard();
+            cb->First(i);
+            GraphicComp* grcomp = cb->GetComp(i);
+            cb->Remove(i);
+            IComp* icomp = (IComp*) catalog->GetCreator()->Create(id);
+            icomp->SetTarget(grcomp); 
+            cb->Append(icomp);
+        }
     } else {
         cmd = GraphicViews::InterpretManipulator(m);
     }
@@ -472,5 +636,33 @@ void IView::Interpret(Command* cmd) {
         GraphicViews::Interpret(cmd);
     }
 }
+
+/*****************************************************************************/
+
+IPSView::IPSView (GraphicComps* icomp) : PostScriptViews (icomp) {
+    _kidps = nil;
+}
+
+void IPSView::Update () {
+    Iterator i;
+    PostScriptViews::Update();
+    First(i);
+    _kidps = GetView(i);
+}
+
+boolean IPSView::Emit (ostream& out) {
+    return _kidps->Emit(out);
+}
+
+boolean IPSView::Definition (ostream& out) {
+    return _kidps->Definition(out);
+}
+
+ClassId IPSView::GetClassId () { return IPS_VIEW; }
+
+boolean IPSView::IsA (ClassId id) {
+    return IPS_VIEW == id || PostScriptViews::IsA(id);
+}
+
 
 

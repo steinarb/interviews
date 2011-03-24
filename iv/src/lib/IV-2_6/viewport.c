@@ -29,12 +29,13 @@
 
 #include <InterViews/canvas.h>
 #include <InterViews/pattern.h>
-#include <InterViews/2.6/InterViews/painter.h>
-#include <InterViews/2.6/InterViews/perspective.h>
-#include <InterViews/2.6/InterViews/shape.h>
-#include <InterViews/2.6/InterViews/viewport.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/perspective.h>
+#include <IV-2_6/InterViews/shape.h>
+#include <IV-2_6/InterViews/viewport.h>
+#include <OS/math.h>
 
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/_enter.h>
 
 Viewport::Viewport(Interactor* i, Alignment a) {
     Init(i, a);

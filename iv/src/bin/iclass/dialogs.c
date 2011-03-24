@@ -42,10 +42,12 @@
 #include <string.h>
 #include <osfcn.h>
 
+#if !defined(AIXV3) && !defined(hpux) && !(defined(sun) && OSMajorVersion >= 5)
 /* sigh, not all systems have this prototype */
 extern "C" {
     char* getcwd(char*, int);
-};
+}
+#endif
 
 /*****************************************************************************/
 
@@ -67,6 +69,9 @@ boolean BasicDialog::Accept () {
 
     do {
 	Read(e);
+	if (e.target == nil) {
+	    break;
+	}
         if (!KeyEquiv(e)) {
             Forward(e);
         }
@@ -81,7 +86,7 @@ void BasicDialog::Forward (Event& e) {
 
     e.target->GetRelative(x, y, this);
     if (x >= 0 && y >= 0 && x <= xmax && y <= ymax) {
-        e.target->Handle(e);
+	e.target->Handle(e);
     }
 }
 
@@ -127,6 +132,9 @@ void AcknowledgeDialog::Acknowledge () {
 
     do {
 	Read(e);
+	if (e.target == nil) {
+	    break;
+	}
         if (!KeyEquiv(e)) {
             Forward(e);
         }
@@ -153,6 +161,9 @@ char ConfirmDialog::Confirm () {
     state->SetValue(v);
     do {
         Read(e);
+	if (e.target == nil) {
+	    break;
+	}
         if (e.eventType == KeyEvent) {
             state->SetValue(e.keystring[0]);
         } else {
@@ -259,6 +270,9 @@ boolean StringDialog::Accept () {
             break;
         }
 	Read(e);
+	if (e.target == nil) {
+	    break;
+	}
         if (!KeyEquiv(e)) {
             Forward(e);
         }
@@ -332,6 +346,9 @@ boolean FileDialog::Accept () {
 
     do {
 	Read(e);
+	if (e.target == nil) {
+	    break;
+	}
         if (!KeyEquiv(e)) {
             Forward(e);
         }

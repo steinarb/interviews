@@ -51,7 +51,7 @@ public:
     virtual Command* InterpretManipulator(Manipulator*);
 };
 
-class TextCode : public CodeView {
+class TextCode : public GraphicCodeView {
 public:
     TextCode(ITextComp* = nil);
 
@@ -62,11 +62,13 @@ public:
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
 protected:
-    virtual boolean CoreConstDecls(ostream&);
-    virtual boolean CoreConstInits(ostream&);
-    virtual boolean ConstDecls(ostream&);
-    virtual boolean ConstInits(ostream&);
+    virtual boolean GCoreConstDecls(ostream&);
+    virtual boolean GCoreConstInits(ostream&);
+    virtual boolean GConstDecls(ostream&);
+    virtual boolean GConstInits(ostream&);
+
     virtual boolean EmitIncludeHeaders(ostream&);
+    virtual const char* GetCVHeader();
 };
 
 #endif

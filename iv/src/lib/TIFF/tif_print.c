@@ -1,10 +1,10 @@
 #ifndef lint
-static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_print.c,v 1.32 91/07/16 16:30:59 sam Exp $";
+static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_print.c,v 1.43 92/03/17 11:08:58 sam Exp $";
 #endif
 
 /*
- * Copyright (c) 1988, 1989, 1990, 1991 Sam Leffler
- * Copyright (c) 1991 Silicon Graphics, Inc.
+ * Copyright (c) 1988, 1989, 1990, 1991, 1992 Sam Leffler
+ * Copyright (c) 1991, 1992 Silicon Graphics, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and 
  * its documentation for any purpose is hereby granted without fee, provided
@@ -32,26 +32,14 @@ static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_print.c,v 1
  * Directory Printing Support
  */
 #include <stdio.h>
+#include <string.h>
 #include "tiffioP.h"
-
-static char *ResponseUnitNames[] = {
-	"#0",
-	"10ths",
-	"100ths",
-	"1,000ths",
-	"10,000ths",
-	"100,000ths",
-};
-static	float ResponseUnit[] = { 1., .1, .01, .001, .0001, .00001 };
-#define	MAXRESPONSEUNIT \
-    (sizeof (ResponseUnitNames) / sizeof (ResponseUnitNames[0]))
 
 #ifdef JPEG_SUPPORT
 static
-JPEGPrintQTable(fd, prec, tab)
+JPEGPrintQTable(fd, tab)
 	FILE *fd;
-	int prec;
-	u_short tab[64];
+	u_char tab[64];
 {
 	int i, j;
 	char *sep;
@@ -97,6 +85,32 @@ JPEGPrintCTable(fd, tab)
 }
 #endif
 
+static const char *photoNames[] = {
+    "min-is-white",				/* PHOTOMETRIC_MINISWHITE */
+    "min-is-black",				/* PHOTOMETRIC_MINISBLACK */
+    "RGB color",				/* PHOTOMETRIC_RGB */
+    "palette color (RGB from colormap)",	/* PHOTOMETRIC_PALETTE */
+    "transparency mask",			/* PHOTOMETRIC_MASK */
+    "separated",				/* PHOTOMETRIC_SEPARATED */
+    "YCbCr",					/* PHOTOMETRIC_YCBCR */
+    "7 (0x7)",
+    "CIE L*a*b*",				/* PHOTOMETRIC_CIELAB */
+};
+#define	NPHOTONAMES	(sizeof (photoNames) / sizeof (photoNames[0]))
+
+static const char *orientNames[] = {
+    "0 (0x0)",
+    "row 0 top, col 0 lhs",			/* ORIENTATION_TOPLEFT */
+    "row 0 top, col 0 rhs",			/* ORIENTATION_TOPRIGHT */
+    "row 0 bottom, col 0 rhs",			/* ORIENTATION_BOTRIGHT */
+    "row 0 bottom, col 0 lhs",			/* ORIENTATION_BOTLEFT */
+    "row 0 lhs, col 0 top",			/* ORIENTATION_LEFTTOP */
+    "row 0 rhs, col 0 top",			/* ORIENTATION_RIGHTTOP */
+    "row 0 rhs, col 0 bottom",			/* ORIENTATION_RIGHTBOT */
+    "row 0 lhs, col 0 bottom",			/* ORIENTATION_LEFTBOT */
+};
+#define	NORIENTNAMES	(sizeof (orientNames) / sizeof (orientNames[0]))
+
 /*
  * Print the contents of the current directory
  * to the specified stdio file stream.
@@ -109,9 +123,8 @@ TIFFPrintDirectory(tif, fd, flags)
 {
 	register TIFFDirectory *td;
 	char *sep;
-	int i;
+	int i, j;
 	long n;
-	float unit;
 
 	fprintf(fd, "TIFF Directory at offset 0x%x\n", tif->tif_diroff);
 	td = &tif->tif_dir;
@@ -126,10 +139,8 @@ TIFFPrintDirectory(tif, fd, flags)
 			fprintf(fd, "%smulti-page document", sep);
 			sep = "/";
 		}
-		if (td->td_subfiletype & FILETYPE_MASK) {
+		if (td->td_subfiletype & FILETYPE_MASK)
 			fprintf(fd, "%stransparency mask", sep);
-			sep = "/";
-		}
 		fprintf(fd, " (%u = 0x%x)\n",
 		    td->td_subfiletype, td->td_subfiletype);
 	}
@@ -175,24 +186,24 @@ TIFFPrintDirectory(tif, fd, flags)
 		    td->td_xposition, td->td_yposition);
 	if (TIFFFieldSet(tif,FIELD_BITSPERSAMPLE))
 		fprintf(fd, "  Bits/Sample: %u\n", td->td_bitspersample);
-	if (TIFFFieldSet(tif,FIELD_DATATYPE)) {
-		fprintf(fd, "  Data Type: ");
-		switch (td->td_datatype) {
-		case DATATYPE_VOID:
+	if (TIFFFieldSet(tif,FIELD_SAMPLEFORMAT)) {
+		fprintf(fd, "  Sample Format: ");
+		switch (td->td_sampleformat) {
+		case SAMPLEFORMAT_VOID:
 			fprintf(fd, "void\n");
 			break;
-		case DATATYPE_INT:
+		case SAMPLEFORMAT_INT:
 			fprintf(fd, "signed integer\n");
 			break;
-		case DATATYPE_UINT:
+		case SAMPLEFORMAT_UINT:
 			fprintf(fd, "unsigned integer\n");
 			break;
-		case DATATYPE_IEEEFP:
+		case SAMPLEFORMAT_IEEEFP:
 			fprintf(fd, "IEEE floating point\n");
 			break;
 		default:
 			fprintf(fd, "%u (0x%x)\n",
-			    td->td_datatype, td->td_datatype);
+			    td->td_sampleformat, td->td_sampleformat);
 			break;
 		}
 	}
@@ -224,9 +235,6 @@ TIFFPrintDirectory(tif, fd, flags)
 		case COMPRESSION_LZW:
 			fprintf(fd, "Lempel-Ziv & Welch encoding\n");
 			break;
-		case COMPRESSION_PICIO:
-			fprintf(fd, "Pixar picio encoding\n");
-			break;
 		case COMPRESSION_NEXT:
 			fprintf(fd, "NeXT 2-bit encoding\n");
 			break;
@@ -241,37 +249,16 @@ TIFFPrintDirectory(tif, fd, flags)
 	}
 	if (TIFFFieldSet(tif,FIELD_PHOTOMETRIC)) {
 		fprintf(fd, "  Photometric Interpretation: ");
-		switch (td->td_photometric) {
-		case PHOTOMETRIC_MINISWHITE:
-			fprintf(fd, "min-is-white\n");
-			break;
-		case PHOTOMETRIC_MINISBLACK:
-			fprintf(fd, "min-is-black\n");
-			break;
-		case PHOTOMETRIC_RGB:
-			fprintf(fd, "RGB color\n");
-			break;
-		case PHOTOMETRIC_PALETTE:
-			fprintf(fd, "palette color (RGB from colormap)\n");
-			break;
-		case PHOTOMETRIC_MASK:
-			fprintf(fd, "transparency mask\n");
-			break;
-		case PHOTOMETRIC_SEPARATED:
-			fprintf(fd, "separated\n");
-			break;
-		case PHOTOMETRIC_YCBCR:
-			fprintf(fd, "YCbCr\n");
-			break;
-		default:
+		if (td->td_photometric < NPHOTONAMES)
+			fprintf(fd, "%s\n", photoNames[td->td_photometric]);
+		else
 			fprintf(fd, "%u (0x%x)\n",
 			    td->td_photometric, td->td_photometric);
-			break;
-		}
 	}
 	if (TIFFFieldSet(tif,FIELD_MATTEING))
 		fprintf(fd, "  Matteing: %s\n", td->td_matteing ?
 		    "pre-multiplied with alpha channel" : "none");
+#ifdef CMYK_SUPPORT
 	if (TIFFFieldSet(tif,FIELD_INKSET)) {
 		fprintf(fd, "  Ink Set: ");
 		switch (td->td_inkset) {
@@ -284,6 +271,22 @@ TIFFPrintDirectory(tif, fd, flags)
 			break;
 		}
 	}
+	if (TIFFFieldSet(tif,FIELD_INKNAMES)) {
+		char *cp;
+		fprintf(fd, "  Ink Names: ");
+		i = td->td_samplesperpixel;
+		sep = "";
+		for (cp = td->td_inknames; i > 0; cp = strchr(cp, '\0')) {
+			fprintf(fd, "%s%s", sep, cp);
+			sep = ", ";
+		}
+	}
+	if (TIFFFieldSet(tif,FIELD_DOTRANGE))
+		fprintf(fd, "  Dot Range: %u-%u\n",
+		    td->td_dotrange[0], td->td_dotrange[1]);
+	if (TIFFFieldSet(tif,FIELD_TARGETPRINTER))
+		fprintf(fd, "  Target Printer: %s\n", td->td_targetprinter);
+#endif
 	if (TIFFFieldSet(tif,FIELD_THRESHHOLDING)) {
 		fprintf(fd, "  Thresholding: ");
 		switch (td->td_threshholding) {
@@ -332,12 +335,40 @@ TIFFPrintDirectory(tif, fd, flags)
 			break;
 		}
 	}
+#ifdef YCBCR_SUPPORT
+	if (TIFFFieldSet(tif,FIELD_YCBCRSUBSAMPLING))
+		fprintf(fd, "  YCbCr Subsampling: %u, %u\n",
+		    td->td_ycbcrsubsampling[0], td->td_ycbcrsubsampling[1]);
+	if (TIFFFieldSet(tif,FIELD_YCBCRPOSITIONING)) {
+		fprintf(fd, "  YCbCr Positioning: ");
+		switch (td->td_ycbcrpositioning) {
+		case YCBCRPOSITION_CENTERED:
+			fprintf(fd, "centered\n");
+			break;
+		case YCBCRPOSITION_COSITED:
+			fprintf(fd, "cosited\n");
+			break;
+		default:
+			fprintf(fd, "%u (0x%x)\n",
+			    td->td_ycbcrpositioning, td->td_ycbcrpositioning);
+			break;
+		}
+	}
+	if (TIFFFieldSet(tif,FIELD_YCBCRCOEFFICIENTS))
+		fprintf(fd, "  YCbCr Coefficients: %g, %g, %g\n",
+		    td->td_ycbcrcoeffs[0],
+		    td->td_ycbcrcoeffs[1],
+		    td->td_ycbcrcoeffs[2]);
+#endif
 #ifdef JPEG_SUPPORT
 	if (TIFFFieldSet(tif,FIELD_JPEGPROC)) {
 		fprintf(fd, "  JPEG Processing Mode: ");
 		switch (td->td_jpegproc) {
 		case JPEGPROC_BASELINE:
-			fprintf(fd, "baseline algorithm\n");
+			fprintf(fd, "baseline sequential algorithm\n");
+			break;
+		case JPEGPROC_LOSSLESS:
+			fprintf(fd, "lossless algorithm with Huffman coding\n");
 			break;
 		default:
 			fprintf(fd, "%u (0x%x)\n",
@@ -345,27 +376,18 @@ TIFFPrintDirectory(tif, fd, flags)
 			break;
 		}
 	}
-	if (TIFFFieldSet(tif,FIELD_JPEGQTABLEPREC)) {
-		fprintf(fd, "  JPEG Quantization Table Precision: ");
-		switch (td->td_jpegprec) {
-		case JPEGQTABLEPREC_8BIT:
-			fprintf(fd, "8-bit\n");
-			break;
-		case JPEGQTABLEPREC_16BIT:
-			fprintf(fd, "16-bit\n");
-			break;
-		default:
-			fprintf(fd, "%u (0x%x)\n",
-			    td->td_jpegprec, td->td_jpegprec);
-			break;
-		}
+	if (TIFFFieldSet(tif,FIELD_JPEGRESTARTINTERVAL)) {
+		fprintf(fd, "  JPEG Restart Interval: ");
+		if (td->td_jpegrestartinterval)
+			fprintf(fd, "%u\n", td->td_jpegrestartinterval);
+		else
+			fprintf(fd, "(no restart markers)\n");
 	}
 	if (TIFFFieldSet(tif,FIELD_JPEGQTABLES)) {
 		fprintf(fd, "  JPEG Quantization Tables: ");
 		if (flags & TIFFPRINT_JPEGQTABLES) {
 			for (i = 0; i < td->td_samplesperpixel; i++)
-				JPEGPrintQTable(fd,
-				    td->td_jpegprec,td->td_qtab[i]);
+				JPEGPrintQTable(fd, td->td_qtab[i]);
 		} else
 			fprintf(fd, "(present)\n");
 	}
@@ -386,6 +408,9 @@ TIFFPrintDirectory(tif, fd, flags)
 			fprintf(fd, "(present)\n");
 	}
 #endif
+	if (TIFFFieldSet(tif,FIELD_HALFTONEHINTS))
+		fprintf(fd, "  Halftone Hints: light %u dark %u\n",
+		    td->td_halftonehints[0], td->td_halftonehints[1]);
 	if (TIFFFieldSet(tif,FIELD_ARTIST))
 		fprintf(fd, "  Artist: \"%s\"\n", td->td_artist);
 	if (TIFFFieldSet(tif,FIELD_DATETIME))
@@ -405,36 +430,11 @@ TIFFPrintDirectory(tif, fd, flags)
 		fprintf(fd, "  Model: \"%s\"\n", td->td_model);
 	if (TIFFFieldSet(tif,FIELD_ORIENTATION)) {
 		fprintf(fd, "  Orientation: ");
-		switch (td->td_orientation) {
-		case ORIENTATION_TOPLEFT:
-			fprintf(fd, "row 0 top, col 0 lhs\n");
-			break;
-		case ORIENTATION_TOPRIGHT:
-			fprintf(fd, "row 0 top, col 0 rhs\n");
-			break;
-		case ORIENTATION_BOTRIGHT:
-			fprintf(fd, "row 0 bottom, col 0 rhs\n");
-			break;
-		case ORIENTATION_BOTLEFT:
-			fprintf(fd, "row 0 bottom, col 0 lhs\n");
-			break;
-		case ORIENTATION_LEFTTOP:
-			fprintf(fd, "row 0 lhs, col 0 top\n");
-			break;
-		case ORIENTATION_RIGHTTOP:
-			fprintf(fd, "row 0 rhs, col 0 top\n");
-			break;
-		case ORIENTATION_RIGHTBOT:
-			fprintf(fd, "row 0 rhs, col 0 bottom\n");
-			break;
-		case ORIENTATION_LEFTBOT:
-			fprintf(fd, "row 0 lhs, col 0 bottom\n");
-			break;
-		default:
+		if (td->td_orientation < NORIENTNAMES)
+			fprintf(fd, "%s\n", orientNames[td->td_orientation]);
+		else
 			fprintf(fd, "%u (0x%x)\n",
 			    td->td_orientation, td->td_orientation);
-			break;
-		}
 	}
 	if (TIFFFieldSet(tif,FIELD_SAMPLESPERPIXEL))
 		fprintf(fd, "  Samples/Pixel: %u\n", td->td_samplesperpixel);
@@ -466,29 +466,6 @@ TIFFPrintDirectory(tif, fd, flags)
 	}
 	if (TIFFFieldSet(tif,FIELD_PAGENAME))
 		fprintf(fd, "  Page Name: \"%s\"\n", td->td_pagename);
-	if (TIFFFieldSet(tif,FIELD_GRAYRESPONSEUNIT)) {
-		fprintf(fd, "  Gray Response Unit: ");
-		if (td->td_grayresponseunit < MAXRESPONSEUNIT)
-			fprintf(fd, "%s\n",
-			    ResponseUnitNames[td->td_grayresponseunit]);
-		else
-			fprintf(fd, "%u (0x%x)\n",
-			    td->td_grayresponseunit, td->td_grayresponseunit);
-	}
-	if (TIFFFieldSet(tif,FIELD_GRAYRESPONSECURVE)) {
-		fprintf(fd, "  Gray Response Curve: ");
-		if (flags & TIFFPRINT_CURVES) {
-			fprintf(fd, "\n");
-			unit = ResponseUnit[td->td_grayresponseunit];
-			n = 1L<<td->td_bitspersample;
-			for (i = 0; i < n; i++)
-				fprintf(fd, "    %2d: %g (%u)\n",
-				    i,
-				    td->td_grayresponsecurve[i] * unit,
-				    td->td_grayresponsecurve[i]);
-		} else
-			fprintf(fd, "(present)\n");
-	}
 	if (TIFFFieldSet(tif,FIELD_GROUP3OPTIONS)) {
 		fprintf(fd, "  Group 3 Options:");
 		sep = " ";
@@ -497,7 +474,7 @@ TIFFPrintDirectory(tif, fd, flags)
 		if (td->td_group3options & GROUP3OPT_FILLBITS)
 			fprintf(fd, "%sEOL padding", sep), sep = "+";
 		if (td->td_group3options & GROUP3OPT_UNCOMPRESSED)
-			fprintf(fd, "%sno compression", sep), sep = "+";
+			fprintf(fd, "%suncompressed data", sep);
 		fprintf(fd, " (%u = 0x%x)\n",
 		    td->td_group3options, td->td_group3options);
 	}
@@ -524,8 +501,13 @@ TIFFPrintDirectory(tif, fd, flags)
 	if (TIFFFieldSet(tif,FIELD_BADFAXRUN))
 		fprintf(fd, "  Consecutive Bad Fax Lines: %u\n",
 		    td->td_badfaxrun);
-	if (TIFFFieldSet(tif,FIELD_GROUP4OPTIONS))
-		fprintf(fd, "  Group 4 Options: 0x%x\n", td->td_group4options);
+	if (TIFFFieldSet(tif,FIELD_GROUP4OPTIONS)) {
+		fprintf(fd, "  Group 4 Options:");
+		if (td->td_group4options & GROUP4OPT_UNCOMPRESSED)
+			fprintf(fd, "uncompressed data");
+		fprintf(fd, " (%u = 0x%x)\n",
+		    td->td_group4options, td->td_group4options);
+	}
 	if (TIFFFieldSet(tif,FIELD_PAGENUMBER))
 		fprintf(fd, "  Page Number: %u-%u\n",
 		    td->td_pagenumber[0], td->td_pagenumber[1]);
@@ -537,36 +519,46 @@ TIFFPrintDirectory(tif, fd, flags)
 			for (i = 0; i < n; i++)
 				fprintf(fd, "   %5d: %5u %5u %5u\n",
 				    i,
-				    td->td_redcolormap[i],
-				    td->td_greencolormap[i],
-				    td->td_bluecolormap[i]);
+				    td->td_colormap[0][i],
+				    td->td_colormap[1][i],
+				    td->td_colormap[2][i]);
 		} else
 			fprintf(fd, "(present)\n");
 	}
-	if (TIFFFieldSet(tif,FIELD_COLORRESPONSEUNIT)) {
-		fprintf(fd, "  Color Response Unit: ");
-		if (td->td_colorresponseunit < MAXRESPONSEUNIT)
-			fprintf(fd, "%s\n",
-			    ResponseUnitNames[td->td_colorresponseunit]);
-		else
-			fprintf(fd, "%u (0x%x)\n",
-			    td->td_colorresponseunit, td->td_colorresponseunit);
+#ifdef COLORIMETRY_SUPPORT
+	if (TIFFFieldSet(tif,FIELD_WHITEPOINT))
+		fprintf(fd, "  White Point: %g-%g\n",
+		    td->td_whitepoint[0], td->td_whitepoint[1]);
+	if (TIFFFieldSet(tif,FIELD_PRIMARYCHROMAS))
+		fprintf(fd, "  Primary Chromaticities: %g,%g %g,%g %g,%g\n",
+		    td->td_primarychromas[0], td->td_primarychromas[1],
+		    td->td_primarychromas[2], td->td_primarychromas[3],
+		    td->td_primarychromas[4], td->td_primarychromas[5]);
+	if (TIFFFieldSet(tif,FIELD_REFBLACKWHITE)) {
+		fprintf(fd, "  Reference Black/White:\n");
+		for (i = 0; i < td->td_samplesperpixel; i++)
+			fprintf(fd, "    %2d: %5g %5g\n",
+			    i,
+			    td->td_refblackwhite[2*i+0],
+			    td->td_refblackwhite[2*i+1]);
 	}
-	if (TIFFFieldSet(tif,FIELD_COLORRESPONSECURVE)) {
-		fprintf(fd, "  Color Response Curve: ");
+	if (TIFFFieldSet(tif,FIELD_TRANSFERFUNCTION)) {
+		fprintf(fd, "  Transfer Function: ");
 		if (flags & TIFFPRINT_CURVES) {
 			fprintf(fd, "\n");
-			unit = ResponseUnit[td->td_colorresponseunit];
 			n = 1L<<td->td_bitspersample;
-			for (i = 0; i < n; i++)
-				fprintf(fd, "    %2d: %6.4f %6.4f %6.4f\n",
-				    i,
-				    td->td_redresponsecurve[i] * unit,
-				    td->td_greenresponsecurve[i] * unit,
-				    td->td_blueresponsecurve[i] * unit);
+			for (i = 0; i < n; i++) {
+				fprintf(fd, "    %2d: %5u",
+				    i, td->td_transferfunction[0][i]);
+				for (j = 1; j < td->td_samplesperpixel; j++)
+					fprintf(fd, " %5u",
+					    td->td_transferfunction[j][i]);
+				putc('\n', fd);
+			}
 		} else
 			fprintf(fd, "(present)\n");
 	}
+#endif
 	if ((flags & TIFFPRINT_STRIPS) &&
 	    TIFFFieldSet(tif,FIELD_STRIPOFFSETS)) {
 		fprintf(fd, "  %u %s:\n",

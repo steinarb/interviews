@@ -29,6 +29,8 @@
 
 #include <Unidraw/stateview.h>
 
+#include <IV-2_6/_enter.h>
+
 class BrushVar;
 class ColorVar;
 class FontVar;
@@ -87,7 +89,7 @@ protected:
     boolean _prevVal, _prevProt;
 };
 
-class MagnifVarView: public StateVarView {
+class MagnifVarView : public StateVarView {
 public:
     MagnifVarView(MagnifVar*, Alignment = Center);
 protected:
@@ -97,7 +99,7 @@ protected:
     float _prevVal;
 };
 
-class GravityVarView: public StateVarView {
+class GravityVarView : public StateVarView {
 public:
     GravityVarView(GravityVar*, Alignment = Center);
 protected:
@@ -142,5 +144,7 @@ protected:
     PSColor* _prevFg, *_prevBg;
     ColorVar* _colorSubj;
 };
+
+#include <IV-2_6/_leave.h>
 
 #endif

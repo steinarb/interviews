@@ -27,7 +27,9 @@
 
 #ifdef iv__2_6_h
 #undef iv__2_6_h
+#ifndef MAKEDEPEND
 #include <InterViews/_names.h>
+#endif
 #endif
 
 #endif

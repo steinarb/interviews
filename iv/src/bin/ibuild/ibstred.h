@@ -21,8 +21,7 @@
  */
 
 /*
- * StrEdit component declarations.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibstred.h,v 1.2 91/09/27 14:15:27 tang Exp $
+ * StrEditor component declarations.
  */
 
 #ifndef ibstred_h
@@ -68,7 +67,7 @@ protected:
     virtual void draw(Canvas*, Graphic*);
 };
 
-class StrEditCode : public CodeView {
+class StrEditCode : public ButtonCode {
 public:
     StrEditCode(StrEditComp* = nil);
 

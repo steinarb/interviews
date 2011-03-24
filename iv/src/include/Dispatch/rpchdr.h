@@ -34,7 +34,6 @@ class rpcstream;
 class RpcHdr {
 public:
     RpcHdr(void* writer, int request);
-    RpcHdr(int request);
     RpcHdr();
 
     unsigned long reader();

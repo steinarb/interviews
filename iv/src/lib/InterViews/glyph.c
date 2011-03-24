@@ -46,6 +46,20 @@ void Glyph::pick(Canvas*, const Allocation& a, int depth, Hit& h) {
     }
 }
 
+void Glyph::undraw() {
+    GlyphIndex n = count();
+    for (GlyphIndex i = 0; i < n; i++) {
+	Glyph* g = component(i);
+	if (g != nil) {
+	    g->undraw();
+	}
+    }
+}
+
+Glyph* Glyph::clone() const {
+    return nil;
+}
+
 Glyph* Glyph::compose(GlyphBreakType b) {
     return (b == no_break || b == pre_break) ? this : nil;
 }

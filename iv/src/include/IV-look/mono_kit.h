@@ -23,57 +23,57 @@
  */
 
 /*
- * MonoKit -- object for creating common UI components for monochrome display
+ * MonoKit -- object for creating common UI monochrome Motif-ish components
  */
 
-#ifndef ivlook_monokit_h
-#define ivlook_monokit_h
+#ifndef ivlook_mono_mf_kit_h
+#define ivlook_mono_mf_kit_h
 
 #include <IV-look/kit.h>
 
 class MonoKitImpl;
 
-class MonoKit : public Kit {
+class MonoKit : public WidgetKit {
 public:
     MonoKit();
     virtual ~MonoKit();
 
-    /* beveling for shading */
-    virtual Glyph* inset_frame(Glyph*, Style*) const;
-    virtual Glyph* outset_frame(Glyph*, Style*) const;
-    virtual Glyph* flat_frame(Glyph*, Style*) const;
+    virtual const char* gui() const;
 
-    /* styled labels */
-    virtual Glyph* label(const char*, Style*) const;
-    virtual Glyph* label(const String&, Style*) const;
+    virtual void style_changed(Style*);
 
-    /* menus */
-    virtual Menu* menubar(Style*) const;
-    virtual Menu* pulldown(Style*) const;
-    virtual Menu* pullright(Style*) const;
-    virtual Telltale* menubar_item(Glyph*, Style*) const;
-    virtual Telltale* menu_item(Glyph*, Style*) const;
-    virtual Telltale* menu_item_separator(Style*) const;
-    virtual void popup(Menu*) const;
+    virtual MonoGlyph* outset_frame(Glyph*) const;
+    virtual MonoGlyph* inset_frame(Glyph*) const;
+    virtual MonoGlyph* bright_inset_frame(Glyph*) const;
 
-    /* buttons */
-    virtual Button* push_button(Glyph*, Style*, Action*) const;
-    virtual Button* toggle_button(Glyph*, Style*, Action*) const;
-    virtual Button* radio_button(Glyph*, Style*, Action*) const;
+    virtual Glyph* menubar_look() const;
+    virtual Glyph* pulldown_look() const;
+    virtual Glyph* menubar_item_look(Glyph*, TelltaleState*) const;
+    virtual Glyph* menu_item_look(Glyph*, TelltaleState*) const;
+    virtual Glyph* check_menu_item_look(Glyph*, TelltaleState*) const;
+    virtual Glyph* radio_menu_item_look(Glyph*, TelltaleState*) const;
+    virtual Glyph* menu_item_separator_look() const;
 
-    virtual Action* quit() const;
+    virtual Glyph* push_button_look(Glyph*, TelltaleState*) const;
+    virtual Glyph* default_button_look(Glyph*, TelltaleState*) const;
+    virtual Glyph* check_box_look(Glyph*, TelltaleState*) const;
+    virtual Glyph* palette_button_look(Glyph*, TelltaleState*) const;
+    virtual Glyph* radio_button_look(Glyph*, TelltaleState*) const;
 
-    /* adjusters */
-    virtual Glyph* hscroll_bar(Adjustable*, Style*) const;
-    virtual Glyph* vscroll_bar(Adjustable*, Style*) const;
-    virtual Glyph* panner(Adjustable*, Adjustable*, Style*) const;
+    virtual Glyph* slider_look(DimensionName, Adjustable*) const;
+    virtual Glyph* scroll_bar_look(DimensionName, Adjustable*) const;
+    virtual Glyph* panner_look(Adjustable*, Adjustable*) const;
 
-    virtual Button* enlarger(Adjustable*, Style*) const;
-    virtual Button* reducer(Adjustable*, Style*) const;
-    virtual Button* up_mover(Adjustable*, Style*) const;
-    virtual Button* down_mover(Adjustable*, Style*) const;
-    virtual Button* left_mover(Adjustable*, Style*) const;
-    virtual Button* right_mover(Adjustable*, Style*) const;
+    virtual Glyph* enlarger_look(TelltaleState*) const;
+    virtual Glyph* reducer_look(TelltaleState*) const;
+    virtual Glyph* up_mover_look(TelltaleState*) const;
+    virtual Glyph* down_mover_look(TelltaleState*) const;
+    virtual Glyph* left_mover_look(TelltaleState*) const;
+    virtual Glyph* right_mover_look(TelltaleState*) const;
+
+    /* hack for reverse video labels */
+    virtual Glyph* label(const char *) const;
+    virtual Glyph* label(const String&) const;
 private:
     MonoKitImpl* impl_;
 };

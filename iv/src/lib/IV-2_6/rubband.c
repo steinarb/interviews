@@ -26,8 +26,8 @@
  * Rubberbanding primitives.
  */
 
-#include <InterViews/2.6/InterViews/rubband.h>
-#include <InterViews/2.6/InterViews/painter.h>
+#include <IV-2_6/InterViews/rubband.h>
+#include <IV-2_6/InterViews/painter.h>
 #include <math.h>
 
 static float DEGS_PER_RAD = 180.0 / M_PI;

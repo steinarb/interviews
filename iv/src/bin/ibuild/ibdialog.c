@@ -20,6 +20,10 @@
  * WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+/* 
+ *  DialogClass implementation
+ */
+
 #include "ibclasses.h"
 #include "ibcmds.h"
 #include "ibdialog.h"
@@ -174,8 +178,8 @@ DialogClassCode::DialogClassCode (
     DialogClass* subj
 ) : MonoSceneClassCode(subj) { }
 
-DialogClass* DialogClassCode::GetDialogClass(){
-    return (DialogClass*) GetSubject();
+DialogClass* DialogClassCode::GetDialogClass() {
+    return (DialogClass*) ComponentView::GetSubject();
 }
 
 ClassId DialogClassCode::GetClassId () { return DIALOGCLASS_CODE; }
@@ -195,8 +199,11 @@ boolean DialogClassCode::Definition (ostream& out) {
     const char* baseclass = snamer->GetBaseClass();
     const char* instance = iname->GetName();
 
-    GetCoreClassName(coreclass);
     ButtonStateVar* bsVar = dclass->GetButtonStateVar();
+    SubclassNameVar* bsclass = bsVar->GetButtonSharedName()->GetSubclass();
+    const char* bsname = bsclass->GetName();
+
+    CodeView::GetCoreClassName(coreclass);
 
     MemberNameVar* kidname;
     CodeView* kidview = GetKidView();
@@ -206,60 +213,135 @@ boolean DialogClassCode::Definition (ostream& out) {
 
     if (
         _emitInstanceInits || _emitClassHeaders || _emitHeaders ||
-        _emitProperty || _emitInstanceDecls || _emitExpHeader
+        _emitProperty || _emitInstanceDecls
     ) {
         ok = ok && MonoSceneClassCode::Definition(out);
-
+        if (_emitClassHeaders) {
+            if (
+                *_classname == '\0' && !_scope || 
+                *_classname != '\0' && _scope || 
+                strcmp(bsname, _classname) == 0
+            ) {
+                ok = ok && CheckToEmitClassHeader(out, bsname);
+            }
+        }
     } else if (
 	_emitFunctionDecls || _emitFunctionInits || 
 	_emitBSDecls || _emitBSInits
     ) {
         if (strcmp(subclass, _classname) == 0) {
-            ok = ok && CodeView::Definition(out);
-            ok = ok && kidview->Definition(out);
+            if (_emitBSInits) {
+                _bsinitslist->Append(bsVar->GetName());
+                ok = ok && kidview->Definition(out);
+            } else {
+                ok = ok && CodeView::Definition(out);
+                ok = ok && kidview->Definition(out);
+            }
 	}
 
     } else if (_emitCorehHeader) {
+        const char* fwname = GetFirewall();
         if (snamer->IsSubclass() && strcmp(subclass, _classname) == 0) {
             if (!_namelist->Search("dialog")) {
                 _namelist->Append("dialog");
                 out << "#include <InterViews/dialog.h>\n";
             }
+        } else if (bsVar->IsSubclass() && strcmp(bsname, _classname) == 0) {
+            if (!_namelist->Search("button")) {
+                _namelist->Append("button");
+                out << "#include <InterViews/button.h>\n";
+            }
+            if (fwname != nil && !_namelist->Search(fwname)) {
+                _namelist->Append(fwname);
+                out << "#include \"" << fwname << "-core.h\"\n";
+            }
+
         } else {
             if (kidview != nil) {
                 ok = ok && kidview->Definition(out); 
             }
         }
+    } else if (_emitExpHeader) {
+        ok = ok && MonoSceneClassCode::Definition(out);
+        if (
+            (strcmp(bsname, _classname) == 0 || 
+                strcmp(subclass, _classname) == 0 && 
+            bsVar->GetExport()) && bsVar->IsSubclass()
+        ) {
+            ok = ok && CheckToEmitHeader(out, bsname);
 
+        } else if (!_namelist->Search("button")) {
+            _namelist->Append("button");
+            out << "#include <InterViews/button.h>\n";
+        }
     } else if (_emitForward) {
-        if (_scope) {
-            ok = ok && CodeView::Definition(out);
+        char Func[CHARBUFSIZE];
+        char coreclass[CHARBUFSIZE];
+        
+        const char* fwname = GetFirewall();
+        if (fwname != nil) {
+            sprintf(coreclass, "%s_core", fwname);
+            strcpy(Func, coreclass);
+            strcat(Func, "_Func");
+        }
+        
+        if (strcmp(bsname, _classname) == 0) {
+            if (fwname != nil && !_namelist->Search(fwname)) {
+                _namelist->Append(fwname);
+                out << "\n#ifndef " << fwname << "_core_func\n";
+                out << "#define " << fwname << "_core_func\n";
+                out << "typedef void (" << coreclass << "::*";
+                out << Func << ")();\n";
+                out << "#endif\n\n";
+            }
+        }
+        if (strcmp(subclass, _classname) == 0) {
+            _scope = true;
+            if (kidview != nil) {
+                ok = ok && kidview->Definition(out); 
+            }
             if (
-                bsVar->GetExport() &&
-                !_bsdeclslist->Search("ButtonState")
+                bsVar->GetExport() && !_bsdeclslist->Search(bsname)
             ) {
-                _bsdeclslist->Append("ButtonState");
-                out << "class ButtonState;\n";
+                _bsdeclslist->Append(bsname);
+                out << "class " << bsname << ";\n";
             }
+            _scope = false;
         } else {
-            if (strcmp(subclass, _classname) == 0) {
-                _scope = true;
-                if (kidview != nil) {
-                    ok = ok && kidview->Definition(out); 
-                }
-                _scope = false;
-            } else {
-                if (kidview != nil) {
-                    ok = ok && kidview->Definition(out); 
-                }
+            if (kidview != nil) {
+                ok = ok && kidview->Definition(out); 
             }
+        }
+    } else if (
+        _emitCreatorHeader || _emitCreatorSubj || _emitCreatorView
+    ) {
+        if (kidview != nil) {
+            ok = ok && kidview->Definition(out); 
         }
 
     } else if (
         _emitCoreDecls || _emitCoreInits || _emitClassDecls || _emitClassInits
     ) {
-        ok = ok && MonoSceneClassCode::Definition(out);
+        if (
+            strcmp(bsname, _classname) == 0 &&
+            !_globallist->Search(_classname)
+        ) {
+	    _globallist->Append(_classname);
+            if (_emitCoreDecls) {
+                ok = ok && BSCoreConstDecls(out);
 
+            } else if (_emitCoreInits) {
+                ok = ok && BSCoreConstInits(out);
+
+            } else if (_emitClassDecls) {
+                ok = ok && BSConstDecls(out);
+
+            } else {
+                ok = ok && BSConstInits(out);
+            }
+        } else {
+            ok = ok && MonoSceneClassCode::Definition(out);
+        }
     }
     return ok && out.good();
 }
@@ -276,9 +358,7 @@ boolean DialogClassCode::CoreConstDecls(ostream& out) {
     
     _emitExport = true;
     ok = ok && EmitBSDecls(this, out);
-    if (kidview != nil) {
-        ok = ok && EmitInstanceDecls(kidview, out);
-    }
+    ok = ok && EmitInstanceDecls(kidview, out);
     _emitExport = false;
     
     return out.good();
@@ -290,11 +370,11 @@ boolean DialogClassCode::CoreConstInits(ostream& out) {
     ButtonStateVar* bsVar = dclass->GetButtonStateVar();
     SubclassNameVar* snamer = dclass->GetClassNameVar();
     const char* baseclass = snamer->GetBaseClass();
+    const char* subclass = snamer->GetName();
     
     char ButtonClass[CHARBUFSIZE];
     char coreclass[CHARBUFSIZE];
     GetCoreClassName(coreclass);
-    _bsinitslist->Append(bsVar->GetName());
     
     strcpy(ButtonClass, coreclass);
     strcat(ButtonClass, "_Button");
@@ -309,7 +389,7 @@ boolean DialogClassCode::CoreConstInits(ostream& out) {
 
     out << " (const char* name) : " << baseclass << "(\n";
     out << "    name, nil, nil\n) {\n";
-    out << "    perspective = new Perspective;\n";
+    out << "    SetClassName(\"" << subclass << "\");\n";
     out << "    if (input != nil) {\n";
     out << "        input->Unreference();\n";
     out << "    }\n";
@@ -334,11 +414,9 @@ boolean DialogClassCode::CoreConstInits(ostream& out) {
         out << bsVar->GetName() << " = state;\n";
     }
     ok = ok && EmitBSInits(this, out);
-    if (kidview != nil) {
-        ok = ok && EmitInstanceInits(kidview, out);
-        out << "    return " << kidname->GetName() << ";\n};\n\n";
-        ok = ok && EmitFunctionInits(kidview, out);
-    }
+    ok = ok && EmitInstanceInits(kidview, out);
+    out << "    return " << kidname->GetName() << ";\n};\n\n";
+    ok = ok && EmitFunctionInits(kidview, out);
 
     return out.good();
 }
@@ -362,5 +440,11 @@ boolean DialogClassCode::ConstInits(ostream& out) {
     return out.good();
 }
 
-
-
+boolean DialogClassCode::EmitIncludeHeaders(ostream& out) {
+    boolean ok = MonoSceneClassCode::EmitIncludeHeaders(out);
+    if (!_namelist->Search("button")) {
+        _namelist->Append("button");
+        out << "#include <InterViews/button.h> \n";
+    }
+    return ok && out.good();
+}

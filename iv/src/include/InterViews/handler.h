@@ -31,12 +31,12 @@
 
 class Event;
 
-class Handler : virtual public Resource {
+class Handler : public Resource {
 protected:
     Handler();
     virtual ~Handler();
 public:
-    virtual void event(Event&) = 0;
+    virtual boolean event(Event&) = 0;
 };
 
 #include <InterViews/_leave.h>

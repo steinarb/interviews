@@ -21,8 +21,7 @@
  */
 
 /*
- * Implementation of SceneView.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibscene.c,v 1.2 91/09/27 14:11:35 tang Exp $
+ * Implementation of SceneComp and SceneView subclasses.
  */
 
 #include "ibclasses.h"
@@ -81,7 +80,7 @@ void SceneComp::Interpret (Command* cmd) {
     Iterator i;
     Editor* ed = cmd->GetEditor();
 
-    if (cmd->IsA(GLUEVISIBILITY_CMD)) {
+    if (cmd->IsA(GLUEVISIBILITY_CMD) || cmd->IsA(GETCLONES_CMD)) {
         for (First(i); !Done(i); Next(i)) {
             GetComp(i)->Interpret(cmd);
         }
@@ -132,6 +131,10 @@ void SceneComp::Interpret (Command* cmd) {
         
     } else if (cmd->IsA(GETCONFLICT_CMD)) {
         InteractorComp::Interpret(cmd);
+        for (First(i); !Done(i); Next(i)) {
+            GetComp(i)->Interpret(cmd);
+        }
+    } else if (cmd->IsA(COMPCHECK_CMD) || cmd->IsA(IDMAP_CMD)) {
         for (First(i); !Done(i); Next(i)) {
             GetComp(i)->Interpret(cmd);
         }
@@ -229,9 +232,16 @@ void SceneComp::Interpret (Command* cmd) {
         Propagate(cmd);
 
     } else if (
-        !cmd->IsA(FONT_CMD) && !cmd->IsA(BRUSH_CMD) && 
-        !cmd->IsA(COLOR_CMD) && !cmd->IsA(ALIGN_CMD)
+        cmd->IsA(FONT_CMD) || cmd->IsA(BRUSH_CMD) || 
+        cmd->IsA(COLOR_CMD) || cmd->IsA(ALIGN_CMD)
     ) {
+        
+        for (First(i); !Done(i); Next(i)) {
+            GetComp(i)->Interpret(cmd);
+        }
+        Propagate(cmd);
+
+    } else {
         InteractorComp::Interpret(cmd);
     }
 }
@@ -322,9 +332,16 @@ void SceneComp::Uninterpret (Command* cmd) {
         Unpropagate(cmd);
 
     } else if (
-        !cmd->IsA(FONT_CMD) && !cmd->IsA(BRUSH_CMD) && 
-        !cmd->IsA(COLOR_CMD) && !cmd->IsA(ALIGN_CMD)
+        cmd->IsA(FONT_CMD) || cmd->IsA(BRUSH_CMD) || 
+        cmd->IsA(COLOR_CMD) || cmd->IsA(ALIGN_CMD)
     ) {
+        
+        for (First(i); !Done(i); Next(i)) {
+            GetComp(i)->Uninterpret(cmd);
+        }
+        Unpropagate(cmd);
+
+    } else {
         InteractorComp::Uninterpret(cmd);
     }
 }
@@ -542,17 +559,16 @@ void MonoSceneComp::Interpret (Command* cmd) {
         Propagate(cmd);
 
     } else if (cmd->IsA(UNGROUP_CMD)) {
-        Clipboard* cb = cmd->GetClipboard();
-        if (cb == nil) {
-            Selection* s = ed->GetSelection();
-            
-            if (s->IsEmpty()) {
-                return;
+        Component* edComp = cmd->GetEditor()->GetComponent();
+        if (edComp == (Component*) this) {
+            Clipboard* cb = cmd->GetClipboard();
+            if (!HasKids(cb)) {
+                SceneComp::Interpret(cmd);
+            } else {
+                delete cb;
+                cmd->SetClipboard(new Clipboard);
             }
-            cmd->SetClipboard(cb = new Clipboard);
-            cb->Init(s);
-        }
-        if (!HasKids(cb)) {
+        } else {
             SceneComp::Interpret(cmd);
         }
         
@@ -653,8 +669,6 @@ CodeView* MonoSceneCode::GetKidView () {
 /*****************************************************************************/
 
 
-UList* MonoSceneClass::_ClassList;
-
 static UList* DupUList(UList* orig) {
     UList* dup = new UList;
     for (UList* i = orig->First();i != orig->End();i = i->Next()) {
@@ -687,14 +701,6 @@ MonoSceneClass::MonoSceneClass (IBGraphic* gr) : MonoSceneComp(gr) {
         subclass->GenNewName();
         subclass->SetAbstract(true);
     }
-    if (_ClassList == nil) {
-        _ClassList = new UList;
-    }
-    _ClassList->Append(new UList(this));
-}
-
-MonoSceneClass::~MonoSceneClass () {
-    _ClassList->Delete(this);
 }
 
 void MonoSceneClass::Interpret (Command* cmd) {
@@ -707,6 +713,17 @@ void MonoSceneClass::Interpret (Command* cmd) {
             MonoSceneComp::Interpret(cmd);
         }
 
+    } else if (cmd->IsA(GETCLONES_CMD)) {
+        GetClonesCmd* gcCmd = (GetClonesCmd*) cmd;
+        MonoSceneClass* orig = gcCmd->GetOriginal();
+        const char* origname = orig->GetClassNameVar()->GetName();
+        const char* thisname = GetClassNameVar()->GetName();
+        if (orig != this && strcmp(origname, thisname) == 0) {
+            gcCmd->GetCloneList()->Append(new UList(this));
+        } else {
+            MonoSceneComp::Interpret(cmd);
+        }
+            
     } else if (cmd->IsA(SCAN_CMD)) {
         Iterator i;
         ScanCmd* scmd = (ScanCmd*) cmd;
@@ -729,103 +746,89 @@ void MonoSceneClass::Interpret (Command* cmd) {
 }
 
 void MonoSceneClass::Clone (Command* cmd) {
-    UList* mylist = DupUList(_ClassList);
-    const char* origname = GetClassNameVar()->GetName();
-    for (UList* i = mylist->First();i != mylist->End();i = i->Next()) {
+    GetClonesCmd cloneCmd(this);
+    cloneCmd.Execute();
+    UList* clonelist = cloneCmd.GetCloneList();
+    for (UList* i = clonelist->First();i != clonelist->End();i = i->Next()) {
         MonoSceneClass* clone = (MonoSceneClass*) (*i) ();
-        const char* clonename = clone->GetClassNameVar()->GetName();
-        if (
-            clone->GetMemberNameVar() != nil && 
-            strcmp(clonename, origname) == 0 && clone != this &&
-            clone->GetRoot() == GetRoot()
-        ) {
-            InteractorComp* ckid = clone->GetKid();
-            InteractorComp* mkid = GetKid();
-            if (cmd != nil) {
-                MonoSceneData* msdata = (MonoSceneData*)cmd->Recall(clone);
-                if (msdata == nil) {
-                    cmd->Store(clone, new MonoSceneData(ckid));
-                    if (mkid != nil) {
-                        boolean unique = IBNameVar::GetUniqueFlag();
-                        IBNameVar::SetUniqueFlag(false);
-                        boolean localcopy = copylock;
-                        copylock = true;
-                        InteractorComp* cmkid = 
-                            (InteractorComp*)mkid->Copy();
-                        copylock = localcopy;
-                        IBNameVar::SetUniqueFlag(unique);
-                        clone->Append(cmkid);
-                        if (ckid != nil) {
-                            Graphic* cgr = ckid->GetGraphic();
-                            cgr->Align(Center, cmkid->GetGraphic(), Center);
-                            clone->Remove(ckid);
-                            clone->Reconfig();
-                        }
-                    }
-                    clone->Place(clone);
-                } else {
-                    InteractorComp* okid = (InteractorComp*) msdata->_void;
-                    if (ckid != nil) {
-                        clone->Remove(ckid);
-                    }
-                    msdata->_void = ckid;
-                    if (okid != nil) {
-                        clone->Append(okid);
-                    }
-                    clone->Notify();
-                }
-            } else {
+        InteractorComp* ckid = clone->GetKid();
+        InteractorComp* mkid = GetKid();
+        if (cmd != nil) {
+            MonoSceneData* msdata = (MonoSceneData*)cmd->Recall(clone);
+            if (msdata == nil) {
+                cmd->Store(clone, new MonoSceneData(ckid));
                 if (mkid != nil) {
-                    Remove(mkid);
-                    delete mkid;
-                }
-                if (ckid != nil) {
                     boolean unique = IBNameVar::GetUniqueFlag();
                     IBNameVar::SetUniqueFlag(false);
                     boolean localcopy = copylock;
                     copylock = true;
-                    InteractorComp* cmkid = (InteractorComp*) ckid->Copy();
+                    InteractorComp* cmkid = 
+                        (InteractorComp*)mkid->Copy();
                     copylock = localcopy;
                     IBNameVar::SetUniqueFlag(unique);
-                    Append(cmkid);
-                    Reconfig();
-                    Place(this);
+                    clone->Append(cmkid);
+                    if (ckid != nil) {
+                        Graphic* cgr = ckid->GetGraphic();
+                        cgr->Align(Center, cmkid->GetGraphic(), Center);
+                        clone->Remove(ckid);
+                        clone->Reconfig();
+                    }
                 }
-                break;
-            }
-        }
-    }
-    delete mylist;
-    unidraw->Update();
-}
-            
-void MonoSceneClass::UnClone (Command* cmd) {
-    UList* mylist = DupUList(_ClassList);
-    const char* origname = GetClassNameVar()->GetName();
-    for (UList* i = mylist->First();i != mylist->End();i = i->Next()) {
-        MonoSceneClass* clone = (MonoSceneClass*) (*i) ();
-        const char* clonename = clone->GetClassNameVar()->GetName();
-        if (
-            clone->GetMemberNameVar() != nil && 
-            strcmp(clonename, origname) == 0 && clone != this &&
-            clone->GetRoot() == GetRoot()
-        ) {
-            MonoSceneData* msdata = (MonoSceneData*) cmd->Recall(clone);
-            if (msdata != nil) {
-                InteractorComp* ckid = (InteractorComp*) msdata->_void;
-                InteractorComp* okid = clone->GetKid();
-                if (okid != nil) {
-                    clone->Remove(okid);
-                }
-                msdata->_void = okid;
+                clone->Place(clone);
+            } else {
+                InteractorComp* okid = (InteractorComp*) msdata->_void;
                 if (ckid != nil) {
-                    clone->Append(ckid);
+                    clone->Remove(ckid);
+                }
+                msdata->_void = ckid;
+                if (okid != nil) {
+                    clone->Append(okid);
                 }
                 clone->Notify();
             }
+        } else {
+            if (mkid != nil) {
+                Remove(mkid);
+                delete mkid;
+            }
+            if (ckid != nil) {
+                boolean unique = IBNameVar::GetUniqueFlag();
+                IBNameVar::SetUniqueFlag(false);
+                boolean localcopy = copylock;
+                copylock = true;
+                InteractorComp* cmkid = (InteractorComp*) ckid->Copy();
+                copylock = localcopy;
+                IBNameVar::SetUniqueFlag(unique);
+                Append(cmkid);
+                Reconfig();
+                Place(this);
+            }
+            break;
         }
     }
-    delete mylist;
+    unidraw->Update();
+}
+
+void MonoSceneClass::UnClone (Command* cmd) {
+    GetClonesCmd cloneCmd(this);
+    cloneCmd.Execute();
+    UList* clonelist = cloneCmd.GetCloneList();
+    for (UList* i = clonelist->First();i != clonelist->End();i = i->Next()) {
+        MonoSceneClass* clone = (MonoSceneClass*) (*i) ();
+        MonoSceneData* msdata = (MonoSceneData*) cmd->Recall(clone);
+        if (msdata != nil) {
+            InteractorComp* ckid = (InteractorComp*) msdata->_void;
+            InteractorComp* okid = clone->GetKid();
+            if (okid != nil) {
+                clone->Remove(okid);
+            }
+            msdata->_void = okid;
+            if (ckid != nil) {
+                clone->Append(ckid);
+            }
+            clone->Notify();
+        } 
+    }
     unidraw->Update();
 }
             
@@ -881,7 +884,15 @@ boolean MonoSceneClassView::IsA (ClassId id) {
 
 MonoSceneClassCode::MonoSceneClassCode (
     MonoSceneClass* subj
-) : MonoSceneCode(subj) { }
+) : MonoSceneCode(subj) {}
+
+void MonoSceneClassCode::Update () {
+    MonoSceneCode::Update();
+    InteractorComp* subj = GetIntComp();
+    Graphic* gr = subj->GetGraphic();
+    gr->SetColors(nil, nil);
+    gr->SetFont(nil);
+}
 
 MonoSceneClass* MonoSceneClassCode::GetMonoSceneClass() {
     return (MonoSceneClass*) GetSubject();
@@ -941,8 +952,9 @@ boolean MonoSceneClassCode::Definition (ostream& out) {
             }
         }
     } else if (
-	_emitBSDecls || _emitBSInits ||
-	_emitFunctionDecls || _emitFunctionInits
+	_emitBSDecls || _emitBSInits || 
+	_emitFunctionDecls || _emitFunctionInits ||
+        _emitCreatorHeader || _emitCreatorSubj || _emitCreatorView
     ) {
 	ok = true;
 
@@ -1006,7 +1018,7 @@ boolean MonoSceneClassCode::CoreConstDecls(ostream& out) {
     }
     _emitExport = false;
     
-    return out.good();
+    return ok && out.good();
 }
 
 boolean MonoSceneClassCode::CoreConstInits(ostream& out) {
@@ -1018,9 +1030,10 @@ boolean MonoSceneClassCode::CoreConstInits(ostream& out) {
     }
     char coreclass[CHARBUFSIZE];
     GetCoreClassName(coreclass);
+    const char* subclass = GetIntComp()->GetClassNameVar()->GetName();
 
     out << "(const char* name) {\n";
-    out << "    perspective = new Perspective;\n";
+    out << "    SetClassName(\"" << subclass << "\");\n";
 
     out << "    SetInstance(name);\n";
     out << "    if (input != nil) {\n";
@@ -1040,7 +1053,7 @@ boolean MonoSceneClassCode::CoreConstInits(ostream& out) {
         ok = ok && EmitFunctionInits(kidview, out);
     }
 
-    return out.good();
+    return ok && out.good();
 }
 
 boolean MonoSceneClassCode::ConstDecls(ostream& out) {
@@ -1052,7 +1065,7 @@ boolean MonoSceneClassCode::ConstDecls(ostream& out) {
         ok = ok && EmitFunctionDecls(kidview, out);
     }
 
-    return out.good();
+    return ok && out.good();
 }
 
 boolean MonoSceneClassCode::ConstInits(ostream& out) {
@@ -1066,7 +1079,27 @@ boolean MonoSceneClassCode::ConstInits(ostream& out) {
         ok = ok && EmitFunctionInits(kidview, out);
     }
             
-    return out.good();
+    return ok && out.good();
 }
 
+boolean MonoSceneClassCode::EmitIncludeHeaders(ostream& out) {
+    if (!_namelist->Search("canvas")) {
+        _namelist->Append("canvas");
+        out << "#include <InterViews/canvas.h> \n";
+    }
+    if (!_namelist->Search("painter")) {
+        _namelist->Append("painter");
+        out << "#include <InterViews/painter.h> \n";
+    }
+    if (!_namelist->Search("sensor")) {
+        _namelist->Append("sensor");
+        out << "#include <InterViews/sensor.h> \n";
+    }
+    if (!_namelist->Search("perspective")) {
+        _namelist->Append("perspective");
+        out << "#include <InterViews/perspective.h> \n";
+    }
+    
+    return out.good();
+}
 

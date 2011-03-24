@@ -28,7 +28,10 @@
 #ifndef unidraw_components_gvupdater_h
 #define unidraw_components_gvupdater_h
 
+#include <Unidraw/globals.h>
+
 class GraphicView;
+class GVU_HashTable;
 class Iterator;
 
 class GVUpdater {
@@ -48,10 +51,12 @@ protected:
     void InsertBefore(Iterator, GraphicView*);
     void Remove(Iterator&);
     void DeleteView(Iterator&);
+
+    virtual ClassId ViewCategory();
 protected:
     GraphicView* _gv;
 private:
-    void RegisterSubjects(class GVU_HashTable*);
+    void RegisterSubjects(GVU_HashTable*);
     void InitViews(GVU_HashTable*);
     void RearrangeViews(GVU_HashTable*);
     void DamageViews(GVU_HashTable*);

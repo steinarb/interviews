@@ -21,8 +21,7 @@
  */
 
 /*
- * Scroller component definitions.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibslider.c,v 1.2 91/09/27 14:11:46 tang Exp $
+ * Slider component definitions.
  */
 
 #include "ibclasses.h"
@@ -320,7 +319,14 @@ boolean SliderCode::IsA(ClassId id) {
     return SLIDER_CODE==id || CodeView::IsA(id);
 }
 
-SliderCode::SliderCode (SliderComp* subj) : CodeView(subj) { }
+SliderCode::SliderCode (SliderComp* subj) : CodeView(subj) {}
+
+void SliderCode::Update () {
+    CodeView::Update();
+    InteractorComp* subj = GetIntComp();
+    Graphic* gr = subj->GetGraphic();
+    gr->SetFont(nil);
+}
 
 SliderComp* SliderCode::GetSliderComp () { 
     return (SliderComp*) GetSubject(); 
@@ -370,23 +376,33 @@ boolean SliderCode::Definition (ostream& out) {
         const char* slidee = mnamer->GetName();
 
 	if (*slidee == '\0') {
-	    strcat(_errbuf, mname);
-            strcat(_errbuf, " has undefined sliding target.\n");
+            if (_err_count < 10) {
+                strcat(_errbuf, mname);
+                strcat(_errbuf, " has undefined sliding target.\n");
+                _err_count++;
+            }
 	    return false;
 
         } else if (!Search(mnamer, ctarget)) {
-	    strcat(_errbuf, mname);
-            strcat(
-                _errbuf, "'s sliding target is not in the same hierarchy.\n"
-            );
+            if (_err_count < 10) {
+                strcat(_errbuf, mname);
+                strcat(
+                    _errbuf, 
+                    "'s sliding target is not in the same hierarchy.\n"
+                );
+                _err_count++;
+            }
 	    return false;
 
         } else if (ctarget != nil && !icomp->IsRelatableTo(ctarget)) {
-	    strcat(_errbuf, mname);
-            strcat(
-                _errbuf, 
-                "'s adjusting target is not subclassed nor adjustable.\n"
-            );
+            if (_err_count < 10) {
+                strcat(_errbuf, mname);
+                strcat(
+                    _errbuf, 
+                    "'s adjusting target is not subclassed nor adjustable.\n"
+                );
+                _err_count++;
+            }
 	    return false;
         }
         if (_instancelist->Find((void*) slidee)) {
@@ -454,10 +470,11 @@ boolean SliderCode::CoreConstInits(ostream& out) {
     InteractorComp* icomp = GetIntComp();
     SubclassNameVar* snamer = icomp->GetClassNameVar();
     const char* baseclass = snamer->GetBaseClass();
+    const char* subclass = snamer->GetName();
 
     out << "(\n    const char* name, Interactor* i, int width\n) : ";
     out << baseclass << "(name, i) {\n";
-    out << "    perspective = new Perspective;\n";
+    out << "    SetClassName(\"" << subclass << "\");\n";
     out << "    Perspective* target = i->GetPerspective();\n";
     out << "    shape->width = width;\n";
     out << "    float aspect = float(target->height)";
@@ -493,6 +510,10 @@ boolean SliderCode::EmitIncludeHeaders(ostream& out) {
     if (!_namelist->Search("shape")) {
         _namelist->Append("shape");
         out << "#include <InterViews/shape.h> \n";
+    }
+    if (!_namelist->Search("perspective")) {
+        _namelist->Append("perspective");
+        out << "#include <InterViews/perspective.h> \n";
     }
     return out.good();
 }

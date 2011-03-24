@@ -10,7 +10,7 @@
 #include <Dispatch/rpcstream.h>
 #include <Dispatch/rpcbuf.h>
 #include "VWork.h"
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/_enter.h>
 
 static port_id = 1040;
 

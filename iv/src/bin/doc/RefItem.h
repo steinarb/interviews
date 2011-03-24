@@ -30,6 +30,7 @@
 #include "Item.h"
 
 class RefView;
+class RefViewInfo_List;
 
 class RefItem : public Item {
 public:
@@ -54,7 +55,7 @@ protected:
 
     char* _label;
     char* _text;
-    class RefViewInfo_List* _view;
+    RefViewInfo_List* _view;
 };
 
 #endif

@@ -27,7 +27,8 @@
 #ifndef segment_h
 #define segment_h
 
-enum Seg { SegA, SegB, SegC, SegD, SegE, SegF, SegG };
+typedef unsigned int Seg;
+enum { SegA, SegB, SegC, SegD, SegE, SegF, SegG };
 
 class Segment {
 public:

@@ -22,7 +22,6 @@
 
 /*
  * Shaper component declarations.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibshaper.h,v 1.2 91/09/27 14:15:15 tang Exp $
  */
 
 #ifndef ibshaper_h
@@ -47,6 +46,7 @@ class ShaperCode : public MonoSceneCode {
 public:
     ShaperCode(ShaperComp* = nil);
 
+    virtual void Update();
     virtual boolean Definition(ostream&);
     ShaperComp* GetShaperComp();
 

@@ -33,44 +33,56 @@ Patch::Patch(Glyph* body) : MonoGlyph(body) {
     canvas_ = nil;
 }
 
-Patch::~Patch() {
-    canvas_ = nil;
-}
-
-Canvas* Patch::canvas() const {
-    return canvas_;
-}
-
-const Allocation& Patch::allocation() const {
-    return allocation_;
-}
+Patch::~Patch() { }
 
 void Patch::redraw() const {
-    if (canvas_ != nil) {
-        Coord l = extension_.left();
-        Coord b = extension_.bottom();
-        Coord r = extension_.right();
-        Coord t = extension_.top();
-        if (l < r && b < t) {
-            canvas_->damage(l, b, r, t);
-        }
+    Canvas* c = canvas_;
+    if (c != nil) {
+	c->damage(extension_);
     }
 }
 
 void Patch::reallocate() {
-    Requisition s;
-    request(s);
-    extension_.xy_extents(fil, -fil, fil, -fil);
-    allocate(canvas_, allocation_, extension_);
+    Canvas* c = canvas_;
+    if (c != nil) {
+	/* remove these two lines when doc otherwise works */
+	Requisition s;
+	request(s);
+
+	c->push_transform();
+	c->transformer(transformer_);
+	extension_.clear();
+	allocate(c, allocation_, extension_);
+	c->pop_transform();
+    }
 }
 
 void Patch::repick(int depth, Hit& h) {
-    pick(canvas_, allocation_, depth, h);
+    Canvas* c = canvas_;
+    if (c != nil) {
+	c->push_transform();
+	c->transformer(transformer_);
+	pick(c, allocation_, depth, h);
+	c->pop_transform();
+    }
 }
 
 void Patch::allocate(Canvas* c, const Allocation& a, Extension& ext) {
-    MonoGlyph::allocate(c, a, ext);
     canvas_ = c;
+    transformer_ = c->transformer();
     allocation_ = a;
+    MonoGlyph::allocate(c, a, ext);
     extension_ = ext;
+}
+
+void Patch::draw(Canvas* c, const Allocation& a) const {
+    const Extension& ext = extension_;
+    if (c->damaged(extension_)) {
+	MonoGlyph::draw(c, a);
+    }
+}
+
+void Patch::undraw() {
+    MonoGlyph::undraw();
+    canvas_ = nil;
 }

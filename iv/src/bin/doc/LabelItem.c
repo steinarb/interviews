@@ -30,14 +30,13 @@
 #include "Document.h"
 #include "DocViewer.h"
 
+#include <OS/list.h>
 #include <string.h>
 
 class LabelViewInfo {
 public:
     LabelView* _view;
 };
-
-#include "list.h"
 
 declareList(LabelViewInfo_List,LabelViewInfo)
 implementList(LabelViewInfo_List,LabelViewInfo)
@@ -62,7 +61,7 @@ LabelItem::~LabelItem () {
     }
     if (_view != nil) {
         while (_view->count() > 0) {
-            LabelViewInfo& view = _view->item(0);
+            LabelViewInfo& view = _view->item_ref(0);
             _view->remove(0);
         }
         delete _view;
@@ -113,7 +112,7 @@ void LabelItem::detach (LabelView* view) {
     if (_view != nil) {
         long count = _view->count();
         for (long i = 0; i < count; ++i) {
-            LabelViewInfo& info = _view->item(i);
+            LabelViewInfo& info = _view->item_ref(i);
             if (info._view == view) {
                 _view->remove(i);
                 break;
@@ -126,7 +125,7 @@ void LabelItem::notify () {
     if (_view != nil) {
         long count = _view->count();
         for (long i = 0; i < count; ++i) {
-            LabelViewInfo& info = _view->item(i);
+            LabelViewInfo& info = _view->item_ref(i);
             info._view->update();
         }
     }

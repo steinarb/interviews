@@ -21,8 +21,7 @@
  */
 
 /*
- * Button component declarations.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibpanner.h,v 1.2 91/09/27 14:14:47 tang Exp $
+ * Panner component declarations.
  */
 
 #ifndef ibpanner_h
@@ -94,6 +93,7 @@ class PannerCode : public CodeView {
 public:
     PannerCode(PannerComp* = nil);
 
+    virtual void Update();
     virtual boolean Definition(ostream&);
     PannerComp* GetPannerComp();
 
@@ -107,4 +107,4 @@ protected:
     virtual boolean EmitIncludeHeaders(ostream&);
 };
 
-#endif;
+#endif

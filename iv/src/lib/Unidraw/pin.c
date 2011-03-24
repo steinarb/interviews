@@ -49,11 +49,13 @@
 #include <Unidraw/Tools/tool.h>
 
 #include <InterViews/event.h>
-#include <InterViews/painter.h>
-#include <InterViews/rubgroup.h>
-#include <InterViews/rubline.h>
-#include <InterViews/shape.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/rubgroup.h>
+#include <IV-2_6/InterViews/rubline.h>
+#include <IV-2_6/InterViews/shape.h>
 #include <InterViews/transformer.h>
+
+#include <IV-2_6/_enter.h>
 
 #include <math.h>
 #include <stdlib.h>

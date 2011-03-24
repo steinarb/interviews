@@ -29,7 +29,6 @@
 #ifndef iv_bitmap_h
 #define iv_bitmap_h
 
-#include <InterViews/boolean.h>
 #include <InterViews/coord.h>
 #include <InterViews/resource.h>
 
@@ -39,7 +38,7 @@ class BitmapRep;
 class Font;
 class Transformer;
 
-class Bitmap : virtual public Resource {
+class Bitmap : public Resource {
 public:
     Bitmap(
 	const void*, unsigned int width, unsigned int height,
@@ -64,8 +63,6 @@ public:
     virtual Coord right_bearing() const;
     virtual Coord ascent() const;
     virtual Coord descent() const;
-
-    virtual void transform(const Transformer&);
 
     virtual void flush() const;
 

@@ -29,11 +29,19 @@
 #ifndef os_table_h
 #define os_table_h
 
-#include <InterViews/boolean.h>
-#include <generic.h>
+#include <OS/enter-scope.h>
 
-#define TableEntry(Table) name2(Table,_Entry)
-#define TableIterator(Table) name2(Table,_Iterator)
+#if defined(__STDC__) || defined(__ANSI_CPP__)
+#define __TableEntry(Table) Table##_Entry
+#define TableEntry(Table) __TableEntry(Table)
+#define __TableIterator(Table) Table##_Iterator
+#define TableIterator(Table) __TableIterator(Table)
+#else
+#define __TableEntry(Table) Table/**/_Entry
+#define TableEntry(Table) __TableEntry(Table)
+#define __TableIterator(Table) Table/**/_Iterator
+#define TableIterator(Table) __TableIterator(Table)
+#endif
 
 #define declareTable(Table,Key,Value) \
 class TableEntry(Table); \
@@ -89,8 +97,10 @@ inline boolean TableIterator(Table)::more() { return entry_ <= last_; }
  * Predefined hash functions
  */
 
+#ifndef os_table2_h
 inline unsigned long key_to_hash(long k) { return (unsigned long)k; }
 inline unsigned long key_to_hash(const void* k) { return (unsigned long)k; }
+#endif
 
 /*
  * Table implementation
@@ -108,6 +118,10 @@ Table::Table(int n) { \
 } \
 \
 Table::~Table() { \
+    for (register TableEntry(Table)** e = first_; e <= last_; e++) { \
+	TableEntry(Table)* t = *e; \
+	delete t; \
+    } \
     delete first_; \
 } \
 \

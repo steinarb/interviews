@@ -22,7 +22,6 @@
 
 /*
  * Implementation of user interface builder-specific manipulators.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibmanips.c,v 1.2 91/09/27 14:10:58 tang Exp $
  */
 
 #include "ibcmds.h"
@@ -201,7 +200,13 @@ boolean RelateManip::CreatePopupMenu(Event& e, RelateMenu*& menu) {
             for (newSel->First(i); !newSel->Done(i); newSel->Next(i)) {
                 GraphicView* view = s->GetView(i);
                 InteractorComp* comp = (InteractorComp*)view->GetGraphicComp();
-                menu->Include(new RelateItem(GetName(comp),Center,comp,menu));
+                menu->Include(
+                    new RelateItem(
+                        GetName(
+                            comp, e.shift_is_down(), true
+                        ), Center, comp, menu
+                    )
+                );
             }
         }
     }
@@ -266,10 +271,12 @@ static boolean Relatable (InteractorComp* src, InteractorComp* dest) {
 }
 
 void RelateManip::Manipulate(Manipulator* m, Event& e) {
+    boolean b;
     m->Grasp(e);
     do {
         _viewer->Read(e);
-    } while (m->Manipulating(e));
+	b = m->Manipulating(e);
+    } while (b);
     m->Effect(e);
 }
 

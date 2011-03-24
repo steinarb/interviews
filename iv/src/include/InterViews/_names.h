@@ -30,9 +30,14 @@
 #undef Border
 #undef Box
 #undef Button
+#undef PushButton
+#undef RadioButton
 #undef Center
 #undef Coord
 #undef Deck
+#undef Dialog
+#undef FileBrowser
+#undef FileChooser
 #undef Glue
 #undef HGlue
 #undef VGlue
@@ -51,14 +56,20 @@
 #undef ScrollBar
 #undef HScrollBar
 #undef VScrollBar
+#undef Slider
 
 #define Adjuster _lib_iv(Adjuster)
 #define Border _lib_iv(Border)
 #define Box _lib_iv(Box)
 #define Button _lib_iv(Button)
+#define PushButton _lib_iv(PushButton)
+#define RadioButton _lib_iv(RadioButton)
 #define Center _lib_iv(Center)
 #define Coord _lib_iv(Coord)
 #define Deck _lib_iv(Deck)
+#define Dialog _lib_iv(Dialog)
+#define FileBrowser _lib_iv(FileBrowser)
+#define FileChooser _lib_iv(FileChooser)
 #define Glue _lib_iv(Glue)
 #define HGlue _lib_iv(HGlue)
 #define VGlue _lib_iv(VGlue)
@@ -77,3 +88,4 @@
 #define ScrollBar _lib_iv(ScrollBar)
 #define HScrollBar _lib_iv(HScrollBar)
 #define VScrollBar _lib_iv(VScrollBar)
+#define Slider _lib_iv(Slider)

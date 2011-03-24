@@ -26,14 +26,14 @@
  * Button management.
  */
 
-#include <IV-look/2.6/InterViews/button.h>
 #include <InterViews/bitmap.h>
 #include <InterViews/font.h>
 #include <InterViews/pattern.h>
-#include <InterViews/sensor.h>
-#include <InterViews/2.6/InterViews/painter.h>
-#include <InterViews/2.6/InterViews/shape.h>
-#include <InterViews/2.6/InterViews/subject.h>
+#include <IV-2_6/InterViews/button.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/sensor.h>
+#include <IV-2_6/InterViews/shape.h>
+#include <IV-2_6/InterViews/subject.h>
 #include <InterViews/Bitmaps/radioBoth.bm>
 #include <InterViews/Bitmaps/radioChosen.bm>
 #include <InterViews/Bitmaps/radioHit.bm>
@@ -42,7 +42,7 @@
 #include <OS/math.h>
 #include <string.h>
 
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/_enter.h>
 
 static const int sep = 3;
 static const int pad = 3;
@@ -153,6 +153,7 @@ void Button::Init(ButtonState* s, void* v) {
     subject = s;
     associates = nil;
     enabled = true;
+    chosen = false;
     hit = false;
     subject->Attach(this);
     Update();

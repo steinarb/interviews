@@ -53,6 +53,8 @@
 
 #include <InterViews/transformer.h>
 
+#include <IV-2_6/_enter.h>
+
 #include <stream.h>
 
 /*****************************************************************************/

@@ -27,7 +27,10 @@
 #ifndef unidraw_manip_h
 #define unidraw_manip_h
 
-#include <InterViews/defs.h>
+#include <InterViews/enter-scope.h>
+#include <Unidraw/enter-scope.h>
+
+#include <InterViews/_enter.h>
 
 class Event;
 class Tool;
@@ -49,5 +52,7 @@ public:
 protected:
     Manipulator();
 };
+
+#include <InterViews/_leave.h>
 
 #endif

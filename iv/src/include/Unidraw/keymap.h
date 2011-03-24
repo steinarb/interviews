@@ -27,6 +27,8 @@
 #ifndef unidraw_keymap_h
 #define unidraw_keymap_h
 
+#include <Unidraw/enter-scope.h>
+
 class UControl;
 
 class KeyMap {

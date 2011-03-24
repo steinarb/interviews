@@ -29,15 +29,15 @@
 #ifndef iv_transformer_h
 #define iv_transformer_h
 
-#include <InterViews/boolean.h>
 #include <InterViews/coord.h>
 #include <InterViews/resource.h>
 
 #include <InterViews/_enter.h>
 
-class Transformer : virtual public Resource {
+class Transformer : public Resource {
 public:
     Transformer();	/* identity */
+    Transformer(const Transformer&);
     Transformer(const Transformer*);
     Transformer(
 	float a00, float a01, float a10, float a11, float a20, float a21
@@ -45,6 +45,11 @@ public:
     virtual ~Transformer();
 
     boolean identity() const;
+    boolean invertible() const;
+
+    boolean operator ==(const Transformer&) const;
+    boolean operator !=(const Transformer&) const;
+    Transformer& operator =(const Transformer&);
 
     virtual void premultiply(const Transformer&);
     virtual void postmultiply(const Transformer&);
@@ -62,6 +67,8 @@ public:
 	float tx, float ty, float& x, float& y
     ) const;
 
+    float det() const;
+
     virtual void matrix(
 	float& a00, float& a01, float& a10, float& a11, float& a20, float& a21
     ) const;
@@ -69,7 +76,6 @@ private:
     boolean identity_;
     float mat00, mat01, mat10, mat11, mat20, mat21;
 
-    float det() const;
     void update();
 
 public:
@@ -112,15 +118,12 @@ public:
     ) const;
     void InvTransformRect(IntCoord&, IntCoord&, IntCoord&, IntCoord&) const;
     void InvTransformRect(float&, float&, float&, float&) const;
-
-    boolean operator ==(const Transformer&) const;
-    boolean operator !=(const Transformer&) const;
-    Transformer& operator =(const Transformer&);
 };
 
-inline boolean Transformer::identity() const { return identity_; }
-
 inline float Transformer::det() const { return mat00*mat11 - mat01*mat10; }
+
+inline boolean Transformer::identity() const { return identity_; }
+inline boolean Transformer::invertible() const { return det() != 0; }
 
 inline boolean Transformer::Translated(float tol) const {
     return -tol > mat20 || mat20 > tol || -tol > mat21 || mat21 > tol;

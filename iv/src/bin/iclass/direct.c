@@ -27,17 +27,25 @@
 #include "direct.h"
 #include "globals.h"
 #include <OS/directory.h>
-#include <OS/leave-scope.h>
+#include <OS/string.h>
+#include <OS/types.h>
 #include <stddef.h>
 #include <osfcn.h>
 #include <pwd.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 
+#ifdef __DECCXX
+extern "C" {
+    extern uid_t getuid();
+    extern struct passwd* getpwuid(uid_t);
+}
+#endif
+
+#undef File
+#undef Directory
 #define SysDir _lib_os(Directory)
-#define SysDirInfo _lib_os(DirectoryInfo)
 
 class DirectoryRep {
 private:
@@ -81,14 +89,15 @@ boolean Directory::LoadDirectory (const char* name) {
 }
 
 int Directory::Index (const char* name) {
-    return rep_->dir == nil ? -1 : rep_->dir->index(name);
+    _lib_os(String) s(name);
+    return rep_->dir == nil ? -1 : rep_->dir->index(s);
 }
 
 boolean Directory::Reset (char* path) {
-    SysDirInfo* info = SysDir::open(path);
-    if (info != nil) {
+    SysDir* d = SysDir::open(_lib_os(String)(path));
+    if (d != nil) {
 	delete rep_->dir;
-	rep_->dir = new SysDir(info);
+	rep_->dir = d;
 	return true;
     }
     return false;
@@ -105,7 +114,14 @@ int Directory::Count() {
 }
 
 const char* Directory::File(int index) {
-    return rep_->dir == nil ? nil : rep_->dir->name(index);
+    if (rep_->dir == nil) {
+	return nil;
+    }
+    const _lib_os(String)* s = rep_->dir->name(index);
+    if (s == nil) {
+	return nil;
+    }
+    return s->string();
 }
 
 const char* Directory::Home (const char* name) {
@@ -194,7 +210,7 @@ const char* Directory::ElimDot (const char* path) {
     return newpath;
 }
 
-static boolean CollapsedDotDotSlash (const char* path, const char*& start) {
+static boolean CollapsedDotDotSlash (char* path, char*& start) {
     if (path == start || *(start-1) != '/') {
         return false;
 

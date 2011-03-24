@@ -45,6 +45,8 @@ public:
     Window* window_;
     Coord pointer_x_;
     Coord pointer_y_;
+    Coord pointer_root_x_;
+    Coord pointer_root_y_;
 
     void clear();
     void locate();

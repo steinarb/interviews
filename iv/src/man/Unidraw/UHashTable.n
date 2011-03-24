@@ -54,7 +54,8 @@ the last element in the traversal.  GetElem returns the element to
 which the given iterator points.
 .TP
 .B "UHashElem* Find(void* key)"
-Find the element with the matching key in the hash table.
+Find the element with the matching key (as defined by the Equal
+operation, described below) in the hash table.
 .SH UHASHTABLE PROTECTED OPERATIONS
 .TP
 .B "virtual UHashElem* CreateElem()"
@@ -64,5 +65,10 @@ redefine this function if they use subclasses of UHashElem.
 .B "virtual int Hash(void* key)"
 Hash the specified key to return a slot index.  This value should be
 less than the value of the \fI_nslots\fP member variable.
+.TP
+.B "virtual boolean Equal(void* key1, void* key2)"
+Return whether the specified keys are equivalent.  By default, Equal
+simply compares the pointers for equality.  Subclasses may redefine
+this operation to make more sophisticated comparisons.
 .SH SEE ALSO
 Iterator(3U)

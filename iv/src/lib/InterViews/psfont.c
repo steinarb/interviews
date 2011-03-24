@@ -27,7 +27,6 @@
  */
 
 #include <InterViews/psfont.h>
-#include <InterViews/world.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

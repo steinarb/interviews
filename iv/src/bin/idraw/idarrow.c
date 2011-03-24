@@ -383,7 +383,9 @@ void ArrowMultiLineComp::Read (istream& in) {
     int count, h, t;
     float scale;
 
-    count = ml->GetOriginal(x, y);
+    const Coord* cx, * cy;
+    count = ml->GetOriginal(cx, cy);
+    x = (Coord*)cx; y = (Coord*)cy;
 
     in >> h >> t >> scale;
 
@@ -633,7 +635,9 @@ void ArrowSplineComp::Read (istream& in) {
     int count, h, t;
     float scale;
 
-    count = spl->GetOriginal(x, y);
+    const Coord* cx, * cy;
+    count = spl->GetOriginal(cx, cy);
+    x = (Coord*)cx; y = (Coord*)cy;
 
     in >> h >> t >> scale;
 

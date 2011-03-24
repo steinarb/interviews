@@ -26,12 +26,14 @@
  * Rubberbanding rectangles.
  */
 
-#include <InterViews/2.6/InterViews/rubrect.h>
-#include <InterViews/2.6/InterViews/painter.h>
+#include <IV-2_6/InterViews/rubrect.h>
+#include <IV-2_6/InterViews/painter.h>
 #include <OS/math.h>
 #include <math.h>
 #include <stdlib.h>
+#ifndef apollo
 #include <values.h>
+#endif
 
 RubberRect::RubberRect(
     Painter* p, Canvas* c, IntCoord x0, IntCoord y0, IntCoord x1, IntCoord y1,

@@ -39,6 +39,9 @@ class Component;
 class ControlInfo;
 class Creator;
 class EditorInfo;
+class NameMap;
+class ObjectMap;
+class ObjectMapElem;
 class PSBrush;
 class PSColor;
 class PSFont;
@@ -48,7 +51,12 @@ class StateVar;
 class Tool;
 class TransferFunct;
 class Transformer;
+class UArray;
+class UHashTable;
+class Unidraw;
 class UList;
+class World;
+
 class istream;
 class ostream;
 
@@ -173,7 +181,7 @@ protected:
     int GetToken(istream& in, char* buf, int buf_size);
 private:
     friend class Unidraw;
-    void Init(class World*);
+    void Init(World*);
     const char* Name(const char*, int);
 
     ClassId ReadClassId(istream&, int& inst_id, ClassId&, const char*&);
@@ -182,7 +190,7 @@ private:
         istream&, int inst_id, ClassId orig_id, ClassId subst_id,
         const char* delim
     );
-    void ReadExtraData(istream&, const char* delim, class UArray*);
+    void ReadExtraData(istream&, const char* delim, UArray*);
 
     void WriteClassId(
         ClassId, ostream&, int inst_id = 0, 
@@ -193,7 +201,7 @@ private:
     void WriteIt(void*, ClassId, ostream&);
 
     void* CopyObject(void*, ClassId);
-    void Forget(void*, const char* name, class NameMap*);
+    void Forget(void*, const char* name, NameMap*);
 
     boolean SaveObject(void*, ClassId, ostream&);
     boolean RetrieveObject(istream&, void*&);
@@ -212,7 +220,7 @@ private:
     UList* _fonts;
     UList* _pats;
 
-    class ObjectMap* _curMap;
+    ObjectMap* _curMap;
     ObjectMap* _substMap;
     float _fileVersion;
 #ifdef __GNUG__
@@ -239,7 +247,7 @@ public:
     void Register(void* obj, int id);
     void Register(
         void* obj, int id, ClassId orig_id, const char* delim,
-        class UArray* extra_data
+        UArray* extra_data
     );
     void Unregister(void* obj);
     void Unregister(int id);
@@ -254,10 +262,10 @@ public:
     const char* GetDelim(void* obj);
     UArray* GetExtraData(void* obj);
 private:
-    class ObjectMapElem* Find(void*);
+    ObjectMapElem* Find(void*);
     ObjectMapElem* Find(int);
 private:
-    class UHashTable _objKeys, _idKeys;
+    UHashTable _objKeys, _idKeys;
     void* _client;
     ClassId _id;
 };

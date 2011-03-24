@@ -26,21 +26,21 @@
  * Panner implementation.
  */
 
-#include <IV-look/2.6/InterViews/adjuster.h>
-#include <IV-look/2.6/InterViews/border.h>
-#include <IV-look/2.6/InterViews/panner.h>
 #include <InterViews/pattern.h>
-#include <InterViews/sensor.h>
-#include <InterViews/2.6/InterViews/box.h>
-#include <InterViews/2.6/InterViews/glue.h>
-#include <InterViews/2.6/InterViews/painter.h>
-#include <InterViews/2.6/InterViews/perspective.h>
-#include <InterViews/2.6/InterViews/rubrect.h>
-#include <InterViews/2.6/InterViews/shape.h>
+#include <IV-2_6/InterViews/adjuster.h>
+#include <IV-2_6/InterViews/border.h>
+#include <IV-2_6/InterViews/panner.h>
+#include <IV-2_6/InterViews/box.h>
+#include <IV-2_6/InterViews/glue.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/perspective.h>
+#include <IV-2_6/InterViews/rubrect.h>
+#include <IV-2_6/InterViews/sensor.h>
+#include <IV-2_6/InterViews/shape.h>
 #include <OS/math.h>
 #include <string.h>
 
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/_enter.h>
 
 Panner::Panner (Interactor* i, int size) {
     Init(i, size);
@@ -109,7 +109,7 @@ void Panner::Reconfig () {
 }
 
 static const int MIN_SLIDER_HT = 20;
-typedef enum MoveType { MOVE_HORIZ, MOVE_VERT, MOVE_UNDEF };
+enum MoveType { MOVE_HORIZ, MOVE_VERT, MOVE_UNDEF };
 
 Slider::Slider (Interactor* i) {
     Init(i);

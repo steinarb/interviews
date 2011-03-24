@@ -1,8 +1,8 @@
-/* $Header: /usr/people/sam/tiff/libtiff/RCS/t4.h,v 1.7 91/07/16 16:30:47 sam Exp $ */
+/* $Header: /usr/people/sam/tiff/libtiff/RCS/t4.h,v 1.9 92/02/10 19:06:22 sam Exp $ */
 
 /*
- * Copyright (c) 1988, 1989, 1990, 1991 Sam Leffler
- * Copyright (c) 1991 Silicon Graphics, Inc.
+ * Copyright (c) 1988, 1989, 1990, 1991, 1992 Sam Leffler
+ * Copyright (c) 1991, 1992 Silicon Graphics, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and 
  * its documentation for any purpose is hereby granted without fee, provided
@@ -55,7 +55,11 @@ typedef struct tableentry {
  *     during state generation (see mkg3states.c).
  */
 #ifdef G3CODES
+#if defined(__STDC__) || defined(__EXTENDED__) || USE_CONST
+const tableentry TIFFFaxWhiteCodes[] = {
+#else
 tableentry TIFFFaxWhiteCodes[] = {
+#endif
     { 8, 0x35, 0 },	/* 0011 0101 */
     { 6, 0x7, 1 },	/* 0001 11 */
     { 4, 0x7, 2 },	/* 0111 */
@@ -167,7 +171,11 @@ tableentry TIFFFaxWhiteCodes[] = {
     { 12, 0x0, G3CODE_INVALID },	/* 0000 0000 0000 */
 };
 
+#if defined(__STDC__) || defined(__EXTENDED__) || USE_CONST
+const tableentry TIFFFaxBlackCodes[] = {
+#else
 tableentry TIFFFaxBlackCodes[] = {
+#endif
     { 10, 0x37, 0 },	/* 0000 1101 11 */
     { 3, 0x2, 1 },	/* 010 */
     { 2, 0x3, 2 },	/* 11 */
@@ -279,7 +287,12 @@ tableentry TIFFFaxBlackCodes[] = {
     { 12, 0x0, G3CODE_INVALID },	/* 0000 0000 0000 */
 };
 #else
+#if defined(__STDC__) || defined(__EXTENDED__) || USE_CONST
+extern	const tableentry TIFFFaxWhiteCodes[];
+extern	const tableentry TIFFFaxBlackCodes[];
+#else
 extern	tableentry TIFFFaxWhiteCodes[];
 extern	tableentry TIFFFaxBlackCodes[];
+#endif /* !__STDC__ */
 #endif
 #endif /* _T4_ */

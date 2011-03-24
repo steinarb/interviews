@@ -31,8 +31,10 @@
 #include <Unidraw/Tools/magnify.h>
 
 #include <InterViews/event.h>
-#include <InterViews/perspective.h>
-#include <InterViews/rubrect.h>
+#include <IV-2_6/InterViews/perspective.h>
+#include <IV-2_6/InterViews/rubrect.h>
+
+#include <IV-2_6/_enter.h>
 
 /*****************************************************************************/
 

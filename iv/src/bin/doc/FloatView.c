@@ -29,8 +29,9 @@
 #include "Document.h"
 #include "FloatItem.h"
 
+#include "doc-listener.h"
+
 #include <InterViews/box.h>
-#include <InterViews/listener.h>
 #include <InterViews/patch.h>
 
 #include <string.h>
@@ -52,6 +53,7 @@ FloatView::~FloatView () {
 
 void FloatView::update () {
     long style = _float->style();
+    _patch->undraw();
     _patch->body(_float->document()->character(0, style));
     _patch->reallocate();
     _patch->redraw();

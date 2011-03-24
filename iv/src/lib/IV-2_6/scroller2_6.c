@@ -26,16 +26,16 @@
  * Scrolling implementation.
  */
 
-#include <IV-look/2.6/InterViews/scroller.h>
 #include <InterViews/pattern.h>
-#include <InterViews/sensor.h>
-#include <InterViews/2.6/InterViews/painter.h>
-#include <InterViews/2.6/InterViews/perspective.h>
-#include <InterViews/2.6/InterViews/rubrect.h>
-#include <InterViews/2.6/InterViews/shape.h>
+#include <IV-2_6/InterViews/scroller.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/perspective.h>
+#include <IV-2_6/InterViews/rubrect.h>
+#include <IV-2_6/InterViews/sensor.h>
+#include <IV-2_6/InterViews/shape.h>
 #include <OS/math.h>
 
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/_enter.h>
 
 static const int inset = 1;	/* space between scroller canvas and bar */
 

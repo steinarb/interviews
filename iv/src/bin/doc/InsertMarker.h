@@ -33,6 +33,7 @@
 #include <InterViews/monoglyph.h>
 
 class Color;
+class IOHandler;
 
 class InsertMarker : public MonoGlyph {
 public:
@@ -46,6 +47,7 @@ public:
 
     virtual void allocate(Canvas*, const Allocation&, Extension&);
     virtual void draw(Canvas*, const Allocation&) const;
+    virtual void undraw();
 protected:
     void flash (long sec, long usec);
 private:
@@ -57,7 +59,7 @@ private:
     Coord x_, y_, width_, height_;
 
     long flash_;
-    class IOHandler* flasher_;
+    IOHandler* flasher_;
 };
 
 #endif

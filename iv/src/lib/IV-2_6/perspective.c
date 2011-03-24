@@ -26,8 +26,8 @@
  * Perspective definition.
  */
 
-#include <InterViews/2.6/InterViews/perspective.h>
-#include <InterViews/2.6/InterViews/interactor.h>
+#include <IV-2_6/InterViews/perspective.h>
+#include <IV-2_6/InterViews/interactor.h>
 
 class ViewList {
 public:

@@ -33,6 +33,7 @@
 #include <OS/enter-scope.h>
 #include <IV-X11/Xlib.h>
 #include <IV-X11/Xutil.h>
+#include <IV-X11/xwindow.h>
 
 #include <InterViews/_enter.h>
 
@@ -40,57 +41,34 @@ class ColorTable;
 class DamageList;
 class GrabList;
 class RGBTable;
+class SelectionList;
 class String;
 class Transformer;
+class Window;
 class WindowTable;
 
 class DisplayRep {
 public:
     XDisplay* display_;
     unsigned int screen_;
-    unsigned int depth_;
     XWindow root_;
-    Visual* visual_;
+    WindowVisualList visuals_;
+    WindowVisual* default_visual_;
     Coord width_;
     Coord height_;
     unsigned int pwidth_;
     unsigned int pheight_;
     Style* style_;
 
-    XColormap cmap_;
-    ColorTable* ctable_;
-    RGBTable* rgbtable_;
-    XColor* localmap_;
-    unsigned int localmapsize_;
-    unsigned long red_;
-    unsigned long red_shift_;
-    unsigned long green_;
-    unsigned long green_shift_;
-    unsigned long blue_;
-    unsigned long blue_shift_;
-    unsigned long white_;
-
-    unsigned long xor_;
     GrabList* grabbers_;
-    DamageList* damage_list_;
+    DamageList* damaged_;
+    SelectionList* selections_;
     WindowTable* wtable_;
 
-    void init_style();
-
-    void set_visual();
-    void set_visual_by_class_name(const String&);
-    void set_visual_by_info(XVisualInfo&, long mask);
-    void set_color_tables();
-    void set_shift(unsigned long mask, unsigned long& v, unsigned long& shift);
-    void set_shaped_windows();
-    void set_synchronous();
-    void set_xor_pixel();
     void set_dpi(Coord&);
 
-    void find_color(unsigned long, XColor&);
-    void find_color(
-	unsigned short r, unsigned short g, unsigned short b, XColor&
-    );
+    void needs_repair(Window*);
+    void remove(Window*);
 };
 
 #include <InterViews/_leave.h>

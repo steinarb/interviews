@@ -22,13 +22,18 @@
 
 /*
  * Unique user interface builder class identifiers
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibclasses.h,v 1.2 91/09/27 14:13:06 tang Exp $
  */
 
 #ifndef ibclasses_h
 #define ibclasses_h
 
 #include <Unidraw/classes.h>
+
+#ifndef MAKEDEPEND
+
+#define PRECISEMOVE_CMD          1011
+#define PRECISEROTATE_CMD        1012
+#define PRECISESCALE_CMD         1013
 
 #define ABOUT_CMD                2999
 #define NEWVIEW_CMD              3000
@@ -137,6 +142,11 @@
 #define COMMANDCONTROL_GRAPHIC   3110
 #define IKEY_COMP                3111
 #define MEMBERSHAREDNAME         3112
+#define IBIMPORT_CMD             3113
+#define GETCLONES_CMD            3114
+#define ID_VAR                   3115
+#define GRAPHICCODE_VIEW         3116
+#define IPS_VIEW   	         3117
 
 #define NEWTOOL_CMD              2008
 #define TOOLS_CMD                2009
@@ -156,6 +166,8 @@
 #define GETCLASSLIST_CMD  	 2022
 #define SCAN_CMD   	         2023
 #define TAB_TOOL   	         2024
+#define COMPCHECK_CMD            2025
+#define IDMAP_CMD                2026
 
 #define ADJUSTER_CODE            Combine(ADJUSTER_COMP, CODE_VIEW)
 #define ADJUSTER_VIEW            Combine(ADJUSTER_COMP, COMPONENT_VIEW)
@@ -251,5 +263,20 @@
 #define ISTENCIL_VIEW            Combine(ISTENCIL_COMP, COMPONENT_VIEW)
 #define IRASTER_VIEW             Combine(IRASTER_COMP, COMPONENT_VIEW)
 
+#define ITEXT_PS               Combine(ITEXT_COMP, POSTSCRIPT_VIEW)
+#define IKEY_PS                Combine(IKEY_COMP, POSTSCRIPT_VIEW)
+#define ILINE_PS               Combine(ILINE_COMP, POSTSCRIPT_VIEW)
+#define IMULTILINE_PS          Combine(IMULTILINE_COMP, POSTSCRIPT_VIEW)
+#define ISPLINE_PS             Combine(ISPLINE_COMP, POSTSCRIPT_VIEW)
+#define IRECT_PS               Combine(IRECT_COMP, POSTSCRIPT_VIEW)
+#define IELLIPSE_PS            Combine(IELLIPSE_COMP, POSTSCRIPT_VIEW)
+#define IPOLYGON_PS            Combine(IPOLYGON_COMP, POSTSCRIPT_VIEW)
+#define ICLOSEDSPLINE_PS       Combine(ICLOSEDSPLINE_COMP, POSTSCRIPT_VIEW)
+#define IPS_VIEWS              Combine(IGRAPHIC_COMPS, POSTSCRIPT_VIEW)
+#define ISTENCIL_PS            Combine(ISTENCIL_COMP, POSTSCRIPT_VIEW)
+#define IRASTER_PS             Combine(IRASTER_COMP, POSTSCRIPT_VIEW)
+#define GRBLOCK_PS             Combine(GRBLOCK_COMP, POSTSCRIPT_VIEW)
+
 #endif
 
+#endif

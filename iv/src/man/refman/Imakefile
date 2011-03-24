@@ -5,7 +5,8 @@ XCOMM
 .SUFFIXES: .ps .PS
 
 DOCS = title.ps cover.ps\
-    ch1.ps ch2.ps ch3.ps ch4.ps ch5.ps ch6.ps ch7.ps ch8.ps
+    ch1.ps ch2.ps ch3.ps ch4.ps ch5.ps ch6.ps ch8.ps \
+    ch9.ps ch10.ps ch11.ps ch12.ps appA.ps
 
 MANUAL = refman.PS
 

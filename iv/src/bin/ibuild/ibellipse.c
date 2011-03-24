@@ -37,8 +37,14 @@ static const char* ellcomp_delim = "%ellcomp_delim";
 /*****************************************************************************/
 
 IEllipseComp::IEllipseComp (SF_Ellipse* graphic) {
-    GetClassNameVar()->SetName("SF_Ellipse");
-    GetClassNameVar()->SetBaseClass("SF_Ellipse");
+    _gclassNameVar->SetName("SF_Ellipse");
+    _gclassNameVar->SetBaseClass("SF_Ellipse");
+    _cclassNameVar->SetName("EllipseComp");
+    _cclassNameVar->SetBaseClass("EllipseComp");
+    _vclassNameVar->SetName("EllipseView");
+    _vclassNameVar->SetBaseClass("EllipseView");
+    _compid->SetOrigID(ELLIPSE_COMP);
+
     if (!_release || graphic != nil) {
         _target = new EllipseComp(graphic);
         if (graphic != nil) {
@@ -64,13 +70,13 @@ boolean IEllipseComp::IsA (ClassId id) {
 ClassId EllipseCode::GetClassId () { return IELLIPSE_CODE; }
 
 boolean EllipseCode::IsA(ClassId id) {
-    return IELLIPSE_CODE == id || CodeView::IsA(id);
+    return IELLIPSE_CODE == id || GraphicCodeView::IsA(id);
 }
 
-EllipseCode::EllipseCode (IEllipseComp* subj) : CodeView(subj) {}
+EllipseCode::EllipseCode (IEllipseComp* subj) : GraphicCodeView(subj) {}
 
 void EllipseCode::Update () {
-    CodeView::Update();
+    GraphicCodeView::Update();
     GetIEllipseComp()->Bequeath();
 }
 
@@ -78,46 +84,26 @@ IEllipseComp* EllipseCode::GetIEllipseComp () {
     return (IEllipseComp*) GetSubject(); 
 }
 
+const char* EllipseCode::GetGHeader () { return "ellipses"; }
+const char* EllipseCode::GetCVHeader () { return "ellipse"; }
+
 boolean EllipseCode::Definition (ostream& out) {
     boolean ok = true;
 
     IEllipseComp* ellipsecomp = GetIEllipseComp();
     EllipseComp* target = (EllipseComp*) ellipsecomp->GetTarget();
     SF_Ellipse* ellipsegr= target->GetEllipse();
-    SubclassNameVar* snamer = ellipsecomp->GetClassNameVar();
+
+    SubclassNameVar* cnamer = ellipsecomp->GetCClassNameVar();
+    SubclassNameVar* gnamer = ellipsecomp->GetGClassNameVar();
     MemberNameVar* mnamer = ellipsecomp->GetMemberNameVar();
+
     const char* mname = mnamer->GetName();
-    const char* subclass = snamer->GetName();
+    const char* cname = cnamer->GetName();
+    const char* gname = gnamer->GetName();
 
-    if (_emitGraphicState) {
-        ok = WriteGraphicDecls(ellipsegr, out);
-
-    } else if (
-        _emitInstanceDecls || _emitForward || 
-        _emitClassHeaders || _emitHeaders
-    ) {
-        ok = CodeView::Definition(out);
-        if (_emitInstanceDecls && _emitGraphicComp && !_emitExport) {
-            out << "    EllipseComp* " << mname << "_comp;\n";
-        }
-
-    } else if (_emitExpHeader) {
-        if (!snamer->IsSubclass()) {
-            if (_scope && mnamer->GetExport()&&!_namelist->Search("ellipses")){
-                _namelist->Append("ellipses");
-                out << "#include <Unidraw/Graphic/ellipses.h> \n";
-            }
-        } else {
-            ok = CodeView::Definition(out);
-        }
-
-    } else if (_emitCorehHeader) {
-        if (snamer->IsSubclass() && strcmp(subclass, _classname) == 0) {
-            if (!_namelist->Search("ellipses")) {
-                _namelist->Append("ellipses");
-                out << "#include <Unidraw/Graphic/ellipses.h> \n";
-            }
-        }
+    if (_emitInstanceDecls || _emitGraphicState) {
+	ok = ok && GraphicCodeView::Definition(out);
 
     } else if (_emitInstanceInits) {
         Coord x0, y0;
@@ -125,32 +111,35 @@ boolean EllipseCode::Definition (ostream& out) {
         ellipsegr->GetOriginal(x0, y0, r1, r2);
 
         out << "    {\n";
-        out << "        " << mname << " = new " << subclass << "(";
+        if (_emitGraphicComp) {
+            out << "        " << mname << "_gr";
+        } else {
+            out << "        " << mname;
+        }
+        out << " = new " << gname << "(";
         out << x0 << ", " << y0 << ", " << r1 << ", " << r2 << ");\n";
         ok = WriteGraphicInits(ellipsegr, out);
         if (_emitGraphicComp) {
-            out << "        " << mname << "_comp = new EllipseComp(";
-            out << mname << ");\n";
+            out << "        " << mname << " = new " << cname << "(";
+            out << mname << "_gr);\n";
         }
         out << "    }\n";
 
-    } else if (
-        _emitCoreDecls || _emitCoreInits || _emitClassDecls || _emitClassInits
-    ) {
-	ok = ok && CodeView::Definition(out);
+    } else {
+	ok = ok && GraphicCodeView::Definition(out);
     }
     return ok && out.good();
 }
 
-boolean EllipseCode::CoreConstDecls(ostream& out) { 
+boolean EllipseCode::GCoreConstDecls(ostream& out) { 
     out << "(Coord x0, Coord y0, int r1, int r2, Graphic* = nil);\n";
     return out.good();
 }
 
-boolean EllipseCode::CoreConstInits(ostream& out) {
+boolean EllipseCode::GCoreConstInits(ostream& out) {
     IComp* icomp = GetIComp();
-    SubclassNameVar* snamer = icomp->GetClassNameVar();
-    const char* baseclass = snamer->GetBaseClass();
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    const char* baseclass = gnamer->GetBaseClass();
 
     out <<"(\n    Coord x0, Coord y0, int r1, int r2, Graphic* gr\n) : ";
     out << baseclass << "(x0, y0, r1, r2, gr) {}\n\n";
@@ -158,35 +147,26 @@ boolean EllipseCode::CoreConstInits(ostream& out) {
     return out.good();
 }
 
-boolean EllipseCode::ConstDecls(ostream& out) {
+boolean EllipseCode::GConstDecls(ostream& out) {
     out << "(Coord x0, Coord y0, int r1, int r2, Graphic* = nil);\n";
+    out << "    virtual Graphic* Copy();\n";
     return out.good();
 }
 
-boolean EllipseCode::ConstInits(ostream& out) {
+boolean EllipseCode::GConstInits(ostream& out) {
     char coreclass[CHARBUFSIZE];
     GetCoreClassName(coreclass);
+    IComp* icomp = GetIComp();
+    SubclassNameVar* gnamer = icomp->GetGClassNameVar();
+    const char* gname = gnamer->GetName();
 
     out <<"(\n    Coord x0, Coord y0, int r1, int r2, Graphic* gr\n) : ";
     out << coreclass << "(x0, y0, r1, r2, gr) {}\n\n";
+    out << "Graphic* " << gname << "::Copy () {\n";
+    out << "    return new " << gname << "(_x0, _y0, _r1, _r2, this);\n";
+    out << "}\n\n";
 
     return out.good();
 }
 
-boolean EllipseCode::EmitIncludeHeaders(ostream& out) {
-    SubclassNameVar* snamer = GetIComp()->GetClassNameVar();
-
-    if (!snamer->IsSubclass() && !_namelist->Search("ellipses")) {
-        _namelist->Append("ellipses");
-        out << "#include <Unidraw/Graphic/ellipses.h> \n";
-    }
-    if (
-        strcmp(snamer->GetName(), _classname) != 0 && 
-        !_namelist->Search("ellipse") && _emitGraphicComp
-    ) {
-        _namelist->Append("ellipse");
-        out << "#include <Unidraw/Components/ellipse.h> \n";
-    }
-    return out.good();
-}
 

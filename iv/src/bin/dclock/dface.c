@@ -32,8 +32,8 @@
 #include "clocktime.h"
 #include <string.h>
 
-declare(IOCallback,DFace);
-implement(IOCallback,DFace);
+declareIOCallback(DFace)
+implementIOCallback(DFace)
 
 static const int FadeDelay = 10000;
 
@@ -184,7 +184,7 @@ DFace::DFace (
     invertor = nil;
     input = new Sensor;
     input->Catch(KeyEvent);
-    tick = new IOCallback(DFace)(this, DFace::Tick);
+    tick = new IOCallback(DFace)(this, &DFace::Tick);
 }
 
 void DFace::Reconfig () {

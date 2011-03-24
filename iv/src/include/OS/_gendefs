@@ -2,6 +2,10 @@
 
 set tmp = /tmp/$$
 cp /dev/null $tmp
+echo "boolean" >> $tmp
+echo "true" >> $tmp
+echo "false" >> $tmp
+echo "u_char" >> $tmp
 grep "^class" *.h | \
     sed -e 's/.*class \([^ ;\*]*\).*$/\1/' | \
     sort | uniq | fgrep -v "(" >> $tmp

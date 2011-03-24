@@ -22,7 +22,6 @@
 
 /*
  * Button component declarations.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibbutton.h,v 1.2 91/09/27 14:13:03 tang Exp $
  */
 
 #ifndef ibbutton_h
@@ -39,6 +38,7 @@ public:
     ButtonComp(MessageGraphic* = nil);
     virtual ~ButtonComp();
 
+    virtual void Reconfig();
     virtual boolean IsRelatableTo(InteractorComp*);
     virtual boolean IsRelatable();
     virtual void Relate(InteractorComp*);

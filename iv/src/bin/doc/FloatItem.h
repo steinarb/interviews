@@ -31,6 +31,7 @@
 
 class TextItem;
 class FloatView;
+class FloatViewInfo_List;
 
 class FloatItem : public Item {
 public:
@@ -60,7 +61,7 @@ protected:
 
     TextItem* _item;
     char* _context;
-    class FloatViewInfo_List* _view;
+    FloatViewInfo_List* _view;
 };
 
 #endif

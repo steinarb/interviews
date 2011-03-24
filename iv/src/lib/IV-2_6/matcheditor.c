@@ -26,9 +26,9 @@
  * MatchEditor - StringEditor with pattern matching
  */
 
-#include <IV-look/2.6/InterViews/matcheditor.h>
-#include <InterViews/world.h>
-#include <InterViews/2.6/InterViews/textbuffer.h>
+#include <IV-2_6/InterViews/matcheditor.h>
+#include <IV-2_6/InterViews/textbuffer.h>
+#include <IV-2_6/InterViews/world.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>

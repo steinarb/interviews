@@ -33,18 +33,18 @@
 #include "IdrawImage.h"
 #include "DocViewer.h"
 
+#include "doc-target.h"
 #include "properties.h"
 
+#include <IV-look/kit.h>
 #include <InterViews/border.h>
-#include <InterViews/box.h>
-#include <InterViews/center.h>
-#include <InterViews/fixedspan.h>
 #include <InterViews/label.h>
-#include <InterViews/margin.h>
-#include <InterViews/target.h>
+#include <InterViews/layout.h>
+#include <InterViews/session.h>
+#include <InterViews/style.h>
 #include <InterViews/tformsetter.h>
 #include <InterViews/transformer.h>
-#include <InterViews/world.h>
+#include <OS/list.h>
 #include <OS/math.h>
 
 #include <strstream.h>
@@ -94,8 +94,6 @@ public:
     Glyph* _final;
 };
 
-#include "list.h"
-
 declareList(PSFigViewInfo_List,PSFigViewInfo)
 implementList(PSFigViewInfo_List,PSFigViewInfo)
 
@@ -103,8 +101,11 @@ PSFigItem::PSFigItem (
     Document* document, Item* parent, long style, long source
 ) : Item(document, parent, style, source) {
     _parameters = new char[256];
-    _filename = new char[100];
+    _parameters[0] = '\0';
+    _filename = new char[256];
+    _filename[0] = '\0';
     _creator = new char[100];
+    _creator[0] = '\0';
     _width = 0;
     _height = 0;
     _hscale = 0;
@@ -120,13 +121,9 @@ PSFigItem::~PSFigItem () {
     delete _creator;
     if (_view != nil) {
         while (_view->count() > 0) {
-            PSFigViewInfo& view = _view->item(0);
-            if (view._draft != nil) {
-                view._draft->unref();
-            }
-            if (view._final != nil) {
-                view._final->unref();
-            }
+            PSFigViewInfo& view = _view->item_ref(0);
+	    Resource::unref(view._draft);
+	    Resource::unref(view._final);
             _view->remove(0);
         }
         delete _view;
@@ -237,51 +234,50 @@ void PSFigItem::change_graphic () {
     if (_view != nil) {
         long count = _view->count();
         for (long i = 0; i < count; ++i) {
-            PSFigViewInfo& info = _view->item(i);
-            if (info._draft != nil) {
-                info._draft->unref();
-                info._draft = nil;
-            }
-            if (info._final != nil) {
-                info._final->unref();
-                info._final = nil;
-            }
+            PSFigViewInfo& info = _view->item_ref(i);
+	    Resource::unref(info._draft);
+	    info._draft = nil;
+	    Resource::unref(info._final);
+	    info._final = nil;
             info._view->graphic_changed();
         }
     }
 }
 
 Glyph* PSFigItem::graphic (PSFigViewMode mode, PSFigView* view) {
-    World* w = World::current();
-    const Font* font = w->font();
-    const Color* fg = w->foreground();
-    const Color* bg = w->background();
-    boolean idraw_font_metrics = w->property_is_on(IDRAW_FONT_METRICS);
+    WidgetKit& kit = *WidgetKit::instance();
+    const LayoutKit& layout = *LayoutKit::instance();
+    Style* s = kit.style();
+    const Font* font = kit.font();
+    const Color* fg = kit.foreground();
+    const Color* bg = kit.background();
+    boolean idraw_font_metrics = s->value_is_on(IDRAW_FONT_METRICS);
     if (_view != nil) {
         long count = _view->count();
         for (long i = 0; i < count; ++i) {
-            PSFigViewInfo& info = _view->item(i);
+            PSFigViewInfo& info = _view->item_ref(i);
             if (info._view == view) {
                 Glyph* g = (mode == PSDraft) ? info._draft : info._final;
                 if (g == nil) {
                     if (mode == PSDraft) {
                         char params[256];
                         strcpy(params, _parameters);
-                        Glyph* label = new TBBox(new Label(_creator, font, fg));
+                        Glyph* label = layout.vbox_first_aligned(
+			    new Label(_creator, font, fg)
+			);
                         char* l = strtok(params, ",");
                         while (l != nil) {
                             label->append(new Label(l, font, fg));
                             l = strtok(nil, ",");
                         }
-                        g = new Target(
+                        g = new DocTarget(
 			    new Border(
-				new Margin(
-				    new Center(label),
+				layout.margin(
+				    layout.center(label),
 				    0, fil, 0, 0, fil, 0, 0, fil, 0, 0, fil, 0
 				),
 				fg
-			    ),
-			    TargetPrimitiveHit
+			    )
                         );
                     } else {
                         FILE* file = fopen(_filename, "r");
@@ -297,16 +293,12 @@ Glyph* PSFigItem::graphic (PSFigViewMode mode, PSFigView* view) {
                             }
                             fclose(file);
                         }
-                        t.rotate(_rotate);
-                        t.scale(_hscale, _vscale);
-                        g = new Center(new TransformSetter(g, t));
+			t.rotate(_rotate);
+			t.scale(_hscale, _vscale);
+			g = layout.center(new TransformSetter(g, t));
                     }
-                    g = new FixedSpan(
-                        new FixedSpan(
-                            g, Dimension_X, _width
-                        ), Dimension_Y, _height
-                    );
-                    g->ref();
+		    g = layout.fixed_span(g, _width, _height);
+		    Resource::ref(g);
                     if (mode == PSDraft) {
                         info._draft = g;
                     } else {
@@ -335,14 +327,10 @@ void PSFigItem::detach (PSFigView* view) {
     if (_view != nil) {
         long count = _view->count();
         for (long i = 0; i < count; ++i) {
-            PSFigViewInfo& info = _view->item(i);
+            PSFigViewInfo& info = _view->item_ref(i);
             if (info._view == view) {
-                if (info._draft != nil) {
-                    info._draft->unref();
-                }
-                if (info._final != nil) {
-                    info._final->unref();
-                }
+		Resource::unref(info._draft);
+		Resource::unref(info._final);
                 _view->remove(i);
                 break;
             }
@@ -354,7 +342,7 @@ void PSFigItem::notify () {
     if (_view != nil) {
         long count = _view->count();
         for (long i = 0; i < count; ++i) {
-            PSFigViewInfo& info = _view->item(i);
+            PSFigViewInfo& info = _view->item_ref(i);
             info._view->update();
         }
     }

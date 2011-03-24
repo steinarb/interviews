@@ -30,14 +30,13 @@
 #include "Document.h"
 #include "DocViewer.h"
 
+#include <OS/list.h>
 #include <string.h>
 
 class RefViewInfo {
 public:
     RefView* _view;
 };
-
-#include "list.h"
 
 declareList(RefViewInfo_List,RefViewInfo)
 implementList(RefViewInfo_List,RefViewInfo)
@@ -62,7 +61,7 @@ RefItem::~RefItem () {
     }
     if (_view != nil) {
         while (_view->count() > 0) {
-            RefViewInfo& view = _view->item(0);
+            RefViewInfo& view = _view->item_ref(0);
             _view->remove(0);
         }
         delete _view;
@@ -105,7 +104,7 @@ void RefItem::label (const char*) {
             if (_view != nil) {
                 long count = _view->count();
                 for (long i = 0; i < count; ++i) {
-                    RefViewInfo& info = _view->item(i);
+                    RefViewInfo& info = _view->item_ref(i);
                     info._view->update();
                 }
             }
@@ -130,7 +129,7 @@ void RefItem::detach (RefView* view) {
     if (_view != nil) {
         long count = _view->count();
         for (long i = 0; i < count; ++i) {
-            RefViewInfo& info = _view->item(i);
+            RefViewInfo& info = _view->item_ref(i);
             if (info._view == view) {
                 _view->remove(i);
                 break;
@@ -143,7 +142,7 @@ void RefItem::notify () {
     if (_view != nil) {
         long count = _view->count();
         for (long i = 0; i < count; ++i) {
-            RefViewInfo& info = _view->item(i);
+            RefViewInfo& info = _view->item_ref(i);
             info._view->update();
         }
     }

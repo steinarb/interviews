@@ -22,7 +22,6 @@
 
 /*
  * ToolPanelControl - a PanelControl with a special shape.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibctrl.h,v 1.2 91/09/27 14:13:29 tang Exp $
  */
 
 #ifndef ibctrl_h

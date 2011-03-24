@@ -30,20 +30,33 @@
 #include <InterViews/window.h>
 #include <InterViews/handler.h>
 
-class Item;
 class Application;
-class Document;
-class Font;
+class CounterItem;
 class Color;
+class DocDeck;
+class DocKeymap;
+class DocMenubar;
+class Patch;
+class Document;
+class FloatItem;
+class Font;
+class LabelItem;
+class Item;
 class ItemView;
-class TextItem;
-class TabularItem;
+class Page;
+class PagenumberItem;
+class PagingView;
 class PSFigItem;
 class RefItem;
-class PagenumberItem;
-class CounterItem;
-class LabelItem;
-class FloatItem;
+class Telltale;
+class TextItem;
+class TabularItem;
+class ViewerColorInfo_List;
+class ViewerMenuInfo_List;
+class ViewerKeymapInfo_List;
+class ViewerPinnedInfo_List;
+class ViewerFloatInfo_List;
+class ViewerPageInfo_List;
 
 class DocumentViewer : public ApplicationWindow, public Handler {
 public:
@@ -75,7 +88,7 @@ public:
     virtual void page_to_view (long index);
     virtual void page_to (long);
 
-    virtual void event (Event&);
+    virtual boolean event(Event&);
 
     virtual boolean command (const char*);
 
@@ -90,6 +103,8 @@ public:
 
     virtual void menubar (const char* name);
     virtual void keymap (const char* name);
+    virtual void pin (const char* name);
+    virtual void unpin (const char* name);
 
     virtual long insert_flash();
     virtual void highlight_colors (
@@ -108,28 +123,30 @@ protected:
 
     long _insert_flash;
     const Font* _icon_font;
+    const Color* _page_bg;
     long _starting_page;
     long _current_page;
     boolean _reshaped;
 
-    class DocMenubar* _menubar;
-    class DocKeymap* _keymap;
+    DocMenubar* _menubar;
+    DocKeymap* _keymap;
 
-    class Patch* _top;
-    class Patch* _header_patch;
-    class Patch* _body_patch;
-    class Patch* _footer_patch;
-    class Patch* _page_patch;
-    class Telltale* _prev_page;
-    class Telltale* _next_page;
-    class PagingView* _view;
-    class Page* _page;
-    class Deck* _pages;
-    class ViewerColorInfo_List* _color_info;
-    class ViewerMenuInfo_List* _menu_info;
-    class ViewerKeymapInfo_List* _keymap_info;
-    class ViewerFloatInfo_List* _float_info;
-    class ViewerPageInfo_List* _page_info;
+    Patch* _top;
+    Patch* _header_patch;
+    Patch* _body_patch;
+    Patch* _footer_patch;
+    Patch* _page_patch;
+    Telltale* _prev_page;
+    Telltale* _next_page;
+    PagingView* _view;
+    Page* _page;
+    DocDeck* _pages;
+    ViewerColorInfo_List* _color_info;
+    ViewerMenuInfo_List* _menu_info;
+    ViewerKeymapInfo_List* _keymap_info;
+    ViewerPinnedInfo_List* _pinned_info;
+    ViewerFloatInfo_List* _float_info;
+    ViewerPageInfo_List* _page_info;
 };
 
 #endif

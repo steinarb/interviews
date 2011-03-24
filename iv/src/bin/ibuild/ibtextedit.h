@@ -20,6 +20,10 @@
  * WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+/*
+ *  TextEdit component declarations
+ */
+
 #ifndef ibtextedit_h
 #define ibtextedit_h
 

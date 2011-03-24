@@ -29,7 +29,6 @@
 #ifndef iv_glyph_h
 #define iv_glyph_h
 
-#include <InterViews/boolean.h>
 #include <InterViews/coord.h>
 #include <InterViews/geometry.h>
 #include <InterViews/resource.h>
@@ -39,12 +38,11 @@
 class Canvas;
 class Hit;
 class Printer;
-class World;
 
 typedef long GlyphIndex;
 typedef unsigned int GlyphBreakType;
 
-class Glyph : virtual public Resource {
+class Glyph : public Resource {
 public:
     enum { no_break, pre_break, in_break, post_break };
 
@@ -55,6 +53,9 @@ public:
     virtual void draw(Canvas*, const Allocation&) const;
     virtual void print(Printer*, const Allocation&) const;
     virtual void pick(Canvas*, const Allocation&, int depth, Hit&);
+    virtual void undraw();
+
+    virtual Glyph* clone() const;
     virtual Glyph* compose(GlyphBreakType);
 
     virtual void append(Glyph*);

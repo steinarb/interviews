@@ -43,6 +43,8 @@
 
 #include <stream.h>
 
+#include <IV-2_6/_enter.h>
+
 /*****************************************************************************/
 
 static const int DATACACHE_SIZE = 255;
@@ -184,7 +186,7 @@ void Command::First (Iterator&) { }
 void Command::Last (Iterator&) { }
 void Command::Next (Iterator&) { }
 void Command::Prev (Iterator&) { }
-boolean Command::Done (Iterator) { return true; }
+boolean Command::Done (Iterator&) { return true; }
 
 void Command::SetEditor (Editor* ed) { _editor = ed; }
 void Command::SetClipboard (Clipboard* cb) { _clipboard = cb; }

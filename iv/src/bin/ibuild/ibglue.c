@@ -22,7 +22,6 @@
 
 /*
  * Glue component definitions.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibglue.c,v 1.2 91/09/27 14:10:33 tang Exp $
  */
 
 #include "ibclasses.h"
@@ -37,6 +36,7 @@
 #include <Unidraw/Graphic/graphic.h>
 #include <Unidraw/Graphic/pspaint.h>
 #include <Unidraw/iterator.h>
+#include <Unidraw/Commands/colorcmd.h>
 #include <Unidraw/Tools/tool.h>
 #include <Unidraw/viewer.h>
 
@@ -92,6 +92,11 @@ void GlueComp::Interpret (Command* cmd) {
         g->SetBrush(br);
         Notify();
 
+    } else if (cmd->IsA(COLOR_CMD)) {
+        ColorCmd* colorcmd = (ColorCmd*) cmd;
+        if (colorcmd->GetFgColor() == nil) {
+            HVComp::Interpret(cmd);
+        }
     } else if (!cmd->IsA(BRUSH_CMD) && !cmd->IsA(FONT_CMD)) {
         HVComp::Interpret(cmd);
     }
@@ -105,6 +110,11 @@ void GlueComp::Uninterpret (Command* cmd) {
         g->SetBrush(br);
         Notify();
 
+    } else if (cmd->IsA(COLOR_CMD)) {
+        ColorCmd* colorcmd = (ColorCmd*) cmd;
+        if (colorcmd->GetFgColor() == nil) {
+            HVComp::Uninterpret(cmd);
+        }
     } else if (!cmd->IsA(BRUSH_CMD) && !cmd->IsA(FONT_CMD)) {
         HVComp::Uninterpret(cmd);
     }
@@ -199,7 +209,17 @@ HVComp* GlueView::InitComp (Coord x0, Coord y0, Coord x1, Coord y1) {
 
 ClassId GlueCode::GetClassId () { return GLUE_CODE; }
 boolean GlueCode::IsA(ClassId id) { return GLUE_CODE==id || CodeView::IsA(id);}
-GlueCode::GlueCode (GlueComp* subj) : CodeView(subj) { }
+
+GlueCode::GlueCode (GlueComp* subj) : CodeView(subj) {}
+
+void GlueCode::Update () {
+    CodeView::Update();
+    InteractorComp* subj = GetIntComp();
+    Graphic* gr = subj->GetGraphic();
+    gr->SetColors(nil, gr->GetBgColor());
+    gr->SetFont(nil);
+}
+
 GlueComp* GlueCode::GetGlueComp () { return (GlueComp*) GetSubject(); }
 
 boolean GlueCode::Definition (ostream& out) {
@@ -315,13 +335,14 @@ boolean GlueCode::CoreConstDecls(ostream& out) {
 boolean GlueCode::CoreConstInits(ostream& out) {
     InteractorComp* icomp = GetIntComp();
     SubclassNameVar* snamer = icomp->GetClassNameVar();
+    const char* subclass = snamer->GetName();
     const char* baseclass = snamer->GetBaseClass();
     char coreclass[CHARBUFSIZE];
     GetCoreClassName(coreclass);
 
     out << "(\n    const char* name, int nat, int shr, int str\n) : ";
     out << baseclass << "(name, nat, shr, str) {\n";
-    out << "    perspective = new Perspective;\n";
+    out << "    SetClassName(\"" << subclass << "\");\n";
     out << "}\n\n";
 
     out << "void " << coreclass << "::Resize () {\n";

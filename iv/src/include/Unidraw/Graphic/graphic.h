@@ -31,6 +31,8 @@
 #include <Unidraw/Graphic/geomobjs.h>
 #include <Unidraw/Graphic/pspaint.h>
 
+#include <IV-2_6/_enter.h>
+
 static const int UNDEF = -1;
 
 class Canvas;
@@ -339,5 +341,7 @@ inline void Graphic::concatGraphic (
 ) {
     g->concat(a, b, d);
 }
+
+#include <IV-2_6/_leave.h>
 
 #endif

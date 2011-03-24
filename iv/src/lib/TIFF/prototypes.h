@@ -1,8 +1,8 @@
-/* $Header: /usr/people/sam/tiff/libtiff/RCS/prototypes.h,v 1.4 91/07/16 16:30:46 sam Exp $ */
+/* $Header: /d/sam/tiff/libtiff/RCS/prototypes.h,v 1.8 92/02/18 18:20:08 sam Exp $ */
 
 /*
- * Copyright (c) 1991 Sam Leffler
- * Copyright (c) 1991 Silicon Graphics, Inc.
+ * Copyright (c) 1991, 1992 Sam Leffler
+ * Copyright (c) 1991, 1992 Silicon Graphics, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and 
  * its documentation for any purpose is hereby granted without fee, provided
@@ -32,6 +32,8 @@
 	f(t1 a1, t2 a2, t3 a3, t4 a4)
 #define	DECLARE5(f,t1,a1,t2,a2,t3,a3,t4,a4,t5,a5)\
 	f(t1 a1, t2 a2, t3 a3, t4 a4, t5 a5)
+#define	DECLARE6(f,t1,a1,t2,a2,t3,a3,t4,a4,t5,a5,t6,a6)\
+	f(t1 a1, t2 a2, t3 a3, t4 a4, t5 a5, t6 a6)
 #define	DECLARE1V(f,t1,a1)		f(t1 a1 ...)
 #define	DECLARE2V(f,t1,a1,t2,a2)	f(t1 a1, t2 a2, ...)
 #define	DECLARE3V(f,t1,a1,t2,a2,t3,a3)	f(t1 a1, t2 a2, t3 a3, ...)
@@ -43,10 +45,16 @@
 	f(a1, a2, a3, a4) t1 a1; t2 a2; t3 a3; t4 a4;
 #define	DECLARE5(f,t1,a1,t2,a2,t3,a3,t4,a4,t5,a5)\
 	f(a1, a2, a3, a4, a5) t1 a1; t2 a2; t3 a3; t4 a4; t5 a5;
+#define	DECLARE6(f,t1,a1,t2,a2,t3,a3,t4,a4,t5,a5,t6,a6)\
+	f(a1, a2, a3, a4, a5, a6) t1 a1; t2 a2; t3 a3; t4 a4; t5 a5; t6 a6;
+#if USE_VARARGS
 #define	DECLARE1V(f,t1,a1) \
 	f(a1, va_alist) t1 a1; va_dcl
 #define	DECLARE2V(f,t1,a1,t2,a2) \
 	f(a1, a2, va_alist) t1 a1; t2 a2; va_dcl
 #define	DECLARE3V(f,t1,a1,t2,a2,t3,a3) \
 	f(a1, a2, a3, va_alist) t1 a1; t2 a2; t3 a3; va_dcl
+#else
+"Help, I don't know how to handle this case: !USE_PROTOTYPES and !USE_VARARGS?"
+#endif
 #endif

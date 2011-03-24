@@ -19,6 +19,11 @@
 %macro{heading}{\medskip {\bf\Large #\hfil}\smallvspace}
 %macro{subheading}{\smallskip {\bf\large #\hfil}\linebreak}
 %macro{chapter}{\counter{chapter}{\bf\LARGE Chapter~\ref{chapter}\smallskip#\hfil}\medvspace}
-%macro{section}{\bigskip\counter{section}\bf\Large\ref{section}\hfill\parbox{-30pt}{#\hfil}\medvspace}
-%macro{subsection}{\medskip\counter{subsection}\bf\large\ref{subsection}\hfill\parbox{-35pt}{#\hfil}\smallvspace}
-%macro{code}{\float{figure}{\parbox{5.5in}{\\\hrule\smallvspace\quad\quad\parbox{5.0in}{#}\\\hrule}}}
+%macro{appendix}{\counter{chapter}{\bf\LARGE Appendix~\ref{chapter}\smallskip#\hfil}\medvspace}
+%macro{section}{\bigskip\counter{section}\bf\Large\ref{section}\hfill\parbox{-35}{#\hfil}\medvspace}
+%macro{subsection}{\medskip\counter{subsection}\bf\large\ref{subsection}\hfill\parbox{-40pt}{#\hfil}\smallvspace}
+%macro{code}{\float{figure}{\parbox{5.5in}{\\\hrule\smallvspace\quad\quad\font{Helvetica}\small\parbox{5.0in}{#}\\\hrule}}}
+%macro{verbatim}{\sf\align{left}\size{10pt}}
+%macro{boldface}{\bf #}
+%macro{emphasis}{\it #}
+%macro{term}{\it #}

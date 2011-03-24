@@ -26,8 +26,8 @@
  * Shadow - a drop shadowing Glyph
  */
 
-#ifndef ivlook_shadow_h
-#define ivlook_shadow_h
+#ifndef iv_shadow_h
+#define iv_shadow_h
 
 #include <InterViews/monoglyph.h>
 
@@ -35,15 +35,25 @@ class Color;
 
 class Shadow : public MonoGlyph {
 public:
-    Shadow(Glyph*, Coord x, Coord y, const Color*);
+    Shadow(Glyph*, Coord x, Coord y, const Color*, boolean single = false);
     virtual ~Shadow();
 
+    virtual void request(Requisition&) const;
     virtual void allocate(Canvas*, const Allocation&, Extension&);
     virtual void draw(Canvas*, const Allocation&) const;
+    virtual void print(Printer*, const Allocation&) const;
+    virtual void pick(Canvas*, const Allocation&, int depth, Hit&);
 private:
     Coord x_offset_;
     Coord y_offset_;
     const Color* color_;
+    boolean single_;
+
+    void compute_requirement(Requirement&, Coord offset) const;
+    void compute_allocation(Allocation&) const;
+    void compute_allotment(Allotment&, Coord offset) const;
+    void draw_shadow(Canvas*, const Allocation&) const;
+    void draw_body(Canvas*, const Allocation&) const;
 };
 
 #endif

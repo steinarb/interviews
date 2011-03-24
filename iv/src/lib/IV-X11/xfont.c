@@ -43,11 +43,11 @@
 
 /** class FontImpl **/
 
-declareList(FontList,const Font*);
-implementList(FontList,const Font*);
+declarePtrList(FontList,Font)
+implementPtrList(FontList,Font)
 
-declareList(FontRepList,FontRep*);
-implementList(FontRepList,FontRep*);
+declarePtrList(FontRepList,FontRep)
+implementPtrList(FontRepList,FontRep)
 
 inline unsigned long key_to_hash(UniqueString& s) { return s.hash(); }
 
@@ -56,8 +56,8 @@ struct KnownFonts {
     FontRepList fontreps;
 };
 
-declareTable(NameToKnownFonts,UniqueString,KnownFonts*);
-implementTable(NameToKnownFonts,UniqueString,KnownFonts*);
+declareTable(NameToKnownFonts,UniqueString,KnownFonts*)
+implementTable(NameToKnownFonts,UniqueString,KnownFonts*)
 
 class FontImpl {
 private:
@@ -83,7 +83,6 @@ private:
     static KnownFonts* known(KnownFonts*, const UniqueString&);
 
     UniqueString* name_;
-    NullTerminatedString* null_terminated_name_;
     float scale_;
     FontRepList replist_;
     KnownFonts* entry_;
@@ -95,7 +94,6 @@ NameToKnownFonts* FontImpl::fonts_;
 
 FontImpl::FontImpl(const String& s, float scale) {
     name_ = new UniqueString(s);
-    null_terminated_name_ = new NullTerminatedString(*name_);
     scale_ = scale;
     entry_ = nil;
 }
@@ -105,12 +103,11 @@ FontImpl::~FontImpl() {
 	Resource::unref(i.cur());
     }
     delete name_;
-    delete null_terminated_name_;
 }
 
 void FontImpl::remove(const Font* f) {
     if (entry_ != nil) {
-	for (ListItr(FontList) i(entry_->fonts); i.more(); i.next()) {
+	for (ListUpdater(FontList) i(entry_->fonts); i.more(); i.next()) {
 	    if (i.cur() == f) {
 		i.remove_cur();
 		break;
@@ -208,6 +205,7 @@ const Font* FontImpl::lookup(Display* d, const String& name, float scale) {
     k = known(k, uname);
     f = new_font(uname, scale, k, r);
     f->impl_->new_rep(k, r);
+    f->impl_->entry_ = k;
     return f;
 }
 
@@ -230,24 +228,26 @@ FontRep* FontImpl::create(Display* d, const String& name, float scale) {
     if (xf == nil) {
 	return nil;
     }
-    FontRep* f = new FontRep(d, xf, scale);
 
+    FontRep* f = new FontRep(d, xf, scale);
     unsigned long value;
-    const char* name;
-    if (XGetFontProperty(xf, XA_FULL_NAME, &value)) {
-	name = XGetAtomName(dpy, (Atom)value);
-    } else if (XGetFontProperty(xf, XA_FAMILY_NAME, &value)) {
-	name = XGetAtomName(dpy, (Atom)value);
+    if (XGetFontProperty(xf, XA_FULL_NAME, &value) ||
+	XGetFontProperty(xf, XA_FAMILY_NAME, &value)
+    ) {
+	char* fullname = XGetAtomName(dpy, (Atom)value);
+	f->name_ = new CopyString(fullname);
+	XFree(fullname);
     } else {
-	name = s.string();
+	f->name_ = new CopyString(s.string());
     }
-    f->name_ = new CopyString(name);
 
     if (XA_CHARSET_REGISTRY == 0) {
 	XA_CHARSET_REGISTRY = XInternAtom(dpy, "CHARSET_REGISTRY", False);
     }
     if (XGetFontProperty(xf, XA_CHARSET_REGISTRY, &value)) {
-	f->encoding_ = new CopyString(XGetAtomName(dpy, (Atom)value));
+	char* registry = XGetAtomName(dpy, (Atom)value);
+	f->encoding_ = new CopyString(registry);
+	XFree(registry);
     } else {
 	f->encoding_ = nil;
     }
@@ -264,7 +264,7 @@ FontRep* FontImpl::create(Display* d, const String& name, float scale) {
 const Font* FontImpl::new_font(
     const String& name, float scale, KnownFonts* k, FontRep* r
 ) {
-    const Font* f = new Font(name, scale);
+    Font* f = new Font(name, scale);
     f->impl_->attach(r);
     k->fonts.append(f);
     return f;
@@ -291,7 +291,7 @@ FontRep::FontRep(Display* d, XFontStruct* xf, float scale) {
 
 FontRep::~FontRep() {
     XFreeFont(display_->rep()->display_, font_);
-    for (ListItr(FontRepList) i(entry_->fontreps); i.more(); i.next()) {
+    for (ListUpdater(FontRepList) i(entry_->fontreps); i.more(); i.next()) {
 	if (i.cur() == this) {
 	    i.remove_cur();
 	    break;
@@ -316,8 +316,11 @@ Font::Font(FontImpl* i) {
 }
 
 Font::~Font() {
-    impl_->remove(this);
     delete impl_;
+}
+
+void Font::cleanup() {
+    impl_->remove(this);
 }
 
 const Font* Font::lookup(const String& name) {
@@ -345,7 +348,8 @@ FontRep* Font::rep(Display* d) const {
 }
 
 const char* Font::name() const {
-    return impl_->null_terminated_name_->string();
+    FontRep* f = impl_->default_rep();
+    return f->name_->string();
 }
 
 const char* Font::encoding() const {
@@ -357,122 +361,81 @@ Coord Font::size() const {
     return impl_->default_rep()->size_;
 }
 
-Coord Font::ascent() const {
+void Font::font_bbox(FontBoundingBox& b) const {
     FontRep* f = impl_->default_rep();
-    return f->display_->to_coord(f->font_->ascent) * f->scale_;
+    float scale = f->scale_;
+    XFontStruct* xf = f->font_;
+    Display* d = f->display_;
+    b.left_bearing_ = scale * d->to_coord(xf->max_bounds.lbearing);
+    b.right_bearing_ = scale * d->to_coord(xf->max_bounds.rbearing);
+    b.width_ = scale * d->to_coord(xf->max_bounds.width);
+    b.ascent_ = scale * d->to_coord(xf->ascent);
+    b.descent_ = scale * d->to_coord(xf->descent);
+    b.font_ascent_ = b.ascent_;
+    b.font_descent_ = b.descent_;
 }
 
-Coord Font::descent() const {
+void Font::char_bbox(long c, FontBoundingBox& b) const {
+    if (c < 0) {
+	b.left_bearing_ = 0;
+	b.right_bearing_ = 0;
+	b.width_ = 0;
+	b.ascent_ = 0;
+	b.descent_ = 0;
+	b.font_ascent_ = 0;
+	b.font_descent_ = 0;
+	return;
+    }
     FontRep* f = impl_->default_rep();
-    return f->display_->to_coord(f->font_->descent) * f->scale_;
-}
-
-static void make_char2b(XChar2b& xc2b, long c) {
+    float scale = f->scale_;
+    XFontStruct* xf = f->font_;
+    Display* d = f->display_;
+    XCharStruct xc;
+    XChar2b xc2b;
     xc2b.byte1 = (unsigned char)((c & 0xff00) >> 8);
     xc2b.byte2 = (unsigned char)(c & 0xff);
+    int dir, asc, des;
+    XTextExtents16(xf, &xc2b, 1, &dir, &asc, &des, &xc);
+    b.left_bearing_ = scale * d->to_coord(-xc.lbearing);
+    b.right_bearing_ = scale * d->to_coord(xc.rbearing);
+    b.width_ = width(c);
+    b.ascent_ = scale * d->to_coord(xc.ascent);
+    b.descent_ = scale * d->to_coord(xc.descent);
+    b.font_ascent_ = scale * d->to_coord(xf->ascent);
+    b.font_descent_ = scale * d->to_coord(xf->descent);
 }
 
-Coord Font::left_bearing(long c) const {
-    if (c >= 0) {
-        XCharStruct xc;
-        XChar2b xc2b;
-	make_char2b(xc2b, c);
-        int dir, asc, des;
-	FontRep* f = impl_->default_rep();
-        XTextExtents16(f->font_, &xc2b, 1, &dir, &asc, &des, &xc);
-        return f->display_->to_coord(-xc.lbearing) * f->scale_;
-    } else {
-        return 0;
-    }
-}
-
-Coord Font::right_bearing(long c) const {
-    if (c >= 0) {
-        XCharStruct xc;
-        XChar2b xc2b;
-	make_char2b(xc2b, c);
-        int dir, asc, des;
-	FontRep* f = impl_->default_rep();
-        XTextExtents16(f->font_, &xc2b, 1, &dir, &asc, &des, &xc);
-        return f->display_->to_coord(xc.rbearing) * f->scale_;
-    } else {
-        return 0;
-    }
-}
-
-Coord Font::descent(long c) const {
-    if (c >= 0) {
-        XCharStruct xc;
-        XChar2b xc2b;
-	make_char2b(xc2b, c);
-        int dir, asc, des;
-	FontRep* f = impl_->default_rep();
-        XTextExtents16(f->font_, &xc2b, 1, &dir, &asc, &des, &xc);
-        return f->display_->to_coord(xc.descent) * f->scale_;
-    } else {
-        return 0;
-    }
-}
-
-Coord Font::ascent(long c) const {
-    if (c >= 0) {
-        XCharStruct xc;
-        XChar2b xc2b;
-	make_char2b(xc2b, c);
-        int dir, asc, des;
-	FontRep* f = impl_->default_rep();
-        XTextExtents16(f->font_, &xc2b, 1, &dir, &asc, &des, &xc);
-        return f->display_->to_coord(xc.ascent) * f->scale_;
-    } else {
-        return 0;
-    }
+void Font::string_bbox(const char* s, int len, FontBoundingBox& b) const {
+    FontRep* f = impl_->default_rep();
+    float scale = f->scale_;
+    XFontStruct* xf = f->font_;
+    Display* d = f->display_;
+    XCharStruct c;
+    int dir, asc, des;
+    XTextExtents(xf, s, len, &dir, &asc, &des, &c);
+    b.left_bearing_ = scale * d->to_coord(-c.lbearing);
+    b.right_bearing_ = scale * d->to_coord(c.rbearing);
+    b.width_ = width(s, len);
+    b.ascent_ = scale * d->to_coord(c.ascent);
+    b.descent_ = scale * d->to_coord(c.descent);
+    b.font_ascent_ = scale * d->to_coord(xf->ascent);
+    b.font_descent_ = scale * d->to_coord(xf->descent);
 }
 
 Coord Font::width(long c) const {
     if (c < 0) {
 	return 0;
     }
+    FontRep* f = impl_->default_rep();
     XChar2b xc2b;
-    make_char2b(xc2b, c);
-    FontRep* f = impl_->default_rep();
-    return f->display_->to_coord(XTextWidth16(f->font_, &xc2b, 1)) * f->scale_;
-}
-
-Coord Font::left_bearing(const char* s, int len) const {
-    XCharStruct c;
-    int dir, asc, des;
-    FontRep* f = impl_->default_rep();
-    XTextExtents(f->font_, s, len, &dir, &asc, &des, &c);
-    return f->display_->to_coord(-c.lbearing) * f->scale_;
-}
-
-Coord Font::right_bearing(const char* s, int len) const {
-    XCharStruct c;
-    int dir, asc, des;
-    FontRep* f = impl_->default_rep();
-    XTextExtents(f->font_, s, len, &dir, &asc, &des, &c);
-    return f->display_->to_coord(c.rbearing) * f->scale_;
-}
-
-Coord Font::descent(const char* s, int len) const {
-    XCharStruct c;
-    int dir, asc, des;
-    FontRep* f = impl_->default_rep();
-    XTextExtents(f->font_, s, len, &dir, &asc, &des, &c);
-    return f->display_->to_coord(c.descent) * f->scale_;
-}
-
-Coord Font::ascent(const char* s, int len) const {
-    XCharStruct c;
-    int dir, asc, des;
-    FontRep* f = impl_->default_rep();
-    XTextExtents(f->font_, s, len, &dir, &asc, &des, &c);
-    return f->display_->to_coord(c.ascent) * f->scale_;
+    xc2b.byte1 = (unsigned char)((c & 0xff00) >> 8);
+    xc2b.byte2 = (unsigned char)(c & 0xff);
+    return f->scale_ * f->display_->to_coord(XTextWidth16(f->font_, &xc2b, 1));
 }
 
 Coord Font::width(const char* s, int len) const {
     FontRep* f = impl_->default_rep();
-    return f->display_->to_coord(XTextWidth(f->font_, s, len)) * f->scale_;
+    return f->scale_ * f->display_->to_coord(XTextWidth(f->font_, s, len));
 }
 
 int Font::index(const char* s, int len, float offset, boolean between) const {
@@ -510,11 +473,15 @@ int Font::index(const char* s, int len, float offset, boolean between) const {
 /* anachronisms */
 
 int Font::Baseline() const {
-    return impl_->default_rep()->display_->to_pixels(descent()) - 1;
+    FontBoundingBox b;
+    font_bbox(b);
+    return impl_->default_rep()->display_->to_pixels(b.descent()) - 1;
 }
 
 int Font::Height() const {
-    return impl_->default_rep()->display_->to_pixels(ascent() + descent());
+    FontBoundingBox b;
+    font_bbox(b);
+    return impl_->default_rep()->display_->to_pixels(b.ascent() + b.descent());
 }
 
 int Font::Width(const char* s) const {
@@ -545,8 +512,8 @@ boolean Font::FixedWidth() const {
 
 /** class FontFamily **/
 
-declareList(FontFamilyRepList,FontFamilyRep*);
-implementList(FontFamilyRepList,FontFamilyRep*);
+declarePtrList(FontFamilyRepList,FontFamilyRep)
+implementPtrList(FontFamilyRepList,FontFamilyRep)
 
 class FontFamilyImpl {
 private:
@@ -635,7 +602,6 @@ FontFamily::FontFamily(const char* familyname) {
 FontFamily::~FontFamily() {
     FontFamilyRepList& list = impl_->replist;
     for (long i = 0; i < list.count(); i++) {
-	FontFamilyRep* f = list.item(i);
 	destroy(list.item(i));
     }
     delete impl_->name;

@@ -37,6 +37,8 @@
 
 #include <InterViews/transformer.h>
 
+#include <IV-2_6/_enter.h>
+
 #include <stdio.h>
 #include <stream.h>
 #include <string.h>
@@ -535,7 +537,7 @@ void PostScriptView::FillProc (ostream& out) {
     out << "eofill\n";
     out << "fgred fggreen fgblue setrgbcolor\n";
     out << "w 0 gt h 0 gt and {\n";
-    out << "l b translate w h scale\n";
+    out << "l w add b translate w neg h scale\n";
     out << "w h true [w 0 0 h neg 0 h] { patternproc } imagemask\n";
     out << "} if\n";
     out << "} ifelse\n";
@@ -774,12 +776,9 @@ void PostScriptView::FgColor (ostream& out) {
 	if (strcmp(name, "white") == 0 || strcmp(name, "White") == 0) {
 	    out << "1 1 1 SetCFg\n";
 	} else {
-	    int r, g, b;
-	    fgcolor->Intensities(r, g, b);
-	    float fr = float(r) / 0xffff;
-	    float fg = float(g) / 0xffff;
-	    float fb = float(b) / 0xffff; 
-	    out << fr << " " << fg << " " << fb << " SetCFg\n";
+	    ColorIntensity r, g, b;
+	    fgcolor->GetIntensities(r, g, b);
+	    out << r << " " << g << " " << b << " SetCFg\n";
 	}
     }
 }
@@ -797,12 +796,9 @@ void PostScriptView::BgColor (ostream& out) {
 	if (strcmp(name, "white") == 0 || strcmp(name, "White") == 0) {
 	    out << "1 1 1 SetCBg\n";
 	} else {
-	    int r, g, b;
-	    bgcolor->Intensities(r, g, b);
-	    float fr = float(r) / 0xffff;
-	    float fg = float(g) / 0xffff;
-	    float fb = float(b) / 0xffff; 
-	    out << fr << " " << fg << " " << fb << " SetCBg\n";
+	    ColorIntensity r, g, b;
+	    bgcolor->GetIntensities(r, g, b);
+	    out << r << " " << g << " " << b << " SetCBg\n";
 	}
     }
 }

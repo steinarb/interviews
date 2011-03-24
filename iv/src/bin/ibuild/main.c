@@ -22,9 +22,9 @@
 
 /*
  * User interface builder main program.
- * $Header: main.c,v 1.3 91/09/27 15:29:01 vlis Exp $
  */
 
+#include "ibcatalog.h"
 #include "ibcreator.h"
 #include "ibed.h"
 
@@ -39,27 +39,50 @@ static PropertyData properties[] = {
     { "*domain",	"user interface" },
     { "*history",	"20" },
     { "*initialborder",  "2" },
+    { "*initialbrush",  "1" },
     { "*initialfgcolor","1" },
     { "*initialbgcolor","10" },
     { "*initialfont",   "4" },
-    { "*initialpattern","1" },
-    { "*pattern1",      "1.0" },
-    { "*font1", "-*-courier-medium-r-normal-*-8-*-*-*-*-*-*-* Courier 8" },
-    { "*font2", "-*-courier-medium-r-normal-*-10-*-*-*-*-*-*-* Courier 10" },
-    { "*font3", "-*-courier-bold-r-normal-*-12-*-*-*-*-*-*-* Courier-Bold 12" },
-    { "*font4", "-*-helvetica-medium-r-normal-*-12-*-*-*-*-*-*-* Helvetica 12" },
-    { "*font5", "-*-helvetica-medium-r-normal-*-14-*-*-*-*-*-*-* Helvetica 14" },
-    { "*font6", "-*-helvetica-bold-r-normal-*-14-*-*-*-*-*-*-* Helvetica-Bold 14" },
-    { "*font7", "-*-helvetica-medium-o-normal-*-14-*-*-*-*-*-*-* Helvetica-Oblique 14" },
-    { "*font8",	"-*-times-medium-r-normal-*-12-*-*-*-*-*-*-*  Times-Roman 12" },
-    { "*font9", "-*-times-medium-r-normal-*-14-*-*-*-*-*-*-* Times-Roman 14" },
-    { "*font10", "-*-times-bold-r-normal-*-14-*-*-*-*-*-*-*  Times-Bold 14" },
-    { "*font11", "-*-times-medium-i-normal-*-14-*-*-*-*-*-*-* Times-Italic 14" },
+    { "*initialpattern","3" },
+    { "*font1",         "*-courier-medium-r-*-80-*    Courier 8" },
+    { "*font2",         "*-courier-medium-r-*-100-*   Courier 10" },
+    { "*font3",         "*-courier-bold-r-*-120-*     Courier-Bold 12" },
+    { "*font4",         "*-helvetica-medium-r-*-120-* Helvetica 12" },
+    { "*font5",         "*-helvetica-medium-r-*-140-* Helvetica 14" },
+    { "*font6",         "*-helvetica-bold-r-*-140-*   Helvetica-Bold 14" },
+    { "*font7",         "*-helvetica-medium-o-*-140-* Helvetica-Oblique 14"},
+    { "*font8",         "*-times-medium-r-*-120-*     Times-Roman 12" },
+    { "*font9",         "*-times-medium-r-*-140-*     Times-Roman 14" },
+    { "*font10",        "*-times-bold-r-*-140-*       Times-Bold 14" },
+    { "*font11",        "*-times-medium-i-*-140-*     Times-Italic 14" },
     { "*border1",        "ffff 1" },
     { "*border2",        "ffff 2" },
     { "*border3",        "ffff 3" },
     { "*border4",        "ffff 4" },
     { "*border5",        "ffff 5" },
+    { "*brush1",	"none" },
+    { "*brush2",	"ffff 0" },
+    { "*brush3",	"ffff 1" },
+    { "*brush4",	"ffff 2" },
+    { "*brush5",	"ffff 3" },
+    { "*brush6",	"fff0 0" },
+    { "*brush7",	"fff0 1" },
+    { "*brush8",	"fff0 2" },
+    { "*brush9",	"fff0 3" },
+    { "*pattern1",	"none" },
+    { "*pattern2",	"0.0" },
+    { "*pattern3",	"1.0" },
+    { "*pattern4",	"0.75" },
+    { "*pattern5",	"0.5" },
+    { "*pattern6",	"0.25" },
+    { "*pattern7",	"1248" },
+    { "*pattern8",	"8421" },
+    { "*pattern9",	"f000" },
+    { "*pattern10",	"8888" },
+    { "*pattern11",	"f888" },
+    { "*pattern12",	"8525" },
+    { "*pattern13",	"cc33" },
+    { "*pattern14",	"7bed" },
     { "*fgcolor1",      "Black 0 0 0" },
     { "*fgcolor2",      "Brown 42240 10752 10752" },
     { "*fgcolor3",      "Red 65535 0 0" },
@@ -97,7 +120,9 @@ int main (int argc, char** argv) {
     IBCreator creator;
     int exit_status = 0;
     Unidraw *unidraw = new Unidraw(
-        new Catalog("ibuild", &creator), argc, argv, options, properties
+        new IBuildCatalog(
+            "ibuild", &creator, 1.1
+        ), argc, argv, options, properties
     );
 
     if (argc > 2) {

@@ -29,7 +29,6 @@
 #ifndef iv_session_h
 #define iv_session_h
 
-#include <InterViews/boolean.h>
 #include <InterViews/coord.h>
 
 #include <InterViews/_enter.h>

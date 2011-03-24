@@ -27,6 +27,8 @@
 #include "classbuffer.h"
 #include "iclass.h"
 
+#include <InterViews/session.h>
+#include <InterViews/style.h>
 #include <InterViews/window.h>
 #include <InterViews/world.h>
 
@@ -76,8 +78,10 @@ int main (int argc, char** argv) {
 
     IClass* iclass = new IClass(buffer);
     ApplicationWindow* window = new ApplicationWindow(iclass);
-    window->name("InterViews class browser");
-    window->icon_name("iclass");
+    Style* s = new Style(Session::instance()->style());
+    s->attribute("name", "InterViews class browser");
+    s->attribute("iconName", "iclass");
+    window->style(s);
     window->map();
     iclass->Run();
     return 0;

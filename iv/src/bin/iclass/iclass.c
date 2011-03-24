@@ -50,11 +50,11 @@
 #include <InterViews/streditor.h>
 #include <InterViews/textbuffer.h>
 #include <InterViews/world.h>
+#include <OS/types.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 
 /*****************************************************************************/
@@ -390,7 +390,7 @@ void IClass::UpdateClassesBrowser () {
     if (_completions != nil) {
         delete _completions;
     }
-    _completions = new char*[count];
+    _completions = new const char*[count];
     for (i = 0; i < count; ++i) {
         _completions[i] = _cbuf->Class(i);
     }

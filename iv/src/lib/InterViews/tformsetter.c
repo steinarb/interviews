@@ -26,149 +26,153 @@
  * TransformSetter
  */
 
-#include <InterViews/boolean.h>
 #include <InterViews/canvas.h>
 #include <InterViews/hit.h>
 #include <InterViews/printer.h>
 #include <InterViews/tformsetter.h>
+#include <OS/math.h>
+
+TransformSetter::TransformSetter(Glyph* g) : MonoGlyph(g) { }
 
 TransformSetter::TransformSetter(
-    Glyph* body, const Transformer& tx
-) : MonoGlyph(body) {
+    Glyph* g, const Transformer& tx
+) : MonoGlyph(g) {
     transformer_ = tx;
 }
 
 TransformSetter::~TransformSetter() { }
 
-static void tx_box(
-    const Transformer& tx, Coord& l, Coord& b, Coord& r, Coord& t
-) {
-    Coord x[4], y[4];
-    tx.transform(l, b, x[0], y[0]);
-    tx.transform(l, t, x[1], y[1]);
-    tx.transform(r, t, x[2], y[2]);
-    tx.transform(r, b, x[3], y[3]);
-    l = x[0]; r = x[0];
-    b = y[0]; t = y[0];
-    for (int i = 1; i < 4; i++) {
-	if (x[i] < l) {
-	    l = x[i];
-	} else if (x[i] > r) {
-	    r = x[i];
-	}
-	if (y[i] < b) {
-	    b = y[i];
-	} else if (y[i] > t) {
-	    t = y[i];
-	}
+const Transformer& TransformSetter::transformer() const {
+    return transformer_;
+}
+
+Transformer& TransformSetter::transformer() {
+    return transformer_;
+}
+
+void TransformSetter::transformer(const Transformer& tx) {
+    transformer_ = tx;
+}
+
+static void compute_req(Requirement& r, Coord first, Coord last) {
+    Coord natural = last - first;
+    r.natural(natural);
+    r.stretch(0.0);
+    r.shrink(0.0);
+    if (Math::equal(natural, float(0), float(1e-3))) {
+	r.alignment(0.0);
+    } else {
+	r.alignment(-first / natural);
     }
 }
 
-static void inv_tx_box(
-    const Transformer& tx, Coord& l, Coord& b, Coord& r, Coord& t
-) {
-    Coord x[4], y[4];
-    tx.inverse_transform(l, b, x[0], y[0]);
-    tx.inverse_transform(l, t, x[1], y[1]);
-    tx.inverse_transform(r, t, x[2], y[2]);
-    tx.inverse_transform(r, b, x[3], y[3]);
-    l = x[0]; r = x[0];
-    b = y[0]; t = y[0];
-    for (int i = 1; i < 4; i++) {
-	if (x[i] < l) {
-	    l = x[i];
-	} else if (x[i] > r) {
-	    r = x[i];
-	}
-	if (y[i] < b) {
-	    b = y[i];
-	} else if (y[i] > t) {
-	    t = y[i];
-	}
-    }
-}
-
-void TransformSetter::request(Requisition& requisition) const {
-    Requisition req;
+void TransformSetter::request(Requisition& req) const {
+    TransformSetter* t = (TransformSetter*)this;
     MonoGlyph::request(req);
-    Requirement& x = req.requirement(Dimension_X);
-    Requirement& y = req.requirement(Dimension_Y);
-    Coord l = -(x.natural() * x.alignment());
-    Coord b = -(y.natural() * y.alignment());
-    Coord r = x.natural() * (1 - x.alignment());
-    Coord t = y.natural() * (1 - y.alignment());
-    tx_box(transformer_, l, b, r, t);
-    Requirement rx(-l, -l, -l, r, r, r);
-    Requirement ry(-b, -b, -b, t, t, t);
-    requisition.require(Dimension_X, rx);
-    requisition.require(Dimension_Y, ry);
+    Allocation& a = t->natural_allocation_;
+
+    Requirement& rx = req.x_requirement();
+    Allotment& ax = a.x_allotment();
+    ax.origin(0.0);
+    ax.span(rx.natural());
+    ax.alignment(rx.alignment());
+
+    Requirement& ry = req.y_requirement();
+    Allotment& ay = a.y_allotment();
+    ay.origin(0.0);
+    ay.span(ry.natural());
+    ay.alignment(ry.alignment());
+
+    const Transformer& tx = transformer_;
+    Coord left = ax.begin(), bottom = ay.begin();
+    Coord right = ax.end(), top = ay.end();
+    Coord x1, y1, x2, y2, x3, y3, x4, y4;
+    tx.transform(left, bottom, x1, y1);
+    tx.transform(left, top, x2, y2);
+    tx.transform(right, top, x3, y3);
+    tx.transform(right, bottom, x4, y4);
+    left = Math::min(x1, x2, x3, x4);
+    bottom = Math::min(y1, y2, y3, y4);
+    right = Math::max(x1, x2, x3, x4);
+    top = Math::max(y1, y2, y3, y4);
+
+    compute_req(rx, left, right);
+    compute_req(ry, bottom, top);
 }
 
 void TransformSetter::allocate(
     Canvas* c, const Allocation& a, Extension& ext
 ) {
-    Coord left = a.left();
-    Coord right = a.right();
-    Coord top = a.top();
-    Coord bottom = a.bottom();
-    inv_tx_box(transformer_, left, bottom, right, top);
-
-    Coord x = 0;
-    Coord y = 0;
-    transformer_.transform(x, y);
-    x += a.x();
-    y += a.y();
-    transformer_.inverse_transform(x, y);
-    Coord xspan = right - left;
-    Coord yspan = top - bottom;
-    float xalign = (xspan == 0) ? 0 : float(x - left)/float(xspan);
-    float yalign = (yspan == 0) ? 0 : float(y - bottom)/float(yspan);
-
-    Allotment ax(x, xspan, xalign);
-    Allotment ay(y, yspan, yalign);
-    allocation_.allot(Dimension_X, ax);
-    allocation_.allot(Dimension_Y, ay);
-
-    Extension e;
-    e.xy_extents(fil, -fil, fil, -fil);
-
+    /*
+     * Shouldn't need to test for nil canvas, but some old
+     * applications (notably doc) pass nil as a canvas
+     * when doing certain kinds of allocation.
+     */
     if (c != nil) {
-	c->push_transform();
-	c->transform(transformer_);
-    }
-    MonoGlyph::allocate(c, allocation_, e);
-    if (c != nil) {
+	push_transform(c, a, natural_allocation_);
+	MonoGlyph::allocate(c, natural_allocation_, ext);
 	c->pop_transform();
     }
-
-    Coord ll = e.left() - x;
-    Coord bb = e.bottom() - y;
-    Coord rr = e.right() - x;
-    Coord tt = e.top() - y;
-    tx_box(transformer_, ll, bb, rr, tt);
-    ext.xy_extents(a.x() + ll, a.x() + rr, a.y() + bb, a.y() + tt);
 }
 
-void TransformSetter::draw(Canvas* c, const Allocation&) const {
-    c->push_transform();
-    c->transform(transformer_);
-    MonoGlyph::draw(c, allocation_);
+void TransformSetter::draw(Canvas* c, const Allocation& a) const {
+    push_transform(c, a, natural_allocation_);
+    MonoGlyph::draw(c, natural_allocation_);
     c->pop_transform();
 }
 
-void TransformSetter::print(Printer* p, const Allocation&) const {
-    p->push_transform();
-    p->transform(transformer_);
-    MonoGlyph::print(p, allocation_);
+void TransformSetter::print(Printer* p, const Allocation& a) const {
+    push_transform(p, a, natural_allocation_);
+    MonoGlyph::print(p, natural_allocation_);
     p->pop_transform();
 }
 
-void TransformSetter::pick(Canvas* c, const Allocation&, int depth, Hit& h) {
-    h.push_transform();
-    h.transform(transformer_);
+void TransformSetter::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
+    Transformer t(transformer_);
+    transform(t, a, natural_allocation_);
     c->push_transform();
-    c->transform(transformer_);
-    MonoGlyph::pick(c, allocation_, depth, h);
+    c->transform(t);
+    h.push_transform();
+    h.transform(t);
+    MonoGlyph::pick(c, natural_allocation_, depth, h);
     c->pop_transform();
     h.pop_transform();
+}
+
+void TransformSetter::push_transform(
+    Canvas* c, const Allocation& a, const Allocation& natural
+) const {
+    Transformer t(transformer_);
+    transform(t, a, natural);
+    c->push_transform();
+    c->transform(t);
+}
+
+void TransformSetter::transform(
+    Transformer& t, const Allocation& a, const Allocation&
+) const {
+    t.translate(a.x(), a.y());
+}
+
+/* class TransformFitter */
+
+TransformFitter::TransformFitter(Glyph* g) : TransformSetter(g) { }
+TransformFitter::~TransformFitter() { }
+
+void TransformFitter::transform(
+    Transformer& t, const Allocation& a, const Allocation& natural
+) const {
+    const Allotment& natural_x = natural.x_allotment();
+    const Allotment& natural_y = natural.y_allotment();
+    if (!Math::equal(natural_x.span(), Coord(0), float(1e-2)) &&
+	!Math::equal(natural_y.span(), Coord(0), float(1e-2))
+    ) {
+	const Allotment& ax = a.x_allotment();
+	const Allotment& ay = a.y_allotment();
+	t.scale(
+	    a.x_allotment().span() / natural_x.span(),
+	    a.y_allotment().span() / natural_y.span()
+	);
+    }
+    t.translate(a.x(), a.y());
 }

@@ -34,8 +34,8 @@
 
 inline unsigned long key_to_hash(String& s) { return s.hash(); }
 
-declareTable(UniqueStringTable,String,String);
-implementTable(UniqueStringTable,String,String);
+declareTable(UniqueStringTable,String,String)
+implementTable(UniqueStringTable,String,String)
 
 static const unsigned strpoolsize = 800;
 
@@ -62,6 +62,7 @@ UniqueString::UniqueString(const char* s, int n) : String() {
 }
 UniqueString::UniqueString(const String& s) : String() { init(s); }
 UniqueString::UniqueString(const UniqueString& s) : String(s) { }
+UniqueString::~UniqueString() { }
 
 void UniqueString::init(const String& s) {
     if (table_ == nil) {
@@ -72,7 +73,7 @@ void UniqueString::init(const String& s) {
             pool_ = new UniqueStringPool;
         }
         int n = s.length();
-        set(pool_->add(s.string(), n), n);
+        set_value(pool_->add(s.string(), n), n);
         table_->insert(*this, *this);
     }
 }
@@ -103,7 +104,7 @@ UniqueStringPool::UniqueStringPool(unsigned poolsize) {
     size = poolsize;
     cur = 0;
     prev = nil;
-};
+}
 
 /*
  * Tail-recursive deletion to walk the list back to the head

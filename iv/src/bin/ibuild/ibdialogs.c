@@ -22,7 +22,6 @@
 
 /*
  * Implementation of user interface builder-specific dialog boxes.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibdialogs.c,v 1.2 91/09/27 14:08:00 tang Exp $
  */
 
 #include "ibclasses.h"
@@ -59,6 +58,7 @@
 #include <InterViews/sensor.h>
 #include <InterViews/streditor.h>
 #include <InterViews/tray.h>
+#include <OS/types.h>
 
 #include <osfcn.h>
 #include <stdio.h>
@@ -72,8 +72,18 @@
 /*****************************************************************************/
 
 #if !defined(_PID_T_) && !defined(__sys_stdtypes_h) && !defined(hpux)
+#if defined(sun) && OSMajorVersion >= 5 && !defined(_SYS_TYPES_H)
+#ifndef sco
 #define _PID_T_
 typedef int     pid_t;                  /* POSIX compliance    */
+#endif
+#endif
+#endif
+
+#ifdef __DECCXX
+extern "C" {
+    int killpg(int, int);
+}
 #endif
 
 #if SYSV
@@ -82,9 +92,19 @@ static inline void kill_process_group(pid_t p, int sig) { kill(-p, sig); }
 static inline void kill_process_group(pid_t p, int sig) { killpg(p, sig); }
 #endif
 
+#if !defined(sun) || OSMajorVersion < 5
+#ifndef sco
 extern "C" {
+#ifdef ultrix
+    pid_t waitpid(pid_t, union wait*, int);
+#else
     pid_t waitpid(pid_t, int*, int);
+#endif
 }
+#endif
+#endif
+
+/*****************************************************************************/
 
 static void Warning (Editor* ed, const char* warning) {
     AcknowledgeDialog dialog("Error!", warning);
@@ -93,6 +113,251 @@ static void Warning (Editor* ed, const char* warning) {
     ed->RemoveDialog(&dialog);
 }
 
+/*****************************************************************************/
+
+MoveDialog::MoveDialog () : BasicDialog(
+    new ButtonState, "", "Enter X and Y movement:"
+) {
+    _medit = new MatchEditor(state, "9999999999999999999");
+    _medit->Message("");
+    _medit->Match("%f %f");
+
+    _units = new ButtonState('p');
+    input = new Sensor;
+    Ref(input);
+    input->Catch(KeyEvent);
+
+    Insert(Interior());
+    SelectMessage();
+}
+
+void MoveDialog::Handle (Event& e) { _medit->Handle(e); }
+
+boolean MoveDialog::Accept () {
+    Event e;
+    int v = 0;
+
+    state->SetValue(0);
+    _medit->Edit();
+    state->GetValue(v);
+
+    while (v == 0) {
+	Read(e);
+	Forward(e);
+	state->GetValue((void*&) v);
+    }
+
+    return v == '\r';
+}
+
+void MoveDialog::SelectMessage () {
+    _medit->Select(0, strlen(_medit->Text()));
+}
+
+Interactor* MoveDialog::Interior () {
+    const int space = round(.5*cm);
+
+    VBox* titleblock = new VBox(
+        new HBox(_title, new HGlue),
+        new HBox(_subtitle, new HGlue)
+    );
+
+    HBox* rbuttons = new HBox(
+        new RadioButton("Pixels", _units, 'p'),
+        new HGlue(space, 0),
+        new RadioButton("Points", _units, 'o'),
+        new HGlue(space, 0),
+        new RadioButton("Centimeters", _units, 'c'),
+        new HGlue(space, 0),
+        new RadioButton("Inches", _units, 'i')
+    );
+    rbuttons->Insert(new HGlue);
+
+    return new MarginFrame(
+        new VBox(
+            titleblock,
+            new VGlue(space),
+            new Frame(new MarginFrame(_medit, 2)),
+            new VGlue(space/2, 0),
+            rbuttons,
+            new VGlue(space),
+            new HBox(
+                new HGlue,
+                new PushButton("Cancel", state, '\007'),
+		new HGlue(space, 0),
+                new PushButton("  OK  ", state, '\r')
+            )
+        ), space, space/2, 0
+    );
+}
+    
+void MoveDialog::GetValues (float& x, float& y) {
+    char* movement = nil;
+    movement = strnew(_medit->Text());
+
+    if (sscanf(movement,"%f %f",&x, &y) != 2) {
+	x = y = 0.0;
+
+    } else {
+	int unit;
+	_units->GetValue(unit);
+
+	switch (unit) {
+	     case 'i':   x *= inches; y *= inches; break;
+	     case 'o':   x *= points; y *= points; break;
+	     case 'c':   x *= cm; y *= cm; break;
+	}
+    }
+    delete movement;
+}
+
+/*****************************************************************************/
+
+ScaleDialog::ScaleDialog () : BasicDialog(
+    new ButtonState, "", "Enter X and Y scaling:"
+) {
+    _medit = new MatchEditor(state, "9999999999999999999");
+    _medit->Message("");
+    _medit->Match("%f %f");
+
+    input = new Sensor;
+    Ref(input);
+    input->Catch(KeyEvent);
+
+    Insert(Interior());
+    SelectMessage();
+}
+
+void ScaleDialog::Handle (Event& e) { _medit->Handle(e); }
+
+boolean ScaleDialog::Accept () {
+    Event e;
+    int v = 0;
+
+    state->SetValue(0);
+    _medit->Edit();
+    state->GetValue(v);
+
+    while (v == 0) {
+	Read(e);
+	Forward(e);
+	state->GetValue((void*&) v);
+    }
+
+    return v == '\r';
+}
+
+void ScaleDialog::SelectMessage () {
+    _medit->Select(0, strlen(_medit->Text()));
+}
+
+Interactor* ScaleDialog::Interior () {
+    const int space = round(.5*cm);
+
+    VBox* titleblock = new VBox(
+        new HBox(_title, new HGlue),
+        new HBox(_subtitle, new HGlue)
+    );
+
+    return new MarginFrame(
+        new VBox(
+            titleblock,
+            new VGlue(space),
+            new Frame(new MarginFrame(_medit, 2)),
+            new VGlue(space),
+            new HBox(
+                new HGlue,
+                new PushButton("Cancel", state, '\007'),
+		new HGlue(space, 0),
+                new PushButton("  OK  ", state, '\r')
+            )
+        ), space, space/2, 0
+    );
+}
+    
+void ScaleDialog::GetValues (float& x, float& y) {
+    char* movement = nil;
+    movement = strnew(_medit->Text());
+
+    if (sscanf(movement,"%f %f",&x, &y) != 2) {
+	x = y = 1.0;
+    }
+    delete movement;
+}
+
+/*****************************************************************************/
+
+RotateDialog::RotateDialog () : BasicDialog(
+    new ButtonState, "", "Enter rotation in degrees:"
+) {
+    _medit = new MatchEditor(state, "9999999999999999999");
+    _medit->Message("");
+    _medit->Match("%f");
+
+    input = new Sensor;
+    Ref(input);
+    input->Catch(KeyEvent);
+
+    Insert(Interior());
+    SelectMessage();
+}
+
+void RotateDialog::Handle (Event& e) { _medit->Handle(e); }
+
+boolean RotateDialog::Accept () {
+    Event e;
+    int v = 0;
+
+    state->SetValue(0);
+    _medit->Edit();
+    state->GetValue(v);
+
+    while (v == 0) {
+	Read(e);
+	Forward(e);
+	state->GetValue((void*&) v);
+    }
+
+    return v == '\r';
+}
+
+void RotateDialog::SelectMessage () {
+    _medit->Select(0, strlen(_medit->Text()));
+}
+
+Interactor* RotateDialog::Interior () {
+    const int space = round(.5*cm);
+
+    VBox* titleblock = new VBox(
+        new HBox(_title, new HGlue),
+        new HBox(_subtitle, new HGlue)
+    );
+
+    return new MarginFrame(
+        new VBox(
+            titleblock,
+            new VGlue(space),
+            new Frame(new MarginFrame(_medit, 2)),
+            new VGlue(space),
+            new HBox(
+                new HGlue,
+                new PushButton("Cancel", state, '\007'),
+		new HGlue(space, 0),
+                new PushButton("  OK  ", state, '\r')
+            )
+        ), space, space/2, 0
+    );
+}
+    
+void RotateDialog::GetValue (float& angle) {
+    char* movement = nil;
+    movement = strnew(_medit->Text());
+
+    if (sscanf(movement,"%f",&angle) != 1) {
+	angle = 0.0;
+    }
+    delete movement;
+}
 /*****************************************************************************/
 
 InfoDialog::InfoDialog (const char* info) : BasicDialog(new ButtonState) {
@@ -320,7 +585,7 @@ ExeDialog::ExeDialog (const char* dir) : FileChooser(
     new ButtonState, dir, 10, 24, Center
 ) {
     FileBrowser* eb = new FileBrowser(state, dir, 10, 24);
-    eb->SetModeFilter(S_IXUSR);
+    eb->SetModeFilter(S_IEXEC);
     eb->Update();
     StringChooser::Init(new StringEditor(state, eb->GetDirectory()), eb);
 
@@ -370,28 +635,30 @@ BSDialog::BSDialog (
     Ref(input);
     SetTitle("ButtonState Information");
     _bsvarview = bsvarview;
-    Insert(Interior());
+    if (_bsvarview != nil) {
+        Insert(Interior());
+    }
 }
 
 boolean BSDialog::Accept () {
     Event e;
     int v = 0;
-
+    
     state->SetValue(0);
-
+    
     while (v == 0) {
 	Read(e);
         Forward(e);
 	state->GetValue(v);
-            
+        
     }
-    return v == '\r';
+    return v == 1 || v == '\r';
 }
 
 void BSDialog::Handle (Event& e) {
     if (e.eventType == KeyEvent && e.len != 0) {
         char c = e.keystring[0];
-
+        
         if (c == '\r' || c == '\007') {
             state->SetValue(c);
         }
@@ -400,11 +667,10 @@ void BSDialog::Handle (Event& e) {
 
 boolean BSDialog::ChangeBS () {
     boolean success = true;
-    ButtonStateVar* bsvar = (ButtonStateVar*) _bsvarview->GetSubject();
-    ButtonSharedName* subject = bsvar->GetButtonSharedName();
+    ButtonSharedName* subject = _bsvarview->GetBSName();
     MatchEditor* med = _bsvarview->GetBSEditor();
     boolean namechange = (strcmp(med->Text(), _bs->Text()) != 0);
-
+    
     if (namechange) {
         GetFirewallCmd firewallCmd(_bsvarview->GetGraphicComp());
         firewallCmd.Execute();
@@ -414,10 +680,10 @@ boolean BSDialog::ChangeBS () {
         
         for (UList* i = ulist->First(); i != ulist->End(); i = i->Next()) {
             StateVar* state = (StateVar*) (*i)();
-            if (state != subject) {
+            if (state != subject && !state->IsA(INSTANCENAME_VAR)) {
                 char buf[CHARBUFSIZE];
                 sprintf(
-                    buf, "ButtonState name %s has already been used!!",
+                    buf, "ButtonState name %s has already been used",
                     _bs->Text()
                 );
                 success = false;
@@ -425,9 +691,8 @@ boolean BSDialog::ChangeBS () {
                 break;
             }
         }
-
     }
-
+    
     if (success) {
         const char* func = _funcname->Text();
         GetFirewallCmd firewallCmd(_bsvarview->GetGraphicComp());
@@ -438,7 +703,7 @@ boolean BSDialog::ChangeBS () {
         
         for (UList* j = ulist->First(); j != ulist->End(); j = j->Next()) {
             StateVar* state = (StateVar*) (*j)();
-
+            
             if (state->IsA(BUTTONSHAREDNAME)) {
                 ButtonSharedName* bsname = (ButtonSharedName*) state;
                 if (strcmp(func, bsname->GetName()) == 0) {
@@ -450,13 +715,13 @@ boolean BSDialog::ChangeBS () {
             if (!success) {
                 char buf[CHARBUFSIZE];
                 sprintf(
-                    buf, "Function name %s has already been used!!", func
+                    buf, "Function name %s has already been used", func
                 );
                 success = false;
                 Warning(_bsvarview->GetIBEditor(), buf);
                 break;
             }
-                
+            
         }
         if (strcmp(func, _bs->Text()) == 0 && success) {
             success = false;
@@ -466,16 +731,18 @@ boolean BSDialog::ChangeBS () {
             );
         }
     }
-
+    
     if (success) {
         int value;
         ButtonSharedName* bsname = _bsvarview->GetBSName();
+        SubclassNameVar* snamer = bsname->GetSubclass();
         _exporter->GetValue(value);
         
         bsname->SetName(_bs->Text());
         bsname->SetFuncName(_funcname->Text());
         bsname->SetInitial(atoi(_initial->Text()));
         bsname->SetExport(value);
+        snamer->SetName(_subclass->Text());
         if (namechange) {
             med->Message(_bs->Text());
             _bsvarview->SetNameChange(true);
@@ -528,16 +795,17 @@ boolean BSDialog::NameNotChanged () {
             _funcname->Message(bsname->GetFuncName());
             _initial->Message(IntToString(bsname->GetInitial()));
             _exporter->SetValue(bsname->GetExport());
+            _subclass->Message(bsname->GetSubclass()->GetName());
         }
     } else {
         bsname = nil;
         GetFirewallCmd firewallCmd(_bsvarview->GetGraphicComp());
         firewallCmd.Execute();
-        GetConflictCmd conflictCmd(firewallCmd.GetFirewall(), text);
-        conflictCmd.Execute();
-        UList* ulist = conflictCmd.GetConflict();
+        GetConflictCmd bconflict(firewallCmd.GetFirewall(), text);
+        bconflict.Execute();
+        UList* ulist = bconflict.GetConflict();
         char buf[CHARBUFSIZE];
-
+        
         for (UList* i = ulist->First(); i != ulist->End(); i = i->Next()) {
             StateVar* state = (StateVar*) (*i)();
             if (state->IsA(BUTTONSHAREDNAME)) {
@@ -546,15 +814,15 @@ boolean BSDialog::NameNotChanged () {
                     bsname = tmp;
                 } else {
                     sprintf(
-                        buf, "ButtonState name %s has already been used!!",text
+                        buf, "ButtonState name %s has already been used",text
                     );
                     success = false;
                     Warning(_bsvarview->GetIBEditor(), buf);
                     break;
                 }
-            } else {
+            } else if (!state->IsA(INSTANCENAME_VAR)) {
                 sprintf(
-                    buf, "ButtonState name %s has already been used!!", text
+                    buf, "ButtonState name %s has already been used", text
                 );
                 success = false;
                 Warning(_bsvarview->GetIBEditor(), buf);
@@ -565,16 +833,19 @@ boolean BSDialog::NameNotChanged () {
             _funcname->Message(bsname->GetFuncName());
             _initial->Message(IntToString(bsname->GetInitial()));
             _exporter->SetValue(bsname->GetExport());
+            _subclass->Message(bsname->GetSubclass()->GetName());
         } else {
             ButtonSharedName* bsname = _bsvarview->GetBSName();
             if (strcmp(bsname->GetName(), text) == 0) {
                 _funcname->Message(bsname->GetFuncName());
                 _initial->Message(IntToString(bsname->GetInitial()));
                 _exporter->SetValue(bsname->GetExport());
+                _subclass->Message(bsname->GetSubclass()->GetName());
             } else {
                 _funcname->Message("");
                 _initial->Message("0");
                 _exporter->SetValue(1);
+                _subclass->Message(bsname->GetSubclass()->GetBaseClass());
             }
         }
     }
@@ -591,40 +862,59 @@ Interactor* BSDialog::Interior () {
     _funcname->Match("%[_a-zA-Z]%[_a-zA-Z0-9]", true);
     _initial = new MatchEditor(state, "999");
     _initial->Match("%d", true);
-
-    Message* nameMsg = new Message("ButtonState Name: ");
+    _subclass = new MatchEditor(state, "a rather long name");
+    _subclass->Match("%[_a-zA-Z]%[_a-zA-Z0-9_]", true);
+    
+    ButtonStateVar* bsvar = (ButtonStateVar*) _bsvarview->GetSubject();
+    SubclassNameVar* subvar = bsvar->GetButtonSharedName()->GetSubclass();
+    const char* baseclass = subvar->GetBaseClass();
+    
+    Message* cname = new Message("Class Name: ");
+    Message* bcname = new Message("Base Class Name: ");
+    Message* bcMsg = new Message(baseclass);
+    Message* nameMsg = new Message("Member Name: ");
     Message* funcMsg = new Message("Member Function: ");
     Message* initialMsg = new Message("Initial Value: ");
-
+    
+    Interactor* subclass = PaddedFrame(_subclass);
     Interactor* bs = PaddedFrame(_bs);
     Interactor* funcname = PaddedFrame(_funcname);
     Interactor* initer = PaddedFrame(_initial);
-
+    
     _exporter = new ButtonState;
-
+    
     Interactor* exporter = new CheckBox("Export", _exporter, 1, 0);
-
+    
     HBox* namer = new HBox(
         bs,
         new HGlue(2*gap, 0, 0),
         exporter
     );
     namer->Align(Center);
-
+    
     Tray* t = new Tray;
+    t->HBox(t, cname, subclass, t);
+    t->HBox(t, bcname, bcMsg, new HGlue, t);
     t->HBox(t, nameMsg, namer, t);
     t->HBox(t,initialMsg,new HGlue(2*gap,0,0),initer,new HGlue(0,0,10*hfil),t);
     t->HBox(t, funcMsg, new HGlue(2*gap, 0, 0), funcname, t);
-
+    
+    t->Align(VertCenter, cname, subclass);
+    t->Align(VertCenter, bcname, bcMsg);
     t->Align(VertCenter, nameMsg, namer);
     t->Align(VertCenter, initialMsg, initer);
     t->Align(VertCenter, funcMsg, funcname);
-
-    t->VBox(t, namer, new VGlue(gap), initer, new VGlue(gap), funcname, t);
-    t->VBox(t, nameMsg, new VGlue(gap), initialMsg ,new VGlue(gap), funcMsg);
-    t->VBox(funcMsg, new VGlue(gap), t);
-    t->Align(Left, namer, initer, funcname);
-
+    
+    t->VBox(t, subclass, new VGlue(gap), bcMsg, new VGlue(gap), namer);
+    t->VBox(namer, new VGlue(gap), initer, new VGlue(gap), funcname, t);
+    
+    t->VBox(t, cname, new VGlue(gap), bcname, new VGlue(gap), nameMsg);
+    t->VBox(
+        nameMsg, new VGlue(gap), initialMsg , new VGlue(gap), funcMsg, 
+        new VGlue(gap), t
+    );
+    t->Align(Left, subclass, bcMsg, namer, initer, funcname);
+    
     return new MarginFrame(
         new VBox(
             new Message("ButtonState Information"),
@@ -647,7 +937,7 @@ Interactor* BSDialog::Buttons (int space) {
         new HGlue,
         new PushButton("Cancel", state, '\007'),
         new HGlue(space, 0),
-        new PushButton("  OK  ", state, '\r')
+        new PushButton("  OK  ", state, 1)
     );
 }
 
@@ -666,10 +956,21 @@ Interactor* CtrlDialog::Interior () {
     _bs = new MatchEditor(state, "a rather long name");
     _funcname = new MatchEditor(state, "dummy");
     _initial = new MatchEditor(state, "dummy");
-
-    Message* nameMsg = new Message("ControlState Name: ");
+    _subclass = new MatchEditor(state, "a rather long name");
+    _subclass->Match("%[_a-zA-Z]%[_a-zA-Z0-9_]", true);
+    
+    ButtonStateVar* bsvar = (ButtonStateVar*) _bsvarview->GetSubject();
+    SubclassNameVar* subvar = bsvar->GetButtonSharedName()->GetSubclass();
+    const char* baseclass = subvar->GetBaseClass();
+    
+    Message* cname = new Message("Class Name: ");
+    Message* bcname = new Message("Base Class Name: ");
+    Message* bcMsg = new Message(baseclass);
+    Message* nameMsg = new Message("Member Name: ");
+    
     Interactor* bs = PaddedFrame(_bs);
-
+    Interactor* subclass = PaddedFrame(_subclass);
+    
     _exporter = new ButtonState;
     Interactor* exporter = new CheckBox("Export", _exporter, 1, 0);
     
@@ -679,11 +980,23 @@ Interactor* CtrlDialog::Interior () {
         exporter
     );
     namer->Align(Center);
-
+    
     Tray* t = new Tray;
+    t->HBox(t, cname, subclass, t);
+    t->HBox(t, bcname, bcMsg, new HGlue, t);
     t->HBox(t, nameMsg, namer, t);
+    
+    t->Align(VertCenter, cname, subclass);
+    t->Align(VertCenter, bcname, bcMsg);
     t->Align(VertCenter, nameMsg, namer);
+    
+    t->VBox(t, subclass, new VGlue(gap), bcMsg, new VGlue(gap), namer, t);
+    
+    t->VBox(t, cname, new VGlue(gap), bcname);
+    t->VBox(bcname, new VGlue(gap), nameMsg, new VGlue(gap), t);
 
+    t->Align(Left, subclass, bcMsg, namer);
+    
     return new MarginFrame(
         new VBox(
             new Message("ControlState Information"),
@@ -695,6 +1008,336 @@ Interactor* CtrlDialog::Interior () {
             ),
             new VGlue(space, 0),
             t,
+            new VGlue(space, 0),
+            Buttons(space)
+        ), space, space/2, 0
+    );
+}
+
+/*****************************************************************************/
+
+static const char* SMDone = "\t\007\033";
+
+SMemberDialog::SMemberDialog (
+    SMemberNameVarView* mvarview, const char* str, const int* array
+) {
+    char info[CHARBUFSIZE];
+
+    sprintf(info, "%s Information", str);
+    SetTitle(info);
+    _mvarview = mvarview;
+    _idvarview = nil;
+    _array = array;
+    _sb = new StringBrowser(state, 10, 24, true, Reversed, SMDone);
+    _smember = new MatchEditor(state, "a rather long name");
+    _smember->Match("%[_a-zA-Z]%[_a-zA-Z0-9]", true);
+    _subclass = new SubMatchEditor(this, state, "a rather long name");
+    _subclass->Match("%[_a-zA-Z]%[_a-zA-Z0-9_]", true);
+    _baseclass = new SubMatchEditor(this, state, "a rather long name");
+    _baseclass->Match("%[_a-zA-Z]%[_a-zA-Z0-9_]", true);
+    _exporter = new ButtonState;
+    _str = strnew(str);
+    IDVar* idvar = mvarview->GetSMemberName()->GetIDVar();
+    if (idvar != nil) {
+        _idvarview = new IDVarView(idvar, state, str);
+    }
+}
+
+SMemberDialog::~SMemberDialog () {
+    delete _str;
+    if (_sb->Count() == 0) {
+        delete _sb;
+        delete _baseclass;
+    }
+    if (interior() == nil) {
+        delete _smember;
+        delete _subclass;
+        delete _exporter;
+        delete _idvarview;
+    }
+}
+
+void SMemberDialog::SMemberUpdate () {
+    if (_sb->Count() > 0) {
+        const char* subclass = _subclass->Text();
+        const char* baseclass = _baseclass->Text();
+        if (strcmp(subclass, baseclass) != 0) {
+            if (_sb->Index(baseclass) >= 0) {
+                _idvarview->IDUpdate(subclass, baseclass);
+                
+            } else {
+                _idvarview->ShowStred(false);
+                _idvarview->DMessage(-1);
+            }
+        } else {
+            _idvarview->ShowStred(false);
+            const char* selected = _baseclass->Text();
+            int index = _sb->Index(selected);
+
+            if (index >= 0) {
+                _idvarview->DMessage(_array[index]);
+            } else {
+                _idvarview->DMessage(-1);
+            }
+        }
+    } else if (_idvarview != nil) {
+        _idvarview->IDUpdate();
+    }
+}
+
+boolean SMemberDialog::Accept () {
+    Event e;
+    int v = 0;
+
+    state->SetValue(0);
+
+    while (v == 0) {
+	Read(e);
+        Forward(e);
+	state->GetValue(v);
+        if (v == '\t' && _sb->Count() > 0) {
+            int index = _sb->Selection();
+            const char* selected = _sb->String(index);
+            if (strcmp(_subclass->Text(), _baseclass->Text()) == 0) {
+                _subclass->Message(selected);
+            }
+            _baseclass->Message(selected);
+            SMemberUpdate();
+            v = 0;
+        }
+    }            
+    return v == 1 || v == '\r';
+}
+
+void SMemberDialog::Append (const char* name) { _sb->Append(name); }
+
+boolean SMemberDialog::ChangeBS () {
+    boolean success = true;
+    MemberSharedName* msnamer = _mvarview->GetSMemberName();
+    MatchEditor* med = _mvarview->GetSMemberEditor();
+    boolean namechange = (strcmp(med->Text(), _smember->Text()) != 0);
+
+    if (namechange) {
+        GetFirewallCmd firewallCmd(_mvarview->GetGraphicComp());
+        firewallCmd.Execute();
+        GetConflictCmd bconflict(firewallCmd.GetFirewall(), _smember->Text());
+        bconflict.Execute();
+        UList* ulist = bconflict.GetConflict();
+        
+        for (UList* i = ulist->First(); i != ulist->End(); i = i->Next()) {
+            StateVar* state = (StateVar*) (*i)();
+            if (state != msnamer && !state->IsA(INSTANCENAME_VAR)) {
+                char buf[CHARBUFSIZE];
+                sprintf(
+                    buf, "Member name %s has already been used",
+                    _smember->Text()
+                );
+                success = false;
+                Warning(_mvarview->GetIBEditor(), buf);
+                break;
+            }
+        }
+    }
+
+    if (success) {
+        int value;
+        MemberSharedName* msnamer = _mvarview->GetSMemberName();
+        SubclassNameVar* snamer = msnamer->GetSubclass();
+        _exporter->GetValue(value);
+        
+        msnamer->SetName(_smember->Text());
+        msnamer->SetExport(value);
+        snamer->SetName(_subclass->Text());
+        if (_sb->Count() > 0) {
+            if (_sb->Index(_baseclass->Text()) >= 0) {
+                snamer->SetBaseClass(_baseclass->Text());
+            } else {
+                char buf[CHARBUFSIZE];
+                sprintf(
+                    buf, "Base class name %s not in library",
+                    _baseclass->Text()
+                );
+                success = false;
+                Warning(_mvarview->GetIBEditor(), buf);
+                return success;
+            }
+        }
+        if (namechange) {
+            med->Message(_smember->Text());
+            _mvarview->SetNameChange(true);
+        } else {
+            _mvarview->SetNameChange(false);
+        }
+        if (_idvarview != nil) {
+            const char* err;
+            _idvarview->ChangedSubject(err);
+        }
+    }
+    return success;
+}
+
+boolean SMemberDialog::Init () {
+    boolean success = true;
+    if (interior() == nil) {
+        Insert(Interior());
+    }
+    const char* text = _mvarview->GetSMemberEditor()->Text();
+    boolean namechange = _mvarview->GetNameChange();
+    if (namechange) {
+        boolean eqname = (strcmp(text, _smember->Text()) == 0);
+        if (!eqname) {
+            success = NameNotChanged();
+        }
+    } else {
+        success = NameNotChanged();
+    }
+    if (success) {
+        SMemberUpdate();
+    }
+    return success;
+}
+
+boolean SMemberDialog::NameNotChanged () {
+    boolean success = true;
+    _mvarview->SetNameChange(false);
+    const char* text = _mvarview->GetSMemberEditor()->Text();
+    MemberNameVar* mnamer = (MemberNameVar*) _mvarview->GetSubject();
+    MemberSharedName* msnamer = mnamer->GetMemberSharedName();
+    if (strcmp(msnamer->GetName(), text) == 0) {
+        if (strcmp(text, _smember->Text()) != 0) {
+            _exporter->SetValue(msnamer->GetExport());
+            _subclass->Message(msnamer->GetSubclass()->GetName());
+            if (_baseclass != nil) {
+                _baseclass->Message(msnamer->GetSubclass()->GetBaseClass());
+            }         
+        }
+    } else {
+        msnamer = nil;
+        GetFirewallCmd firewallCmd(_mvarview->GetGraphicComp());
+        firewallCmd.Execute();
+        GetConflictCmd bconflict(firewallCmd.GetFirewall(), text);
+        bconflict.Execute();
+        UList* ulist = bconflict.GetConflict();
+        char buf[CHARBUFSIZE];
+
+        for (UList* i = ulist->First(); i != ulist->End(); i = i->Next()) {
+            StateVar* state = (StateVar*) (*i)();
+            if (state->IsA(MEMBERSHAREDNAME)) {
+                msnamer = (MemberSharedName*) state;
+                break;
+
+            } else if (!state->IsA(INSTANCENAME_VAR)) {
+                sprintf(
+                    buf, "Member name %s has already been used", text
+                );
+                success = false;
+                Warning(_mvarview->GetIBEditor(), buf);
+                break;
+            }
+        }
+        if (msnamer != nil) {
+            _exporter->SetValue(msnamer->GetExport());
+            _subclass->Message(msnamer->GetSubclass()->GetName());
+        } else {
+            MemberSharedName* msnamer = _mvarview->GetSMemberName();
+            _exporter->SetValue(msnamer->GetExport());
+            _subclass->Message(msnamer->GetSubclass()->GetName());
+            if (_baseclass != nil) {
+                _baseclass->Message(msnamer->GetSubclass()->GetBaseClass());
+            }         
+        }
+    }
+    _smember->Message(text);
+    return success;
+}
+
+Interactor* SMemberDialog::Interior () {
+    const int gap = round(.1*cm);
+    const int space = round(.5*cm);
+    MemberNameVar* mnamer = (MemberNameVar*) _mvarview->GetSubject();
+    SubclassNameVar* subvar = mnamer->GetMemberSharedName()->GetSubclass();
+    const char* baseclass = subvar->GetBaseClass();
+
+    char msg1[CHARBUFSIZE];
+    char msg2[CHARBUFSIZE];
+    char msg3[CHARBUFSIZE];
+
+    sprintf(msg1, "%s Class: ", _str);
+    sprintf(msg2, "%s Base Class: ", _str);
+    sprintf(msg3, "%s Information", _str);
+
+    Message* cname = new Message(msg1);
+    Message* bcname = new Message(msg2);
+    Message* nameMsg = new Message("Member Name: ");
+
+    Interactor* subclass = PaddedFrame(_subclass);
+    Interactor* smember = PaddedFrame(_smember);
+    Interactor* bcMsg;
+    if (_sb->Count() > 0) {
+        bcMsg = PaddedFrame(_baseclass);
+    } else {
+        bcMsg = new Message(baseclass);
+    }
+
+    Interactor* exporter = new CheckBox("Export", _exporter, 1, 0);
+
+    HBox* namer = new HBox(
+        smember,
+        new HGlue(2*gap, 0, 0),
+        exporter
+    );
+    namer->Align(Center);
+
+    Tray* t = new Tray;
+    t->HBox(t, cname, subclass, t);
+    t->HBox(t, bcname, bcMsg, t);
+    t->HBox(t, nameMsg, namer, t);
+
+    t->Align(VertCenter, cname, subclass);
+    t->Align(VertCenter, bcname, bcMsg);
+    t->Align(VertCenter, nameMsg, namer);
+
+    t->VBox(t, subclass, new VGlue(gap), bcMsg, new VGlue(gap), namer, t);
+    t->VBox(t, cname, new VGlue(gap), bcname, new VGlue(gap), nameMsg);
+    t->VBox(nameMsg, new VGlue(gap), t);
+    t->Align(Left, subclass, bcMsg, namer);
+
+    VBox* body = new VBox;
+    body->Insert(t);
+    if (_idvarview != nil) {
+        body->Insert(new VGlue(gap));
+        body->Insert(_idvarview);
+    }
+    if (_sb->Count() > 0) {
+        body->Insert(new VGlue(space/2, 0));
+        body->Insert(
+            new VBox(
+                new HBox(
+                    new Message("Library"),
+                    new HGlue
+                ),
+                new VGlue(space/2, 0),
+                new Frame(
+                    new HBox(
+                        new MarginFrame(_sb, 2),
+                        new VBorder,
+                        new VScrollBar(_sb)
+                    )
+                )
+            )
+        );
+    }
+    return new MarginFrame(
+        new VBox(
+            new Message(msg3),
+            new VGlue(space/2),
+            new VBox(
+                new HBorder,
+                new VGlue(2,0),
+                new HBorder
+            ),
+            new VGlue(space, 0),
+            body,
             new VGlue(space, 0),
             Buttons(space)
         ), space, space/2, 0

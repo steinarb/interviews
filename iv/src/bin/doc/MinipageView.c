@@ -32,17 +32,16 @@
 #include "DocViewer.h"
 #include "InsertMarker.h"
 
+#include "doc-composition.h"
+#include "doc-listener.h"
+#include "doc-target.h"
 #include "properties.h"
 
-#include <InterViews/box.h>
-#include <InterViews/composition.h>
 #include <InterViews/hit.h>
-#include <InterViews/listener.h>
+#include <InterViews/layout.h>
 #include <InterViews/lrmarker.h>
 #include <InterViews/patch.h>
-#include <InterViews/target.h>
 #include <InterViews/texcomp.h>
-#include <InterViews/world.h>
 #include <InterViews/xymarker.h>
 #include <OS/math.h>
 #include <string.h>
@@ -51,7 +50,7 @@ MinipageView::MinipageView (
     DocumentViewer* viewer, ItemView* parent, TextItem* text
 ) : TextView(viewer, parent, text) {
     Document* document = _text->document();
-    _lines = new TBBox();
+    _lines = LayoutKit::instance()->vbox_first_aligned();
     Coord format_width = Coord(_text->format_width());
     if (format_width == 0) {
         format_width = fil;
@@ -64,8 +63,8 @@ MinipageView::MinipageView (
     _characters->append(nil);
     _characters->view(0, 0);
     _text_patch = new Patch(_characters);
-    Color* ol;
-    Color* ul;
+    const Color* ol;
+    const Color* ul;
     _viewer->highlight_colors(SELECT_HIGHLIGHT_COLOR, ol, ul);
     _select_marker = new LRMarker(_text_patch, ol, ul);
     _viewer->highlight_colors(INSERT_HIGHLIGHT_COLOR, ol, ul);
@@ -112,7 +111,7 @@ void MinipageView::item_replaced (long index, long count) {
         if (item == nil) {
             g = document->character(_text->item_code(i), _text->item_style(i));
         } else {
-            g = new Target(item->view(this, _viewer), TargetCharacterHit);
+            g = new DocTarget(item->view(this, _viewer));
         }
         g->ref();
         _characters->replace(i, nil);
@@ -130,7 +129,7 @@ void MinipageView::item_inserted (long index, long count) {
         if (item == nil) {
             g = document->character(_text->item_code(i), _text->item_style(i));
         } else {
-            g = new Target(item->view(this, _viewer), TargetCharacterHit);
+            g = new DocTarget(item->view(this, _viewer));
         }
         _characters->insert(i, g);
     }
@@ -218,15 +217,13 @@ boolean MinipageView::command (const char* command) {
     }
 }
 
-void MinipageView::allocate (
-    Canvas* canvas, const Allocation& allocation, Extension& extension
-) {
-    if (canvas == nil) {
+void MinipageView::allocate(Canvas* c, const Allocation& a, Extension& ext) {
+    if (c == nil) {
         _characters->view(0, 0);
     } else {
         _characters->view(-1, _characters->count());
         _characters->repair();
         _text_patch->reallocate();
     }
-    TextView::allocate(canvas, allocation, extension);
+    TextView::allocate(c, a, ext);
 }

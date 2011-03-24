@@ -1,10 +1,10 @@
 #ifndef lint
-static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_open.c,v 1.29 91/08/19 14:40:45 sam Exp $";
+static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_open.c,v 1.33 92/02/14 13:40:51 sam Exp $";
 #endif
 
 /*
- * Copyright (c) 1988, 1989, 1990, 1991 Sam Leffler
- * Copyright (c) 1991 Silicon Graphics, Inc.
+ * Copyright (c) 1988, 1989, 1990, 1991, 1992 Sam Leffler
+ * Copyright (c) 1991, 1992 Silicon Graphics, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and 
  * its documentation for any purpose is hereby granted without fee, provided
@@ -32,13 +32,57 @@ static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_open.c,v 1.
 #include "tiffioP.h"
 #include "prototypes.h"
 
-#define	ord(e)	((int)e)
-
 #if USE_PROTOTYPES
 extern	int TIFFDefaultDirectory(TIFF*);
 #else
 extern	int TIFFDefaultDirectory();
 #endif
+
+static const long typemask[13] = {
+	0,		/* TIFF_NOTYPE */
+	0x000000ff,	/* TIFF_BYTE */
+	0xffffffff,	/* TIFF_ASCII */
+	0x0000ffff,	/* TIFF_SHORT */
+	0xffffffff,	/* TIFF_LONG */
+	0xffffffff,	/* TIFF_RATIONAL */
+	0x000000ff,	/* TIFF_SBYTE */
+	0x000000ff,	/* TIFF_UNDEFINED */
+	0x0000ffff,	/* TIFF_SSHORT */
+	0xffffffff,	/* TIFF_SLONG */
+	0xffffffff,	/* TIFF_SRATIONAL */
+	0xffffffff,	/* TIFF_FLOAT */
+	0xffffffff,	/* TIFF_DOUBLE */
+};
+static const int bigTypeshift[13] = {
+	0,		/* TIFF_NOTYPE */
+	24,		/* TIFF_BYTE */
+	0,		/* TIFF_ASCII */
+	16,		/* TIFF_SHORT */
+	0,		/* TIFF_LONG */
+	0,		/* TIFF_RATIONAL */
+	16,		/* TIFF_SBYTE */
+	16,		/* TIFF_UNDEFINED */
+	24,		/* TIFF_SSHORT */
+	0,		/* TIFF_SLONG */
+	0,		/* TIFF_SRATIONAL */
+	0,		/* TIFF_FLOAT */
+	0,		/* TIFF_DOUBLE */
+};
+static const int litTypeshift[13] = {
+	0,		/* TIFF_NOTYPE */
+	0,		/* TIFF_BYTE */
+	0,		/* TIFF_ASCII */
+	0,		/* TIFF_SHORT */
+	0,		/* TIFF_LONG */
+	0,		/* TIFF_RATIONAL */
+	0,		/* TIFF_SBYTE */
+	0,		/* TIFF_UNDEFINED */
+	0,		/* TIFF_SSHORT */
+	0,		/* TIFF_SLONG */
+	0,		/* TIFF_SRATIONAL */
+	0,		/* TIFF_FLOAT */
+	0,		/* TIFF_DOUBLE */
+};
 
 /*
  * Initialize the bit fill order, the
@@ -52,22 +96,13 @@ DECLARE3(TIFFInitOrder, register TIFF*, tif, int, magic, int, bigendian)
 	/* XXX how can we deduce this dynamically? */
 	tif->tif_fillorder = FILLORDER_MSB2LSB;
 
-	tif->tif_typemask[0] = 0;
-	tif->tif_typemask[ord(TIFF_BYTE)] = 0xff;
-	tif->tif_typemask[ord(TIFF_SHORT)] = 0xffff;
-	tif->tif_typemask[ord(TIFF_LONG)] = 0xffffffff;
-	tif->tif_typemask[ord(TIFF_RATIONAL)] = 0xffffffff;
-	tif->tif_typeshift[0] = 0;
-	tif->tif_typeshift[ord(TIFF_LONG)] = 0;
-	tif->tif_typeshift[ord(TIFF_RATIONAL)] = 0;
+	tif->tif_typemask = typemask;
 	if (magic == TIFF_BIGENDIAN) {
-		tif->tif_typeshift[ord(TIFF_BYTE)] = 24;
-		tif->tif_typeshift[ord(TIFF_SHORT)] = 16;
+		tif->tif_typeshift = bigTypeshift;
 		if (!bigendian)
 			tif->tif_flags |= TIFF_SWAB;
 	} else {
-		tif->tif_typeshift[ord(TIFF_BYTE)] = 0;
-		tif->tif_typeshift[ord(TIFF_SHORT)] = 0;
+		tif->tif_typeshift = litTypeshift;
 		if (bigendian)
 			tif->tif_flags |= TIFF_SWAB;
 	}
@@ -143,6 +178,7 @@ TIFFFdOpen(fd, name, mode)
 	strcpy(tif->tif_name, name);
 	tif->tif_fd = fd;
 	tif->tif_mode = m &~ (O_CREAT|O_TRUNC);
+	tif->tif_curdir = -1;		/* non-existent directory */
 	tif->tif_curoff = 0;
 	tif->tif_curstrip = -1;		/* invalid strip */
 	tif->tif_row = -1;		/* read/write pre-increment */
@@ -151,8 +187,6 @@ TIFFFdOpen(fd, name, mode)
 	 * Read in TIFF header.
 	 */
 	if (!ReadOK(fd, &tif->tif_header, sizeof (TIFFHeader))) {
-		int one = 1;
-
 		if (tif->tif_mode == O_RDONLY) {
 			TIFFError(name, "Cannot read TIFF header");
 			goto bad;
@@ -323,6 +357,16 @@ TIFFCurrentRow(tif)
 	TIFF *tif;
 {
 	return (tif->tif_row);
+}
+
+/*
+ * Return index of the current directory.
+ */
+int
+TIFFCurrentDirectory(tif)
+	TIFF *tif;
+{
+	return (tif->tif_curdir);
 }
 
 /*

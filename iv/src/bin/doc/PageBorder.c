@@ -29,41 +29,53 @@
 #include <InterViews/canvas.h>
 #include <InterViews/color.h>
 
-PageBorder::PageBorder(Glyph* body, const Color* c) : MonoGlyph(body) {
-    color_ = c;
-    Resource::ref(color_);
+PageBorder::PageBorder(
+    Glyph* body, const Color* fg, const Color* bg
+) : MonoGlyph(body) {
+    fg_ = fg;
+    Resource::ref(fg_);
+    bg_ = bg;
+    Resource::ref(bg_);
 }
 
 PageBorder::~PageBorder() {
-    Resource::unref(color_);
+    Resource::unref(fg_);
+    Resource::unref(bg_);
 }
 
 void PageBorder::draw(Canvas* c, const Allocation& a) const {
-    MonoGlyph::draw(c, a);
     if (c != nil) {
         Coord left = a.left();
         Coord bottom = a.bottom();
         Coord right = a.right();
         Coord top = a.top();
+        if (c->damaged(left + 1, bottom + 5, right - 5, top - 1)) {
+            c->fill_rect(left + 1, bottom + 5, right - 5, top - 1, bg_);
+        }
         if (c->damaged(left, bottom + 5, left + 1, top)) {
-            c->fill_rect(left + 1, bottom + 5, left, top, color_);
+            c->fill_rect(left + 1, bottom + 5, left, top, fg_);
         }
         if (c->damaged(left + 1, top - 1, right - 4, top)) {
-            c->fill_rect(left + 1, top - 1, right - 4, top, color_);
+            c->fill_rect(left + 1, top - 1, right - 4, top, fg_);
         }
         if (c->damaged(right - 5, bottom, right, top - 1)) {
-            c->fill_rect(right - 5, top - 1, right - 4, bottom + 4, color_);
-            c->fill_rect(right - 4, top - 3, right - 2, top - 2, color_);
-            c->fill_rect(right - 3, top - 3, right - 2, bottom + 2, color_);
-            c->fill_rect(right - 2, top - 5, right, top - 4, color_);
-            c->fill_rect(right - 1, top - 5, right, bottom, color_);
+            c->fill_rect(right - 5, top - 1, right - 4, bottom + 4, fg_);
+            c->fill_rect(right - 4, top - 3, right - 2, top - 2, fg_);
+            c->fill_rect(right - 4, top - 3, right - 3, bottom + 3, bg_);
+            c->fill_rect(right - 3, top - 3, right - 2, bottom + 2, fg_);
+            c->fill_rect(right - 2, top - 5, right, top - 4, fg_);
+            c->fill_rect(right - 2, top - 5, right - 1, bottom + 1, bg_);
+            c->fill_rect(right - 1, top - 5, right, bottom, fg_);
         }
         if (c->damaged(left, bottom, right - 1, bottom + 5)) {
-            c->fill_rect(right - 5, bottom + 5, left, bottom + 4, color_);
-            c->fill_rect(right - 3, bottom + 3, left + 2, bottom + 2, color_);
-            c->fill_rect(left + 3, bottom + 3, left + 2, bottom + 4, color_);
-            c->fill_rect(right - 1, bottom + 1, left + 4, bottom, color_);
-            c->fill_rect(left + 5, bottom + 1, left + 4, bottom + 2, color_);
+            c->fill_rect(right - 5, bottom + 5, left, bottom + 4, fg_);
+            c->fill_rect(left + 3, bottom + 3, right - 4, bottom + 4, bg_);
+            c->fill_rect(right - 3, bottom + 3, left + 2, bottom + 2, fg_);
+            c->fill_rect(left + 3, bottom + 3, left + 2, bottom + 4, fg_);
+            c->fill_rect(left + 5, bottom + 1, right - 1, bottom + 2, bg_);
+            c->fill_rect(right - 1, bottom + 1, left + 4, bottom, fg_);
+            c->fill_rect(left + 5, bottom + 1, left + 4, bottom + 2, fg_);
         }
     }
+    MonoGlyph::draw(c, a);
 }

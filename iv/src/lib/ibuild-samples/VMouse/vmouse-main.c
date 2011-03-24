@@ -7,7 +7,7 @@
 #include <InterViews/world.h> 
 #include "VMouse.h"
 #include <InterViews/perspective.h> 
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/_enter.h>
 #include <stream.h>
 
 static PropertyData properties[] = {

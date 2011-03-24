@@ -6,7 +6,7 @@
 #include <InterViews/sensor.h> 
 #include <InterViews/world.h> 
 #include "Grapher.h"
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/_enter.h>
 
 static PropertyData properties[] = {
 #include "grapher-props"

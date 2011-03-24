@@ -28,6 +28,7 @@
 #include <OS/enter-scope.h>
 
 class FileInfo;
+class String;
 
 class File {
 protected:
@@ -35,7 +36,7 @@ protected:
 public:
     virtual ~File();
 
-    virtual const char* name() const;
+    virtual const String* name() const;
     virtual long length() const;
     virtual void close();
 
@@ -55,7 +56,7 @@ protected:
 public:
     virtual ~InputFile();
 
-    static InputFile* open(const char* name);
+    static InputFile* open(const String& name);
 
     virtual int read(const char*& start);
 };
@@ -67,26 +68,6 @@ public:
 
     virtual long length() const;
     virtual int read(const char*& start);
-};
-
-class OutputFile : public File {
-protected:
-    OutputFile(FileInfo*);
-public:
-    virtual ~OutputFile();
-
-    static OutputFile* open(const char* name);
-
-    virtual void write(char*& start, char*& end);
-};
-
-class StdOutput : public OutputFile {
-public:
-    StdOutput();
-    virtual ~StdOutput();
-
-    virtual long length() const;
-    virtual void write(char*& start, char*& end);
 };
 
 #endif

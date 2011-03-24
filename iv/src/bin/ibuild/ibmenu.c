@@ -22,7 +22,6 @@
 
 /*
  * MenuItem component definitions.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibmenu.c,v 1.2 91/09/27 14:11:02 tang Exp $
  */
 
 #include "ibclasses.h"
@@ -59,6 +58,7 @@
 
 #include <OS/memory.h>
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <stream.h>
 #include <string.h>
@@ -127,6 +127,8 @@ MenuItemComp::MenuItemComp (MessageGraphic* g) : MessageComp(g) {
     if (g != nil) {
 	GetClassNameVar()->SetName(g->GetClassName());
 	GetClassNameVar()->SetBaseClass(g->GetClassName());
+        IBShape* ibshape = GetShapeVar()->GetShape();
+        ibshape->hstretch = hfil;
     }
     _proc = nil;
 }
@@ -151,6 +153,20 @@ void MenuItemComp::Interpret(Command* cmd) {
 	    char ProcName[CHARBUFSIZE];
 	    strcpy(ProcName, editcmd->GetNewText());
 	    TransformText(ProcName);
+            
+            GetFirewallCmd firewallCmd(this);
+            firewallCmd.Execute();
+            GetConflictCmd conflictCmd(firewallCmd.GetFirewall(), ProcName);
+            conflictCmd.Execute();
+            UList* cl = conflictCmd.GetConflict();
+            for (UList* i = cl->First(); i != cl->End(); i = i->Next()) {
+                StateVar* state = (StateVar*) (*i)();
+                if (!state->IsA(PROCNAME_VAR)) {
+                    *ProcName = '\0';
+                    break;
+                }
+            }
+
 	    _proc->SetName(ProcName);
 	    sd->_tracked = true;
 	}
@@ -194,8 +210,9 @@ void MenuItemComp::Reconfig () {
     Shape* shape = GetShapeVar()->GetShape();
     int w, h;
     GetMessageGraphic()->Natural(w, h);
-    shape->Rect(w, h);
-    shape->Rigid(2, hfil, 0, 0);
+    shape->width = w;
+    shape->height = h;
+    shape->hshrink = shape->vshrink = 4;
     GetShapeVar()->Notify();
 }
 
@@ -387,6 +404,7 @@ boolean MenuItemCode::Definition (ostream& out) {
             const char* proc = menuItem->GetTrackNameVar()->GetName();
             const char* text = menuItem->GetMenuItemGraphic()->GetText();
             boolean export = icomp->GetMemberNameVar()->GetExport();
+            Shape* shape = icomp->GetShapeVar()->GetShape();
             
             if (icomp->GetClassNameVar()->IsSubclass()) {
                 BeginInstantiate(out);
@@ -404,10 +422,12 @@ boolean MenuItemCode::Definition (ostream& out) {
                 out << "(";
             }
             InstanceName(out);
+            out << "new Message(";
             out << "\"" << text << "\", ";
             Alignment a = menuItem->GetMessageGraphic()->GetAlignment();
-            Align(a, out);
-	    out << ")";
+            ok = ok && Align(a, out);
+            out << ", 2, " << shape->hstretch << ", " << shape->vstretch;
+	    out << "))";
             EndInstantiate(out);
             
             if (!_emitMain && proc != nil && *proc != '\0') {
@@ -465,19 +485,6 @@ boolean MenuItemCode::Definition (ostream& out) {
     return out.good() && ok;
 }
     
-const char* MenuItemCode::GetFirewall () {
-    const char* fwname = nil;
-    GetFirewallCmd firewallCmd(GetIntComp());
-    firewallCmd.Execute();
-    InteractorComp* firewall = firewallCmd.GetFirewall();
-    if (firewall != nil) {
-        if (firewall->IsANewScope()) {
-            fwname = firewall->GetClassNameVar()->GetName();
-        }
-    }
-    return fwname;
-}
-
 boolean MenuItemCode::CoreConstDecls(ostream& out) { 
     char Func[CHARBUFSIZE];
     char coreclass[CHARBUFSIZE];
@@ -489,7 +496,8 @@ boolean MenuItemCode::CoreConstDecls(ostream& out) {
         strcat(Func, "_Func");
     }
     
-    out << "(const char*, const char*, Alignment);\n\n";
+    out << "(const char*, Interactor*);\n\n";
+
     if (fwname != nil) {
         out << "    virtual void Do();\n";
         out << "    void SetCoreClass(" << coreclass << "*);\n";
@@ -517,15 +525,15 @@ boolean MenuItemCode::CoreConstInits(ostream& out) {
     InteractorComp* icomp = GetIntComp();
     SubclassNameVar* snamer = icomp->GetClassNameVar();
     const char* baseclass = snamer->GetBaseClass();
+    const char* subclass = snamer->GetName();
 
-    out << "(\n    const char* name, const char* str, Alignment al\n) : ";
-    out << baseclass << "(str, al) {\n";
-    out << "    perspective = new Perspective;\n";
+    out << "(\n    const char* name, Interactor* i\n) : ";
+    out << baseclass << "(name, i) {\n";
+    out << "    SetClassName(\"" << subclass << "\");\n";
     if (fwname != nil) {
         out << "    _func = nil;\n";
         out << "    _coreclass = nil;\n";
     }
-    out << "    SetInstance(name);\n";
     out << "}\n\n";
 
     if (fwname != nil) {
@@ -550,7 +558,7 @@ boolean MenuItemCode::CoreConstInits(ostream& out) {
 }
 
 boolean MenuItemCode::ConstDecls(ostream& out) {
-    out << "(const char*, const char*, Alignment);\n";
+    out << "(const char*, Interactor*);\n";
     return out.good();
 }
 
@@ -558,8 +566,8 @@ boolean MenuItemCode::ConstInits(ostream& out) {
     char coreclass[CHARBUFSIZE];
     GetCoreClassName(coreclass);
 
-    out << "(\n    const char* name, const char* str, Alignment al\n) : ";
-    out << coreclass << "(name, str, al) {}\n\n";
+    out << "(\n    const char* name, Interactor* i\n) : ";
+    out << coreclass << "(name, i) {}\n\n";
 
     return out.good();
 }
@@ -570,6 +578,13 @@ boolean MenuItemCode::EmitIncludeHeaders(ostream& out) {
     if (!snamer->IsSubclass() && !_namelist->Search("menu")) {
         _namelist->Append("menu");
         out << "#include <InterViews/menu.h> \n";
+    }
+    if (
+        strcmp(snamer->GetName(), _classname) != 0 && 
+        !_namelist->Search("message")
+    ) {
+        _namelist->Append("message");
+        out << "#include <InterViews/message.h> \n";
     }
     return out.good();
 }
@@ -694,9 +709,10 @@ boolean MenuBarCode::CoreConstInits(ostream& out) {
     InteractorComp* icomp = GetIntComp();
     SubclassNameVar* snamer = icomp->GetClassNameVar();
     const char* baseclass = snamer->GetBaseClass();
+    const char* subclass = snamer->GetName();
 
     out << "(const char* i) : " << baseclass << "(i) {\n";
-    out << "    perspective = new Perspective;\n";
+    out << "    SetClassName(\"" << subclass << "\");\n";
     out << "}\n\n";
     return out.good();
 }
@@ -872,6 +888,10 @@ PullMenuComp::PullMenuComp (
         GetClassNameVar()->SetBaseClass(gr->GetClassName());
 	pmGraphic->Prepend(gr);
 	pmGraphic->SetMenuItemGraphic(gr);
+        IBShape* ibshape = GetShapeVar()->GetShape();
+        ibshape->hstr = ibshape->vstr = true;
+        ibshape->vstretch = 0;
+        ibshape->hstretch = 0;
     }
     MenuBodyComp* menuBody = new MenuBodyComp;
     SceneComp::Append(menuBody);
@@ -915,11 +935,21 @@ void PullMenuComp::Interpret (Command* cmd) {
         alignCmd->GetAlignment(a, a);
 	mg->SetAlignment(a);
         Notify();
-        Propagate(cmd);
+        if (!cmd->GetClipboard()->Includes(this)) {
+            SceneComp::Interpret(cmd);
+
+        } else {
+            Propagate(cmd);
+        }
 
     } else if (cmd->IsA(COLOR_CMD) || cmd->IsA(FONT_CMD)) {
-        InteractorComp::Interpret(cmd);
-        SceneComp::Interpret(cmd);
+        GraphicComps::Interpret(cmd);
+        if (!cmd->GetClipboard()->Includes(this)) {
+            SceneComp::Interpret(cmd);
+
+        } else {
+            Propagate(cmd);
+        }
 
     } else if (cmd->IsA(UNGROUP_CMD)) {
         Editor* ed = cmd->GetEditor();
@@ -949,11 +979,20 @@ void PullMenuComp::Uninterpret(Command* cmd) {
 	Alignment a = (Alignment) vd->_void;
 	GetMenuItemGraphic()->SetAlignment(a);
         Notify();
-        Unpropagate(cmd);
+        if (!cmd->GetClipboard()->Includes(this)) {
+            SceneComp::Uninterpret(cmd);
+        } else {
+            Unpropagate(cmd);
+        }
 
     } else if (cmd->IsA(COLOR_CMD) || cmd->IsA(FONT_CMD)) {
-        InteractorComp::Uninterpret(cmd);
-        SceneComp::Uninterpret(cmd);
+        GraphicComps::Uninterpret(cmd);
+        if (!cmd->GetClipboard()->Includes(this)) {
+            SceneComp::Uninterpret(cmd);
+
+        } else {
+            Unpropagate(cmd);
+        }
 
     } else if (cmd->IsA(UNGROUP_CMD)) {
         Editor* ed = cmd->GetEditor();
@@ -1058,9 +1097,9 @@ void PullMenuComp::Reconfig () {
     Shape* shape = GetShapeVar()->GetShape();
     int w, h;
     _menuGraphic->Natural(w, h);
-    shape->Rect(w, h);
-    shape->Rigid(2, 0, 0, 0);
-
+    shape->width = w;
+    shape->height = h;
+    shape->hshrink = shape->vshrink = 4;
     GetShapeVar()->Notify();
     MenuBodyComp* mbComp = GetMenuBody();
     mbComp->Reconfig();
@@ -1095,6 +1134,11 @@ void PullMenuComp::ReAdjust () {
 
 void PullMenuComp::Read (istream& in) {
     SceneComp::Read(in);
+
+    /* backward compability */
+    IBShape* ibshape = GetShapeVar()->GetShape();
+    ibshape->hstr = ibshape->vstr = true;
+
     Catalog* catalog = unidraw->GetCatalog();
     ClassId id;
     in >> id;
@@ -1317,13 +1361,15 @@ boolean PullMenuCode::Definition (ostream& out) {
 		MenuItemGraphic* menuGraphic = pdcomp->GetMenuItemGraphic();
 		const char* text = menuGraphic->GetText();
                 Alignment a = menuGraphic->GetAlignment();
+                Shape* shape = pdcomp->GetShapeVar()->GetShape();
 
                 out << "(";
                 InstanceName(out);
                 out << "new Message(";
                 out << "\"" << text << "\", ";
-                Align(a, out);
-                out << ", 2))";
+                ok = ok && Align(a, out);
+                out << ", 2, " << shape->hstretch << ", " << shape->vstretch;
+                out << "))";
                 EndInstantiate(out);
 
 
@@ -1349,7 +1395,8 @@ boolean PullMenuCode::Definition (ostream& out) {
 	}
     } else if (
 	_emitBSDecls || _emitBSInits || 
-	_emitFunctionDecls || _emitFunctionInits
+	_emitFunctionDecls || _emitFunctionInits ||
+        _emitCreatorHeader || _emitCreatorSubj || _emitCreatorView
     ) {
         ok = ok && Iterate(out);
 
@@ -1375,10 +1422,11 @@ boolean PullMenuCode::CoreConstInits(ostream& out) {
     InteractorComp* icomp = GetIntComp();
     SubclassNameVar* snamer = icomp->GetClassNameVar();
     const char* baseclass = snamer->GetBaseClass();
+    const char* subclass = snamer->GetName();
 
     out << "(\n    const char* name, Interactor* i\n) : " << baseclass;
     out << "(name, i) {\n";
-    out << "    perspective = new Perspective;\n";
+    out << "    SetClassName(\"" << subclass << "\");\n";
     out << "}\n\n";
     return out.good();
 }

@@ -6,7 +6,7 @@
 #include "Grapher.h"
 #include "Plotter.h"
 #include <stdio.h>
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/_enter.h>
 
 static int pad = 30;
 

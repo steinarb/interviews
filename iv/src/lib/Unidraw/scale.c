@@ -36,6 +36,8 @@
 
 #include <InterViews/event.h>
 
+#include <IV-2_6/_enter.h>
+
 /*****************************************************************************/
 
 ClassId ScaleTool::GetClassId () { return SCALE_TOOL; }

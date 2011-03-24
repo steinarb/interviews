@@ -29,19 +29,21 @@
 #ifndef iv_canvas_h
 #define iv_canvas_h
 
-#include <InterViews/boolean.h>
 #include <InterViews/coord.h>
 
 #include <InterViews/_enter.h>
 
 class Bitmap;
 class Brush;
+class CanvasRep;
 class Color;
+class Extension;
 class Font;
 class Raster;
 class Transformer;
 class Window;
 
+/* anachronism */
 typedef unsigned int CanvasLocation;
 
 class Canvas {
@@ -52,12 +54,16 @@ public:
     virtual Window* window() const;
 
     virtual void size(Coord width, Coord height);
-    virtual void psize(unsigned int width, unsigned int height);
+    virtual void psize(PixelCoord width, PixelCoord height);
 
     virtual Coord width() const;
     virtual Coord height() const;
-    unsigned int pwidth() const;
-    unsigned int pheight() const;
+    virtual PixelCoord pwidth() const;
+    virtual PixelCoord pheight() const;
+
+    virtual PixelCoord to_pixels(Coord) const;
+    virtual Coord to_coord(PixelCoord) const;
+    virtual Coord to_pixels_coord(Coord) const;
 
     virtual void new_path();
     virtual void move_to(Coord x, Coord y);
@@ -86,21 +92,34 @@ public:
     virtual void transform(const Transformer&);
     virtual void pop_transform();
 
+    virtual void transformer(const Transformer&);
+    virtual const Transformer& transformer() const;
+
     virtual void push_clipping();
     virtual void clip();
     virtual void clip_rect(Coord l, Coord b, Coord r, Coord t);
     virtual void pop_clipping();
 
+    virtual void front_buffer();
+    virtual void back_buffer();
+
+    virtual void damage(const Extension&);
     virtual void damage(Coord left, Coord bottom, Coord right, Coord top);
+    virtual boolean damaged(const Extension&) const;
     virtual boolean damaged(
 	Coord left, Coord bottom, Coord right, Coord top
     ) const;
+    virtual void damage_area(Extension&);
     virtual void damage_all();
     virtual boolean any_damage() const;
+    virtual void restrict_damage(const Extension&);
+    virtual void restrict_damage(
+	Coord left, Coord bottom, Coord right, Coord top
+    );
     virtual void redraw(Coord left, Coord bottom, Coord right, Coord top);
     virtual void repair();
 
-    class CanvasRep* rep() const;
+    CanvasRep* rep() const;
 private:
     CanvasRep* rep_;
 

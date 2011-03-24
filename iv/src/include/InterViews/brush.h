@@ -38,7 +38,7 @@ class BrushRep;
 class BrushImpl;
 class Display;
 
-class Brush : virtual public Resource {
+class Brush : public Resource {
 public:
     Brush(Coord width);
     Brush(int pattern, Coord width);

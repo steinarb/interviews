@@ -25,4 +25,4 @@
  */
 
 static const char* VERSION =
-    "idraw - Version 2.0.1.  By John Vlissides and Scott Stanton.";
+    "idraw - Version 2.1.  By John Vlissides and Scott Stanton.";

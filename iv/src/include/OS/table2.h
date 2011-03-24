@@ -29,11 +29,19 @@
 #ifndef os_table2_h
 #define os_table2_h
 
-#include <InterViews/boolean.h>
-#include <generic.h>
+#include <OS/enter-scope.h>
 
-#define Table2Entry(Table2) name2(Table2,_Entry)
-#define Table2Iterator(Table2) name2(Table2,_Iterator)
+#if defined(__STDC__) || defined(__ANSI_CPP__)
+#define __Table2Entry(Table2) Table2##_Entry
+#define Table2Entry(Table2) __Table2Entry(Table2)
+#define __Table2Iterator(Table2) Table2##_Iterator
+#define Table2Iterator(Table2) __Table2Iterator(Table2)
+#else
+#define __Table2Entry(Table2) Table2/**/_Entry
+#define Table2Entry(Table2) __Table2Entry(Table2)
+#define __Table2Iterator(Table2) Table2/**/_Iterator
+#define Table2Iterator(Table2) __Table2Iterator(Table2)
+#endif
 
 #define declareTable2(Table2,Key1,Key2,Value) \
 class Table2Entry(Table2); \
@@ -87,15 +95,13 @@ inline Key2& Table2Iterator(Table2)::cur_key2() { return cur_->key2_; } \
 inline Value& Table2Iterator(Table2)::cur_value() { return cur_->value_; } \
 inline boolean Table2Iterator(Table2)::more() { return entry_ <= last_; }
 
-#ifndef os_table_h
-
 /*
  * Predefined hash functions
  */
 
+#ifndef os_table_h
 inline unsigned long key_to_hash(long k) { return (unsigned long)k; }
 inline unsigned long key_to_hash(const void* k) { return (unsigned long)k; }
-
 #endif
 
 /*

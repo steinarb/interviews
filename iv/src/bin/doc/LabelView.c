@@ -29,8 +29,8 @@
 #include "Document.h"
 #include "LabelItem.h"
 
-#include <InterViews/box.h>
-#include <InterViews/listener.h>
+#include "doc-listener.h"
+
 #include <InterViews/patch.h>
 
 #include <string.h>

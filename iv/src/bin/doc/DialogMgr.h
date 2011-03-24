@@ -29,6 +29,10 @@
 
 #include <InterViews/boolean.h>
 
+class ChooserInfo_List;
+class AskerInfo_List;
+class ConfirmerInfo_List;
+class ReporterInfo_List;
 class Window;
 
 class DialogManager {
@@ -40,11 +44,11 @@ public:
     virtual const char* ask (Window*, const char* prompt, const char* init);
     virtual int confirm (Window*, const char* prompt);
     virtual void report (Window*, const char* prompt);
-protected:
-    class ChooserInfo_List* _chooser;
-    class AskerInfo_List* _asker;
-    class ConfirmerInfo_List* _confirmer;
-    class ReporterInfo_List* _reporter;
+private:
+    ChooserInfo_List* _chooser;
+    AskerInfo_List* _asker;
+    ConfirmerInfo_List* _confirmer;
+    ReporterInfo_List* _reporter;
 };
 
 #endif

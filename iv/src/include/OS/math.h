@@ -82,16 +82,16 @@ public:
     static boolean equal(double x, double y, double e);
 };
 
-implement_binary_minmax(int);
-implement_binary_minmax(unsigned);
-implement_binary_minmax(long);
-implement_binary_minmax(unsigned long);
-implement_binary_minmax(float);
-implement_binary_minmax(double);
+implement_binary_minmax(int)
+implement_binary_minmax(unsigned)
+implement_binary_minmax(long)
+implement_binary_minmax(unsigned long)
+implement_binary_minmax(float)
+implement_binary_minmax(double)
 
-implement_4_minmax(int);
-implement_4_minmax(float);
-implement_4_minmax(double);
+implement_4_minmax(int)
+implement_4_minmax(float)
+implement_4_minmax(double)
 
 inline int Math::round(float x) { return x > 0 ? int(x+0.5) : -int(-x+0.5); }
 inline int Math::round(double x) { return x > 0 ? int(x+0.5) : -int(-x+0.5); }

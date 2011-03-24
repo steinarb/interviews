@@ -29,6 +29,8 @@
 
 #include <Unidraw/Commands/command.h>
 
+#include <IV-2_6/_enter.h>
+
 class MoveCmd : public Command {
 public:
     MoveCmd(ControlInfo*, float = 0, float = 0);
@@ -82,5 +84,7 @@ protected:
 };
 
 inline float RotateCmd::GetRotation () { return _angle; }
+
+#include <IV-2_6/_leave.h>
 
 #endif

@@ -27,9 +27,9 @@
  */
 
 #include <InterViews/font.h>
-#include <InterViews/2.6/InterViews/painter.h>
-#include <InterViews/2.6/InterViews/shape.h>
-#include <InterViews/2.6/InterViews/textdisplay.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/shape.h>
+#include <IV-2_6/InterViews/textdisplay.h>
 #include <OS/math.h>
 #include <OS/memory.h>
 #include <stdlib.h>
@@ -694,7 +694,7 @@ void TextLine::Insert (
     IntCoord left, right;
     int shift;
     index = Math::max(0, index);
-    Size(Math::max(index, lastchar) + count);
+    Size(Math::max(index, size) + count);
     int src = index;
     int dst = index + count;
     int len = Math::max(0, lastchar - index + 1);

@@ -24,20 +24,43 @@
 
 #include <OS/file.h>
 #include <OS/string.h>
+#include <OS/types.h>
 #include <assert.h>
 #include <fcntl.h>
-#include <osfcn.h>
 #include <stdio.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 
 #ifdef sgi
 #include <sys/mman.h>
 #endif
 
+/* no standard place for these */
+extern "C" {
+    extern int close(int);
+#if defined(sgi)
+    extern int read(int, void*, unsigned int);
+#endif
+#if defined(sun) && !defined(__SYSENT_H)
+    extern int read(int, void*, unsigned int);
+#endif
+#if defined(AIXV3)
+    extern int read(int, char*, unsigned int);
+#endif
+#if defined(apollo)
+    extern long read(int, void*, unsigned int);
+#endif
+#if defined(__DECCXX)
+    extern int read(int, void*, unsigned int);
+#endif
+}
+
+#ifdef __GNUC__
+#include <unistd.h>
+#endif
+
 class FileInfo {
 public:
-    String name_;
+    CopyString* name_;
     int fd_;
     char* map_;
     struct stat info_;
@@ -45,10 +68,11 @@ public:
     char* buf_;
     unsigned int limit_;
 
-    FileInfo(const char*, int fd);
+    FileInfo(CopyString*, int fd);
 };
 
-FileInfo::FileInfo(const char* s, int fd) : name_(s) {
+FileInfo::FileInfo(CopyString* s, int fd) {
+    name_ = s;
     fd_ = fd;
     pos_ = 0;
     limit_ = 0;
@@ -63,11 +87,12 @@ File::File(FileInfo* i) {
 
 File::~File() {
     close();
+    delete rep_->name_;
     delete rep_;
 }
 
-const char* File::name() const {
-    return rep_->name_.string();
+const String* File::name() const {
+    return rep_->name_;
 }
 
 long File::length() const {
@@ -101,13 +126,17 @@ FileInfo* File::rep() const { return rep_; }
 InputFile::InputFile(FileInfo* i) : File(i) { }
 InputFile::~InputFile() { }
 
-InputFile* InputFile::open(const char* name) {
-    int fd = ::open(name, O_RDONLY);
+InputFile* InputFile::open(const String& name) {
+    CopyString* s = new CopyString(name);
+    /* cast to workaround DEC C++ prototype bug */
+    int fd = ::open((char*)s->string(), O_RDONLY);
     if (fd < 0) {
+	delete s;
 	return nil;
     }
-    FileInfo* i = new FileInfo(name, fd);
+    FileInfo* i = new FileInfo(s, fd);
     if (fstat(fd, &i->info_) < 0) {
+	delete s;
 	delete i;
 	return nil;
     }
@@ -142,7 +171,7 @@ int InputFile::read(const char*& start) {
 
 /* class StdInput */
 
-StdInput::StdInput() : InputFile(new FileInfo("-stdin", 0)) { }
+StdInput::StdInput() : InputFile(new FileInfo(new CopyString("-stdin"), 0)) { }
 StdInput::~StdInput() { }
 
 long StdInput::length() const { return -1; }
@@ -155,32 +184,9 @@ int StdInput::read(const char*& start) {
 	}
 	i->buf_ = new char[i->limit_];
     }
-    int nbytes = ::read(i->fd_, i->buf_, i->limit_);
+    int nbytes = ::read(i->fd_, (char*)i->buf_, i->limit_);
     if (nbytes > 0) {
 	start = (const char*)(i->buf_);
     }
     return nbytes;
-}
-
-/* class OutputFile */
-/** not implemented **/
-
-OutputFile::OutputFile(FileInfo* i) : File(i) { }
-OutputFile::~OutputFile() { }
-
-OutputFile* OutputFile::open(const char* /* name */) {
-    return nil;
-}
-
-void OutputFile::write(char*& /* start */, char*& /* end */) {
-}
-
-/* class StdOutput */
-
-StdOutput::StdOutput() : OutputFile(new FileInfo("-stdout", 1)) { }
-StdOutput::~StdOutput() { }
-
-long StdOutput::length() const { return -1; }
-
-void StdOutput::write(char*& /* start */, char*& /* end */) {
 }

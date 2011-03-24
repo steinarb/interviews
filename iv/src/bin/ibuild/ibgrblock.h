@@ -20,6 +20,10 @@
  * WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+/*
+ *  GraphicBlock component declaration
+ */
+
 #ifndef ibgrblock_h
 #define ibgrblock_h
 
@@ -29,6 +33,29 @@
 class Command;
 class IGraphicComps;
 class GrBlockGraphic;
+
+class GrBlockPicture : public IBGraphic {
+public:
+    GrBlockPicture(CanvasVar* = nil, Graphic* = nil);
+
+    virtual void SetCanvasVar(CanvasVar*);
+    virtual void SetColors(PSColor* f, PSColor* b);
+    virtual PSColor* GetBgColor();
+    void SetGrBlockGraphic(GrBlockGraphic*);
+    void SetClip(boolean);
+    boolean GetClip();
+
+protected:
+    virtual void getExtent(float&, float&, float&, float&, float&, Graphic*);
+    virtual void draw(Canvas*, Graphic*);
+    virtual void drawClipped(Canvas*, Coord, Coord, Coord, Coord, Graphic*);
+    virtual void concatGS(Graphic*, Graphic*, Graphic*);
+
+protected:
+    GrBlockGraphic* _grblockgr;
+    boolean _clipped;
+    boolean _damage;
+};
 
 class GrBlockComp : public MonoSceneComp {
 public:
@@ -94,6 +121,7 @@ inline IGraphicComps* GrBlockComp::GetTop () { return _top; }
 class GrBlockView : public MonoSceneView {
 public:
     GrBlockView(GrBlockComp* = nil);
+    virtual ~GrBlockView();
     GrBlockComp* GetGrBlockComp();
 
     virtual GraphicComp* CreateProtoComp(Editor*, Coord, Coord, Coord, Coord);
@@ -112,6 +140,7 @@ class GrBlockCode : public MonoSceneCode {
 public:
     GrBlockCode(GrBlockComp* = nil);
 
+    virtual void Update();
     virtual boolean Definition(ostream&);
     GrBlockComp* GetGrBlockComp();
 
@@ -128,7 +157,13 @@ protected:
 
 class GrBlockGraphic : public IBGraphic {
 public:
-    GrBlockGraphic(CanvasVar* = nil, Graphic* = nil);
+    GrBlockGraphic(
+        CanvasVar* = nil, Graphic* = nil, Alignment = Center
+    );
+
+    void SetAlignment(Alignment);
+    Alignment GetAlignment();
+
     virtual Graphic* Copy();
     virtual void Read(istream&);
     virtual void Write(ostream&);
@@ -139,6 +174,11 @@ protected:
     virtual void getExtent(float&, float&, float&, float&, float&, Graphic*);
     virtual void draw(Canvas*, Graphic*);
     virtual void drawClipped(Canvas*, Coord, Coord, Coord, Coord, Graphic*);
+protected:
+    Alignment _align;
 };
+
+inline void GrBlockGraphic::SetAlignment (Alignment a) { _align = a; }
+inline Alignment GrBlockGraphic::GetAlignment () { return _align; }
 
 #endif

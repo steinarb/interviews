@@ -26,21 +26,21 @@
  * Implementation of common menus.
  */
 
-#include <IV-look/2.6/InterViews/frame.h>
-#include <IV-look/2.6/InterViews/menu.h>
 #include <InterViews/event.h>
 #include <InterViews/pattern.h>
 #include <InterViews/window.h>
-#include <InterViews/world.h>
-#include <InterViews/2.6/InterViews/box.h>
-#include <InterViews/2.6/InterViews/glue.h>
-#include <InterViews/2.6/InterViews/message.h>
-#include <InterViews/2.6/InterViews/painter.h>
-#include <InterViews/2.6/InterViews/shape.h>
+#include <IV-2_6/InterViews/box.h>
+#include <IV-2_6/InterViews/frame.h>
+#include <IV-2_6/InterViews/glue.h>
+#include <IV-2_6/InterViews/menu.h>
+#include <IV-2_6/InterViews/message.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/shape.h>
+#include <IV-2_6/InterViews/world.h>
 #include <OS/math.h>
 #include <stdlib.h>
 
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/_enter.h>
 
 /** class MenuItem **/
 
@@ -119,7 +119,6 @@ void MenuShadow::Reconfig() {
 
 void MenuShadow::Resize() {
     if (interior() != nil) {
-	canvas->window()->double_buffered(false);
 	Place(interior(), 0, depth_, xmax - depth_, ymax);
     }
 }

@@ -22,13 +22,13 @@
 
 /*
  * Implementation of Shaper component and derived classes.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibshaper.c,v 1.2 91/09/27 14:11:42 tang Exp $
  */
 
 #include "ibclasses.h"
 #include "ibshaper.h"
 #include "ibvars.h"
 #include <Unidraw/ulist.h>
+#include <Unidraw/Graphic/graphic.h>
 #include <string.h>
 #include <stream.h>
 
@@ -81,6 +81,14 @@ boolean ShaperCode::IsA (ClassId id) {
 ShaperCode::ShaperCode (ShaperComp* subj) : MonoSceneCode(subj) { }
 ShaperComp* ShaperCode::GetShaperComp () { return (ShaperComp*) GetSubject(); }
 
+void ShaperCode::Update () {
+    MonoSceneCode::Update();
+    InteractorComp* subj = GetIntComp();
+    Graphic* gr = subj->GetGraphic();
+    gr->SetColors(nil, nil);
+    gr->SetFont(nil);
+}
+
 boolean ShaperCode::Definition (ostream& out) {
     boolean ok = true;
 
@@ -93,7 +101,12 @@ boolean ShaperCode::Definition (ostream& out) {
     GetCoreClassName(coreclass);
     CodeView* kview = GetKidView();
 
-    if (_emitInstanceDecls) {
+    if (_emitProperty) {
+        ok = ok && MonoSceneCode::Definition(out);
+        if (kview != nil) {
+            ok = ok && kview->Definition(out);
+        }
+    } else if (_emitInstanceDecls) {
         if (!snamer->IsSubclass()) {
             if (_emitExport) {
                 if (mnamer->GetExport()) {
@@ -136,7 +149,7 @@ boolean ShaperCode::Definition (ostream& out) {
         if (kview != nil) {
             ok = ok && kview->Definition(out);
         }
-    } else if (_emitHeaders || _emitProperty || _emitClassHeaders) {
+    } else if (_emitHeaders || _emitClassHeaders) {
 	ok = ok && CodeView::Definition(out);
         if (kview != nil) {
             ok = ok && kview->Definition(out);
@@ -201,7 +214,8 @@ boolean ShaperCode::Definition (ostream& out) {
 
     } else if (
 	_emitBSDecls || _emitBSInits || 
-	_emitFunctionDecls || _emitFunctionInits
+	_emitFunctionDecls || _emitFunctionInits ||
+        _emitCreatorHeader || _emitCreatorSubj || _emitCreatorView
     ) {
         if (kview != nil) {
             ok = ok && kview->Definition(out);
@@ -247,12 +261,13 @@ boolean ShaperCode::Definition (ostream& out) {
 boolean ShaperCode::CoreConstInits(ostream& out) {
     InteractorComp* icomp = GetIntComp();
     SubclassNameVar* snamer = icomp->GetClassNameVar();
+    const char* subclass = snamer->GetName();
     char coreclass[CHARBUFSIZE];
     GetCoreClassName(coreclass);
 
     out << "(\n    const char* name, int h, int v, ";
     out << "int hstr, int vstr, int hshr, int vshr\n) {\n";
-    out << "    perspective = new Perspective;\n";
+    out << "    SetClassName(\"" << subclass << "\");\n";
     out << "    SetInstance(name);\n";
     out << "    _h = h, _v = v;\n";
     out << "    _hstr = hstr, _vstr = vstr;\n";

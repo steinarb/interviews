@@ -20,7 +20,10 @@ implements the tool manipulation loop.
 .B "    Editor*, GraphicView*, Page*, Grid* = nil,"
 .ns
 .TP
-.B "    Coord width = 0, Coord height = 0"
+.B "    Coord width = 0, Coord height = 0, Orientation = Normal,"
+.ns
+.TP
+.B "    Alignment = Center, Zooming = Binary"
 .ns
 .TP
 .B ")"
@@ -35,12 +38,16 @@ implements the tool manipulation loop.
 .B "    Coord width = 0, Coord height = 0"
 .ns
 .TP
+.B "    Alignment = Center, Zooming = Binary"
+.ns
+.TP
 .B ")"
 .br
 Both constructors take the enclosing editor, the GraphicView object
-that the viewer will display, a page object, and optionally a grid and
-a natural width and height specification.  The second form adds a
-parameter for specifying the Viewer's instance name.
+that the viewer will display, a page object, and optionally a grid, a
+natural width and height, initial page orientation, alignment, and
+zooming specifications.  The second form adds a parameter for
+specifying the Viewer's instance name.
 .TP
 .B "virtual void Update()"
 Viewer augments GraphicBlock's Update semantics by repairing any
@@ -215,9 +222,14 @@ current orientation.
 .B "virtual void UpdateMagnifVar()"
 A helper function used in SetMagnification to notify the enclosing
 viewer's MagnifVar (if it defines one) of the change in magnification.
+.TP
+.B "virtual ClassId ViewCategory()"
+Returns the view category (see classes(3U)) the viewer will use to
+instantiate a view if it is not given one explicitly.  ViewCategory
+returns COMPONENT_VIEW by default.
 .SH SEE ALSO
 Damage(3U), Editor(3U), Event(3I), Graphic(3U), GraphicBlock(3U),
 GraphicComp(3U), GraphicView(3U), Grid(3U), Manipulator(3U),
 MoveTool(3U), Page(3U), Perspective(3I), Rubband(3I), SelectTool(3U),
-Selection(3U), Sensor(3I), TextDisplay(3I), Tool(3U), globals(3U),
-statevars(3U)
+Selection(3U), Sensor(3I), TextDisplay(3I), Tool(3U), classes(3U),
+globals(3U), statevars(3U)

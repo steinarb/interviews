@@ -36,8 +36,7 @@ Target::Target(Glyph* body, TargetSensitivity sensitivity) : MonoGlyph(body) {
 Target::~Target() { }
 
 void Target::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
-    Coord x = h.left();
-    Coord y = h.bottom();
+    Coord x, left, right;
     switch (sensitivity_) {
     case TargetBodyHit:
 	MonoGlyph::pick(c, a, depth, h);
@@ -48,17 +47,20 @@ void Target::pick(Canvas* c, const Allocation& a, int depth, Hit& h) {
 	h.target(depth, this, 0);
 	break;
     case TargetPrimitiveHit:
-        if (x >= a.left() && x < a.right() && y >= a.bottom() && y < a.top()) {
+        if (h.right() >= a.left() && h.left() < a.right() &&
+	    h.top() >= a.bottom() && h.bottom() < a.top()
+	) {
             h.target(depth, this, 0);
         }
 	break;
     case TargetCharacterHit:
 	/* call to pick is dubious, but needed for now by doc */
 	MonoGlyph::pick(c, a, depth, h);
-        Coord left = a.left();
-        Coord right = a.right();
-        if (x >= left && x < right) {
-            h.target(depth, this, (x > (left+right)/2) ? 1 : 0);
+	x = h.left();
+        left = a.left();
+        right = a.right();
+        if (h.right() >= left && x < right) {
+            h.target(depth, this, (x > ((left + right) * 0.5)) ? 1 : 0);
         }
 	break;
     }

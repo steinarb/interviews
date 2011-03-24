@@ -22,7 +22,6 @@
 
 /*
  * Border component definitions.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibborder.c,v 1.2 91/09/27 14:06:05 tang Exp $
  */
 
 #include "ibborder.h"
@@ -38,6 +37,7 @@
 #include <Unidraw/manips.h>
 #include <Unidraw/viewer.h>
 #include <Unidraw/Commands/macro.h>
+#include <Unidraw/Commands/colorcmd.h>
 #include <Unidraw/Graphic/geomobjs.h>
 #include <Unidraw/Graphic/graphic.h>
 #include <Unidraw/Tools/tool.h>
@@ -109,6 +109,11 @@ void BorderComp::Interpret (Command* cmd) {
         Notify();
         Propagate(cmd);
 
+    } else if (cmd->IsA(COLOR_CMD)) {
+        ColorCmd* colorcmd = (ColorCmd*) cmd;
+        if (colorcmd->GetFgColor() != nil) {
+            HVComp::Interpret(cmd);
+        }
     } else if (!cmd->IsA(FONT_CMD)){
         HVComp::Interpret(cmd);
     }
@@ -136,6 +141,11 @@ void BorderComp::Uninterpret (Command* cmd) {
         Notify();
         Unpropagate(cmd);
 
+    } else if (cmd->IsA(COLOR_CMD)) {
+        ColorCmd* colorcmd = (ColorCmd*) cmd;
+        if (colorcmd->GetFgColor() != nil) {
+            HVComp::Uninterpret(cmd);
+        }
     } else if (!cmd->IsA(FONT_CMD)){
         HVComp::Uninterpret(cmd);
     }
@@ -225,7 +235,17 @@ HVComp* BorderView::InitComp (Coord l, Coord b, Coord r, Coord t) {
 
 ClassId BorderCode::GetClassId () { return BORDER_CODE; }
 boolean BorderCode::IsA(ClassId id){return BORDER_CODE==id||CodeView::IsA(id);}
-BorderCode::BorderCode (BorderComp* subj) : CodeView(subj) { }
+
+BorderCode::BorderCode (BorderComp* subj) : CodeView(subj) {}
+
+void BorderCode::Update () {
+    CodeView::Update();
+    InteractorComp* subj = GetIntComp();
+    Graphic* gr = subj->GetGraphic();
+    gr->SetColors(gr->GetFgColor(), nil);
+    gr->SetFont(nil);
+}
+
 BorderComp* BorderCode::GetBorderComp () { return (BorderComp*) GetSubject(); }
 
 boolean BorderCode::Definition (ostream& out) {
@@ -304,11 +324,12 @@ boolean BorderCode::CoreConstDecls(ostream& out) {
 boolean BorderCode::CoreConstInits(ostream& out) {
     InteractorComp* icomp = GetIntComp();
     SubclassNameVar* snamer = icomp->GetClassNameVar();
+    const char* subclass = snamer->GetName();
     const char* baseclass = snamer->GetBaseClass();
 
     out << "(\n    const char* name, int w\n) : " << baseclass;
     out << "(name, w) {\n";
-    out << "    perspective = new Perspective;\n";
+    out << "    SetClassName(\"" << subclass << "\");\n";
     out << "}\n\n";
     return out.good();
 }
@@ -342,8 +363,8 @@ boolean BorderCode::EmitIncludeHeaders(ostream& out) {
 BorderGraphic::BorderGraphic (
     Orientation o, CanvasVar* c, Graphic* g, int nat, int w
 ) : HVGraphic(c, g) {
-    int fil = (o == Horizontal) ? hfil : vfil;
-    Init(nat, fil, fil, o, w);
+    int f = (o == Horizontal) ? hfil : vfil;
+    Init(nat, f, f, o, w);
 }
 
 Graphic* BorderGraphic::Copy () {

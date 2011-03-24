@@ -63,19 +63,19 @@ void Image::request(Requisition& requisition) const {
     }
 }
 
-void Image::allocate(Canvas*, const Allocation& a, Extension& ext) {
+void Image::allocate(Canvas* c, const Allocation& a, Extension& ext) {
     if (raster_ != nil) {
         Coord x = a.x();
         Coord y = a.y();
-	ext.xy_extents(
-	    x - raster_->left_bearing(), x + raster_->right_bearing(),
-	    y - raster_->descent(), y + raster_->ascent()
+	ext.set_xy(
+	    c, x - raster_->left_bearing(), y - raster_->descent(),
+	    x + raster_->right_bearing(), y + raster_->ascent()
 	);
     }
 }
 
 void Image::draw(Canvas* c, const Allocation& a) const {
-    if (c != nil && raster_ != nil) {
+    if (raster_ != nil) {
 	c->image(raster_, a.x(), a.y());
     }
 }

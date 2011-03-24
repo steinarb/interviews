@@ -46,31 +46,33 @@
 #include "LabelView.h"
 #include "FloatView.h"
 
+#include "doc-composition.h"
+#include "doc-deck.h"
+#include "doc-listener.h"
 #include "properties.h"
 
-#include <IV-look/button.h>
+#include <IV-look/kit.h>
 #include <InterViews/background.h>
 #include <InterViews/border.h>
 #include <InterViews/box.h>
-#include <InterViews/center.h>
 #include <InterViews/color.h>
-#include <InterViews/composition.h>
-#include <InterViews/discretion.h>
+#include <InterViews/display.h>
 #include <InterViews/font.h>
-#include <InterViews/glue.h>
 #include <InterViews/hit.h>
 #include <InterViews/label.h>
-#include <InterViews/listener.h>
-#include <InterViews/margin.h>
+#include <InterViews/layout.h>
 #include <InterViews/patch.h>
 #include <InterViews/printer.h>
+#include <InterViews/session.h>
 #include <InterViews/simplecomp.h>
-#include <InterViews/world.h>
-#include <InterViews/deck.h>
+#include <InterViews/style.h>
 #include <InterViews/page.h>
 #include <InterViews/shadow.h>
+#include <InterViews/tformsetter.h>
 #include <InterViews/window.h>
+#include <OS/list.h>
 #include <OS/math.h>
+#include <OS/string.h>
 
 #include <fstream.h>
 #include <math.h>
@@ -88,6 +90,14 @@ class ViewerKeymapInfo {
 public:
     char* _name;
     DocKeymap* _keymap;
+};
+
+class ViewerPinnedInfo {
+public:
+    char* _name;
+    DocPopup* _menu;
+    boolean _mapped;
+    TransientWindow* _window;
 };
 
 class ViewerFloatInfo {
@@ -116,13 +126,14 @@ public:
     const Color* _underlay;
 };
 
-#include "list.h"
-
 declareList(ViewerMenuInfo_List,ViewerMenuInfo)
 implementList(ViewerMenuInfo_List,ViewerMenuInfo)
 
 declareList(ViewerKeymapInfo_List,ViewerKeymapInfo)
 implementList(ViewerKeymapInfo_List,ViewerKeymapInfo)
+
+declareList(ViewerPinnedInfo_List,ViewerPinnedInfo)
+implementList(ViewerPinnedInfo_List,ViewerPinnedInfo)
 
 declareList(ViewerFloatInfo_List,ViewerFloatInfo)
 implementList(ViewerFloatInfo_List,ViewerFloatInfo)
@@ -140,48 +151,68 @@ DocumentViewer::DocumentViewer (
     _document = document;
     _document->ref();
 
-    World* world = World::current();
-    const Color* fg = world->foreground();
-    const Color* bg = world->background();
-    const Font* font = world->font();
+    WidgetKit& kit = *WidgetKit::instance();
+    Style* style = kit.style();
+    const LayoutKit& layout = *LayoutKit::instance();
+    const Color* fg = kit.foreground();
+    const Color* bg = kit.background();
+    const Font* font = kit.font();
 
-    const char* insert_flash = world->property_value(INSERT_FLASH_RATE);
-    if (insert_flash != nil) {
-        _insert_flash = long(atof(insert_flash) * 1000000);
-    } else {
-        _insert_flash = 0;
+    _page_bg = bg;
+    String page_bg_color;
+    if (style->find_attribute(PAGE_BACKGROUND_COLOR, page_bg_color)) {
+	const Color* c = Color::lookup(
+	    Session::instance()->default_display(), page_bg_color
+	);
+	if (c != nil) {
+	    _page_bg = c;
+	}
+    }
+    Resource::ref(_page_bg);
+
+    _insert_flash = 0;
+    float flash_rate_seconds;
+    if (style->find_attribute(INSERT_FLASH_RATE, flash_rate_seconds)) {
+	_insert_flash = long(flash_rate_seconds * 1000000);
     }
 
-    const char* icon_font = world->property_value(PAGE_ICON_FONT);
-    if (icon_font != nil && Font::exists(world->display(), icon_font)) {
-        _icon_font = new Font(icon_font);
-    } else {
-        _icon_font = font;
+    _icon_font = font;
+    String icon_font_name;
+    if (style->find_attribute(PAGE_ICON_FONT, icon_font_name)) {
+	const Font* f = Font::lookup(icon_font_name);
+	if (f != nil) {
+	    _icon_font = f;
+	}
     }
-    _icon_font->ref();
+    Resource::ref(_icon_font);
 
     _prev_page = new PageButton(
-        new HCenter(new Label("-", _icon_font, fg)), fg
+	layout.hcenter(new Label("-", _icon_font, fg)), fg
     );
     _prev_page->ref();
     _next_page = new PageButton(
-        new HCenter(new Label("+", _icon_font, fg)), fg
+	layout.hcenter(new Label("+", _icon_font, fg)), fg
     );
     _next_page->ref();
 
     _menu_info = new ViewerMenuInfo_List();
     _keymap_info = new ViewerKeymapInfo_List();
+    _pinned_info = new ViewerPinnedInfo_List();
     _page_info = new ViewerPageInfo_List();
     _float_info = new ViewerFloatInfo_List();
     _color_info = new ViewerColorInfo_List();
 
     _header_patch = new Patch(nil);
     _page_patch = new Patch(nil);
-    _footer_patch = new Patch(new LRBox(_prev_page, _next_page));
+    _footer_patch = new Patch(
+	layout.hbox_first_aligned(_prev_page, _next_page)
+    );
     _body_patch = new Patch(
-	new TBBox(
-	    new Margin(
-		new PageBorder(new Margin(_page_patch, 1, 5, 5, 1), fg),
+	layout.vbox_first_aligned(
+	    layout.margin(
+		new PageBorder(
+		    layout.margin(_page_patch, 1, 5, 5, 1), fg, _page_bg
+                ),
 		0, 0, 0, 0, fil, 0, 5, fil, 0, 0, 0, 0
 	    ),
 	    _footer_patch
@@ -195,25 +226,27 @@ DocumentViewer::DocumentViewer (
 
     Listener* listener = new Listener(
         new Background(
-	    new TBBox(
-		new VCenter(_header_patch, 1.0),
-		new Margin(_body_patch, 5)
+	    layout.vbox_first_aligned(
+		layout.vcenter(_header_patch, 1.0),
+		layout.margin(_body_patch, 5)
             ), bg
         ), this
     );
     listener->key(true);
-    listener->button(true);
+    listener->button(true, Event::any);
     _top->body(listener);
 
-    _pages = new Deck();
+    _pages = new DocDeck();
 
-    _view = new PagingView(this, nil, _document->body(), _pages);
+    _view = new PagingView(
+	this, nil, _document->body(), layout.variable_span(_pages)
+    );
     _view->item_inserted(0L, _document->body()->item_count());
     _view->update();
 
     _page = new Page(_view);
     _page_patch->body(
-	new Margin(_page, leftmargin, rightmargin, bottommargin, topmargin)
+	layout.margin(_page, leftmargin, rightmargin, bottommargin, topmargin)
     );
 
     _starting_page = long(_document->document_metric("startingpage"));
@@ -236,7 +269,7 @@ DocumentViewer::~DocumentViewer () {
         _icon_font->unref();
     }
     while (_color_info->count() > 0) {
-        ViewerColorInfo& info = _color_info->item(0);
+        ViewerColorInfo& info = _color_info->item_ref(0);
         delete info._name;
         if (info._overlay != nil) {
             info._overlay->unref();
@@ -248,7 +281,7 @@ DocumentViewer::~DocumentViewer () {
     }
     delete _color_info;
     while (_menu_info->count() > 0) {
-        ViewerMenuInfo& m = _menu_info->item(0);
+        ViewerMenuInfo& m = _menu_info->item_ref(0);
         delete m._name;
         if (m._menubar != nil) {
             m._menubar->unref();
@@ -257,21 +290,31 @@ DocumentViewer::~DocumentViewer () {
     }
     delete _menu_info;
     while (_keymap_info->count() > 0) {
-        ViewerKeymapInfo& m = _keymap_info->item(0);
+        ViewerKeymapInfo& m = _keymap_info->item_ref(0);
         delete m._name;
         delete m._keymap;
         _keymap_info->remove(0);
     }
     delete _keymap_info;
+    while (_pinned_info->count() > 0) {
+        ViewerPinnedInfo& p = _pinned_info->item_ref(0);
+        if (p._mapped) {
+            p._window->unmap();
+        }
+        delete p._window;
+        delete p._name;
+        _pinned_info->remove(0);
+    }
+    delete _pinned_info;
     while (_float_info->count() > 0) {
-        ViewerFloatInfo& info = _float_info->item(0);
+        ViewerFloatInfo& info = _float_info->item_ref(0);
         info._item->unref();
         info._view->unref();
         _float_info->remove(0);
     }
     delete _float_info;
     while (_page_info->count() > 0) {
-        ViewerPageInfo& info = _page_info->item(0);
+        ViewerPageInfo& info = _page_info->item_ref(0);
         info._telltale->unref();
         delete info._label;
         _page_info->remove(0);
@@ -341,7 +384,7 @@ Glyph* DocumentViewer::view (ItemView* parent, LabelItem* label) {
     return view;
 }
 
-void DocumentViewer::event (Event& e) {
+boolean DocumentViewer::event (Event& e) {
     switch (e.type()) {
     case Event::key:
         if (_keymap != nil && _keymap->map(e)) {
@@ -359,11 +402,18 @@ void DocumentViewer::event (Event& e) {
         }
         break;
     }
+    return true;
 }
 
 boolean DocumentViewer::command (const char* command) {
     if (strncmp(command, "viewer", 6) == 0) {
-        World* world = World::current();
+	Style* style = Session::instance()->style();
+	String ps_ext_string = "ps";
+	style->find_attribute(POSTSCRIPT_FILE_EXTENSION, ps_ext_string);
+	NullTerminatedString ps_ext(ps_ext_string);
+	String doc_ext_string = "doc";
+	style->find_attribute(DOCUMENT_FILE_EXTENSION, doc_ext_string);
+	NullTerminatedString doc_ext(doc_ext_string);
         const char* keyword = command + 7;
         highlight(keyword, true);
         if (strcmp(keyword, "print") == 0) {
@@ -376,9 +426,7 @@ boolean DocumentViewer::command (const char* command) {
                     *dot = '\0';
                 }
                 strcat(buffer, ".");
-                strcat(
-                    buffer, world->property_value(POSTSCRIPT_FILE_EXTENSION)
-                );
+                strcat(buffer, ps_ext.string());
                 ofstream out(buffer);
                 Printer* ps = new Printer(&out);
                 const Allocation& a = _page_patch->allocation();
@@ -387,9 +435,10 @@ boolean DocumentViewer::command (const char* command) {
                 long current_page = _current_page;
                 long count = _page_info->count();
                 for (long i = 0; i < count; ++i) {
-                    ps->page(_page_info->item(i)._label);
+                    ps->page(_page_info->item_ref(i)._label);
                     page_to(i);
                     _page_patch->print(ps, a);
+		    _page_patch->undraw();
                 }
                 page_to(current_page);
                 ps->epilog();
@@ -404,8 +453,7 @@ boolean DocumentViewer::command (const char* command) {
             _application->open(new DocumentViewer(_application, document));
         } else if (strcmp(keyword, "open") == 0) {
             const char* file_name = _application->choose(
-                this, "Choose file to open:",
-                world->property_value(DOCUMENT_FILE_EXTENSION)
+                this, "Choose file to open:", doc_ext.string()
             );
             if (file_name != nil) {
                 Document* document = _application->read(file_name);
@@ -433,7 +481,7 @@ boolean DocumentViewer::command (const char* command) {
                     file_name = _application->choose(
                         this,
                         "Choose file for save:",
-                        world->property_value(DOCUMENT_FILE_EXTENSION)
+			doc_ext.string()
                     );
                 }
                 if (file_name == nil || strlen(file_name) == 0) {
@@ -452,7 +500,7 @@ boolean DocumentViewer::command (const char* command) {
                 file_name = _application->choose(
                     this,
                     "Choose file for save:",
-                    world->property_value(DOCUMENT_FILE_EXTENSION)
+		    doc_ext.string()
                 );
             }
             if (file_name != nil && strlen(file_name) > 0) {
@@ -463,7 +511,7 @@ boolean DocumentViewer::command (const char* command) {
             const char* file_name = _application->choose(
                 this,
                 "Choose file for save:",
-                world->property_value(DOCUMENT_FILE_EXTENSION)
+		doc_ext.string()
             );
             if (file_name != nil && strlen(file_name) > 0) {
                 _document->name(file_name);
@@ -472,8 +520,10 @@ boolean DocumentViewer::command (const char* command) {
 	} else if (strcmp(keyword, "help") == 0) {
 	    _application->report(this, "Help not implemented");
 	} else if (strcmp(keyword, "about") == 0) {
+	    String vers;
+	    style->find_attribute(VERSION, vers);
 	    char about[100];
-	    sprintf(about, "Doc version %s", world->property_value(VERSION));
+	    sprintf(about, "Doc version %.*s", vers.length(), vers.string());
 	    _application->report(this, about);
         }
         highlight(keyword, false);
@@ -492,6 +542,12 @@ boolean DocumentViewer::command (const char* command) {
         return false;
     } else if (strncmp(command, "page", 4) == 0) {
 	page_to(atoi(command + 4));
+        return false;
+    } else if (strncmp(command, "pin", 3) == 0) {
+        pin(command + 4);
+        return false;
+    } else if (strncmp(command, "unpin", 5) == 0) {
+        unpin(command + 6);
         return false;
     } else {
         return _application->command(command);
@@ -518,11 +574,21 @@ void DocumentViewer::choose (const char* tag, boolean choose) {
     if (_menubar != nil) {
         _menubar->choose(tag, choose);
     }
+    long count = _pinned_info->count();
+    for (long i = 0; i < count; ++i) {
+        ViewerPinnedInfo& m = _pinned_info->item_ref(i);
+        m._menu->choose(tag, choose);
+    }
 }
 
 void DocumentViewer::enable (const char* tag, boolean enable) {
     if (_menubar != nil) {
         _menubar->enable(tag, enable);
+    }
+    long count = _pinned_info->count();
+    for (long i = 0; i < count; ++i) {
+        ViewerPinnedInfo& m = _pinned_info->item_ref(i);
+        m._menu->enable(tag, enable);
     }
 }
 
@@ -530,13 +596,64 @@ void DocumentViewer::highlight (const char* tag, boolean highlight) {
     if (_menubar != nil) {
         _menubar->highlight(tag, highlight);
     }
-    World::current()->flush();
+    Session::instance()->default_display()->flush();
+}
+
+void DocumentViewer::pin (const char* name) {
+    long count = _pinned_info->count();
+    for (long i = 0; i < count; ++i) {
+        ViewerPinnedInfo& m = _pinned_info->item_ref(i);
+        if (strcmp(m._name, name) == 0) {
+            break;
+        }
+    }
+    if (i == count) {
+        ViewerPinnedInfo p;
+        p._name = strcpy(new char[strlen(name) + 1], name);
+        p._menu = new DocPopup(this, name);
+        p._window = new TransientWindow(p._menu);
+        p._window->transient_for(this);
+        p._mapped = false;
+        _pinned_info->append(p);
+    }
+    ViewerPinnedInfo& p = _pinned_info->item_ref(i);
+    if (p._mapped) {
+        p._window->unmap();
+    }
+    Event e;
+    e.display(Session::instance()->default_display());
+    e.poll();
+    IntCoord x = e.x;
+    IntCoord y = e.y;
+    e.GetAbsolute(x, y);
+    p._window->align(0.1, 0.9);
+    p._window->place(x, y);
+    p._window->map();
+    p._mapped = true;
+}
+
+void DocumentViewer::unpin (const char* name) {
+    long count = _pinned_info->count();
+    for (long i = 0; i < count; ++i) {
+        ViewerPinnedInfo& m = _pinned_info->item_ref(i);
+        if (strcmp(m._name, name) == 0) {
+            break;
+        }
+    }
+    if (i < count) {
+        ViewerPinnedInfo& p = _pinned_info->item_ref(i);
+        if (p._mapped) {
+            p._window->unmap();
+        }
+        p._mapped = false;
+    }
 }
 
 void DocumentViewer::menubar (const char* name) {
+    choose(nil, false);
     long count = _menu_info->count();
     for (long i = 0; i < count; ++i) {
-        ViewerMenuInfo& m = _menu_info->item(i);
+        ViewerMenuInfo& m = _menu_info->item_ref(i);
         if (strcmp(m._name, name) == 0) {
             break;
         }
@@ -548,7 +665,7 @@ void DocumentViewer::menubar (const char* name) {
         m._menubar->ref();
         _menu_info->append(m);
     }
-    ViewerMenuInfo& m = _menu_info->item(i);
+    ViewerMenuInfo& m = _menu_info->item_ref(i);
     _menubar = m._menubar;
     _header_patch->redraw();
     _header_patch->body(m._menubar);
@@ -559,7 +676,7 @@ void DocumentViewer::menubar (const char* name) {
 void DocumentViewer::keymap (const char* name) {
     long count = _keymap_info->count();
     for (long i = 0; i < count; ++i) {
-        ViewerKeymapInfo& info = _keymap_info->item(i);
+        ViewerKeymapInfo& info = _keymap_info->item_ref(i);
         if (strcmp(info._name, name) == 0) {
             break;
         }
@@ -570,7 +687,7 @@ void DocumentViewer::keymap (const char* name) {
         info._keymap = new DocKeymap(this, name);
         _keymap_info->append(info);
     }
-    ViewerKeymapInfo& info = _keymap_info->item(i);
+    ViewerKeymapInfo& info = _keymap_info->item_ref(i);
     _keymap = info._keymap;
 }
 
@@ -583,7 +700,7 @@ void DocumentViewer::highlight_colors (
 ) {
     long count = _color_info->count();
     for (long i = 0; i < count; ++i) {
-        ViewerColorInfo& info = _color_info->item(i);
+        ViewerColorInfo& info = _color_info->item_ref(i);
         if (strcmp(info._name, name) == 0) {
             break;
         }
@@ -591,17 +708,19 @@ void DocumentViewer::highlight_colors (
     if (i == count) {
         ViewerColorInfo info;
         info._name = strcpy(new char[strlen(name) + 1], name);
-        World* world = World::current();
+	WidgetKit& kit = *WidgetKit::instance();
+	Style* style = kit.style();
+	Display* display = Session::instance()->default_display();
 
 	const Color* highlight = nil;
-        const char* hl = world->property_value(name);
-	if (hl != nil) {
-	    highlight = Color::lookup(world->display(), hl);
+	String hl;
+	if (style->find_attribute(name, hl)) {
+	    highlight = Color::lookup(display, hl);
 	}
 	if (highlight == nil) {
-	    const char* default_hl = world->property_value(HIGHLIGHT_COLOR);
-	    if (default_hl != nil) {
-		highlight = Color::lookup(world->display(), default_hl);
+	    String default_hl;
+	    if (style->find_attribute(HIGHLIGHT_COLOR, default_hl)) {
+		highlight = Color::lookup(display, default_hl);
 	    }
 	    if (highlight == nil) {
 		highlight = new Color(0.8, 0.8, 0.8, 1.0);
@@ -609,8 +728,8 @@ void DocumentViewer::highlight_colors (
 	}
 	Resource::ref(highlight);
 
-        const Color* fg = world->foreground();
-        const Color* bg = world->background();
+        const Color* fg = kit.foreground();
+        const Color* bg = kit.background();
         if (highlight->distinguished(fg) && highlight->distinguished(bg)) {
             info._underlay = highlight;
             info._underlay->ref();
@@ -623,7 +742,7 @@ void DocumentViewer::highlight_colors (
         highlight->unref();
         _color_info->append(info);
     }
-    ViewerColorInfo& info = _color_info->item(i);
+    ViewerColorInfo& info = _color_info->item_ref(i);
     overlay = info._overlay;
     underlay = info._underlay;
 }
@@ -649,11 +768,11 @@ void DocumentViewer::float_inserted (Item* item) {
 void DocumentViewer::float_removed (Item* item) {
     long count = _float_info->count();
     for (long i = 0; i < count; ++i) {
-        if (_float_info->item(i)._item == item) {
+        if (_float_info->item_ref(i)._item == item) {
             break;
         }
     }
-    ViewerFloatInfo& info = _float_info->item(i);
+    ViewerFloatInfo& info = _float_info->item_ref(i);
     info._item->unref();
     Resource::unref(info._view);
     _float_info->remove(i);
@@ -665,11 +784,11 @@ void DocumentViewer::float_removed (Item* item) {
 void DocumentViewer::float_changed (Item* item) {
     long count = _float_info->count();
     for (long i = 0; i < count; ++i) {
-        if (_float_info->item(i)._item == item) {
+        if (_float_info->item_ref(i)._item == item) {
             break;
         }
     }
-    ViewerFloatInfo& info = _float_info->item(i);
+    ViewerFloatInfo& info = _float_info->item_ref(i);
     _page->change(i);
     _body_patch->change(0);
     _body_patch->reallocate();
@@ -677,14 +796,14 @@ void DocumentViewer::float_changed (Item* item) {
 }
 
 void DocumentViewer::float_adjusted (Item* item, float x, float y, long p) {
-    World::current()->flush();
+    Session::instance()->default_display()->flush();
     long count = _float_info->count();
     for (long i = 0; i < count; ++i) {
-        if (_float_info->item(i)._item == item) {
+        if (_float_info->item_ref(i)._item == item) {
             break;
         }
     }
-    ViewerFloatInfo& info = _float_info->item(i);
+    ViewerFloatInfo& info = _float_info->item_ref(i);
     if (info._view == nil) {
 	info._view = item->view(nil, this);
 	info._view->ref();
@@ -692,8 +811,8 @@ void DocumentViewer::float_adjusted (Item* item, float x, float y, long p) {
     if (info._page != p) {
         Glyph* g;
         if (p == -1) {
-            const Color* fg = World::current()->foreground();
-            const Color* bg = World::current()->background();
+            const Color* fg = WidgetKit::instance()->foreground();
+            const Color* bg = _page_bg;
             g = new NoPrint(
                 new Shadow(
                     new Background(new Border(info._view, fg, 1), bg), 4, -4,
@@ -740,7 +859,7 @@ long DocumentViewer::float_index (Coord x, Coord y) {
 void DocumentViewer::manipulate (Event& e) {
     long index = float_index(e.pointer_x(), e.pointer_y());
     if (index >= 0) {
-        ViewerFloatInfo& info = _float_info->item(index);
+        ViewerFloatInfo& info = _float_info->item_ref(index);
         Coord x = e.pointer_x() - info._x;
         Coord y = e.pointer_y() - info._y;
         boolean synchronous = !e.shift_is_down();
@@ -762,7 +881,7 @@ void DocumentViewer::menu (Event& e) {
     long index = float_index(e.pointer_x(), e.pointer_y());
     boolean shift = e.shift_is_down();
     if (index >= 0) {
-        ViewerFloatInfo& info = _float_info->item(index);
+        ViewerFloatInfo& info = _float_info->item_ref(index);
         long new_page;
         if (info._page == -1) {
             new_page = shift ? -2 : _current_page;
@@ -776,7 +895,7 @@ void DocumentViewer::menu (Event& e) {
 
 const char* DocumentViewer::current_page_label () const {
     if (_current_page >= 0) {
-        return _page_info->item(_current_page)._label;
+        return _page_info->item_ref(_current_page)._label;
     } else {
         return "?";
     }
@@ -785,21 +904,29 @@ const char* DocumentViewer::current_page_label () const {
 void DocumentViewer::page_to (long page) {
     long page_count = _pages->count()/2;
     if (page_count != _page_info->count()) {
-        const Color* fg = World::current()->foreground();
+	WidgetKit& kit = *WidgetKit::instance();
+	const LayoutKit& layout = *LayoutKit::instance();
+	Style* style = kit.style();
+        const Color* fg = kit.foreground();
         char label[10];
         while (_page_info->count() < page_count) {
             ViewerPageInfo info;
-            sprintf(label, "%d", _page_info->count() + _starting_page + 1);
+            _document->format_counter(
+                _page_info->count() + _starting_page + 1,
+                _document->document_parameter("pagenumberformat"),
+                label
+            );
             info._label = strcpy(new char[strlen(label) + 1], label);
             info._telltale = new PageButton(
-                new HCenter(new Label(info._label, _icon_font, fg)), fg
+                layout.hcenter(new Label(info._label, _icon_font, fg)), fg
             );
+	    info._telltale->state()->set(TelltaleState::is_enabled, true);
             info._telltale->ref();
             _page_info->append(info);
         }
         while (_page_info->count() > page_count) {
             long count = _page_info->count();
-            ViewerPageInfo& info = _page_info->item(count - 1);
+            ViewerPageInfo& info = _page_info->item_ref(count - 1);
             if (info._telltale != nil) {
                 info._telltale->unref();
             }
@@ -807,34 +934,43 @@ void DocumentViewer::page_to (long page) {
             _page_info->remove(count - 1);
         }
 
-        LRBox* buttons = new LRBox();
+        PolyGlyph* buttons = layout.hbox_first_aligned();
 	buttons->append(nil);
         buttons->append(
-            new Button(new Command(this, "page backward"), _prev_page)
+            new Button(
+		_prev_page, style, _prev_page->state(),
+		new Command(this, "page backward")
+	    )
         );
         buttons->append(
-            new Button(new Command(this, "page forward"), _next_page)
+            new Button(
+		_next_page, style, _next_page->state(),
+		new Command(this, "page forward")
+	    )
         );
-        buttons->append(new HGlue(5, 0, 0));
+        buttons->append(layout.hspace(5));
 
         Coord width = _document->document_metric("textwidth");
         LRComposition* comp = new LRComposition(
-            new TBBox(), new SimpleCompositor(), nil, width, true
+            layout.vbox_first_aligned(), new SimpleCompositor(), nil, width
         );
         for (long i = 0; i < page_count; ++i) {
-            ViewerPageInfo& info = _page_info->item(i);
+            ViewerPageInfo& info = _page_info->item_ref(i);
             char command [20];
             sprintf(command, "page %d", i);
             comp->append(
-                new Button(new Command(this, command), info._telltale)
+                new Button(
+		    info._telltale, style, info._telltale->state(),
+		    new Command(this, command)
+		)
             );
             comp->append(
-                new Discretionary(0, nil, nil, nil, nil)
+		layout.discretionary(0, nil, nil, nil, nil)
             );
         }
         comp->repair();
         buttons->append(comp);
-	buttons->append(new HGlue());
+	buttons->append(layout.hglue());
         _footer_patch->redraw();
         _footer_patch->body(buttons);
 	_body_patch->change(1);
@@ -848,14 +984,14 @@ void DocumentViewer::page_to (long page) {
         _pages->flip_to(_current_page * 2);
         _view->view_page(_current_page * 2);
         for (long i = 0; i < page_count; ++i) {
-            ViewerPageInfo& info = _page_info->item(i);
+            ViewerPageInfo& info = _page_info->item_ref(i);
             info._telltale->choose(i == _current_page);
         }
         _prev_page->enable(_current_page > 0);
         _next_page->enable(_current_page < page_count - 1);
         long float_count = _float_info->count();
         for (long j = 0; j < float_count; ++j) {
-            ViewerFloatInfo& info = _float_info->item(j);
+            ViewerFloatInfo& info = _float_info->item_ref(j);
             boolean showing = (
                 info._page == -2 && _current_page > 0
                 || info._page == -1
@@ -889,7 +1025,7 @@ Coord DocumentViewer::top_margin (
     Coord top = t;
     long count = _float_info->count();
     for (long i = 0; i < count; ++i) {
-        ViewerFloatInfo& info = _float_info->item(i);
+        ViewerFloatInfo& info = _float_info->item_ref(i);
         if (info._page == page/2 || info._page == -2 && page > 0) {
 	    Allotment ax, ay;
             _page->allotment(i, Dimension_X, ax);
@@ -914,7 +1050,7 @@ Coord DocumentViewer::bottom_margin (
     Coord bottom = b;
     long count = _float_info->count();
     for (long i = 0; i < count; ++i) {
-        ViewerFloatInfo& info = _float_info->item(i);
+        ViewerFloatInfo& info = _float_info->item_ref(i);
         if (info._page == page/2 || info._page == -2 && page > 0) {
 	    Allotment ax, ay;
             _page->allotment(i, Dimension_X, ax);

@@ -27,6 +27,7 @@
 #include "DialogMgr.h"
 #include "dialogs.h"
 
+#include <OS/list.h>
 #include <string.h>
 
 class ChooserInfo {
@@ -53,8 +54,6 @@ public:
     Reporter* _reporter;
 };
 
-#include "list.h"
-
 declareList(ChooserInfo_List,ChooserInfo)
 implementList(ChooserInfo_List,ChooserInfo)
 
@@ -76,28 +75,28 @@ DialogManager::DialogManager () {
 
 DialogManager::~DialogManager () {
     while (_chooser->count() > 0) {
-        ChooserInfo& info = _chooser->item(0);
+        ChooserInfo& info = _chooser->item_ref(0);
         delete info._prompt;
         delete info._chooser;
         _chooser->remove(0);
     }
     delete _chooser;
     while (_asker->count() > 0) {
-        AskerInfo& info = _asker->item(0);
+        AskerInfo& info = _asker->item_ref(0);
         delete info._prompt;
         delete info._asker;
         _asker->remove(0);
     }
     delete _asker;
     while (_confirmer->count() > 0) {
-        ConfirmerInfo& info = _confirmer->item(0);
+        ConfirmerInfo& info = _confirmer->item_ref(0);
         delete info._prompt;
         delete info._confirmer;
         _confirmer->remove(0);
     }
     delete _confirmer;
     while (_reporter->count() > 0) {
-        ReporterInfo& info = _reporter->item(0);
+        ReporterInfo& info = _reporter->item_ref(0);
         delete info._prompt;
         delete info._reporter;
         _reporter->remove(0);
@@ -110,7 +109,7 @@ const char* DialogManager::choose (
 ) {
     long count = _chooser->count();
     for (long i = 0; i < count; ++i) {
-        ChooserInfo& info = _chooser->item(i);
+        ChooserInfo& info = _chooser->item_ref(i);
         if (strcmp(info._prompt, prompt) == 0) {
             break;
         }
@@ -118,10 +117,10 @@ const char* DialogManager::choose (
     if (i == count) {
         ChooserInfo info;
         info._prompt = strcpy(new char[strlen(prompt) + 1], prompt);
-        info._chooser = new Chooser("", prompt);
+        info._chooser = new Chooser("choose", prompt);
         _chooser->append(info);
     }
-    ChooserInfo& info = _chooser->item(i);
+    ChooserInfo& info = _chooser->item_ref(i);
     return info._chooser->post(window, filter);
 }
 
@@ -130,7 +129,7 @@ const char* DialogManager::ask (
 ) {
     long count = _asker->count();
     for (long i = 0; i < count; ++i) {
-        AskerInfo& info = _asker->item(i);
+        AskerInfo& info = _asker->item_ref(i);
         if (strcmp(info._prompt, prompt) == 0) {
             break;
         }
@@ -138,17 +137,17 @@ const char* DialogManager::ask (
     if (i == count) {
         AskerInfo info;
         info._prompt = strcpy(new char[strlen(prompt) + 1], prompt);
-        info._asker = new Asker("", prompt);
+        info._asker = new Asker("ask", prompt);
         _asker->append(info);
     }
-    AskerInfo& info = _asker->item(i);
+    AskerInfo& info = _asker->item_ref(i);
     return info._asker->post(window, initial);
 }
 
 int DialogManager::confirm (Window* window, const char* prompt) {
     long count = _confirmer->count();
     for (long i = 0; i < count; ++i) {
-        ConfirmerInfo& info = _confirmer->item(i);
+        ConfirmerInfo& info = _confirmer->item_ref(i);
         if (strcmp(info._prompt, prompt) == 0) {
             break;
         }
@@ -156,17 +155,17 @@ int DialogManager::confirm (Window* window, const char* prompt) {
     if (i == count) {
         ConfirmerInfo info;
         info._prompt = strcpy(new char[strlen(prompt) + 1], prompt);
-        info._confirmer = new Confirmer("", prompt);
+        info._confirmer = new Confirmer("confirm", prompt);
         _confirmer->append(info);
     }
-    ConfirmerInfo& info = _confirmer->item(i);
+    ConfirmerInfo& info = _confirmer->item_ref(i);
     return info._confirmer->post(window);
 }
 
 void DialogManager::report (Window* window, const char* prompt) {
     long count = _reporter->count();
     for (long i = 0; i < count; ++i) {
-        ReporterInfo& info = _reporter->item(i);
+        ReporterInfo& info = _reporter->item_ref(i);
         if (strcmp(info._prompt, prompt) == 0) {
             break;
         }
@@ -174,9 +173,9 @@ void DialogManager::report (Window* window, const char* prompt) {
     if (i == count) {
         ReporterInfo info;
         info._prompt = strcpy(new char[strlen(prompt) + 1], prompt);
-        info._reporter = new Reporter("", prompt);
+        info._reporter = new Reporter("report", prompt);
         _reporter->append(info);
     }
-    ReporterInfo& info = _reporter->item(i);
+    ReporterInfo& info = _reporter->item_ref(i);
     info._reporter->post(window);
 }

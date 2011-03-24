@@ -32,6 +32,8 @@
 #include <Unidraw/Components/grview.h>
 
 class CGlue;
+class CSolver;
+class CSolverInfo;
 class Path;
 class StateVar;
 
@@ -74,7 +76,7 @@ protected:
     TransMethod _transMethod;
 private:
     friend class CSolver;
-    class CSolverInfo* _csinfo;
+    CSolverInfo* _csinfo;
 };
 
 class ConnectorView : public GraphicView {

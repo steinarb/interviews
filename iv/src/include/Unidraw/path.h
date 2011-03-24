@@ -28,11 +28,15 @@
 #ifndef unidraw_path_h
 #define unidraw_path_h
 
-#include <InterViews/defs.h>
+#include <InterViews/enter-scope.h>
+#include <Unidraw/enter-scope.h>
+
+#include <InterViews/_enter.h>
 
 static const int SLOTS = 100;
 
 class Connector;
+class UList;
 
 class Path {
 public:
@@ -44,5 +48,7 @@ public:
 private:
     class UList* _slot[SLOTS];
 };
+
+#include <InterViews/_leave.h>
 
 #endif

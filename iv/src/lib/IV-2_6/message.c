@@ -27,9 +27,9 @@
  */
 
 #include <InterViews/font.h>
-#include <InterViews/2.6/InterViews/message.h>
-#include <InterViews/2.6/InterViews/painter.h>
-#include <InterViews/2.6/InterViews/shape.h>
+#include <IV-2_6/InterViews/message.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/shape.h>
 #include <stdlib.h>
 #include <string.h>
 

@@ -47,26 +47,19 @@ void Align::request(
     for (int index = 0; index < count; ++index) {
         const Requirement& r = request[index].requirement(dimension_);
         if (r.defined()) {
-            natural_lead = Math::max(
-                natural_lead, Coord(r.natural() * r.alignment())
-            );
-            max_lead = Math::min(
-                max_lead, Coord((r.natural() + r.stretch()) * r.alignment())
-            );
-            min_lead = Math::max(
-                min_lead, Coord((r.natural() - r.stretch()) * r.alignment())
-            );
+	    Coord r_nat = r.natural();
+	    Coord r_max = r_nat + r.stretch();
+	    Coord r_min = r_nat - r.shrink();
+	    Coord r_align = r.alignment();
+	    Coord r_inv_align = 1.0 - r_align;
+            natural_lead = Math::max(natural_lead, Coord(r_nat * r_align));
+            max_lead = Math::min(max_lead, Coord(r_max * r_align));
+            min_lead = Math::max(min_lead, Coord(r_min * r_align));
             natural_trail = Math::max(
-                natural_trail, Coord(r.natural() * (1 - r.alignment()))
+                natural_trail, Coord(r_nat * r_inv_align)
             );
-            max_trail = Math::min(
-                max_trail,
-                Coord((r.natural() + r.stretch()) * (1 - r.alignment()))
-            );
-            min_trail = Math::max(
-                min_trail,
-                Coord((r.natural() - r.shrink()) * (1 - r.alignment()))
-            );
+            max_trail = Math::min(max_trail, Coord(r_max * r_inv_align));
+            min_trail = Math::max(min_trail, Coord(r_min * r_inv_align));
         }
     }
     Requirement r(

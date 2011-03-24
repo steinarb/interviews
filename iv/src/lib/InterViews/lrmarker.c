@@ -122,10 +122,18 @@ void LRMarker::bound(Coord left, Coord bottom, Coord right, Coord top) {
             Coord rn = Math::min(right_, right);
             Coord tx = Math::max(top_, top);
             Coord tn = Math::min(top_, top);
-            if (ln != lx) canvas_->damage(ln, bn, lx, tn);
-            if (tn != tx) canvas_->damage(ln, tn, rn, tx);
-            if (rn != rx) canvas_->damage(rn, bx, rx, tx);
-            if (bn != bx) canvas_->damage(lx, bn, rx, bx);
+            if (ln != lx) {
+		canvas_->damage(ln, bn, lx, tn);
+	    }
+            if (tn != tx) {
+		canvas_->damage(ln, tn, rn, tx);
+	    }
+            if (rn != rx) {
+		canvas_->damage(rn, bx, rx, tx);
+	    }
+            if (bn != bx) {
+		canvas_->damage(lx, bn, rx, bx);
+	    }
         }
     }
     left_ = left;
@@ -176,28 +184,33 @@ void LRMarker::mark(
     marked_ = true;
 }
 
-void LRMarker::allocate(Canvas* canvas, const Allocation& a, Extension& ext) {
-    MonoGlyph::allocate(canvas, a, ext);
-    ext.extend(a);
-    canvas_ = canvas;
+void LRMarker::allocate(Canvas* c, const Allocation& a, Extension& ext) {
+    MonoGlyph::allocate(c, a, ext);
+    ext.merge(c, a);
+    canvas_ = c;
 }
 
-void LRMarker::draw(Canvas* canvas, const Allocation& a) const {
-    if (canvas != nil) {
+void LRMarker::draw(Canvas* c, const Allocation& a) const {
+    if (c != nil) {
         if (marked_ && underlay_ != nil) {
             do_draw(
-                canvas, underlay_,
+                c, underlay_,
                 left_, right_, x1_, y1_, y1_ + h1_, x2_, y2_, y2_ + h2_
             );
         }
     }
-    MonoGlyph::draw(canvas, a);
-    if (canvas != nil) {
+    MonoGlyph::draw(c, a);
+    if (c != nil) {
         if (marked_ && overlay_ != nil) {
             do_draw(
-                canvas, overlay_,
+                c, overlay_,
                 left_, right_, x1_, y1_, y1_ + h1_, x2_, y2_, y2_ + h2_
             );
         }
     }
+}
+
+void LRMarker::undraw() {
+    MonoGlyph::undraw();
+    canvas_ = nil;
 }

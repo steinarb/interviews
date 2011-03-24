@@ -46,14 +46,12 @@ void Rule::request(Requisition& req) const {
     req.require(dimension_, r);
 }
 
-void Rule::allocate(Canvas*, const Allocation& a, Extension& ext) {
-    ext.xy_extents(a);
+void Rule::allocate(Canvas* c, const Allocation& a, Extension& ext) {
+    ext.set(c, a);
 }
 
 void Rule::draw(Canvas* c, const Allocation& a) const {
-    if (c != nil) {
-        c->fill_rect(a.left(), a.bottom(), a.right(), a.top(), color_);
-    }
+    c->fill_rect(a.left(), a.bottom(), a.right(), a.top(), color_);
 }
 
 HRule::HRule(const Color* c, Coord t) : Rule(Dimension_Y, c, t) { }

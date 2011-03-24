@@ -22,7 +22,6 @@
 
 /*
  * Implementation of user interface builder-specific tools.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibtools.c,v 1.2 91/09/27 14:12:15 tang Exp $
  */
 
 #include "ibadjuster.h"
@@ -47,6 +46,7 @@
 #include <InterViews/event.h>
 #include <InterViews/message.h>
 #include <InterViews/shape.h>
+#include <string.h>
 
 /*****************************************************************************/
 
@@ -93,7 +93,33 @@ void ComputeViewPath (Event& e, GraphicView* views, Selection* s){
 }
 
 const char* GetName (GraphicComp* comp) {
-    return ((IBNameVar*) comp->GetState("ClassNameVar"))->GetName();
+    SubclassNameVar* snamer = (SubclassNameVar*)comp->GetState(
+        "ClassNameVar"
+    );
+    return snamer->GetName();
+}
+
+const char* GetName (GraphicComp* comp, boolean shift, boolean mname) {
+    static char Name[CHARBUFSIZE];
+    SubclassNameVar* snamer = (SubclassNameVar*)comp->GetState(
+        "ClassNameVar"
+    );
+    strcpy(Name, snamer->GetName());
+    if (shift) {
+        strcat(Name, " ");
+        if (mname) {
+            MemberNameVar* mnamer = (MemberNameVar*) comp->GetState(
+                "MemberNameVar"
+            );
+            strcat(Name, mnamer->GetName());
+        } else {
+            InstanceNameVar* inamer = (InstanceNameVar*) comp->GetState(
+                "InstanceNameVar"
+            );
+            strcat(Name, inamer->GetName());
+        }
+    }
+    return Name;
 }
 
 /*****************************************************************************/
@@ -135,6 +161,7 @@ Manipulator* ExamineTool::CreateManipulator (
 
     s->Clear();
     ComputeViewPath(e, views, _selPath);
+    _shift = e.shift_is_down();
 
     if (!_selPath->IsEmpty()) {
         Iterator i;
@@ -163,7 +190,9 @@ Control* ExamineTool::CreateInfoEntry (Selection* s, Editor* ed) {
 	    GraphicView* view = (GraphicView*) s->GetView(i);
             GraphicComp* comp = view->GetGraphicComp();
             InfoCmd* cmd = new InfoCmd(ed, view);
-            m->Include(new CommandItem(GetName(comp), Center, cmd));
+            m->Include(
+                new CommandItem(GetName(comp, _shift, true), Center, cmd)
+            );
         }
     } else {
 	s->First(i);
@@ -189,7 +218,9 @@ Control* ExamineTool::CreatePropsEntry (Selection* s, Editor* ed) {
                 }
                 Menu* m = (Menu*) ctrl;
                 PropsCmd* cmd = new PropsCmd(ed, (InteractorComp*) comp);
-                m->Include(new CommandItem(GetName(comp), Center, cmd));
+                m->Include(
+                    new CommandItem(GetName(comp, _shift, false), Center, cmd)
+                );
             }
         }
     } else {

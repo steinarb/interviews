@@ -22,7 +22,6 @@
 
 /*
  * Interactor component definitions.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibinteractor.c,v 1.2 91/09/27 14:10:46 tang Exp $
  */
 
 #include "ibclasses.h"
@@ -67,6 +66,7 @@
 #include <InterViews/transformer.h>
 
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <stream.h>
 #include <string.h>
@@ -180,6 +180,7 @@ boolean InteractorComp::IsA (ClassId id) {
 
 InteractorComp::InteractorComp (IBGraphic* g) : GraphicComps(g) {
     _classNameVar = new SubclassNameVar("Interactor", false);
+    _classNameVar->ref();
     _shapeVar = new ShapeVar(new IBShape);
     _props = new Props("");
     _memberVar = nil;
@@ -191,9 +192,9 @@ InteractorComp::~InteractorComp () {
     delete _canvasVar;
     delete _props;
     delete _shapeVar;
-    delete _classNameVar;
     delete _instanceNameVar;
     delete _memberVar;
+    _classNameVar->unref();
 }
 
 void InteractorComp::Propagate (Command* cmd) {
@@ -302,7 +303,9 @@ void InteractorComp::Interpret (Command* cmd) {
         GetFirewallCmd* gcmd = (GetFirewallCmd*) cmd;
         InteractorComp* parent = (InteractorComp*) GetParent();
         
-        if (parent != nil && parent->IsANewScope()) {
+        if (IsANewScope()) {
+            gcmd->SetFirewall(this);
+        } else if (parent != nil && parent->IsANewScope()) {
             gcmd->SetFirewall(parent);
         } else if (parent == (InteractorComp*) GetRoot()) {
             gcmd->SetFirewall(this);
@@ -365,8 +368,8 @@ void InteractorComp::Interpret (Command* cmd) {
 
     } else if (
 	!cmd->IsA(GLUEVISIBILITY_CMD) && 
-	!cmd->IsA(ALIGN_CMD) && 
-	!cmd->IsA(BRUSH_CMD) && !cmd->IsA(UNGROUP_CMD)
+	!cmd->IsA(ALIGN_CMD) && !cmd->IsA(BRUSH_CMD) && 
+        !cmd->IsA(UNGROUP_CMD) && !cmd->IsA(GETCLONES_CMD)
     ) {
         GraphicComps::Interpret(cmd);
     }
@@ -422,8 +425,8 @@ void InteractorComp::Uninterpret (Command* cmd) {
 
     } else if (
 	!cmd->IsA(GLUEVISIBILITY_CMD) && 
-	!cmd->IsA(ALIGN_CMD) && 
-	!cmd->IsA(BRUSH_CMD) && !cmd->IsA(UNGROUP_CMD)
+	!cmd->IsA(ALIGN_CMD) && !cmd->IsA(BRUSH_CMD) && 
+        !cmd->IsA(UNGROUP_CMD) && !cmd->IsA(GETCLONES_CMD)
     ) {
 	GraphicComps::Uninterpret(cmd);
     }
@@ -482,6 +485,7 @@ void InteractorComp::Instantiate() {
 	sprintf(buf, "_%s_0", _classNameVar->GetName());
 	_memberVar = new MemberNameVar(buf);
         _memberVar->GenNewName();
+        _memberVar->SetSubclass(_classNameVar);
     }
 }
 
@@ -507,7 +511,10 @@ void InteractorComp::SetState(const char* name, StateVar* stateVar) {
         _canvasVar = (CanvasVar*) stateVar;
 
     } else if (strcmp(name, "ClassNameVar") == 0) {
-        _classNameVar = (SubclassNameVar*) stateVar;
+        SubclassNameVar* classNameVar = (SubclassNameVar*) stateVar;
+        classNameVar->ref();
+        _classNameVar->unref();
+        _classNameVar = classNameVar;
 
     } else if (strcmp(name, "MemberNameVar") == 0) {
         MemberNameVar* memberVar = (MemberNameVar*) stateVar;
@@ -549,15 +556,19 @@ void InteractorComp::Read (istream& in) {
     
     delete _canvasVar;
     delete _shapeVar;
-    delete _classNameVar;
     delete _instanceNameVar;
     delete _memberVar;
+    _classNameVar->unref();
 
     _canvasVar = (CanvasVar*) catalog->ReadStateVar(in);
     _classNameVar = (SubclassNameVar*) catalog->ReadStateVar(in);
     _memberVar = (MemberNameVar*) catalog->ReadStateVar(in);
     _instanceNameVar = (InstanceNameVar*) catalog->ReadStateVar(in);
     _shapeVar = (ShapeVar*) catalog->ReadStateVar(in);
+    _classNameVar->ref();
+    if (_memberVar != nil) {
+        _memberVar->SetSubclass(_classNameVar);
+    }
 
     _props->Read(in);
 
@@ -798,13 +809,23 @@ boolean InteractorView::UpdateCanvasVar () {
 boolean InteractorView::Different (Graphic* g1, Graphic* g2) {
     boolean different = true;
 
+    BoxObj box1;
+    BoxObj box2;
+
+    g1->GetBox(box1);
+    g2->GetBox(box2);
+
     if (
         g1->GetFgColor() == g2->GetFgColor() &&
         g1->GetBgColor() == g2->GetBgColor() &&
         g1->BgFilled() == g2->BgFilled() &&
         g1->GetPattern() == g2->GetPattern() &&
         g1->GetBrush() == g2->GetBrush() &&
-        g1->GetFont() == g2->GetFont()
+        g1->GetFont() == g2->GetFont() &&
+        box1._left == box2._left &&
+        box1._bottom == box2._bottom &&
+        box1._right == box2._right &&
+        box1._top == box2._top
     ) {
         Transformer identity;
         Transformer* t1 = g1->GetTransformer();

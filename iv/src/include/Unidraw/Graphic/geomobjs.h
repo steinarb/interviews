@@ -27,7 +27,10 @@
 #ifndef unidraw_graphic_geomobjs_h
 #define unidraw_graphic_geomobjs_h
 
-#include <InterViews/defs.h>
+#include <IV-2_6/InterViews/defs.h>
+#include <Unidraw/enter-scope.h>
+
+#include <IV-2_6/_enter.h>
 
 class PointObj {
 public:
@@ -130,5 +133,7 @@ public:
  */
 
 inline boolean Extent::Undefined () { return _left == _cx && _bottom == _cy; }
+
+#include <IV-2_6/_leave.h>
 
 #endif

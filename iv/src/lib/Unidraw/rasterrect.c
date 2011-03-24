@@ -27,9 +27,11 @@
 #include <Unidraw/globals.h>
 #include <Unidraw/Graphic/rasterrect.h>
 
-#include <InterViews/painter.h>
+#include <IV-2_6/InterViews/painter.h>
 #include <InterViews/raster.h>
 #include <InterViews/transformer.h>
+
+#include <IV-2_6/_enter.h>
 
 /*****************************************************************************/
 

@@ -22,7 +22,6 @@
 
 /*
  * IBuild object creator class.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibcreator.h,v 1.2 91/09/27 14:13:25 tang Exp $
  */
 
 #ifndef ibcreator_h
@@ -39,6 +38,7 @@ public:
     );
     virtual void* Create(ClassId);              // for views
     static void SetLock(boolean);
+    static boolean GetLock();
 private:
     void* Default(ClassId, istream&, ObjectMap*, int);
 private:

@@ -30,10 +30,9 @@
 #include "DocViewer.h"
 #include "PagenoItem.h"
 
-#include <InterViews/box.h>
-#include <InterViews/fixedspan.h>
-#include <InterViews/listener.h>
-#include <InterViews/margin.h>
+#include "doc-listener.h"
+
+#include <InterViews/layout.h>
 #include <InterViews/patch.h>
 
 #include <string.h>
@@ -47,7 +46,7 @@ PagenumberView::PagenumberView (
     const char* sample = _pagenumber->sample();
     int l = strlen(sample);
     long style = _pagenumber->style();
-    LRBox* box = new LRBox(l);
+    Glyph* box = LayoutKit::instance()->hbox(l);
     for (int i = 0; i < l; ++i) {
         box->append(_pagenumber->document()->character(sample[i], style));
     }
@@ -73,15 +72,15 @@ void PagenumberView::draw (Canvas* c, const Allocation& allocation) const {
         p->_label = strcpy(new char[strlen(label)+1], label);
         int l = strlen(label);
         long style = p->_pagenumber->style();
-        LRBox* box = new LRBox(l);
+	const LayoutKit& layout = *LayoutKit::instance();
+        Glyph* box = layout.hbox(l);
         for (int i = 0; i < l; ++i) {
             box->append(_pagenumber->document()->character(label[i], style));
         }
+	p->_patch->undraw();
         p->_patch->body(
-            new FixedSpan(
-                new HMargin(box, 0, fil, fil, 0, fil, fil),
-		Dimension_X,
-		p->_width
+            layout.h_fixed_span(
+                layout.h_margin(box, 0, fil, fil, 0, fil, fil), p->_width
             )
         );
         p->_patch->reallocate();
@@ -97,15 +96,15 @@ void PagenumberView::print (Printer* printer, const Allocation& a) const {
         p->_label = strcpy(new char[strlen(label)+1], label);
         int l = strlen(label);
         long style = p->_pagenumber->style();
-        LRBox* box = new LRBox(l);
+	const LayoutKit& layout = *LayoutKit::instance();
+        Glyph* box = layout.hbox(l);
         for (int i = 0; i < l; ++i) {
             box->append(_pagenumber->document()->character(label[i], style));
         }
+	p->_patch->undraw();
         p->_patch->body(
-            new FixedSpan(
-                new HMargin(box, 0, fil, fil, 0, fil, fil),
-		Dimension_X,
-		p->_width
+            layout.h_fixed_span(
+                layout.h_margin(box, 0, fil, fil, 0, fil, fil), p->_width
             )
         );
         p->_patch->reallocate();

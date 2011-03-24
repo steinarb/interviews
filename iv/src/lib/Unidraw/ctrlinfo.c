@@ -29,6 +29,8 @@
 #include <Unidraw/uctrl.h>
 #include <Unidraw/Components/text.h>
 
+#include <IV-2_6/_enter.h>
+
 #include <string.h>
 
 /*****************************************************************************/

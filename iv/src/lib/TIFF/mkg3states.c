@@ -1,10 +1,10 @@
 #ifndef lint
-static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/mkg3states.c,v 1.5 91/08/13 11:36:35 sam Exp $";
+static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/mkg3states.c,v 1.13 92/03/06 11:10:57 sam Exp $";
 #endif
 
 /*
- * Copyright (c) 1991 Sam Leffler
- * Copyright (c) 1991 Silicon Graphics, Inc.
+ * Copyright (c) 1991, 1992 Sam Leffler
+ * Copyright (c) 1991, 1992 Silicon Graphics, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and 
  * its documentation for any purpose is hereby granted without fee, provided
@@ -43,7 +43,7 @@ static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/mkg3states.c,v 
  *	code without payment of royalties or the necessity of notification as
  *	long as this notice (all the text under "LEGAL") is included.
  *
- *	Reference: $Id: mkg3states.c,v 1.5 91/08/13 11:36:35 sam Exp $
+ *	Reference: $Id: mkg3states.c,v 1.13 92/03/06 11:10:57 sam Exp $
  *
  *	This program is offered without any warranty of any kind. It includes
  *	no warranty of merchantability or fitness for any purpose. Testing and
@@ -68,8 +68,6 @@ static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/mkg3states.c,v 
  * END (from the original source)
  */
 #include <stdio.h>
-#include <sys/types.h>
-
 #include "prototypes.h"
 
 #ifndef TRUE
@@ -100,22 +98,22 @@ static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/mkg3states.c,v 
 #define MODE_ERROR	11
 #define MODE_ERROR_1	12
 
-u_long
-DECLARE1(append_0, u_long, prefix)
+unsigned long
+DECLARE1(append_0, unsigned long, prefix)
 {
     return (prefix + (1L<<16));
 }
 
-u_long
-DECLARE1(append_1, u_long, prefix)
+unsigned long
+DECLARE1(append_1, unsigned long, prefix)
 {
-    static u_short prefix_bit[16] = {
+    static unsigned short prefix_bit[16] = {
 	0x8000, 0x4000, 0x2000, 0x1000,
 	0x0800, 0x0400, 0x0200, 0x0100,
 	0x0080, 0x0040, 0x0020, 0x0010,
 	0x0008, 0x0004, 0x0002, 0x0001
     };
-    u_char len = (prefix >> 16) & 0xf;
+    unsigned char len = (prefix >> 16) & 0xf;
     return (append_0(prefix) + prefix_bit[len]);
 }
 
@@ -123,10 +121,14 @@ DECLARE1(append_1, u_long, prefix)
 #include "t4.h"
 
 short
-DECLARE3(search_table, u_long, prefix, tableentry*, tab, int, n)
+#if defined(__STDC__) || defined(__EXTENDED__) || USE_CONST
+DECLARE3(search_table, unsigned long, prefix, tableentry const*, tab, int, n)
+#else
+DECLARE3(search_table, unsigned long, prefix, tableentry*, tab, int, n)
+#endif
 {
-    u_short len = (prefix >> 16) & 0xf;
-    u_short code = (prefix & 0xffff) >> (16 - len);
+    unsigned short len = (prefix >> 16) & 0xf;
+    unsigned short code = (prefix & 0xffff) >> (16 - len);
 
     while (n-- > 0) {
 	if (tab->length == len && tab->code == code)
@@ -138,22 +140,22 @@ DECLARE3(search_table, u_long, prefix, tableentry*, tab, int, n)
 
 #define	NCODES(a)	(sizeof (a) / sizeof (a[0]))
 short
-DECLARE1(white_run_length, u_long, prefix)
+DECLARE1(white_run_length, unsigned long, prefix)
 {
     return (search_table(prefix, TIFFFaxWhiteCodes, NCODES(TIFFFaxWhiteCodes)));
 }
 
 short
-DECLARE1(black_run_length, u_long, prefix)
+DECLARE1(black_run_length, unsigned long, prefix)
 {
     return (search_table(prefix, TIFFFaxBlackCodes, NCODES(TIFFFaxBlackCodes)));
 }
 #undef NCODES
 
 #define MAX_NULLPREFIX	200	/* max # of null-mode prefixes */
-typedef	u_char NullModeTable[MAX_NULLPREFIX][256];
+typedef	unsigned char NullModeTable[MAX_NULLPREFIX][256];
 #define MAX_HORIZPREFIX	250	/* max # of incomplete 1-D prefixes */
-typedef	u_char HorizModeTable[MAX_HORIZPREFIX][256];
+typedef	unsigned char HorizModeTable[MAX_HORIZPREFIX][256];
 
   /* the bit string corresponding to this row of the decoding table */
 long	null_mode_prefix[MAX_NULLPREFIX];
@@ -231,7 +233,7 @@ long	horiz_mode_prefix[MAX_HORIZPREFIX];
 char	horiz_mode_color[MAX_HORIZPREFIX];
 short	horiz_mode_prefix_count = 0;
 
-static	u_char bit_mask[8] =
+static	unsigned char bit_mask[8] =
     { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
 
 #if USE_PROTOTYPES
@@ -257,28 +259,36 @@ void	write_tables();
 #endif
 
 int	verbose = FALSE;
+char	*storage_class = "";
 
 void
 DECLARE2(main, int, argc, char**, argv)
 {
-    if (argc > 1 && strcmp(argv[1], "-v") == 0)
-	verbose = TRUE;
+    while (argc > 1 && argv[1][0] == '-') {
+	if (strcmp(argv[1], "-v") == 0) {
+	    verbose = TRUE;
+	    argc--, argv++;
+	} else if (strcmp(argv[1], "-c") == 0) {
+	    storage_class = "const ";
+	    argc--, argv++;
+	}
+    }
     build_null_mode_tables();		/* null mode decoding tables */
     if (verbose) {
-	fprintf(stderr, "%hd null mode prefixes defined\n",
-	    null_mode_prefix_count);
+	fprintf(stderr, "%d null mode prefixes defined\n",
+	    (int) null_mode_prefix_count);
 	fprintf(stderr, "building uncompressed mode scripts...\n");
     }
     build_uncomp_mode_tables();		/* uncompressed mode decoding tables */
     if (verbose) {
-	fprintf(stderr, "%hd uncompressed mode prefixes defined\n",
-	    uncomp_mode_prefix_count);
+	fprintf(stderr, "%d uncompressed mode prefixes defined\n",
+	    (int) uncomp_mode_prefix_count);
 	fprintf(stderr, "building 1D scripts...\n");
     }
     build_horiz_mode_tables();		/* 1D decoding tables */
     if (verbose)
-	fprintf(stderr, "%hd incomplete prefixes defined\n",
-	    horiz_mode_prefix_count);
+	fprintf(stderr, "%d incomplete prefixes defined\n",
+	    (int) horiz_mode_prefix_count);
     write_tables(stdout);
     exit(0);
 }
@@ -290,13 +300,14 @@ DECLARE3(write_null_mode_table, FILE*, fd, NullModeTable, table, char*, name)
     char* outersep;
     char* sep;
 
-    fprintf(fd, "u_char\t%s[%hd][256] = {", name, null_mode_prefix_count);
+    fprintf(fd, "%su_char\t%s[%d][256] = {", storage_class,
+	name, (int) null_mode_prefix_count);
     outersep = "";
     for (i = 0; i < null_mode_prefix_count; i++) {
 	fprintf(fd, "%s\n/* prefix %d */ {\n", outersep, i);
 	sep = "    ";
 	for (j = 0; j < 256; j++) {
-	    fprintf(fd, "%s%2hd", sep, (short) table[i][j]);
+	    fprintf(fd, "%s%2d", sep, (int) table[i][j]);
 	    if (((j+1) % 16) == 0) {
 		fprintf(fd, ", /* %3d-%3d */\n", j-15, j);
 		sep = "    ";
@@ -316,13 +327,14 @@ DECLARE3(write_horiz_mode_table, FILE*, fd, HorizModeTable, table, char*, name)
     char* outersep;
     char* sep;
 
-    fprintf(fd, "u_char\t%s[%hd][256] = {", name, horiz_mode_prefix_count);
+    fprintf(fd, "%s u_char\t%s[%d][256] = {", storage_class,
+	name, (int) horiz_mode_prefix_count);
     outersep = "";
     for (i = 0; i < horiz_mode_prefix_count; i++) {
 	fprintf(fd, "%s\n/* prefix %d */ {\n", outersep, i);
 	sep = "    ";
 	for (j = 0; j < 256; j++) {
-	    fprintf(fd, "%s%3hd", sep, (short) table[i][j]);
+	    fprintf(fd, "%s%3d", sep, (int) table[i][j]);
 	    if (((j+1) % 14) == 0) {
 		fprintf(fd, ", /* %3d-%3d */\n", j-13, j);
 		sep = "    ";
@@ -404,16 +416,33 @@ write_preamble(fd)
 }
 
 void
+extern_table(fd, name)
+    FILE* fd;
+    char* name;
+{
+    fprintf(fd, "extern\t%su_char %s[][256];\n", storage_class, name);
+}
+
+void
 write_tables(fd)
     FILE* fd;
 {
     write_preamble(fd);
+    fprintf(fd, "#ifdef G3STATES\n");
     write_null_mode_table(fd, null_mode, "TIFFFax2DMode");
     write_null_mode_table(fd, null_mode_next_state, "TIFFFax2DNextState");
     write_null_mode_table(fd, uncomp_mode, "TIFFFaxUncompAction");
     write_null_mode_table(fd, uncomp_mode_next_state, "TIFFFaxUncompNextState");
     write_horiz_mode_table(fd, horiz_mode, "TIFFFax1DAction");
     write_horiz_mode_table(fd, horiz_mode_next_state, "TIFFFax1DNextState");
+    fprintf(fd, "#else\n");
+    extern_table(fd, "TIFFFax2DMode");
+    extern_table(fd, "TIFFFax2DNextState");
+    extern_table(fd, "TIFFFaxUncompAction");
+    extern_table(fd, "TIFFFaxUncompNextState");
+    extern_table(fd, "TIFFFax1DAction");
+    extern_table(fd, "TIFFFax1DNextState");
+    fprintf(fd, "#endif\n");
 }
 
 short
@@ -431,8 +460,8 @@ DECLARE1(find_null_mode_prefix, long, prefix)
 	exit(1);
     }
     if (verbose)
-	fprintf(stderr, "adding null mode prefix[%hd] 0x%lx\n",
-	    null_mode_prefix_count, prefix);
+	fprintf(stderr, "adding null mode prefix[%d] 0x%lx\n",
+	    (int) null_mode_prefix_count, prefix);
     null_mode_prefix[null_mode_prefix_count++] = prefix;
     return (null_mode_prefix_count-1);
 }
@@ -454,8 +483,8 @@ DECLARE2(find_horiz_mode_prefix, long, prefix, char, color)
     }
     /* OK, there's room... */
     if (verbose)
-	fprintf(stderr, "\nhoriz mode prefix %hd, color %c = 0x%lx ",
-	    horiz_mode_prefix_count, "WB"[color], prefix);
+	fprintf(stderr, "\nhoriz mode prefix %d, color %c = 0x%lx ",
+	    (int) horiz_mode_prefix_count, "WB"[color], prefix);
     horiz_mode_prefix[horiz_mode_prefix_count] = prefix;
     horiz_mode_color[horiz_mode_prefix_count] = color;
     horiz_mode_prefix_count++;
@@ -477,8 +506,8 @@ DECLARE1(find_uncomp_mode_prefix, long, prefix)
 	exit(1);
     }
     if (verbose)
-	fprintf(stderr, "adding uncomp mode prefix[%hd] 0x%lx\n",
-	    uncomp_mode_prefix_count, prefix);
+	fprintf(stderr, "adding uncomp mode prefix[%d] 0x%lx\n",
+	    (int) uncomp_mode_prefix_count, prefix);
     uncomp_mode_prefix[uncomp_mode_prefix_count++] = prefix;
     return (uncomp_mode_prefix_count-1);
 }
@@ -533,7 +562,7 @@ DECLARE1(uncomp_mode_type, long, prefix)
     return ((code || len > 10) ? UNCOMP_INVALID : -1);
 }
 
-#define	BASESTATE(b)	((u_char) ((b) & 0x7))
+#define	BASESTATE(b)	((unsigned char) ((b) & 0x7))
 
 void
 build_null_mode_tables()
@@ -586,13 +615,13 @@ build_null_mode_tables()
 		     * is to be fetched during the decoding process
 		     */
 		    found_code = TRUE;
-		    null_mode[prefix][byte] = (u_char) mode;
+		    null_mode[prefix][byte] = (unsigned char) mode;
 		    null_mode_next_state[prefix][byte] = BASESTATE(bit+1);
 		    break;
 		}
 	    }
 	    if (!found_code) {
-		null_mode_next_state[prefix][byte] = (u_char)
+		null_mode_next_state[prefix][byte] = (unsigned char)
 		    find_null_mode_prefix(curprefix);
 		/*
 		 * This indicates to the decoder that
@@ -607,7 +636,7 @@ build_null_mode_tables()
 void
 build_horiz_mode_tables()
 {
-    u_short byte;
+    unsigned short byte;
     short prefix;
 
     /*
@@ -622,7 +651,7 @@ build_horiz_mode_tables()
 	    short bit;
 	    short firstbit;
 	    char color;
-	    u_long curprefix;
+	    unsigned long curprefix;
 
 	    if (prefix < 8) {
 		color = WHITE;
@@ -658,15 +687,15 @@ build_horiz_mode_tables()
 		    short runlength = white_run_length(curprefix);
 
 		    if (runlength == G3CODE_INVALID) {
-			horiz_mode[prefix][byte] = (u_char) ACT_INVALID;
-			horiz_mode_next_state[prefix][byte] = (u_char) bit;
+			horiz_mode[prefix][byte] = (unsigned char) ACT_INVALID;
+			horiz_mode_next_state[prefix][byte] = (unsigned char) bit;
 			bits_digested = bit + 1;
 		    } else if (runlength == G3CODE_EOL) { /* Group 3 only */
-			horiz_mode[prefix][byte] = (u_char) ACT_EOL;
+			horiz_mode[prefix][byte] = (unsigned char) ACT_EOL;
 			horiz_mode_next_state[prefix][byte] = BASESTATE(bit+1);
 			bits_digested = bit + 1;
 		    } else if (runlength != G3CODE_INCOMP) {
-			horiz_mode[prefix][byte] = (u_char)
+			horiz_mode[prefix][byte] = (unsigned char)
 			    horiz_mode_code_white(runlength);
 			horiz_mode_next_state[prefix][byte] = BASESTATE(bit+1);
 			bits_digested = bit + 1;
@@ -675,15 +704,15 @@ build_horiz_mode_tables()
 		    short runlength = black_run_length(curprefix);
 
 		    if (runlength == G3CODE_INVALID) {
-			horiz_mode[prefix][byte] = (u_char) ACT_INVALID;
-			horiz_mode_next_state[prefix][byte] = (u_char) (bit+8);
+			horiz_mode[prefix][byte] = (unsigned char) ACT_INVALID;
+			horiz_mode_next_state[prefix][byte] = (unsigned char) (bit+8);
 			bits_digested = bit + 1;
 		    } else if (runlength == G3CODE_EOL) { /* Group 3 only */
-			horiz_mode[prefix][byte] = (u_char) ACT_EOL;
+			horiz_mode[prefix][byte] = (unsigned char) ACT_EOL;
 			horiz_mode_next_state[prefix][byte] = BASESTATE(bit+1);
 			bits_digested = bit + 1;
 		    } else if (runlength != G3CODE_INCOMP) {
-			horiz_mode[prefix][byte] = (u_char)
+			horiz_mode[prefix][byte] = (unsigned char)
 			    horiz_mode_code_black(runlength);
 			horiz_mode_next_state[prefix][byte] = BASESTATE(bit+1);
 			bits_digested = bit + 1;
@@ -691,8 +720,8 @@ build_horiz_mode_tables()
 		}
 	    }
 	    if (!bits_digested) {	/* no codewords after examining byte */
-		horiz_mode[prefix][byte] = (u_char) ACT_INCOMP;
-		horiz_mode_next_state[prefix][byte] = (u_char)
+		horiz_mode[prefix][byte] = (unsigned char) ACT_INCOMP;
+		horiz_mode_next_state[prefix][byte] = (unsigned char)
 		    find_horiz_mode_prefix(curprefix, color);
 	    }
 	}
@@ -738,13 +767,13 @@ build_uncomp_mode_tables()
 		     * is to be fetched during the decoding process
 		     */
 		    found_code = TRUE;
-		    uncomp_mode[prefix][byte] = (u_char) mode;
+		    uncomp_mode[prefix][byte] = (unsigned char) mode;
 		    uncomp_mode_next_state[prefix][byte] = BASESTATE(bit+1);
 		    break;
 		}
 	    }
 	    if (!found_code) {
-		uncomp_mode_next_state[prefix][byte] = (u_char)
+		uncomp_mode_next_state[prefix][byte] = (unsigned char)
 		    find_uncomp_mode_prefix(curprefix);
 		/*
 		 * This indicates to the decoder that

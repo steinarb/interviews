@@ -29,6 +29,8 @@
 
 #include <Unidraw/Graphic/verts.h>
 
+#include <IV-2_6/_enter.h>
+
 class Rect : public Graphic {
 public:
     void GetOriginal(Coord&, Coord&, Coord&, Coord&);
@@ -169,5 +171,7 @@ private:
     PSBrush* _br;
     PSPattern* _pat;
 };
+
+#include <IV-2_6/_leave.h>
 
 #endif

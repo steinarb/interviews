@@ -22,7 +22,6 @@
 
 /*
  * Implementation of PanelCtrl
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibpanelctrl.c,v 1.2 91/09/27 14:11:09 tang Exp $
  */
 
 #include "ibbutton.h"
@@ -43,12 +42,12 @@
 #include <Unidraw/catalog.h>
 #include <Unidraw/clipboard.h>
 #include <Unidraw/iterator.h>
-#include <Unidraw/page.h>
 #include <Unidraw/statevars.h>
 #include <Unidraw/selection.h>
 #include <Unidraw/viewer.h>
 #include <Unidraw/ulist.h>
 #include <Unidraw/unidraw.h>
+#include <Unidraw/upage.h>
 #include <Unidraw/Tools/tool.h>
 #include <Unidraw/Graphic/pspaint.h>
 
@@ -60,6 +59,7 @@
 #include <InterViews/transformer.h>
 
 #include <OS/math.h>
+#include <stdio.h>
 #include <stream.h>
 #include <string.h>
 
@@ -128,9 +128,20 @@ void PanelCtrlComp::Instantiate () {
         _curCtrlVar = new ButtonStateVar("curCtrl");
         _curCtrlVar->GenNewName();
         _curCtrlVar->HideSetting();
+        ButtonSharedName* bsnamer = _curCtrlVar->GetButtonSharedName();
+        SubclassNameVar* svar = bsnamer->GetSubclass();
+        svar->SetBaseClass("ControlState");
+        svar->SetName("ControlState");
     }
     if (_toolname == nil) {
-        _toolname = new TrackNameVar("GraphicCompTool");
+        IDVar* idvar = new IDVar;
+        idvar->SetOrigID(GRAPHIC_COMP_TOOL);
+        _toolname = new MemberNameVar("GraphicCompTool");
+        _toolname->GenNewName();
+        SubclassNameVar* svar = _toolname->GetSubclass();
+        svar->SetBaseClass("GraphicCompTool");
+        svar->SetName("GraphicCompTool");
+        _toolname->SetIDVar(idvar);
     }
     if (_edVar == nil) {
         _edVar = new MemberNameVar("", false, false);
@@ -200,10 +211,39 @@ void PanelCtrlComp::Interpret(Command* cmd) {
         const char* cname = gcmd->GetCName();
         UList* conflictlist = gcmd->GetConflict();
         const char* curCtrl = _curCtrlVar->GetName();
+        const char* toolm = _toolname->GetName();
+        SubclassNameVar* toolnamer = _toolname->GetSubclass();
+        const char* tools = toolnamer->GetName();
+        const char* toolb = toolnamer->GetBaseClass();
         
         if (strcmp(curCtrl, cname) == 0) {
-            conflictlist->Append(new UList(_curCtrlVar->GetButtonSharedName()));
+            conflictlist->Append(
+                new UList(_curCtrlVar->GetButtonSharedName())
+            );
         }
+        if (strcmp(tools, cname) == 0 || strcmp(toolb, cname) == 0) {
+            conflictlist->Append(
+                new UList(toolnamer)
+            );
+        }
+        if (strcmp(toolm, cname) == 0) {
+            conflictlist->Append(
+                new UList(_toolname->GetMemberSharedName())
+            );
+        }
+    } else if (cmd->IsA(IDMAP_CMD)) {
+        IDMap* idmap = IDVar::GetIDMap();
+        idmap->Add(_toolname->GetMemberSharedName());
+        GrBlockComp::Interpret(cmd);
+
+    } else if (cmd->IsA(GETNAMEVARS_CMD)) {
+        GrBlockComp::Interpret(cmd);
+        GetNameVarsCmd* gcmd = (GetNameVarsCmd*) cmd;
+        gcmd->AppendExtras(_toolname);
+        gcmd->AppendExtras(_toolname->GetSubclass());
+        gcmd->AppendExtras(_curCtrlVar);
+        gcmd->AppendExtras(_curCtrlVar->GetButtonSharedName());
+        gcmd->AppendExtras(_curCtrlVar->GetButtonSharedName()->GetSubclass());
 
     } else if (
         cmd->IsA(COLOR_CMD) || cmd->IsA(FONT_CMD) || 
@@ -216,7 +256,7 @@ void PanelCtrlComp::Interpret(Command* cmd) {
         }
         Propagate(cmd);
         
-    } else {
+    } else if (!cmd->IsA(ALIGN_CMD)) {
         GrBlockComp::Interpret(cmd);
     }
 }
@@ -233,7 +273,7 @@ void PanelCtrlComp::Uninterpret(Command* cmd) {
         }
         Unpropagate(cmd);
         
-    } else {
+    } else if (!cmd->IsA(ALIGN_CMD)) {
         GrBlockComp::Uninterpret(cmd);
     }
 }
@@ -244,7 +284,7 @@ void PanelCtrlComp::SetState(const char* name, StateVar* stateVar) {
         *_curCtrlVar = *curCtrlVar;
 
     } else if (strcmp(name, "ToolName") == 0) {
-        _toolname = (TrackNameVar*) stateVar;
+        _toolname = (MemberNameVar*) stateVar;
 
     } else if (
         strcmp(name, "EditorVar") == 0 || strcmp(name, "RelatedVar") == 0
@@ -319,7 +359,29 @@ void PanelCtrlComp::Read (istream& in) {
 
     _keylabel = (ITextComp*) catalog->ReadComponent(in);
     _curCtrlVar = (ButtonStateVar*) catalog->ReadStateVar(in);
-    _toolname = (TrackNameVar*) catalog->ReadStateVar(in);
+    float version = unidraw->GetCatalog()->FileVersion();
+    if (version > 1.05) {
+        _toolname = (MemberNameVar*) catalog->ReadStateVar(in);
+    } else {
+        TrackNameVar* tracker = (TrackNameVar*) catalog->ReadStateVar(in);
+        if (tracker != nil) {
+            const char* tname = tracker->GetName();
+            _toolname = new MemberNameVar(tname);
+            
+            boolean unique = IBNameVar::GetUniqueFlag();
+            IBNameVar::SetUniqueFlag(true);
+            _toolname->GenNewName();
+            IBNameVar::SetUniqueFlag(unique);
+
+            _toolname->SetIDVar(new IDVar);
+            SubclassNameVar* svar = _toolname->GetSubclass();
+            svar->SetBaseClass(tname);
+            svar->SetName(tname);
+            delete tracker;
+        } else {
+            _toolname = nil;
+        }
+    }
     _edVar = (MemberNameVar*) catalog->ReadStateVar(in);
 
     Graphic* keygr = _keylabel->GetGraphic();
@@ -339,6 +401,11 @@ void PanelCtrlComp::Write (ostream& out) {
     catalog->WriteStateVar(_edVar, out);
 }
 
+/*****************************************************************************/
+const int toolID[] = {
+    CONNECT_TOOL, GRAPHIC_COMP_TOOL, MAGNIFY_TOOL, MOVE_TOOL, RESHAPE_TOOL,
+    ROTATE_TOOL, SCALE_TOOL, SELECT_TOOL, STRETCH_TOOL
+};
 /*****************************************************************************/
 
 PanelCtrlView::PanelCtrlView (
@@ -489,15 +556,14 @@ InfoDialog* PanelCtrlView::GetInfoDialog () {
     PanelCtrlComp* pcComp = GetPanelCtrlComp();
 
     ButtonStateVar* curCtrlVar = pcComp->GetButtonStateVar();
-    TrackNameVar* toolname = pcComp->GetToolName();
+    MemberNameVar* toolname = pcComp->GetToolName();
     MemberNameVar* edVar = pcComp->GetEditorVar();
 
     info->Include(new RelatedVarView(
         edVar, state, pcComp, "Editor Name: ")
     );
-    NameChooserView* toolChooser = new NameChooserView(
-        toolname, state, ibed,
-        "Library tools:", "Tool Name: "
+    SMemberNameVarView* toolChooser = new SMemberNameVarView(
+        toolname, state, pcComp, ibed, "Tool", toolID
     );
     toolChooser->Append("ConnectTool");
     toolChooser->Append("GraphicCompTool");
@@ -534,11 +600,26 @@ GraphicComp* PanelCtrlView::CreateProtoComp (
 }
 /*****************************************************************************/
 
-PanelCtrlCode::PanelCtrlCode (PanelCtrlComp* subj) : GrBlockCode(subj) { }
+PanelCtrlCode::PanelCtrlCode (PanelCtrlComp* subj) : GrBlockCode(subj) {
+    _unidraw = true;
+}
 
 PanelCtrlComp* PanelCtrlCode::GetPanelCtrlComp() {
     return (PanelCtrlComp*) GetSubject();
 }
+
+void PanelCtrlCode::Update () {
+    GrBlockCode::Update();
+    MemberNameVar* toolm = GetPanelCtrlComp()->GetToolName();
+    SubclassNameVar* toolnamer = toolm->GetSubclass();
+    if (toolnamer->IsSubclass()) {
+        _subunidraw = true;
+    }
+    InteractorComp* subj = GetIntComp();
+    Graphic* gr = subj->GetGraphic();
+    gr->SetColors(nil, nil);
+    gr->SetFont(nil);
+}    
 
 ClassId PanelCtrlCode::GetClassId () { return PANELCONTROL_CODE; }
 
@@ -555,13 +636,14 @@ boolean PanelCtrlCode::SingleKid () {
 
 void PanelCtrlCode::HashKeyCode(char* keycode) {
     int l = strlen(keycode);
-    if (l == 0 || l > 2) {
-        strcpy(keycode, " ");
+    if (l == 0 || l > 2 || *keycode == ' ') {
+        strcpy(keycode, "");
+
     } else if (l == 2) {
         if (keycode[0] == '^' && keycode[1] >= 'A' && keycode[1] <= 'Z') {
-            sprintf(keycode, "\\0%2o", keycode[1]-64);
+            sprintf(keycode, "\\0%02o", keycode[1]-64);
         } else {
-            strcpy(keycode, " ");
+            strcpy(keycode, "");
         }
     }
 }    
@@ -577,13 +659,19 @@ boolean PanelCtrlCode::Definition (ostream& out) {
     MemberNameVar* mnamer = pcComp->GetMemberNameVar();
     TextComp* textcomp = (TextComp*) pcComp->GetKeyLabel()->GetTarget();
     TextGraphic* textgr = textcomp->GetText();
-    ButtonStateVar* curCtrlVar = pcComp->GetButtonStateVar();
+    ButtonStateVar* csVar = pcComp->GetButtonStateVar();
+    SubclassNameVar* csclass = csVar->GetButtonSharedName()->GetSubclass();
+    const char* csname = csclass->GetName();
     MemberNameVar* edVar = pcComp->GetEditorVar();
+    MemberNameVar* toolm = pcComp->GetToolName();
+    int id = toolm->GetIDVar()->GetID();
+    SubclassNameVar* toolnamer = toolm->GetSubclass();
     const char* edname = edVar->GetName();
 
     const char* text = textgr->GetOriginal();
-    const char* tool = pcComp->GetToolName()->GetName();
-    const char* ctrl = curCtrlVar->GetName();
+    const char* tools = toolnamer->GetName();
+    const char* toolb = toolnamer->GetBaseClass();
+    const char* ctrl = csVar->GetName();
 
     const char* subclass = snamer->GetName();
     const char* baseclass = snamer->GetBaseClass();
@@ -594,47 +682,118 @@ boolean PanelCtrlCode::Definition (ostream& out) {
 
     GetCoreClassName(coreclass);
     if (*edname == '\0') {
-        strcat(_errbuf, mname);
-        strcat(_errbuf, " has undefined Editor.\n");
+        if (_err_count < 10) {
+            strcat(_errbuf, mname);
+            strcat(_errbuf, " has undefined Editor.\n");
+            _err_count++;
+        } 
         return false;
 
     } else if (!Search(edVar, dummy)) {
-        strcat(_errbuf, mname);
-        strcat(
-            _errbuf, "'s Editor is not in the same hierachy.\n"
-        );
+        if (_err_count < 10) {
+            strcat(_errbuf, mname);
+            strcat(
+                _errbuf, "'s Editor is not in the same hierachy.\n"
+            );
+            _err_count++;
+        } 
         return false;
     }
 
     _emitGraphicComp = true;
 
     if (
-        _emitInstanceDecls || _emitClassHeaders || 
-        _emitHeaders || _emitProperty || _emitForward
+        _emitInstanceDecls || _emitHeaders || _emitProperty 
     ) {
         ok = ok && GrBlockCode::Definition(out);
-
-    } else if (_emitExpHeader) {
-        if (!snamer->IsSubclass()) {
-            if (_scope && mnamer->GetExport()&&!_namelist->Search("uctrls")) {
-                _namelist->Append("uctrls");
-                out << "#include <Unidraw/uctrls.h> \n";
+        if (_emitInstanceDecls) {
+            if (_emitExport) {
+                if (toolm->GetExport()) {
+                    out << "    " << tools << "* " << toolm->GetName() <<";\n";
+                }
+            } else {
+                if (!toolm->GetExport() || _emitMain) {
+                    out << "    " << tools << "* " << toolm->GetName() <<";\n";
+                }
             }
-        } else {
-            ok = ok && CodeView::Definition(out);
         }
+    } else if (_emitClassHeaders) {
+        ok = ok && GrBlockCode::Definition(out);
+        if (csclass->IsSubclass()) {
+            if (
+                *_classname == '\0' && !_scope || 
+                *_classname != '\0' && _scope || 
+                strcmp(csname, _classname) == 0
+            ) {
+                ok = ok && CheckToEmitClassHeader(out, csname);
+            }
+        }
+        if (toolnamer->IsSubclass()) {
+            if (
+                *_classname == '\0' && !_scope || 
+                *_classname != '\0' && _scope || 
+                strcmp(tools, _classname) == 0
+            ) {
+                ok = ok && CheckToEmitClassHeader(out, tools);
+            }
+        }
+    } else if (_emitForward) {
+        if (_scope) {
+            ok = ok && GrBlockCode::Definition(out);
+            if (
+                csVar->GetExport() && !_bsdeclslist->Search(csname)
+            ) {
+                _bsdeclslist->Append(csname);
+                out << "class " << csname << ";\n";
+            }
+            if (
+                toolm->GetExport() && !_namelist->Search(tools)
+            ) {
+                _namelist->Append(tools);
+                out << "class " << tools << ";\n";
+            }
+        }
+    } else if (_emitExpHeader) {
+        if (_scope && !_namelist->Search("uctrls")) {
+            _namelist->Append("uctrls");
+            out << "#include <Unidraw/uctrls.h> \n";
+        }
+        if (csclass->IsSubclass()) {
+            if (
+                strcmp(csname, _classname) == 0 || 
+                _scope && csVar->GetExport()
+            ) {
+                ok = ok && CheckToEmitHeader(out, csname);
+            }
+        }
+        if (toolnamer->IsSubclass()) {
+            if (
+                strcmp(tools, _classname) == 0 || 
+                _scope && toolm->GetExport()
+            ) {
+                ok = ok && CheckToEmitHeader(out, tools);
+            }
+        } else if (_scope && toolm->GetExport()) {
+            ok = ok && EmitCommonHeaders(tools, out);
+        }
+        ok = ok && CodeView::Definition(out);
         ok = ok && Iterate(out);
 
     } else if (_emitCorehHeader) {
-        if (snamer->IsSubclass() && strcmp(subclass, _classname) == 0) {
-            if (!_namelist->Search("control")) {
-                _namelist->Append("control");
-                out << "#include <InterViews/control.h>\n";
-            }
+        if (strcmp(subclass, _classname) == 0) {
             if (!_namelist->Search("uctrls")) {
                 _namelist->Append("uctrls");
                 out << "#include <Unidraw/uctrls.h>\n";
             }
+        }
+        if (strcmp(csname, _classname) == 0) {
+            if (!_namelist->Search("control")) {
+                _namelist->Append("control");
+                out << "#include <InterViews/control.h>\n";
+            }
+        }
+        if (strcmp(tools, _classname) == 0) {
+            ok = ok && EmitCommonHeaders(toolb, out);
         }
         ok = ok && Iterate(out);
 
@@ -643,13 +802,12 @@ boolean PanelCtrlCode::Definition (ostream& out) {
             _instancelist->Append(new UList((void*)mname));
 
             ok = ok && EmitGraphicState(out);
-
             for(First(i); !Done(i); Next(i)) {
                 CodeView* kid = (CodeView*) GetView(i);
                 ok = ok && EmitInstanceDecls(kid, out);
             }
-            ok = ok && Iterate(out);
 
+            ok = ok && Iterate(out);
             const char* kidname = nil;
 
             if (!SingleKid()) {
@@ -659,10 +817,12 @@ boolean PanelCtrlCode::Definition (ostream& out) {
                 
                 for(First(i); !Done(i); Next(i)) {
                     CodeView* kid = (CodeView*) GetView(i);
-                    MemberNameVar* kmnamer=kid->GetIComp()->GetMemberNameVar();
+                    IComp* kidcomp = kid->GetIComp();
+                    MemberNameVar* kmnamer = kidcomp->GetMemberNameVar();
+                    SubclassNameVar* kidcclass = kidcomp->GetCClassNameVar();
                     const char* kmname = kmnamer->GetName();
                     out << "    " << mname << "_comp->Append(";
-                    out << kmname << "_comp);\n";
+                    out << kmname << ");\n";
                 }
             } else {
                 First(i);
@@ -674,24 +834,27 @@ boolean PanelCtrlCode::Definition (ostream& out) {
             out << "_info = new ControlInfo(";
 
             if (kidname == nil) {
-                out << mname;
+                out << mname << "_comp";
             } else {
                 out << kidname;
             }
-            out << "_comp, \"" << text << "\", \"" << Keycode << "\");\n";
-            out << "    Tool* " << mname << "_tool = new ";
+            out << ", \"" << text << "\", \"" << Keycode << "\");\n";
 
-            if (*tool == '\0' || strcmp(tool, "GraphicCompTool") == 0) {
-                out << "GraphicCompTool(" << mname << "_info, (GraphicComp*) ";
+            if (!toolm->GetExport() || _emitMain) {
+                out << "    " << tools << "* " << toolm->GetName() <<";\n";
+            }
+            out << "    " << toolm->GetName() << " = new ";
+
+            if (strcmp(toolb, "GraphicCompTool") == 0) {
+                out << tools << "(" << mname << "_info, (GraphicComp*) ";
                 if (kidname == nil) {
-                    out << mname;
+                    out << mname << "_comp->Copy());\n";
                 } else {
-                    out << kidname;
+                    out << kidname << "->Copy());\n";;
                 }
-                out << "_comp->Copy());\n";
 
             } else {
-                out << tool << "(" << mname << "_info);\n";
+                out << tools << "(" << mname << "_info);\n";
             }
             BeginInstantiate(out);
             out << "(";
@@ -703,36 +866,24 @@ boolean PanelCtrlCode::Definition (ostream& out) {
         }
 
     } else if (_emitBSDecls) {
-        ButtonStateVar* bsVar = pcComp->GetButtonStateVar();
-	const char* name = bsVar->GetName();
-
-	if (_emitExport) {
-	    if (bsVar->GetExport() && !_bsdeclslist->Search(name)) {
-                _bsdeclslist->Append(name);
-                out << "    ControlState* " << name << ";\n";
-	    }
-
-	} else {
-            if (!bsVar->GetExport() && !_bsdeclslist->Search(name)) {
-                _bsdeclslist->Append(name);
-                out << "    ControlState* " << name << ";\n";
-            }
-	}
+        ok = ok && CodeView::Definition(out);
 
     } else if (_emitBSInits) {
         ButtonStateVar* bsVar = pcComp->GetButtonStateVar();
 	const char* name = bsVar->GetName();
         boolean export = bsVar->GetExport();
+        const char* subclass = bsVar->GetSubclassName();
 
 	if (!_bsinitslist->Search(name)) {
 	    _bsinitslist->Append(name);
-            if (export) {
+
+            if (export && !_emitMain) {
                 out << "    " << name;
 
             } else {
-                out << "    ControlState*" << name;
+                out << "    " << subclass << "*" << name;
             }
-            out << " = new ControlState;\n";
+            out << " = new " << subclass << ";\n";
         }
     } else if (_emitFunctionDecls || _emitFunctionInits) {
 	ok = true;
@@ -740,13 +891,66 @@ boolean PanelCtrlCode::Definition (ostream& out) {
     } else if (
         _emitCoreDecls || _emitCoreInits || _emitClassDecls || _emitClassInits
     ) {
-	ok = ok && GrBlockCode::Definition(out);
-        
+        if (
+            strcmp(csname, _classname) == 0 &&
+            !_globallist->Search(_classname)
+        ) {
+	    _globallist->Append(_classname);
+            if (_emitCoreDecls) {
+                ok = ok && CSCoreConstDecls(out);
+
+            } else if (_emitCoreInits) {
+                ok = ok && CSCoreConstInits(out);
+
+            } else if (_emitClassDecls) {
+                ok = ok && CSConstDecls(out);
+
+            } else {
+                ok = ok && CSConstInits(out);
+            }
+        } else if (
+            strcmp(tools, _classname) == 0 &&
+            !_globallist->Search(_classname)
+        ) {
+	    _globallist->Append(_classname);
+            if (_emitCoreDecls) {
+                ok = ok && ToolCoreConstDecls(out);
+
+            } else if (_emitCoreInits) {
+                ok = ok && ToolCoreConstInits(out);
+
+            } else if (_emitClassDecls) {
+                ok = ok && ToolConstDecls(out);
+
+            } else {
+                ok = ok && ToolConstInits(out);
+            }
+        } else {
+            ok = ok && GrBlockCode::Definition(out);
+        }
+    } else if (_emitCreatorHeader) {
+        if (toolnamer->IsSubclass() && !_namelist->Search(tools)) {
+            _namelist->Append(tools);
+            out << "#include \"" << tools << ".h\"\n";
+        }
+        ok = ok && Iterate(out);
+
+    } else if (_emitCreatorSubj) {
+        if (toolnamer->IsSubclass() && !_namelist->Search(tools)) {
+            _namelist->Append(tools);
+            out << "        case " << id << ":\tCREATE(";
+            out << tools << ", in, objmap, objid);\n";
+        }
+        ok = ok && Iterate(out);
+
+    } else if (_emitCreatorView) {
+        ok = ok && Iterate(out);
+
     } else if (_emitMain) {
 	ok = ok && GrBlockCode::Definition(out);
         
     }
-    _emitGraphicComp = true;
+    _emitGraphicComp = false;
 
     return out.good() && ok;
 }
@@ -760,11 +964,12 @@ boolean PanelCtrlCode::CoreConstInits(ostream& out) {
     InteractorComp* icomp = GetIntComp();
     SubclassNameVar* snamer = icomp->GetClassNameVar();
     const char* baseclass = snamer->GetBaseClass();
+    const char* subclass = snamer->GetName();
 
     out << "(\n    const char* name, ControlInfo* info, ControlState* state";
     out << "\n) : ";
     out << baseclass << "(name, info, state) {\n";
-    out << "    perspective = new Perspective;\n";
+    out << "    SetClassName(\"" << subclass << "\");\n";
     out << "}\n\n";
 
     return out.good();
@@ -787,9 +992,11 @@ boolean PanelCtrlCode::ConstInits(ostream& out) {
 }
 
 boolean PanelCtrlCode::EmitIncludeHeaders(ostream& out) {
+    boolean ok = true;
     GrBlockCode::EmitIncludeHeaders(out);
     PanelCtrlComp* pcComp = GetPanelCtrlComp();
-    const char* tool = pcComp->GetToolName()->GetName();
+    SubclassNameVar* tnamer = pcComp->GetToolName()->GetSubclass();
+    const char* tools = tnamer->GetName();
     SubclassNameVar* snamer = pcComp->GetClassNameVar();
 
     if (!snamer->IsSubclass() && !_namelist->Search("uctrls")) {
@@ -810,57 +1017,170 @@ boolean PanelCtrlCode::EmitIncludeHeaders(ostream& out) {
             out << "#include <Unidraw/Tools/grcomptool.h>\n";
         }
         
-        if (strcmp(tool, "ConnectTool") == 0) {
-            if (!_namelist->Search("connect")) {
-                _namelist->Append("connect");
-                out << "#include <Unidraw/Tools/connect.h>\n";
-            }
-        }    
-        if (strcmp(tool, "MagnifyTool") == 0) {
-            if (!_namelist->Search("magnify")) {
-                _namelist->Append("magnify");
-                out << "#include <Unidraw/Tools/magnify.h>\n";
-            }
-        }    
-        if (strcmp(tool, "MoveTool") == 0) {
-            if (!_namelist->Search("move")) {
-                _namelist->Append("move");
-                out << "#include <Unidraw/Tools/move.h>\n";
-            }
-        }    
-        if (strcmp(tool, "ReshapeTool") == 0) {
-            if (!_namelist->Search("reshape")) {
-                _namelist->Append("reshape");
-                out << "#include <Unidraw/Tools/reshape.h>\n";
-            }
-        }    
-        if (strcmp(tool, "RotateTool") == 0) {
-            if (!_namelist->Search("rotate")) {
-                _namelist->Append("rotate");
-                out << "#include <Unidraw/Tools/rotate.h>\n";
-            }
-        }    
-        if (strcmp(tool, "ScaleTool") == 0){
-            if (!_namelist->Search("scale")) {
-                _namelist->Append("scale");
-                out << "#include <Unidraw/Tools/scale.h>\n";
-            }
-        }    
-        if (strcmp(tool, "SelectTool") == 0) {
-            if (!_namelist->Search("select")) {
-                _namelist->Append("select");
-                out << "#include <Unidraw/Tools/select.h>\n";
-            }
-        }    
-        if (strcmp(tool, "StretchTool") == 0) {
-            if (!_namelist->Search("stretch")) {
-                _namelist->Append("stretch");
-                out << "#include <Unidraw/Tools/stretch.h>\n";
-            }
-        }    
+        if (!tnamer->IsSubclass()) {
+            ok = ok && EmitCommonHeaders(tools, out);
+        }
+    }
+    return out.good() && ok;
+}
+
+boolean PanelCtrlCode::EmitCommonHeaders(const char* tools, ostream& out) {
+    if (strcmp(tools, "ConnectTool") == 0) {
+        if (!_namelist->Search("connect")) {
+            _namelist->Append("connect");
+            out << "#include <Unidraw/Tools/connect.h>\n";
+        }
+    } else if (strcmp(tools, "MagnifyTool") == 0) {
+        if (!_namelist->Search("magnify")) {
+            _namelist->Append("magnify");
+            out << "#include <Unidraw/Tools/magnify.h>\n";
+        }
+    } else if (strcmp(tools, "GraphicCompTool") == 0) {
+        if (!_namelist->Search("grcomptool")) {
+            _namelist->Append("grcomptool");
+            out << "#include <Unidraw/Tools/grcomptool.h>\n";
+        }
+    } else if (strcmp(tools, "MoveTool") == 0) {
+        if (!_namelist->Search("move")) {
+            _namelist->Append("move");
+            out << "#include <Unidraw/Tools/move.h>\n";
+        }
+    } else if (strcmp(tools, "ReshapeTool") == 0) {
+        if (!_namelist->Search("reshape")) {
+            _namelist->Append("reshape");
+            out << "#include <Unidraw/Tools/reshape.h>\n";
+        }
+    } else if (strcmp(tools, "RotateTool") == 0) {
+        if (!_namelist->Search("rotate")) {
+            _namelist->Append("rotate");
+            out << "#include <Unidraw/Tools/rotate.h>\n";
+        }
+    } else if (strcmp(tools, "ScaleTool") == 0){
+        if (!_namelist->Search("scale")) {
+            _namelist->Append("scale");
+            out << "#include <Unidraw/Tools/scale.h>\n";
+        }
+    } else if (strcmp(tools, "SelectTool") == 0) {
+        if (!_namelist->Search("select")) {
+            _namelist->Append("select");
+            out << "#include <Unidraw/Tools/select.h>\n";
+        }
+    } else if (strcmp(tools, "StretchTool") == 0) {
+        if (!_namelist->Search("stretch")) {
+            _namelist->Append("stretch");
+            out << "#include <Unidraw/Tools/stretch.h>\n";
+        }
     }
     return out.good();
 }
+
+boolean PanelCtrlCode::ToolCoreConstDecls(ostream& out) { 
+    PanelCtrlComp* pcComp = GetPanelCtrlComp();
+    MemberNameVar* toolm = pcComp->GetToolName();
+    SubclassNameVar* toolnamer = toolm->GetSubclass();
+
+    const char* subclass = toolnamer->GetName();
+    const char* baseclass = toolnamer->GetBaseClass();
+
+    char Subclass[CHARBUFSIZE];
+    strcpy(Subclass, subclass);
+    strcat(Subclass, "_core");
+
+    out << "class " << Subclass << " : public " << baseclass << " {\n";
+    out << "public:\n";
+    out << "    " << Subclass << "(ControlInfo* = nil";
+    if (strcmp(baseclass, "GraphicCompTool") == 0) {
+        out << ", GraphicComp* prototype = nil";
+    }
+    out << ");\n";
+    out << "    virtual ClassId GetClassId();\n";
+    out << "    virtual boolean IsA(ClassId);\n";
+    out << "};\n\n";
+
+    return out.good();
+}
+
+boolean PanelCtrlCode::ToolCoreConstInits(ostream& out) {
+    PanelCtrlComp* pcComp = GetPanelCtrlComp();
+    MemberNameVar* toolm = pcComp->GetToolName();
+    SubclassNameVar* toolnamer = toolm->GetSubclass();
+    IDVar* idvar = toolm->GetIDVar();
+
+    const char* subclass = toolnamer->GetName();
+    const char* baseclass = toolnamer->GetBaseClass();
+
+    char Subclass[CHARBUFSIZE];
+    strcpy(Subclass, subclass);
+    strcat(Subclass, "_core");
+
+    out << Subclass << "::" << Subclass << "(\n";
+    out << "    ControlInfo* ctrlinfo";
+    if (strcmp(baseclass, "GraphicCompTool") == 0) {
+        out << ", GraphicComp* prototype";
+    }
+    out << "\n) : " << baseclass << "(ctrlinfo";
+    if (strcmp(baseclass, "GraphicCompTool") == 0) {
+        out << ", prototype";
+    }
+    out << ") {}\n\n";
+
+    out << "ClassId " << Subclass << "::GetClassId() { return ";
+    out << toolm->GetIDVar()->GetID() << ";}\n";
+    out << "boolean " << Subclass << "::IsA(ClassId id) {\n";
+    out << "    return id == " << toolm->GetIDVar()->GetID() << " || ";
+    out << baseclass << "::IsA(id);\n";
+    out << "}\n";
+    return out.good();
+}
+
+boolean PanelCtrlCode::ToolConstDecls(ostream& out) {
+    PanelCtrlComp* pcComp = GetPanelCtrlComp();
+    MemberNameVar* toolm = pcComp->GetToolName();
+    SubclassNameVar* toolnamer = toolm->GetSubclass();
+    const char* subclass = toolnamer->GetName();
+    const char* baseclass = toolnamer->GetBaseClass();
+
+    char Subclass[CHARBUFSIZE];
+    strcpy(Subclass, subclass);
+    strcat(Subclass, "_core");
+
+    out << "class " << subclass << " : public " << Subclass << " {\n";
+    out << "public:\n";
+    out << "    " << subclass << "(ControlInfo* = nil";
+    if (strcmp(baseclass, "GraphicCompTool") == 0) {
+        out << ", GraphicComp* prototype = nil";
+    }
+    out << ");\n";
+    out << "};\n\n";
+
+    return out.good();
+}
+
+boolean PanelCtrlCode::ToolConstInits(ostream& out) {
+    PanelCtrlComp* pcComp = GetPanelCtrlComp();
+    MemberNameVar* toolm = pcComp->GetToolName();
+    SubclassNameVar* toolnamer = toolm->GetSubclass();
+    const char* subclass = toolnamer->GetName();
+    const char* baseclass = toolnamer->GetBaseClass();
+
+    char Subclass[CHARBUFSIZE];
+    strcpy(Subclass, subclass);
+    strcat(Subclass, "_core");
+
+    out << subclass << "::" << subclass << "(\n";
+    out << "    ControlInfo* ctrlinfo";
+    if (strcmp(baseclass, "GraphicCompTool") == 0) {
+        out << ", GraphicComp* prototype";
+    }
+    out << "\n) : " << Subclass << "(ctrlinfo";
+    if (strcmp(baseclass, "GraphicCompTool") == 0) {
+        out << ", prototype";
+    }
+    out << ") {}\n\n";
+
+    return out.good();
+}
+
 
 /*****************************************************************************/
 

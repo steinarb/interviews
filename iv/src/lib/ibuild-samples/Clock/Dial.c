@@ -2,7 +2,7 @@
 #include <Unidraw/Graphic/graphic.h>
 
 #include "Dial.h"
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/_enter.h>
 
 Dial::Dial(
     const char* name, Graphic* gr

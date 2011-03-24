@@ -22,7 +22,6 @@
 
 /*
  * Message component definitions.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibmessage.c,v 1.2 91/09/27 14:11:07 tang Exp $
  */
 
 #include "ibmessage.h"
@@ -68,6 +67,10 @@ MessageComp::MessageComp (MessageGraphic* g) : InteractorComp(g) {
     if (g != nil) {
         GetClassNameVar()->SetName("Message");
         GetClassNameVar()->SetBaseClass("Message");
+        IBShape* ibshape = GetShapeVar()->GetShape();
+        ibshape->hstr = ibshape->vstr = true;
+        ibshape->hstretch = 0;
+        ibshape->vstretch = 0;
     }
 }
 
@@ -75,8 +78,8 @@ MessageGraphic* MessageComp::GetMessageGraphic () {
     return (MessageGraphic*) GetGraphic();
 }
 
-InteractorComp& MessageComp::operator = (InteractorComp& comp) {
-    MessageComp::operator = (comp);
+InteractorComp& MessageComp::operator = (InteractorComp& comp) { 
+    InteractorComp::operator = (comp);
     return *this;
 }
 
@@ -130,14 +133,20 @@ void MessageComp::Reconfig () {
     Shape* shape = GetShapeVar()->GetShape();
     int w, h;
     GetMessageGraphic()->Natural(w, h);
-    shape->Rect(w, h);
-    shape->Rigid();
+    shape->width = w;
+    shape->height = h;
+    shape->hshrink = shape->vshrink = 0;
     GetShapeVar()->Notify();
 }
 
 void MessageComp::Read (istream& in) {
     Catalog* catalog = unidraw->GetCatalog();
     InteractorComp::Read(in);
+
+    /* backward compability */
+
+    IBShape* ibshape = GetShapeVar()->GetShape();
+    ibshape->hstr = ibshape->vstr = true;
 
     ClassId id;
     in >> id;
@@ -187,7 +196,6 @@ Painter* InitPainter (Graphic* g, Transformer* rel) {
     p->FillBg(g->BgFilled());
     p->SetColors(g->GetFgColor(), g->GetBgColor());
     p->SetTransformer(rel);
-    Unref(rel);
     return p;
 }
 
@@ -318,6 +326,7 @@ boolean MessageCode::Definition (ostream& out) {
         }
     } else if (_emitInstanceInits) {
         InteractorComp* icomp = GetIntComp();
+        Shape* shape = icomp->GetShapeVar()->GetShape();
         const char* mname = icomp->GetMemberNameVar()->GetName();
 
         if (!_instancelist->Find((void*) mname)) {
@@ -331,7 +340,8 @@ boolean MessageCode::Definition (ostream& out) {
             out << "\"" << text << "\", ";
 
 	    Alignment a = mcomp->GetMessageGraphic()->GetAlignment();
-            Align(a, out);
+            ok = ok && Align(a, out);
+            out << ", 0, " << shape->hstretch << ", " << shape->vstretch;
 	    out << ")";
             EndInstantiate(out);
 	}
@@ -354,42 +364,8 @@ boolean MessageCode::Definition (ostream& out) {
     return out.good() && ok;
 }
 
-void MessageCode::Align(Alignment a, ostream& out) {
-    if (a == TopLeft) {
-        out << "TopLeft";
-    } else if (a == TopCenter) {
-        out << "TopCenter";
-    } else if (a == TopRight) {
-        out << "TopRight";
-    } else if (a == CenterLeft) {
-        out << "CenterLeft";
-    } else if (a == Center) {
-        out << "Center";
-    } else if (a == CenterRight) {
-        out << "CenterRight";
-    } else if (a == BottomLeft) {
-        out << "BottomLeft";
-    } else if (a == BottomCenter) {
-        out << "BottomCenter";
-    } else if (a == BottomRight) {
-        out << "BottomRight";
-    } else if (a == Left) {
-        out << "Left";
-    } else if (a == Right) {
-        out << "Right";
-    } else if (a == Top) {
-        out << "Top";
-    } else if (a == Bottom) {
-        out << "Bottom";
-    } else if (a == HorizCenter) {
-        out << "HorizCenter";
-    } else if (a == VertCenter) {
-        out << "VertCenter";
-    }
-}
-
 boolean MessageCode::CoreConstDecls(ostream& out) { 
-    out << "(const char*, const char*, Alignment);\n";
+    out<<"(const char*, const char*, Alignment, int = 0, int = 0, int = 0);\n";
     return out.good();
 }
 
@@ -397,17 +373,19 @@ boolean MessageCode::CoreConstInits(ostream& out) {
     InteractorComp* icomp = GetIntComp();
     SubclassNameVar* snamer = icomp->GetClassNameVar();
     const char* baseclass = snamer->GetBaseClass();
+    const char* subclass = snamer->GetName();
 
-    out << "(\n    const char* i, const char* name, Alignment al\n) : ";
+    out << "(\n    const char* i, const char* name, Alignment al, int p";
+    out << ", int hstr, int hshr\n) : ";
     out << baseclass;
-    out << "(i, name, al) {\n";
-    out << "    perspective = new Perspective;\n";
+    out << "(i, name, al, p, hstr, hshr) {\n";
+    out << "    SetClassName(\"" << subclass << "\");\n";
     out << "}\n\n";
     return out.good();
 }
 
 boolean MessageCode::ConstDecls(ostream& out) {
-    out << "(const char*, const char*, Alignment);\n";
+    out<<"(const char*, const char*, Alignment, int = 0, int = 0, int = 0);\n";
     return out.good();
 }
 
@@ -415,9 +393,10 @@ boolean MessageCode::ConstInits(ostream& out) {
     char coreclass[CHARBUFSIZE];
     GetCoreClassName(coreclass);
 
-    out << "(\n    const char* i, const char* name, Alignment al\n) : ";
+    out << "(\n    const char* i, const char* name, Alignment al, int p";
+    out << ", int hstr, int hshr\n) : ";
     out << coreclass;
-    out << "(i, name, al) {}\n\n";
+    out << "(i, name, al, p, hstr, hshr) {}\n";
     return out.good();
 }
 

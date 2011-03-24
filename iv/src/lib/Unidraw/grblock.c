@@ -27,33 +27,17 @@
 #include <Unidraw/Graphic/graphic.h>
 #include <Unidraw/Graphic/grblock.h>
 
+#include <IV-look/kit.h>
 #include <InterViews/bitmap.h>
 #include <InterViews/canvas.h>
 #include <InterViews/cursor.h>
 #include <InterViews/event.h>
-#include <InterViews/painter.h>
-#include <InterViews/perspective.h>
-#include <InterViews/scene.h>
-#include <InterViews/shape.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/perspective.h>
+#include <IV-2_6/InterViews/scene.h>
+#include <IV-2_6/InterViews/shape.h>
 
-#include <InterViews/Bitmaps/hand.bm>
-#include <InterViews/Bitmaps/handMask.bm>
-#include <InterViews/Bitmaps/dfast.bm>
-#include <InterViews/Bitmaps/dfastMask.bm>
-#include <InterViews/Bitmaps/ldfast.bm>
-#include <InterViews/Bitmaps/ldfastMask.bm>
-#include <InterViews/Bitmaps/lfast.bm>
-#include <InterViews/Bitmaps/lfastMask.bm>
-#include <InterViews/Bitmaps/lufast.bm>
-#include <InterViews/Bitmaps/lufastMask.bm>
-#include <InterViews/Bitmaps/rdfast.bm>
-#include <InterViews/Bitmaps/rdfastMask.bm>
-#include <InterViews/Bitmaps/rfast.bm>
-#include <InterViews/Bitmaps/rfastMask.bm>
-#include <InterViews/Bitmaps/rufast.bm>
-#include <InterViews/Bitmaps/rufastMask.bm>
-#include <InterViews/Bitmaps/ufast.bm>
-#include <InterViews/Bitmaps/ufastMask.bm>
+#include <IV-2_6/_enter.h>
 
 #include <math.h>
 #include <stdlib.h>
@@ -448,19 +432,8 @@ void GraphicBlock::SetMagnification (float m) {
 }
 
 void GraphicBlock::GrabScroll (Event& e) {
-    static Cursor* handCursor;
     Cursor* origCursor = GetCursor();
-
-    if (handCursor == nil) {
-        Bitmap hand(hand_bits, hand_width, hand_height, hand_x_hot,hand_y_hot);
-        Bitmap handmask(
-            hand_mask_bits, hand_mask_width, hand_mask_height
-        );
-        handCursor = new Cursor(
-            &hand, &handmask, output->GetFgColor(), output->GetBgColor()
-        );
-    }
-    SetCursor(handCursor);
+    SetCursor(WidgetKit::instance()->hand_cursor());
 
     int y = e.y;
     int x = e.x;
@@ -479,84 +452,8 @@ void GraphicBlock::GrabScroll (Event& e) {
 }
 
 void GraphicBlock::RateScroll (Event& e) {
-    static Cursor* luCursor, *ldCursor, *ruCursor, *rdCursor;
-    static Cursor* lCursor, *rCursor, *uCursor, *dCursor;
     Cursor* origCursor = GetCursor();
-
-    if (luCursor == nil) {
-        Bitmap lubits(
-            lufast_bits, lufast_width, lufast_height, lufast_x_hot,lufast_y_hot
-        );
-        Bitmap lumask(
-            lufast_mask_bits, lufast_mask_width, lufast_mask_height
-        );
-        Bitmap ldbits(
-            ldfast_bits, ldfast_width, ldfast_height, ldfast_x_hot,ldfast_y_hot
-        );
-        Bitmap ldmask(
-            ldfast_mask_bits, ldfast_mask_width, ldfast_mask_height
-        );
-        Bitmap rubits(
-            rufast_bits, rufast_width, rufast_height, rufast_x_hot,rufast_y_hot
-        );
-        Bitmap rumask(
-            rufast_mask_bits, rufast_mask_width, rufast_mask_height
-        );
-        Bitmap rdbits(
-            rdfast_bits, rdfast_width, rdfast_height, rdfast_x_hot,rdfast_y_hot
-        );
-        Bitmap rdmask(
-            rdfast_mask_bits, rdfast_mask_width, rdfast_mask_height
-        );
-        Bitmap lbits(
-            lfast_bits, lfast_width, lfast_height, lfast_x_hot,lfast_y_hot
-        );
-        Bitmap lmask(
-            lfast_mask_bits, lfast_mask_width, lfast_mask_height
-        );
-        Bitmap rbits(
-            rfast_bits, rfast_width, rfast_height, rfast_x_hot,rfast_y_hot
-        );
-        Bitmap rmask(
-            rfast_mask_bits, rfast_mask_width, rfast_mask_height
-        );
-        Bitmap ubits(
-            ufast_bits, ufast_width, ufast_height, ufast_x_hot,ufast_y_hot
-        );
-        Bitmap umask(
-            ufast_mask_bits, ufast_mask_width, ufast_mask_height
-        );
-        Bitmap dbits(
-            dfast_bits, dfast_width, dfast_height, dfast_x_hot,dfast_y_hot
-        );
-        Bitmap dmask(
-            dfast_mask_bits, dfast_mask_width, dfast_mask_height
-        );
-        luCursor = new Cursor(
-            &lubits, &lumask, output->GetFgColor(), output->GetBgColor()
-        );
-        ldCursor = new Cursor(
-            &ldbits, &ldmask, output->GetFgColor(), output->GetBgColor()
-        );
-        ruCursor = new Cursor(
-            &rubits, &rumask, output->GetFgColor(), output->GetBgColor()
-        );
-        rdCursor = new Cursor(
-            &rdbits, &rdmask, output->GetFgColor(), output->GetBgColor()
-        );
-        lCursor = new Cursor(
-            &lbits, &lmask, output->GetFgColor(), output->GetBgColor()
-        );
-        rCursor = new Cursor(
-            &rbits, &rmask, output->GetFgColor(), output->GetBgColor()
-        );
-        uCursor = new Cursor(
-            &ubits, &umask, output->GetFgColor(), output->GetBgColor()
-        );
-        dCursor = new Cursor(
-            &dbits, &dmask, output->GetFgColor(), output->GetBgColor()
-        );
-    }
+    WidgetKit& kit = *WidgetKit::instance();
 
     int y = e.y;
     int x = e.x;
@@ -572,23 +469,23 @@ void GraphicBlock::RateScroll (Event& e) {
             double angle = atan2(dy, dx)*180/M_PI;
 
             if (angle < -157.5) {
-                SetCursor(rCursor);
+                SetCursor(kit.rfast_cursor());
             } else if (angle < -112.5) {
-                SetCursor(ruCursor);
+                SetCursor(kit.rufast_cursor());
             } else if (angle < -67.5) {
-                SetCursor(uCursor);
+                SetCursor(kit.ufast_cursor());
             } else if (angle < -22.5) {
-                SetCursor(luCursor);
+                SetCursor(kit.lufast_cursor());
             } else if (angle < 22.5) {
-                SetCursor(lCursor);
+                SetCursor(kit.lfast_cursor());
             } else if (angle < 67.5) {
-                SetCursor(ldCursor);
+                SetCursor(kit.ldfast_cursor());
             } else if (angle < 112.5) {
-                SetCursor(dCursor);
+                SetCursor(kit.dfast_cursor());
             } else if (angle < 157.5) {
-                SetCursor(rdCursor);
+                SetCursor(kit.rdfast_cursor());
             } else {
-                SetCursor(rCursor);
+                SetCursor(kit.rfast_cursor());
             }
         }
 

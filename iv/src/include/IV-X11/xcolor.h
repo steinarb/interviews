@@ -35,17 +35,11 @@
 
 #include <InterViews/_enter.h>
 
-class Display;
+class WindowVisual;
 
 class ColorRep {
 public:
-    Display* display_;
-/*
-    ColorIntensity red_;
-    ColorIntensity green_;
-    ColorIntensity blue_;
-    float alpha_;
- */
+    WindowVisual* visual_;
     ColorOp op_;
     boolean masking_;
     XColor xcolor_;

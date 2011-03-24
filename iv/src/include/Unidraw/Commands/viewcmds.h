@@ -30,6 +30,7 @@
 #include <Unidraw/Commands/command.h>
 
 class ControlInfo;
+class GridDialog;
 
 class NormSizeCmd : public Command {
 public:
@@ -96,7 +97,7 @@ public:
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
 protected:
-    class GridDialog* _dialog;
+    GridDialog* _dialog;
 };
 
 class GravityCmd : public Command {

@@ -27,11 +27,12 @@
  */
 
 #include <InterViews/canvas.h>
-#include <InterViews/2.6/InterViews/painter.h>
-#include <InterViews/2.6/InterViews/shape.h>
-#include <InterViews/2.6/InterViews/tray.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/shape.h>
+#include <IV-2_6/InterViews/tray.h>
+#include <OS/math.h>
 
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/_enter.h>
 
 inline float abs (float f) { return (f < 0) ? -f : f; }
 
@@ -64,23 +65,42 @@ public:
 TElement::TElement(Interactor* i) {
     owner = i;
     tglue = nil;
-    pos = sigma = 0;
+    pos = 0;
+    sigma = 0;
+    nat = 0.0;
+    stretch = 0.0;
+    shrink = 0.0;
+    combinable = false;
+    leftBotHalf = false;
 }
 
 TElement::TElement(TGlue* tg) {
     owner = nil;
     tglue = tg;
-    pos = sigma = 0;
+    Resource::ref(tglue);
+    pos = 0;
+    sigma = 0;
+    nat = 0.0;
+    stretch = 0.0;
+    shrink = 0.0;
+    combinable = false;
+    leftBotHalf = false;
 }
 
 TElement::TElement() {
     owner = nil;
     tglue = nil;
-    pos = sigma = 0;
+    pos = 0;
+    sigma = 0;
+    nat = 0.0;
+    stretch = 0.0;
+    shrink = 0.0;
+    combinable = false;
+    leftBotHalf = false;
 }
 
 TElement::~TElement() {
-    delete tglue;
+    Resource::unref(tglue);
 }
 
 void TElement::HSetShape() {

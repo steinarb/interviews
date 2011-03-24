@@ -77,10 +77,15 @@ void UHashTable::Unregister (void* key) {
         for (UList* u = slot->First(); u != slot->End(); u = u->Next()) {
             UHashElem* elem = Elem(u);
 
-            if (elem->GetKey() == key) {
+            if (Equal(elem->GetKey(), key)) {
                 slot->Remove(u);
                 delete elem;
                 delete u;
+
+		if (_slot[n]->IsEmpty()) {
+		    delete _slot[n];
+		    _slot[n] = nil;
+		}
                 break;
             }
         }
@@ -129,6 +134,8 @@ boolean UHashTable::Done (Iterator i) {
     return true;
 }
 
+boolean UHashTable::Equal (void* key1, void* key2) { return key1 == key2; }
+
 UHashElem* UHashTable::Find (void* key) {
     int n = Hash(key);
     UList* slot = _slot[n];
@@ -137,7 +144,7 @@ UHashElem* UHashTable::Find (void* key) {
         for (UList* u = slot->First(); u != slot->End(); u = u->Next()) {
             UHashElem* elem = Elem(u);
 
-            if (elem->GetKey() == key) {
+            if (Equal(elem->GetKey(), key)) {
                 return elem;
             }
         }

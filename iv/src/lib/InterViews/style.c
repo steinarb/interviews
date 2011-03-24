@@ -26,103 +26,109 @@
  * Style - style information
  */
 
+#include <InterViews/action.h>
 #include <InterViews/brush.h>
 #include <InterViews/color.h>
 #include <InterViews/display.h>
 #include <InterViews/font.h>
 #include <InterViews/session.h>
 #include <InterViews/style.h>
+#include <OS/file.h>
 #include <OS/list.h>
+#include <OS/math.h>
 #include <OS/table.h>
+#include <OS/string.h>
 #include <OS/ustring.h>
 #include <ctype.h>
 
-declareList(StyleList,Style*);
-implementList(StyleList,Style*);
+declarePtrList(StyleList,Style)
+implementPtrList(StyleList,Style)
 
-declareList(UniqueStringList,UniqueString*);
-implementList(UniqueStringList,UniqueString*);
+declarePtrList(UniqueStringList,UniqueString)
+implementPtrList(UniqueStringList,UniqueString)
 
-static void delete_UniqueStringList(UniqueStringList* list) {
-    if (list != nil) {
-	for (ListItr(UniqueStringList) i(*list); i.more(); i.next()) {
-	    UniqueString* s = i.cur();
-	    delete s;
-	}
-	delete list;
-    }
-}
-
-class StyleAttribute {
-public:
-    StyleAttribute(
-	const UniqueString& name, const String& value, int priority
-    );
-    StyleAttribute(const StyleAttribute&, boolean cached = true);
-    virtual ~StyleAttribute();
-
-    const UniqueString& name() const;
-    const String& value() const;
-    int priority() const;
-
-    virtual boolean match(const UniqueString&, String&) const;
-    virtual boolean update(const UniqueString&, const String&, int priority);
-    virtual boolean is_cached() const;
-
-    static String* parse_value(const String&);
+struct StyleAttribute {
 private:
-    UniqueString name_;
+    friend class Style;
+    friend class StyleRep;
+
+    String* name_;
+    UniqueStringList* path_;
     String* value_;
     int priority_;
-
-    /* not permitted */
-    void operator =(const StyleAttribute&);
+    Macro* observers_;
+    long index_;
 };
 
-StyleAttribute::StyleAttribute(const UniqueString& n, const String& v, int p) :
-    name_(n), value_(parse_value(v)), priority_(p) { }
+declarePtrList(StyleAttributeList,StyleAttribute)
+implementPtrList(StyleAttributeList,StyleAttribute)
 
-StyleAttribute::StyleAttribute(const StyleAttribute& a, boolean cached) :
-    name_(a.name_), value_(new String(*a.value_)),
-    priority_(cached ? -1000 : a.priority_) { }
+struct StyleAttributeTableEntry {
+    StyleAttributeList** entries_;
+    long avail_;
+    long used_;
+};
 
-StyleAttribute::~StyleAttribute() {
-    delete value_;
-}
+inline unsigned long key_to_hash(UniqueString& s) { return s.hash(); }
 
-inline const UniqueString& StyleAttribute::name() const { return name_; }
-inline const String& StyleAttribute::value() const { return *value_; }
-inline int StyleAttribute::priority() const { return priority_; }
+declareTable(StyleAttributeTable,UniqueString,StyleAttributeTableEntry*)
+implementTable(StyleAttributeTable,UniqueString,StyleAttributeTableEntry*)
 
-boolean StyleAttribute::match(const UniqueString& n, String& v) const {
-    if (name_ == n) {
-	v = *value_;
-	return true;
-    }
-    return false;
-}
+class StyleRep {
+private:
+    friend class Style;
 
-boolean StyleAttribute::update(const UniqueString& n, const String& v, int p) {
-    if (name_ == n) {
-	if (p >= priority_) {
-	    value_ = parse_value(v);
-	    priority_ = p;
-	}
-	return true;
-    }
-    return false;
-}
+    UniqueString* name_;
+    UniqueStringList* aliases_;
+    Style* parent_;
+    StyleAttributeTable* table_;
+    StyleAttributeList* list_;
+    StyleList* children_;
+    Macro* observers_;
+    boolean modified_;
 
-boolean StyleAttribute::is_cached() const {
-    return priority_ == -1000;
-}
+    StyleRep(UniqueString*);
+    ~StyleRep();
+
+    void clear_info();
+    void modify();
+    void update();
+
+    StyleAttribute* add_attribute(
+	const String& name, const String& value, int priority
+    );
+    UniqueStringList* parse_name(String&, int& priority);
+    String* parse_value(const String&);
+    int find_separator(const String&);
+    int match_name(const UniqueString&);
+    boolean same_path(const UniqueStringList&, const UniqueStringList&);
+    void delete_path(UniqueStringList*);
+    void delete_attribute(StyleAttribute*);
+
+    String strip(const String&);
+    void missing_colon(const String&);
+    void bad_property_name(const String&);
+    void bad_property_value(const String&);
+
+    StyleAttributeTableEntry* find_entry(const UniqueString&);
+    boolean wildcard_match(
+	const StyleAttributeTableEntry&, const StyleList&, String& value
+    );
+    boolean wildcard_match_name(
+	const UniqueString& name, const StyleAttributeTableEntry&,
+	const StyleList&, long s_index, String& value
+    );
+    int StyleRep::finish_match(
+	const StyleList&, long s_index, const UniqueStringList&, long p_index
+    );
+};
 
 /*
  * Scan an attribute value, replace \<char> as follows:
  *
  *	\<newline>	nothing
  *	\n		newline
- *	\\		\
+ *	\<backslash>	\
  */
 
 class ValueString : public String {
@@ -136,12 +142,12 @@ public:
 ValueString::ValueString(char* str, int len) : String(str, len) { }
 ValueString::~ValueString() {
     char* s = (char*)string();
-    delete [] s;
+    delete s;
 }
 
 boolean ValueString::null_terminated() const { return true; }
 
-String* StyleAttribute::parse_value(const String& v) {
+String* StyleRep::parse_value(const String& v) {
     if (v.index('\\') == -1) {
 	return new NullTerminatedString(v);
     }
@@ -160,7 +166,11 @@ String* StyleAttribute::parse_value(const String& v) {
 	    case 'n':
 		*dst++ = '\n';
 		break;
+	    case '\\':
+		*dst++ = *src;
+		break;
 	    default:
+		*dst++ = '\\';
 		*dst++ = *src;
 		break;
 	    }
@@ -172,371 +182,146 @@ String* StyleAttribute::parse_value(const String& v) {
     return new ValueString(dst_start, dst - dst_start);
 }
 
-class StyleWildcardInfo {
-public:
-    long depth_;
-    long index_;
-};
-
-declareList(StyleWildcardInfoList,StyleWildcardInfo);
-implementList(StyleWildcardInfoList,StyleWildcardInfo);
-
-class StyleWildcardMatchQuality {
-public:
-    StyleWildcardMatchQuality();
-    virtual ~StyleWildcardMatchQuality();
-
-    void zero();
-    void push(long element, long index);
-    void pop();
-    boolean operator >(StyleWildcardMatchQuality& q);
-    void operator =(const StyleWildcardMatchQuality& q);
-    boolean defined() const;
-private:
-    StyleWildcardInfoList list_;
-};
-
-StyleWildcardMatchQuality::StyleWildcardMatchQuality() : list_(10) { }
-StyleWildcardMatchQuality::~StyleWildcardMatchQuality() { }
-
-inline void StyleWildcardMatchQuality::zero() { list_.remove_all(); }
-
-void StyleWildcardMatchQuality::push(long element, long index) {
-    StyleWildcardInfo info;
-    info.depth_ = element;
-    info.index_ = index;
-    list_.prepend(info);
-}
-
-inline void StyleWildcardMatchQuality::pop() {
-    list_.remove(list_.count() - 1);
-}
-
-boolean StyleWildcardMatchQuality::operator >(
-    StyleWildcardMatchQuality& q
-) {
-    ListItr(StyleWildcardInfoList) i(list_);
-    ListItr(StyleWildcardInfoList) q_i(q.list_);
-    for (; i.more(); i.next(), q_i.next()) {
-	if (!q_i.more()) {
-	    return true;
-	}
-	const StyleWildcardInfo& info = i.cur();
-	const StyleWildcardInfo& q_info = q_i.cur();
-	if (info.depth_ > q_info.depth_) {
-	    return true;
-	}
-	if (info.depth_ < q_info.depth_) {
-	    return false;
-	}
-	if (info.index_ < q_info.index_) {
-	    return true;
-	}
-	if (info.index_ > q_info.index_) {
-	    return false;
-	}
-    }
-    return !q_i.more();
-}
-
-void StyleWildcardMatchQuality::operator =(
-    const StyleWildcardMatchQuality& q
-) {
-    list_.remove_all();
-    for (ListItr(StyleWildcardInfoList) i(q.list_); i.more(); i.next()) {
-	list_.append(i.cur_ref());
-    }
-}
-
-inline boolean StyleWildcardMatchQuality::defined() const {
-    return list_.count() != 0;
-}
-
-declareList(AttributeList,StyleAttribute*);
-implementList(AttributeList,StyleAttribute*);
-
-class StyleWildcard : public StyleAttribute {
-public:
-    StyleWildcard(
-	UniqueStringList* path, const UniqueString& s, const String& v, int p
-    );
-    StyleWildcard(const StyleWildcard&, boolean cached = true);
-    ~StyleWildcard();
-
-    void wildcard_match(
-	StyleList&, const UniqueString& name,
-	StyleWildcardMatchQuality&, String& v
-    ) const;
-    boolean wildcard_update(
-	UniqueStringList& path, const UniqueString& s, const String& v, int p
-    );
-private:
-    UniqueStringList* path_;
-};
-
-StyleWildcard::StyleWildcard(
-    UniqueStringList* path, const UniqueString& name, const String& v, int p
-) : StyleAttribute(name, v, p), path_(path) { }
-
-StyleWildcard::StyleWildcard(
-    const StyleWildcard& s, boolean cached
-) : StyleAttribute(s, cached) {
-    path_ = new UniqueStringList;
-    for (ListItr(UniqueStringList) i(*s.path_); i.more(); i.next()) {
-	UniqueString* u = new UniqueString(*i.cur());
-	path_->append(u);
-    }
-}
-
-StyleWildcard::~StyleWildcard() {
-    delete_UniqueStringList(path_);
-}
-
-boolean StyleWildcard::wildcard_update(
-    UniqueStringList& path, const UniqueString& s, const String& v, int p
-) {
-    if (path.count() == path_->count()) {
-	ListItr(UniqueStringList) i(path);
-	ListItr(UniqueStringList) j(*path_);
-	for (; i.more(); i.next(), j.next()) {
-	    if (*i.cur() != *j.cur()) {
-		return false;
-	    }
-	}
-	return update(s, v, p);
-    }
-    return false;
-}
-
-declareList(WildcardList,StyleWildcard*);
-implementList(WildcardList,StyleWildcard*);
-
-declareTable(StyleToFont,StyleRep*,const Font*);
-implementTable(StyleToFont,StyleRep*,const Font*);
-
-declareTable(StyleToColor,StyleRep*,const Color*);
-implementTable(StyleToColor,StyleRep*,const Color*);
-
-struct FancyColors {
-    const Color* flat;
-    const Color* light;
-    const Color* dull;
-    const Color* dark;
-};
-
-declareTable(StyleToFancyColors,StyleRep*,FancyColors*);
-implementTable(StyleToFancyColors,StyleRep*,FancyColors*);
-
-class StyleRep {
-    friend class Style;
-    friend class StyleWildcard;
-
-    StyleRep(UniqueString*, Style*);
-    ~StyleRep();
-
-    void clear_info();
-    void modify();
-    void update();
-    void copy_attributes(AttributeList&);
-    void copy_wildcards(WildcardList&);
-    void copy_prefixes(UniqueStringList&);
-
-    boolean parse_name(String&, int& priority, UniqueStringList*&);
-    int find_separator(const String&);
-    boolean match_name(const UniqueString&, int& priority);
-
-    boolean find_normal(const UniqueString& name, String& value);
-    boolean find_wildcard(StyleList&, const UniqueString& name, String& value);
-
-    static long prefix_index(Style*, const UniqueString&);
-
-    const Color* find_color(
-	const Style*, StyleToColor* table,
-	const UniqueString* s1, const UniqueString* s2
-    );
-    boolean valid_font(const String&, StyleRep*, const Font*&);
-    boolean valid_color(
-	const String&, StyleRep*, StyleToColor* table, const Color*&
-    );
-
-    UniqueString* name_;
-    UniqueStringList* prefixes_;
-    Style* parent_;
-    AttributeList* values_;
-    WildcardList* wildcard_values_;
-    StyleList* children_;
-    boolean modified_;
-
-    static StyleToFont* font_table_;
-    static StyleToColor* foreground_table_;
-    static StyleToColor* background_table_;
-    static StyleToFancyColors* fancy_table_;
-
-    static UniqueString* font_string_;
-    static UniqueString* Font_string_;
-    static UniqueString* foreground_string_;
-    static UniqueString* Foreground_string_;
-    static UniqueString* background_string_;
-    static UniqueString* Background_string_;
-    static UniqueString* flat_string_;
-    static UniqueString* Flat_string_;
-};
-
-StyleToFont* StyleRep::font_table_;
-StyleToColor* StyleRep::foreground_table_;
-StyleToColor* StyleRep::background_table_;
-StyleToFancyColors* StyleRep::fancy_table_;
-
-UniqueString* StyleRep::font_string_;
-UniqueString* StyleRep::Font_string_;
-UniqueString* StyleRep::foreground_string_;
-UniqueString* StyleRep::Foreground_string_;
-UniqueString* StyleRep::background_string_;
-UniqueString* StyleRep::Background_string_;
-UniqueString* StyleRep::flat_string_;
-UniqueString* StyleRep::Flat_string_;
-
-StyleRep::StyleRep(UniqueString* s, Style* p) {
-    name_ = s;
-    parent_ = p;
-    children_ = nil;
-    prefixes_ = nil;
-    values_ = new AttributeList;
-    wildcard_values_ = nil;
-    modified_ = true;
-
-    if (font_table_ == nil) {
-	font_table_ = new StyleToFont(128);
-	foreground_table_ = new StyleToColor(256);
-	background_table_ = new StyleToColor(256);
-	fancy_table_ = new StyleToFancyColors(16);
-
-	font_string_ = new UniqueString("font");
-	Font_string_ = new UniqueString("Font");
-	foreground_string_ = new UniqueString("foreground");
-	Foreground_string_ = new UniqueString("Foreground");
-	background_string_ = new UniqueString("background");
-	Background_string_ = new UniqueString("Background");
-	flat_string_ = new UniqueString("flat");
-	Flat_string_ = new UniqueString("Flat");
-    }
-}
-
-StyleRep::~StyleRep() {
-    delete name_;
-
-    for (ListItr(AttributeList) i(*values_); i.more(); i.next()) {
-	StyleAttribute* a = i.cur();
-	delete a;
-    }
-    delete values_;
-
-    if (wildcard_values_ != nil) {
-	for (ListItr(WildcardList) i(*wildcard_values_); i.more(); i.next()) {
-	    StyleWildcard* s = i.cur();
-	    delete s;
-	}
-	delete wildcard_values_;
-    }
-
-    delete_UniqueStringList(prefixes_);
-
-    if (children_ != nil) {
-	for (ListItr(StyleList) i(*children_); i.more(); i.next()) {
-	    Style* s = i.cur();
-	    s->rep_->parent_ = nil;
-	    Resource::unref(s);
-	}
-	delete children_;
-    }
-}
-
 Style::Style() {
-    rep_ = new StyleRep(nil, nil);
+    rep_ = new StyleRep(nil);
 }
 
 Style::Style(const String& name) {
-    rep_ = new StyleRep(new UniqueString(name), nil);
+    rep_ = new StyleRep(new UniqueString(name));
 }
 
 Style::Style(Style* p) {
-    rep_ = new StyleRep(nil, p);
+    rep_ = new StyleRep(nil);
     p->append(this);
 }
 
 Style::Style(const String& name, Style* p) {
-    rep_ = new StyleRep(new UniqueString(name), p);
+    rep_ = new StyleRep(new UniqueString(name));
     p->append(this);
 }
 
 Style::Style(const Style& style) {
     StyleRep& s = *style.rep_;
-    UniqueString* name;
-    if (s.name_ != nil) {
-	name = new UniqueString(*s.name_);
-    } else {
-	name = nil;
-    }
-    rep_ = new StyleRep(name, s.parent_);
+    rep_ = new StyleRep(s.name_ == nil ? nil : new UniqueString(*s.name_));
     if (s.parent_ != nil) {
 	s.parent_->append(this);
     }
     s.update();
-    rep_->copy_attributes(*s.values_);
-    if (s.wildcard_values_ != nil) {
-	rep_->copy_wildcards(*s.wildcard_values_);
+
+    long n = style.alias_count();
+    long i;
+    for (i = n - 1; i >= 0; i--) {
+	alias(*style.alias(i));
     }
-    if (s.prefixes_ != nil) {
-	rep_->copy_prefixes(*s.prefixes_);
+
+    n = style.children();
+    for (i = 0; i < n; i++) {
+	append(style.child(i));
     }
+
+    n = style.attribute_count();
+    for (i = 0; i < n; i++) {
+	String name, value;
+	if (style.attribute(i, name, value)) {
+	    attribute(name, value);
+	}
+    }
+
     rep_->modify();
 }
 
 Style::~Style() {
+    Style* p = rep_->parent_;
+    if (p != nil) {
+	p->remove(this);
+    }
     delete rep_;
 }
 
-const String& Style::name() const {
-    static UniqueString* default_name = nil;
-    UniqueString* s = rep_->name_;
-    if (s == nil) {
-	if (default_name == nil) {
-	    default_name = new UniqueString("Unknown style");
-	}
-	s = default_name;
-    }
-    return *s;
+StyleRep::StyleRep(UniqueString* s) {
+    name_ = s;
+    aliases_ = nil;
+    parent_ = nil;
+    table_ = nil;
+    list_ = nil;
+    children_ = nil;
+    observers_ = nil;
+    modified_ = true;
 }
 
-Style* Style::parent() const {
-    return rep_->parent_;
+StyleRep::~StyleRep() {
+    clear_info();
+    delete name_;
+    StyleAttributeTable* t = table_;
+    if (t != nil) {
+	for (TableIterator(StyleAttributeTable) i(*t); i.more(); i.next()) {
+	    StyleAttributeTableEntry* e = i.cur_value();
+	    for (unsigned long j = 0; j < e->used_; j++) {
+		StyleAttributeList* a = e->entries_[j];
+		if (a != nil) {
+		    for (
+			ListItr(StyleAttributeList) k(*a); k.more(); k.next()
+		    ) {
+			delete_attribute(k.cur());
+		    }
+		    delete a;
+		}
+	    }
+	    delete e->entries_;
+	    delete e;
+	}
+	delete t;
+    }
+    delete list_;
+    delete_path(aliases_);
+    if (children_ != nil) {
+	for (ListItr(StyleList) i(*children_); i.more(); i.next()) {
+	    Style* s = i.cur();
+	    s->rep_->parent_ = nil;
+	}
+	delete children_;
+    }
 }
+
+const String* Style::name() const { return rep_->name_; }
 
 void Style::name(const String& str) {
-    StyleRep* s = rep_;
-    delete s->name_;
-    s->name_ = new UniqueString(str);
+    StyleRep& s = *rep_;
+    delete s.name_;
+    s.name_ = new UniqueString(str);
 }
 
-/*
- * Add a prefix to the current style.
- */
-
-void Style::prefix(const String& name) {
-    UniqueString* s = new UniqueString(name);
-    UniqueStringList* list = rep_->prefixes_;
-    if (list == nil) {
-	list = new UniqueStringList(5);
-	rep_->prefixes_ = list;
+void Style::alias(const String& name) {
+    StyleRep& s = *rep_;
+    if (s.aliases_ == nil) {
+	s.aliases_ = new UniqueStringList(5);
     }
-    list->prepend(s);
-    rep_->modify();
+    s.aliases_->prepend(new UniqueString(name));
+    s.modify();
 }
+
+long Style::alias_count() const {
+    StyleRep& s = *rep_;
+    return s.aliases_ == nil ? 0 : s.aliases_->count();
+}
+
+const String* Style::alias(long i) const {
+    UniqueStringList* list = rep_->aliases_;
+    if (list == nil || i < 0 || i >= list->count()) {
+	return nil;
+    }
+    return list->item(i);
+}
+
+void Style::name(const char* s) { name(String(s)); }
+void Style::alias(const char* s) { alias(String(s)); }
+
+Style* Style::parent() const { return rep_->parent_; }
 
 /*
  * Add a child style.  Implicitly remove the child from its current parent,
  * if it has one, and set its parent to this.  Because reparenting may change
- * attributes, we must mark the child modified.
+ * (cached) attributes, we must mark the child modified.
  */
 
 void Style::append(Style* style) {
@@ -544,36 +329,31 @@ void Style::append(Style* style) {
     if (p == this) {
 	return;
     }
-
-    Resource::ref(style);
-
     if (p != nil) {
 	p->remove(style);
     }
-
-    StyleList* list = rep_->children_;
-    if (list == nil) {
-	list = new StyleList;
-	rep_->children_ = list;
+    StyleRep& s = *rep_;
+    if (s.children_ == nil) {
+	s.children_ = new StyleList(5);
     }
-    list->append(style);
-
-    StyleRep* s = style->rep_;
-    s->parent_ = this;
-    s->modify();
+    s.children_->append(style);
+    Resource::ref(this);
+    style->rep_->parent_ = this;
+    style->rep_->modify();
 }
 
 /*
- * Remove a child style.  Do nothing the given style isn't really a child.
+ * Remove a child style.  Do nothing if the given style isn't really a child.
  */
 
 void Style::remove(Style* style) {
-    if (rep_->children_ != nil) {
-	for (ListItr(StyleList) i(*rep_->children_); i.more(); i.next()) {
+    StyleList* list = rep_->children_;
+    if (list != nil) {
+	for (ListUpdater(StyleList) i(*list); i.more(); i.next()) {
 	    if (i.cur() == style) {
 		i.remove_cur();
 		style->rep_->parent_ = nil;
-		Resource::unref(style);
+		Resource::unref(this);
 		break;
 	    }
 	}
@@ -585,8 +365,8 @@ void Style::remove(Style* style) {
  */
 
 long Style::children() const {
-    StyleList* s = rep_->children_;
-    return s == nil ? 0 : s->count();
+    StyleList* list = rep_->children_;
+    return list == nil ? 0 : list->count();
 }
 
 /*
@@ -594,64 +374,11 @@ long Style::children() const {
  */
 
 Style* Style::child(long i) const {
-    StyleList* s = rep_->children_;
-    if (s != nil && i >= 0 && i < s->count()) {
-	return s->item(i);
+    StyleList* list = rep_->children_;
+    if (list != nil && i >= 0 && i < list->count()) {
+	return list->item(i);
     }
     return nil;
-}
-
-/*
- * Find a child style with the given name.
- */
-
-Style* Style::find_style(const String& name) const {
-    if (rep_->children_ != nil) {
-	UniqueString u(name);
-	for (ListItr(StyleList) i(*rep_->children_); i.more(); i.next()) {
-	    Style* s = i.cur();
-	    StyleRep* sr = s->rep_;
-	    if (sr->name_ != nil && *sr->name_ == u) {
-		return s;
-	    }
-	}
-    }
-    return nil;
-}
-
-/*
- * Copy attributes from another style.
- */
-
-void StyleRep::copy_attributes(AttributeList& list) {
-    for (ListItr(AttributeList) i(list); i.more(); i.next()) {
-	StyleAttribute* a = new StyleAttribute(*i.cur(), false);
-	values_->append(a);
-    }
-}
-
-/*
- * Copy wildcard attributes from another style.
- */
-
-void StyleRep::copy_wildcards(WildcardList& list) {
-    wildcard_values_ = new WildcardList;
-    for (ListItr(WildcardList) i(list); i.more(); i.next()) {
-	StyleWildcard* w = new StyleWildcard(*i.cur(), false);
-	wildcard_values_->append(w);
-    }
-}
-
-/*
- * Copy prefixes from another style.
- */
-
-void StyleRep::copy_prefixes(UniqueStringList& list) {
-    prefixes_ = new UniqueStringList(5);
-    for (ListItr(UniqueStringList) i(list); i.more(); i.next()) {
-	UniqueString* u = new UniqueString(*i.cur());
-	prefixes_->append(u);
-    }
 }
 
 /*
@@ -659,81 +386,120 @@ void StyleRep::copy_prefixes(UniqueStringList& list) {
  */
 
 void Style::attribute(const String& name, const String& value, int priority) {
-    StyleRep* s = rep_;
+    rep_->add_attribute(name, value, priority);
+}
+
+StyleAttribute* StyleRep::add_attribute(
+    const String& name, const String& value, int priority
+) {
     String str(name);
     int p = priority;
-
-    UniqueStringList* pathlist;
-    if (!s->parse_name(str, p, pathlist)) {
+    UniqueStringList* path = parse_name(str, p);
+    if (path == nil) {
 	/* irrelevant attribute: A*B where A doesn't match */
-	return;
+	return nil;
+    }
+
+    if (table_ == nil) {
+	table_ = new StyleAttributeTable(50);
     }
 
     UniqueString u(str);
-    if (pathlist == nil) {
-	/* simple name */
-	for (ListItr(AttributeList) i(*s->values_); i.more(); i.next()) {
-	    if (i.cur()->update(u, value, p)) {
-		return;
-	    }
+    StyleAttributeTableEntry* e = find_entry(u);
+    if (e == nil) {
+	e = new StyleAttributeTableEntry;
+	e->entries_ = new StyleAttributeList*[3];
+	e->avail_ = 3;
+	e->used_ = 0;
+	for (long i = 0; i < e->avail_; i++) {
+	    e->entries_[i] = nil;
 	}
-	StyleAttribute* a = new StyleAttribute(u, value, p);
-	s->values_->append(a);
-    } else {
-	/* name with wildcarding */
-	WildcardList* wc = s->wildcard_values_;
-	if (wc == nil) {
-	    wc = new WildcardList;
-	    s->wildcard_values_ = wc;
-	}
-	for (ListItr(WildcardList) i(*wc); i.more(); i.next()) {
-	    if (i.cur()->wildcard_update(*pathlist, u, value, p)) {
-		delete_UniqueStringList(pathlist);
-		return;
-	    }
-	}
-	StyleWildcard* w = new StyleWildcard(pathlist, u, value, p);
-	wc->append(w);
+	table_->insert(u, e);
     }
-    s->modify();
+
+    long n = path->count();
+    if (e->avail_ <= n) {
+	long new_avail = n + 5;
+	StyleAttributeList** new_list = new StyleAttributeList*[new_avail];
+	for (long i = 0; i < e->avail_; i++) {
+	    new_list[i] = e->entries_[i];
+	}
+	for (i = e->avail_; i < new_avail; i++) {
+	    new_list[i] = nil;
+	}
+	delete e->entries_;
+	e->entries_ = new_list;
+	e->avail_ = new_avail;
+    }
+    if (e->entries_[n] == nil) {
+	e->entries_[n] = new StyleAttributeList;
+    }
+    e->used_ = Math::max(e->used_, n + 1);
+    StyleAttributeList& list = *e->entries_[n];
+    for (ListItr(StyleAttributeList) i(list); i.more(); i.next()) {
+	StyleAttribute* a = i.cur();
+	if (same_path(*a->path_, *path)) {
+	    if (p >= a->priority_) {
+		delete a->value_;
+		a->value_ = parse_value(value);
+		a->priority_ = p;
+		if (a->observers_ != nil) {
+		    a->observers_->execute();
+		}
+		modify();
+	    }
+	    delete_path(path);
+	    return a;
+	}
+    }
+    StyleAttribute* a = new StyleAttribute;
+    a->name_ = new CopyString(name);
+    a->path_ = path;
+    a->value_ = parse_value(value);
+    a->priority_ = p;
+    a->observers_ = nil;
+    list.append(a);
+    if (list_ == nil) {
+	list_ = new StyleAttributeList;
+    }
+    a->index_ = list_->count();
+    list_->append(a);
+    modify();
+    return a;
 }
 
 /*
  * Parse a name of the form *A*B*C into the list of names A, B, C.
  * Strip the first name (e.g., A) if it matches the style's name
- * or a prefix.
+ * or an alias.
  */
 
-boolean StyleRep::parse_name(
-    String& s, int& priority, UniqueStringList*& list
-) {
+UniqueStringList* StyleRep::parse_name(String& s, int& priority) {
     boolean leading_star = false;
     if (s[0] == '*') {
 	leading_star = true;
 	s.set_to_right(1);
     }
-
-    list = nil;
+    UniqueStringList* list = new UniqueStringList;
     boolean first = true;
     for (int i = find_separator(s); i != -1; i = find_separator(s)) {
 	UniqueString name(s.left(i));
 	if (first) {
 	    first = false;
-	    if (match_name(name, priority)) {
+	    int q = match_name(name);
+	    if (q != 0) {
+		priority += (q == 1) ? 2 : 1;
 		s.set_to_right(i + 1);
 		continue;
 	    } else if (!leading_star) {
-		return false;
+		delete_path(list);
+		return nil;
 	    }
 	}
-	if (list == nil) {
-	    list = new UniqueStringList;
-	}
-	UniqueString* u = new UniqueString(name);
-	list->append(u);
+	list->append(new UniqueString(name));
 	s.set_to_right(i + 1);
     }
-    return true;
+    return list;
 }
 
 /*
@@ -754,68 +520,78 @@ int StyleRep::find_separator(const String& s) {
 
 /*
  * Check to see if a given name matches the style's name
- * or any of its prefixes.  Bump up the priority to override
- * less precise names.
+ * or any of its aliases.
+ *
+ * Return value:
+ *     0 - no match
+ *     1 - name match
+ *     2 and up - index of alias match plus 2
  */
 
-boolean StyleRep::match_name(const UniqueString& name, int& priority) {
+int StyleRep::match_name(const UniqueString& name) {
+    int match = 0;
     if (name_ != nil && name == *name_) {
-	priority += 2;
-	return true;
-    }
-    if (prefixes_ != nil) {
-	for (ListItr(UniqueStringList) i(*prefixes_); i.more(); i.next()) {
+	match = 1;
+    } else if (aliases_ != nil) {
+	int possible_match = 2;
+	for (ListItr(UniqueStringList) i(*aliases_); i.more(); i.next()) {
 	    if (name == *i.cur()) {
-		priority += 1;
-		return true;
+		match = possible_match;
+		break;
 	    }
+	    ++possible_match;
 	}
     }
-    return false;
+    return match;
+}
+
+/*
+ * Compare to lists of strings.
+ */
+
+boolean StyleRep::same_path(
+    const UniqueStringList& p1, const UniqueStringList& p2
+) {
+    if (p1.count() != p2.count()) {
+	return false;
+    }
+    ListItr(UniqueStringList) i1(p1);
+    ListItr(UniqueStringList) i2(p2);
+    for (; i1.more(); i1.next(), i2.next()) {
+	if (*i1.cur() != *i2.cur()) {
+	    return false;
+	}
+    }
+    return true;
+}
+
+void StyleRep::delete_path(UniqueStringList* list) {
+    if (list != nil) {
+	for (ListItr(UniqueStringList) i(*list); i.more(); i.next()) {
+	    UniqueString* s = i.cur();
+	    delete s;
+	}
+	delete list;
+    }
 }
 
 /*
  * Clear out any cached information about this style.
  */
 
-void StyleRep::clear_info() {
-    const Font* f;
-    if (font_table_->find_and_remove(f, this)) {
-	Resource::unref(f);
-    }
-
-    const Color* c;
-    if (foreground_table_->find_and_remove(c, this)) {
-	Resource::unref(c);
-    }
-    if (background_table_->find_and_remove(c, this)) {
-	Resource::unref(c);
-    }
-
-    FancyColors* colors;
-    if (fancy_table_->find_and_remove(colors, this)) {
-	delete colors;
-    }
-}
-
-/*
- * Note that a style has been modified.  Because of the way styles
- * are inherited, we must mark also all descendant styles as modified.
- */
+void StyleRep::clear_info() { }
 
 void StyleRep::modify() {
     modified_ = true;
+    if (observers_ != nil) {
+	observers_->execute();
+    }
     if (children_ != nil) {
 	for (ListItr(StyleList) i(*children_); i.more(); i.next()) {
 	    i.cur()->rep_->modify();
 	}
     }
 }
-
-/*
- * Update a style.  First we must ensure all modified ancestors are updated,
- * flush the cache of style information, and remove any cached attributes.
- */
 
 void StyleRep::update() {
     if (!modified_) {
@@ -824,43 +600,66 @@ void StyleRep::update() {
     clear_info();
     if (parent_ != nil) {
 	parent_->rep_->update();
-	for (ListItr(AttributeList) i(*values_); i.more(); i.next()) {
-	    StyleAttribute* a = i.cur();
-	    if (a->is_cached()) {
-		i.remove_cur();
-		delete a;
-	    }
-	}
     }
     modified_ = false;
 }
 
-/*
- * Remove an attribute.  Because we might have multiple entries
- * with the same name, we must search the entire list.
- * Do nothing if the name is not found.
- */
-
 void Style::remove_attribute(const String& name) {
-    rep_->update();
-    UniqueString s(name);
-    String v;
-    for (ListItr(AttributeList) i(*rep_->values_); i.more(); i.next()) {
-	StyleAttribute* a = i.cur();
-	if (a->match(s, v)) {
-	    i.remove_cur();
-	    delete a;
-	    return;
+    StyleRep& s = *rep_;
+    s.update();
+    if (s.table_ == nil) {
+	return;
+    }
+    String tail(name);
+    int priority = 0;
+    UniqueStringList* path = s.parse_name(tail, priority);
+    if (path == nil) {
+	return;
+    }
+    UniqueString u(tail);
+    StyleAttributeTableEntry* e = s.find_entry(u);
+    long p = path->count();
+    if (e != nil && e->used_ > p) {
+	StyleAttributeList* a = e->entries_[p];
+	if (a != nil) {
+	    for (ListUpdater(StyleAttributeList) i(*a); i.more(); i.next()) {
+		StyleAttribute* attr = i.cur();
+		if (s.same_path(*attr->path_, *path)) {
+		    s.delete_attribute(attr);
+		    i.remove_cur();
+		    break;
+		}
+	    }
+	    if (a->count() == 0) {
+		delete a;
+		e->entries_[p] = nil;
+	    }
 	}
     }
+    s.delete_path(path);
+}
+
+void StyleRep::delete_attribute(StyleAttribute* a) {
+    delete a->name_;
+    list_->remove(a->index_);
+    long n = list_->count();
+    for (long i = a->index_; i < n; i++) {
+	StyleAttribute* attr = list_->item(i);
+	attr->index_ -= 1;
+    }
+    delete_path(a->path_);
+    delete a->value_;
+    delete a->observers_;
+    delete a;
 }
 
 /*
  * Return number of attributes.
  */
 
-long Style::attributes() const {
-    return rep_->values_->count();
+long Style::attribute_count() const {
+    StyleAttributeList* list = rep_->list_;
+    return list == nil ? 0 : list->count();
 }
 
 /*
@@ -868,22 +667,104 @@ long Style::attributes() const {
  */
 
 boolean Style::attribute(long i, String& name, String& value) const {
-    AttributeList& list = *rep_->values_;
-    if (i < 0 || i >= list.count()) {
+    StyleAttributeList* list = rep_->list_;
+    if (list == nil || i < 0 || i >= list->count()) {
 	return false;
     }
-    StyleAttribute& a = *list.item(i);
-    name = a.name();
-    value = a.value();
+    StyleAttribute& a = *list->item(i);
+    name = *a.name_;
+    value = *a.value_;
     return true;
 }
 
 /*
- * Triggers are not implemented yet.
+ * Convenient short-hand
  */
 
-void Style::add_trigger(const String&, Action*) {
-    /* not implemented */
+void Style::attribute(const char* name, const char* value, int priority) {
+    attribute(String(name), String(value), priority);
+}
+
+void Style::remove_attribute(const char* name) {
+    remove_attribute(String(name));
+}
+
+void Style::load_file(const String& filename, int priority) {
+    InputFile* f = InputFile::open(filename);
+    if (f == nil) {
+	return;
+    }
+    const char* start;
+    int len = f->read(start);
+    if (len > 0) {
+	load_list(String(start, len), priority);
+    }
+    f->close();
+    delete f;
+}
+
+void Style::load_list(const String& str, int priority) {
+    const char* p = str.string();
+    const char* q = p + str.length();
+    const char* start = p;
+    for (; p < q; p++) {
+	if (*p == '\n') {
+	    if (p > start && *(p-1) != '\\') {
+		load_property(String(start, p - start), priority);
+		start = p + 1;
+	    }
+	}
+    }
+}
+
+void Style::load_property(const String& prop, int priority) {
+    StyleRep& s = *rep_;
+    String p(s.strip(prop));
+    if (p.length() == 0 || p[0] == '!') {
+	return;
+    }
+    int colon = p.index(':');
+    if (colon < 0) {
+	s.missing_colon(p);
+    } else {
+	String name(s.strip(p.left(colon)));
+	String value(s.strip(p.right(colon + 1)));
+	if (name.length() <= 0) {
+	    s.bad_property_name(name);
+	} else if (value.length() <= 0) {
+	    s.bad_property_value(value);
+	} else {
+	    attribute(name, value, priority);
+	}
+    }
+}
+
+String StyleRep::strip(const String& s) {
+    int i = 0;
+    int len = s.length();
+    for (i = 0; i < len && isspace(s[i]); i++);
+    int j = len - 1;
+    for (; j >= 0 && isspace(s[j]); j--);
+    return s.substr(i, j - i + 1);
+}
+
+/*
+ * Errors are nops for now.
+ */
+
+void StyleRep::missing_colon(const String&) { }
+void StyleRep::bad_property_name(const String&) { }
+void StyleRep::bad_property_value(const String&) { }
+
+void Style::add_trigger(const String& name, Action* action) {
+    String v("undefined");
+    StyleAttribute* a = rep_->add_attribute(name, v, -1000);
+    if (a != nil) {
+	if (a->observers_ == nil) {
+	    a->observers_ = new Macro;
+	}
+	a->observers_->append(action);
+    }
 }
 
 /*
@@ -891,8 +772,52 @@ void Style::add_trigger(const String&, Action*) {
  * with the name.
  */
 
-void Style::remove_trigger(const String&, Action*) {
-    /* not implemented */
+void Style::remove_trigger(const String& name, Action* action) {
+    String v("undefined");
+    StyleAttribute* a = rep_->add_attribute(name, v, -1000);
+    if (a != nil) {
+	Macro* m = a->observers_;
+	if (action == nil) {
+	    delete m;
+	    a->observers_ = nil;
+	} else {
+	    MacroIndex mcount = m->count();
+	    for (MacroIndex i = 0; i < mcount; i++) {
+		if (m->action(i) == action) {
+		    m->remove(i);
+		    break;
+		}
+	    }
+	}
+    }
+}
+
+void Style::add_trigger_any(Action* action) {
+    StyleRep& s = *rep_;
+    if (s.observers_ == nil) {
+	s.observers_ = new Macro;
+    }
+    s.observers_->append(action);
+}
+
+void Style::remove_trigger_any(Action* action) {
+    StyleRep& s = *rep_;
+    Macro* m = s.observers_;
+    MacroIndex mcount = m->count();
+    for (MacroIndex i = 0; i < mcount; i++) {
+	if (m->action(i) == action) {
+	    m->remove(i);
+	    break;
+	}
+    }
+}
+
+void Style::add_trigger(const char* name, Action* a) {
+    add_trigger(String(name), a);
+}
+
+void Style::remove_trigger(const char* name, Action* a) {
+    remove_trigger(String(name), a);
 }
 
 /*
@@ -902,113 +827,129 @@ void Style::remove_trigger(const String&, Action*) {
 boolean Style::find_attribute(const String& name, String& value) const {
     StyleRep* s = rep_;
     s->update();
-    if (s->find_normal(name, value)) {
-	return true;
+    UniqueString uname(name);
+    StyleAttributeTableEntry* e = s->find_entry(uname);
+    if (e != nil) {
+	StyleAttributeList* list = e->entries_[0];
+	if (list != nil && list->count() != 0) {
+	    value = *list->item(0)->value_;
+	    return true;
+	}
     }
 
-    UniqueString uname(name);
     StyleList sl(20);
     Style* this_style = (Style*)this;
     sl.prepend(this_style);
     for (Style* style = s->parent_; style != nil; style = s->parent_) {
 	s = style->rep_;
-	if (s->wildcard_values_ != nil && s->find_wildcard(sl, uname, value)) {
-	    return true;
-	}
-	if (s->find_normal(uname, value)) {
-	    return true;
+	e = s->find_entry(uname);
+	if (e != nil) {
+	    if (e->used_ > 0 && s->wildcard_match(*e, sl, value)) {
+		return true;
+	    }
+	    StyleAttributeList* list = e->entries_[0];
+	    if (list != nil) {
+		value = *list->item(0)->value_;
+		return true;
+	    }
 	}
 	sl.prepend(style);
     }
     return false;
 }
 
+StyleAttributeTableEntry* StyleRep::find_entry(const UniqueString& name) {
+    StyleAttributeTableEntry* e;
+    if (table_ != nil) {
+	/* avoid && to workaround cfront bug */
+	if (table_->find(e, name)) {
+	    return e;
+	}
+    }
+    return nil;
+}
+
 /*
- * Find normal attribute (as opposed to a wildcard), if defined.
+ * Check if the given table entry contains a match for the
+ * given list of styles and if so copy the value.
+ *
+ * We start from the end of the style list so that we can find
+ * the closest match.
  */
 
-boolean StyleRep::find_normal(const UniqueString& name, String& value) {
-    for (ListItr(AttributeList) a(*values_); a.more(); a.next()) {
-	if (a.cur()->match(name, value)) {
+boolean StyleRep::wildcard_match(
+    const StyleAttributeTableEntry& e, const StyleList& sl, String& value
+) {
+    long n = sl.count();
+    for (long i = n - 1; i >= 0; i--) {
+	StyleRep& s = *sl.item(i)->rep_;
+	if (s.name_ != nil && wildcard_match_name(*s.name_, e, sl, i, value)) {
 	    return true;
+	}
+	UniqueStringList* list = s.aliases_;
+	if (list != nil) {
+	    for (ListItr(UniqueStringList) a(*list); a.more(); a.next()) {
+		if (wildcard_match_name(*a.cur(), e, sl, i, value)) {
+		    return true;
+		}
+	    }
 	}
     }
     return false;
 }
 
-/*
- * Find best wildcard match, if any.
- */
-
-boolean StyleRep::find_wildcard(
-    StyleList& sl, const UniqueString& name, String& value
+boolean StyleRep::wildcard_match_name(
+    const UniqueString& name, const StyleAttributeTableEntry& e,
+    const StyleList& sl, long s_index, String& value
 ) {
-    StyleWildcardMatchQuality q, best_match;
-    String v;
-    for (ListItr(WildcardList) w(*wildcard_values_); w.more(); w.next()) {
-	w.cur()->wildcard_match(sl, name, q, v);
-	if (q.defined() && (!best_match.defined() || q > best_match)) {
-	    best_match = q;
-	    value = v;
-	}
-    }
-    return best_match.defined();
-}
-
-void StyleWildcard::wildcard_match(
-    StyleList& sl, const UniqueString& s,
-    StyleWildcardMatchQuality& q, String& v
-) const {
-    if (name() != s) {
-	return;
-    }
-    q.zero();
-    long cur_element = 0;
-    long num_elements = path_->count();
-    long cur_prefix = 0;
-    long num_prefixes = sl.count();
-    long try_prefix = 0;
-    long possible_prefix_end = num_prefixes - num_elements + 1;
-    while (cur_element >= 0 && cur_element < num_elements) {
-	if (try_prefix >= possible_prefix_end) {
-	    q.pop();
-	    --cur_element;
-	    --cur_prefix;
-	    --possible_prefix_end;
-	    try_prefix = cur_prefix + 1;
-	} else {
-	    UniqueString* element = path_->item(cur_element);
-	    long index = StyleRep::prefix_index(sl.item(try_prefix), *element);
-	    if (index != -1) {
-		q.push(try_prefix, index);
-		++cur_element;
-		++cur_prefix;
-		++possible_prefix_end;
-		try_prefix = cur_prefix - 1;
+    long n = Math::min(s_index + 1, e.used_ - 1);
+    for (long i = n; i >= 1; i--) {
+	StyleAttributeList* list = e.entries_[i];
+	if (list != nil) {
+	    boolean found_match = false;
+	    int best_match = 0;
+	    for (ListItr(StyleAttributeList) a(*list); a.more(); a.next()) {
+		StyleAttribute& attr = *a.cur();
+		const UniqueStringList& path = *attr.path_;
+		if (name == *path.item(i - 1)) {
+		    if (i == 1) {
+			value = *attr.value_;
+			return true;
+		    } else if (s_index != 0) {
+			int new_match = finish_match(sl, s_index-1, path, i-2);
+			if (new_match > best_match) {
+			    found_match = true;
+			    best_match = new_match;
+			    value = *attr.value_;
+			}
+		    }
+		}
 	    }
-	    ++try_prefix;
-	}
-    }
-    if (q.defined()) {
-	v = value();
-    }
-}
-
-long StyleRep::prefix_index(Style* style, const UniqueString& prefix) {
-    StyleRep* s = style->rep_;
-    if (s->name_ != nil && *s->name_ == prefix) {
-	return 0;
-    }
-    if (s->prefixes_ != nil) {
-	long n = s->prefixes_->count();
-	for (long i = 0; i < n; i++) {
-	    UniqueString* p = s->prefixes_->item(i);
-	    if (*p == prefix) {
-		return i + 1;
+	    if (found_match) {
+		return true;
 	    }
 	}
     }
-    return -1;
+    return false;
+}
+
+int StyleRep::finish_match(
+    const StyleList& sl, long s_index,
+    const UniqueStringList& path, long p_index
+) {
+    int matched = 0;
+    long s_cur = s_index;
+    long p_cur = p_index;
+    while (p_cur >= 0 && s_cur >= 0) {
+	StyleRep& s = *sl.item(s_cur)->rep_;
+	int m = s.match_name(*path.item(p_cur));
+	if (m != 0) {
+	    --p_cur;
+	    matched += m;
+	}
+	--s_cur;
+    }
+    return matched;
 }
 
 /*
@@ -1046,6 +987,9 @@ boolean Style::find_attribute(const String& name, Coord& value) const {
     Coord pts = 1.0;
     const char* p = v.string();
     const char* end = p + v.length();
+    if (p < end && (*p == '-' || *p == '+')) {
+	++p;
+    }
     boolean dot = false;
     for (; p < end; p++) {
 	if (!dot && *p == '.') {
@@ -1053,10 +997,12 @@ boolean Style::find_attribute(const String& name, Coord& value) const {
 	} else if (!isspace(*p) && !isdigit(*p)) {
 	    int i = p - v.string();
 	    units.set_to_right(i);
-	    if (units == "in") {
+	    if (units == "mm") {
+		pts = 72.0 / 25.4;
+	    } else if (units == "cm") {
+		pts = 72.0 / 2.54;
+	    } else if (units == "in") {
 		pts = 72.0;
-	    } else if (units == "em") {
-		pts = font()->width('m');
 	    } else if (units != "pt") {
 		return false;
 	    }
@@ -1085,153 +1031,4 @@ boolean Style::value_is_on(const String& s) const {
 
 boolean Style::value_is_on(const char* s) const {
     return value_is_on(String(s));
-}
-
-/*
- * Special typed style information for font, brush, colors, etc.
- */
-
-const Font* Style::font() const {
-    rep_->update();
-    const Font* f;
-    if (StyleRep::font_table_->find(f, rep_)) {
-	return f;
-    }
-    String v;
-    if (find_attribute(*StyleRep::font_string_, v) &&
-	rep_->valid_font(v, rep_, f)
-    ) {
-	return f;
-    }
-    if (find_attribute(*StyleRep::Font_string_, v) &&
-	rep_->valid_font(v, rep_, f)
-    ) {
-	return f;
-    }
-    return nil;
-}
-
-const Brush* Style::brush() const {
-    /* unimplemented */
-    rep_->update();
-    return nil;
-}
-
-const Color* Style::foreground() const {
-    return rep_->find_color(
-	this, StyleRep::foreground_table_,
-	StyleRep::foreground_string_, StyleRep::Foreground_string_
-    );
-}
-
-const Color* Style::background() const {
-    return rep_->find_color(
-	this, StyleRep::background_table_,
-	StyleRep::background_string_, StyleRep::Background_string_
-    );
-}
-
-const Color* StyleRep::find_color(
-    const Style* s, StyleToColor* table,
-    const UniqueString* s1, const UniqueString* s2
-) {
-    update();
-    const Color* c;
-    if (table->find(c, this)) {
-	return c;
-    }
-    String v;
-    if (s->find_attribute(*s1, v) && valid_color(v, this, table, c)) {
-	return c;
-    }
-    if (s->find_attribute(*s2, v) && valid_color(v, this, table, c)) {
-	return c;
-    }
-    return nil;
-}
-
-const Color* Style::flat() const {
-    rep_->update();
-    FancyColors* colors;
-    if (StyleRep::fancy_table_->find(colors, rep_)) {
-	return colors->flat;
-    }
-    Display* d = Session::instance()->default_display();
-    String v;
-    if (find_attribute("flat", v)) {
-	const Color* c = Color::lookup(d, v);
-	if (c != nil) {
-	    colors = new FancyColors;
-	    colors->flat = c;
-	    Resource::ref(colors->flat);
-	    colors->light = c->brightness(0.6);
-	    Resource::ref(colors->light);
-	    colors->dull = c->brightness(-0.2);
-	    Resource::ref(colors->dull);
-	    colors->dark = c->brightness(-0.4);
-	    Resource::ref(colors->dark);
-	    StyleRep::fancy_table_->insert(rep_, colors);
-	    return c;
-	}
-    }
-    return nil;
-}
-
-const Color* Style::light() const {
-    FancyColors* colors;
-    if (flat() != nil && StyleRep::fancy_table_->find(colors, rep_)) {
-	return colors->light;
-    }
-    return nil;
-}
-
-const Color* Style::dull() const {
-    FancyColors* colors;
-    if (flat() != nil && StyleRep::fancy_table_->find(colors, rep_)) {
-	return colors->dull;
-    }
-    return nil;
-}
-
-const Color* Style::dark() const {
-    FancyColors* colors;
-    if (flat() != nil && StyleRep::fancy_table_->find(colors, rep_)) {
-	return colors->dark;
-    }
-    return nil;
-}
-
-boolean StyleRep::valid_font(
-    const String& name, StyleRep* requestor, const Font*& f
-) {
-    const Font* ff = Font::lookup(name);
-    if (ff != nil) {
-	Resource::ref(ff);
-	font_table_->insert(this, ff);
-	if (requestor != this) {
-	    font_table_->insert(requestor, ff);
-	}
-	f = ff;
-	return true;
-    }
-    return false;
-}
-
-boolean StyleRep::valid_color(
-    const String& name, StyleRep* requestor,
-    StyleToColor* table, const Color*& c
-) {
-    const Color* cc = Color::lookup(
-	Session::instance()->default_display(), name
-    );
-    if (cc != nil) {
-	Resource::ref(cc);
-	table->insert(this, cc);
-	if (requestor != this) {
-	    table->insert(requestor, cc);
-	}
-	c = cc;
-	return true;
-    }
-    return false;
 }

@@ -34,8 +34,10 @@
 #include <Unidraw/Graphic/util.h>
 #include <Unidraw/Graphic/verts.h>
 
-#include <InterViews/rubcurve.h>
+#include <IV-2_6/InterViews/rubcurve.h>
 #include <InterViews/transformer.h>
+
+#include <IV-2_6/_enter.h>
 
 #include <stream.h>
 
@@ -112,7 +114,7 @@ void VerticesView::Interpret (Command* cmd) {
 void VerticesView::GetVertices (Coord*& x, Coord*& y, int& n) {
     Vertices* vertices = (Vertices*) GetGraphic();
     Transformer t;
-    Coord* origx, *origy;
+    const Coord* origx, *origy;
 
     n = vertices->GetOriginal(origx, origy);
     ArrayDup(origx, origy, n, x, y);

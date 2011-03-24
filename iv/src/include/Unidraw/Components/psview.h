@@ -30,6 +30,8 @@
 
 #include <Unidraw/Components/externview.h>
 
+#include <IV-2_6/_enter.h>
+
 class PostScriptView : public PreorderView {
 public:
     virtual boolean Emit(ostream&);
@@ -138,5 +140,7 @@ protected:
 protected:
     UList* _views;
 };
+
+#include <IV-2_6/_leave.h>
 
 #endif

@@ -33,10 +33,18 @@ class Compositor;
 class Break;
 
 class Composition : public MonoGlyph {
+protected:
+    Composition(
+        Glyph* context, Compositor*, Glyph* separator,
+        DimensionName, Coord span, Coord stretch, Coord shrink,
+	GlyphIndex size
+    );
 public:
     virtual ~Composition();
 
+    virtual void allocate(Canvas*, const Allocation&, Extension&);
     virtual boolean repair();
+
     virtual GlyphIndex item(GlyphIndex index) const;
     virtual GlyphIndex beginning_of(GlyphIndex item) const;
     virtual GlyphIndex end_of(GlyphIndex item) const;
@@ -57,11 +65,6 @@ public:
 
     virtual void allotment(GlyphIndex, DimensionName, Allotment&) const;
 protected:
-    Composition(
-        Glyph* context, Compositor*, Glyph* separator,
-        DimensionName, Coord span, GlyphIndex size
-    );
-
     virtual void do_repair(
         GlyphIndex first_component, GlyphIndex first_break,
 	GlyphIndex* breaks, GlyphIndex break_count
@@ -82,13 +85,15 @@ private:
     GlyphIndex item_;
     DimensionName dimension_;
     Coord span_;
+    boolean resizable_;
 };
 
 class LRComposition : public Composition {
 public:
     LRComposition(
         Glyph* context, Compositor*, Glyph* separator,
-        Coord width, GlyphIndex size = 10
+        Coord width, Coord stretch = fil, Coord shrink = fil,
+	GlyphIndex size = 10
     );
     virtual ~LRComposition();
 protected:
@@ -99,7 +104,8 @@ class TBComposition : public Composition {
 public:
     TBComposition(
         Glyph* context, Compositor*, Glyph* separator,
-        Coord height, GlyphIndex size = 10
+        Coord height, Coord stretch = fil, Coord shrink = fil,
+	GlyphIndex size = 10
     );
     virtual ~TBComposition();
 protected:

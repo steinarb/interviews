@@ -26,14 +26,14 @@
  * Graphics primitives.
  */
 
-#include <InterViews/2.6/InterViews/painter.h>
-#include <InterViews/2.6/InterViews/textstyle.h>
 #include <InterViews/brush.h>
 #include <InterViews/color.h>
 #include <InterViews/font.h>
 #include <InterViews/pattern.h>
 #include <InterViews/transformer.h>
-#include <InterViews/world.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/textstyle.h>
+#include <IV-2_6/InterViews/world.h>
 #include <OS/math.h>
 #include <OS/memory.h>
 #include <stdlib.h>

@@ -1,10 +1,10 @@
 #ifndef lint
-static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_tile.c,v 1.5 91/08/22 17:15:01 sam Exp $";
+static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_tile.c,v 1.9 92/02/10 19:06:47 sam Exp $";
 #endif
 
 /*
- * Copyright (c) 1991 Sam Leffler
- * Copyright (c) 1991 Silicon Graphics, Inc.
+ * Copyright (c) 1991, 1992 Sam Leffler
+ * Copyright (c) 1991, 1992 Silicon Graphics, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and 
  * its documentation for any purpose is hereby granted without fee, provided
@@ -134,7 +134,7 @@ TIFFNumberOfTiles(tif)
 }
 
 /*
- * Compute the # bytes in each row of a (row-aligned) tile.
+ * Compute the # bytes in each row of a tile.
  */
 u_long
 TIFFTileRowSize(tif)
@@ -152,16 +152,50 @@ TIFFTileRowSize(tif)
 }
 
 /*
- * Compute the # bytes in a (row-aligned) tile.
+ * Compute the # bytes in a variable length, row-aligned tile.
+ */
+u_long
+TIFFVTileSize(tif, nrows)
+	TIFF *tif;
+	u_long nrows;
+{
+	TIFFDirectory *td = &tif->tif_dir;
+	u_long tilesize;
+
+	if (td->td_tilelength == 0 || td->td_tilewidth == 0 ||
+	    td->td_tiledepth == 0)
+		return (0);
+#ifdef YCBCR_SUPPORT
+	if (td->td_planarconfig == PLANARCONFIG_CONTIG &&
+	    td->td_photometric == PHOTOMETRIC_YCBCR) {
+		/*
+		 * Packed YCbCr data contain one Cb+Cr for every
+		 * HorizontalSampling*VerticalSampling Y values.
+		 * Must also roundup width and height when calculating
+		 * since images that are not a multiple of the
+		 * horizontal/vertical subsampling area include
+		 * YCbCr data for the extended image.
+		 */
+		u_long w =
+		    roundup(td->td_tilewidth, td->td_ycbcrsubsampling[0]);
+		u_long rowsize = howmany(w*td->td_bitspersample, 8);
+		u_long samplingarea =
+		    td->td_ycbcrsubsampling[0]*td->td_ycbcrsubsampling[1];
+		nrows = roundup(nrows, td->td_ycbcrsubsampling[1]);
+		/* NB: don't need howmany here 'cuz everything is rounded */
+		tilesize = nrows*rowsize + 2*(nrows*rowsize / samplingarea);
+	} else
+#endif
+		tilesize = nrows * TIFFTileRowSize(tif);
+	return (tilesize * td->td_tiledepth);
+}
+
+/*
+ * Compute the # bytes in a row-aligned tile.
  */
 u_long
 TIFFTileSize(tif)
 	TIFF *tif;
 {
-	TIFFDirectory *td = &tif->tif_dir;
-	
-	if (td->td_tilelength == 0 || td->td_tilewidth == 0 ||
-	    td->td_tiledepth == 0)
-		return (0);
-	return (td->td_tilelength * td->td_tiledepth * TIFFTileRowSize(tif));
+	return (TIFFVTileSize(tif, tif->tif_dir.td_tilelength));
 }

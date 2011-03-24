@@ -25,13 +25,161 @@
 #include <InterViews/tile.h>
 #include <OS/math.h>
 
-Tile::Tile(DimensionName dimension) : Layout() {
-    dimension_ = dimension;
+static void compute_tile_request(
+    DimensionName d, float a, GlyphIndex count, const Requisition* request,
+    Requisition& result
+) {
+    Coord natural = 0, min_size = 0, max_size = 0;
+    for (GlyphIndex i = 0; i < count; i++) {
+        const Requirement& r = request[i].requirement(d);
+        if (r.defined()) {
+	    Coord n = r.natural();
+	    natural += n;
+	    max_size += n + r.stretch();
+	    min_size += n - r.shrink();
+	}
+    }
+    Requirement& nr = result.requirement(d);
+    nr.natural(natural);
+    nr.stretch(max_size - natural);
+    nr.shrink(natural - min_size);
+    nr.alignment(a);
 }
 
+Tile::Tile(DimensionName d) : Layout() { dimension_ = d; }
 Tile::~Tile() { }
 
 void Tile::request(
+    GlyphIndex count, const Requisition* request, Requisition& result
+) {
+    compute_tile_request(dimension_, 0.0, count, request, result);
+    requisition_ = result;
+}
+
+void Tile::allocate(
+    const Allocation& given,
+    GlyphIndex count, const Requisition* request, Allocation* result
+) {
+    const Allotment& g = given.allotment(dimension_);
+    Requirement& r = requisition_.requirement(dimension_);
+    Coord span = g.span();
+    if (r.alignment() == 0) {
+        span = Coord(float(span) * (1 - g.alignment()));
+    } else if (r.alignment() == 1) {
+        span = Coord(float(span) * g.alignment());
+    } else {
+        span = Coord(
+            float(span) * Math::min(
+                g.alignment()/r.alignment(),
+                (1 - g.alignment())/(1 - r.alignment())
+            )
+        );
+    }
+    Coord natural = r.natural();
+    boolean growing = span > natural;
+    boolean shrinking = span < natural;
+    float f;
+    if (growing && r.stretch() > 0) {
+        f = float(span - natural) / float(r.stretch());
+    } else if (shrinking && r.shrink() > 0) {
+        f = float(natural - span) / float(r.shrink());
+    } else {
+        f = 0;
+    }
+    Coord p = g.origin();
+    for (unsigned long index = 0; index < count; ++index) {
+        const Requirement& r = request[index].requirement(dimension_);
+        Allotment& a = result[index].allotment(dimension_);
+        if (r.defined()) {
+            Coord cspan = r.natural();
+            if (growing) {
+                cspan += Coord(float(r.stretch()) * f);
+            } else if (shrinking) {
+                cspan -= Coord(float(r.shrink()) * f);
+            }
+            a.span(cspan);
+            a.origin(p + Coord(r.alignment() * cspan));
+            a.alignment(r.alignment());
+            p += cspan;
+        } else {
+            a.span(0);
+            a.origin(p);
+            a.alignment(0);
+        }
+    }
+}
+
+TileReversed::TileReversed(DimensionName d) : Layout() { dimension_ = d; }
+TileReversed::~TileReversed() { }
+
+void TileReversed::request(
+    GlyphIndex count, const Requisition* request, Requisition& result
+) {
+    compute_tile_request(dimension_, 1.0, count, request, result);
+    requisition_ = result;
+}
+
+void TileReversed::allocate(
+    const Allocation& given,
+    GlyphIndex count, const Requisition* request, Allocation* result
+) {
+    const Allotment& g = given.allotment(dimension_);
+    Requirement& r = requisition_.requirement(dimension_);
+    Coord span = g.span();
+    if (r.alignment() == 0) {
+        span = Coord(float(span) * (1 - g.alignment()));
+    } else if (r.alignment() == 1) {
+        span = Coord(float(span) * g.alignment());
+    } else {
+        span = Coord(
+            float(span) * Math::min(
+                g.alignment()/r.alignment(),
+                (1 - g.alignment())/(1 - r.alignment())
+            )
+        );
+    }
+    Coord natural = r.natural();
+    boolean growing = span > natural;
+    boolean shrinking = span < natural;
+    float f;
+    if (growing && r.stretch() > 0) {
+        f = float(span - natural) / float(r.stretch());
+    } else if (shrinking && r.shrink() > 0) {
+        f = float(natural - span) / float(r.shrink());
+    } else {
+        f = 0;
+    }
+    Coord p = g.origin();
+    for (unsigned long index = 0; index < count; ++index) {
+        const Requirement& r = request[index].requirement(dimension_);
+        Allotment a;
+        if (r.defined()) {
+            Coord cspan = r.natural();
+            if (growing) {
+                cspan += Coord(float(r.stretch()) * f);
+            } else if (shrinking) {
+                cspan -= Coord(float(r.shrink()) * f);
+            }
+            p -= cspan;
+            a.span(cspan);
+            a.origin(p + Coord(r.alignment() * cspan));
+            a.alignment(r.alignment());
+        } else {
+            a.span(0);
+            a.origin(p);
+            a.alignment(0);
+        }
+        result[index].allot(dimension_, a);
+    }
+}
+
+TileFirstAligned::TileFirstAligned(DimensionName dimension) : Layout() {
+    dimension_ = dimension;
+}
+
+TileFirstAligned::~TileFirstAligned() { }
+
+void TileFirstAligned::request(
     GlyphIndex count, const Requisition* request, Requisition& result
 ) {
     Coord natural_lead = 0;
@@ -69,7 +217,7 @@ void Tile::request(
     requisition_ = result;
 }
 
-void Tile::allocate(
+void TileFirstAligned::allocate(
     const Allocation& given,
     GlyphIndex count, const Requisition* request, Allocation* result
 ) {
@@ -126,13 +274,15 @@ void Tile::allocate(
     }
 }
 
-TileReversed::TileReversed(DimensionName dimension) : Layout() {
-    dimension_ = dimension;
+TileReversedFirstAligned::TileReversedFirstAligned(
+    DimensionName d
+) : Layout() {
+    dimension_ = d;
 }
 
-TileReversed::~TileReversed() { }
+TileReversedFirstAligned::~TileReversedFirstAligned() { }
 
-void TileReversed::request(
+void TileReversedFirstAligned::request(
     GlyphIndex count, const Requisition* request, Requisition& result
 ) {
     Coord natural_lead = 0;
@@ -170,7 +320,7 @@ void TileReversed::request(
     requisition_ = result;
 }
 
-void TileReversed::allocate(
+void TileReversedFirstAligned::allocate(
     const Allocation& given,
     GlyphIndex count, const Requisition* request, Allocation* result
 ) {

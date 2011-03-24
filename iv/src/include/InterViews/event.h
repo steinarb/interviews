@@ -29,7 +29,6 @@
 #ifndef iv_event_h
 #define iv_event_h
 
-#include <InterViews/boolean.h>
 #include <InterViews/coord.h>
 
 #include <InterViews/_enter.h>
@@ -75,6 +74,9 @@ public:
     virtual void display(Display*);
     virtual Display* display() const;
 
+    virtual void window(Window*);
+    virtual Window* window() const;
+
     virtual boolean pending() const;
     virtual void read();
     virtual boolean read(long sec, long usec);
@@ -83,8 +85,8 @@ public:
 
     virtual Handler* handler() const;
     virtual void handle();
-    virtual void grab(Handler*);
-    virtual void ungrab(Handler*);
+    virtual void grab(Handler*) const;
+    virtual void ungrab(Handler*) const;
     virtual Handler* grabber() const;
     virtual boolean is_grabbing(Handler*) const;
 
@@ -92,6 +94,8 @@ public:
     virtual unsigned long time() const;
     virtual Coord pointer_x() const;
     virtual Coord pointer_y() const;
+    virtual Coord pointer_root_x() const;
+    virtual Coord pointer_root_y() const;
     virtual EventButton pointer_button() const;
     virtual unsigned int keymask() const;
     virtual boolean control_is_down() const;
@@ -102,11 +106,13 @@ public:
     virtual boolean middle_is_down() const;
     virtual boolean right_is_down() const;
     virtual unsigned char keycode() const;
+    virtual unsigned long keysym() const;
     virtual unsigned int mapkey(char*, unsigned int len) const;
 
     EventRep* rep() const;
 private:
     EventRep* rep_;
+    char free_store_[200];
 
     void copy_rep(const Event&);
 

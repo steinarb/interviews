@@ -1,8 +1,8 @@
-/* $Header: /usr/people/sam/tiff/libtiff/RCS/tiffioP.h,v 1.13 91/08/19 14:40:23 sam Exp $ */
+/* $Header: /usr/people/sam/tiff/libtiff/RCS/tiffioP.h,v 1.28 92/03/06 11:59:52 sam Exp $ */
 
 /*
- * Copyright (c) 1988, 1989, 1990, 1991 Sam Leffler
- * Copyright (c) 1991 Silicon Graphics, Inc.
+ * Copyright (c) 1988, 1989, 1990, 1991, 1992 Sam Leffler
+ * Copyright (c) 1991, 1992 Silicon Graphics, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and 
  * its documentation for any purpose is hereby granted without fee, provided
@@ -36,11 +36,13 @@
  * Internal format of a TIFF directory entry.
  */
 typedef	struct {
+	u_long	td_fieldsset[2];	/* bit vector of fields that are set */
+
 	u_long	td_imagewidth, td_imagelength, td_imagedepth;
 	u_long	td_tilewidth, td_tilelength, td_tiledepth;
 	u_short	td_subfiletype;
 	u_short	td_bitspersample;
-	u_short	td_datatype;
+	u_short	td_sampleformat;
 	u_short	td_compression;
 	u_short	td_photometric;
 	u_short	td_threshholding;
@@ -49,7 +51,7 @@ typedef	struct {
 	u_short	td_samplesperpixel;
 	u_short	td_predictor;
 	u_long	td_rowsperstrip;
-	u_long	td_minsamplevalue, td_maxsamplevalue;	/* maybe float? */
+	u_long	td_minsamplevalue, td_maxsamplevalue;	/* XXX */
 	float	td_xresolution, td_yresolution;
 	u_short	td_resolutionunit;
 	u_short	td_planarconfig;
@@ -57,20 +59,12 @@ typedef	struct {
 	u_long	td_group3options;
 	u_long	td_group4options;
 	u_short	td_pagenumber[2];
-	u_short	td_grayresponseunit;
-	u_short	td_colorresponseunit;
 	u_short	td_matteing;
-	u_short	td_inkset;
 	u_short	td_cleanfaxdata;
 	u_short	td_badfaxrun;
 	u_long	td_badfaxlines;
-	u_short	*td_grayresponsecurve;
-	u_short	*td_redresponsecurve;
-	u_short	*td_greenresponsecurve;
-	u_short	*td_blueresponsecurve;
-	u_short	*td_redcolormap;
-	u_short	*td_greencolormap;
-	u_short	*td_bluecolormap;
+	u_short	*td_colormap[3];
+	u_short	td_halftonehints[2];
 	char	*td_documentname;
 	char	*td_artist;
 	char	*td_datetime;
@@ -80,17 +74,33 @@ typedef	struct {
 	char	*td_model;
 	char	*td_software;
 	char	*td_pagename;
-	u_long	td_fieldsset[2];	/* bit vector of fields that are set */
 	u_long	td_stripsperimage;
 	u_long	td_nstrips;		/* size of offset & bytecount arrays */
 	u_long	*td_stripoffset;
 	u_long	*td_stripbytecount;
+#ifdef YCBCR_SUPPORT
+	float	*td_ycbcrcoeffs;
+	u_short	td_ycbcrsubsampling[2];
+	u_short	td_ycbcrpositioning;
+#endif
 #ifdef JPEG_SUPPORT
 	u_short	td_jpegproc;
-	u_short	td_jpegprec;
-	u_short	**td_qtab;
+	u_short	td_jpegrestartinterval;
+	u_char	**td_qtab;
 	u_char	**td_dctab;
 	u_char	**td_actab;
+#endif
+#ifdef COLORIMETRY_SUPPORT
+	float	*td_whitepoint;
+	float	*td_primarychromas;
+	float	*td_refblackwhite;
+	u_short	*td_transferfunction[4];
+#endif
+#ifdef CMYK_SUPPORT
+	u_short	td_inkset;
+	u_short	td_dotrange[2];
+	char	*td_inknames;
+	char	*td_targetprinter;
 #endif
 } TIFFDirectory;
 
@@ -123,44 +133,90 @@ typedef	struct {
 #define	FIELD_MAXSAMPLEVALUE		19
 #define	FIELD_PLANARCONFIG		20
 #define	FIELD_PAGENAME			21
-#define	FIELD_GRAYRESPONSEUNIT		22
-#define	FIELD_GRAYRESPONSECURVE		23
-#define	FIELD_GROUP3OPTIONS		24
-#define	FIELD_GROUP4OPTIONS		25
-#define	FIELD_RESOLUTIONUNIT		26
-#define	FIELD_PAGENUMBER		27
-#define	FIELD_COLORRESPONSEUNIT		28
-#define	FIELD_COLORRESPONSECURVE	29
-#define	FIELD_STRIPBYTECOUNTS		30
-#define	FIELD_STRIPOFFSETS		31
-#define	FIELD_COLORMAP			32
-#define FIELD_PREDICTOR			33
-#define FIELD_ARTIST			34
-#define FIELD_DATETIME			35
-#define FIELD_HOSTCOMPUTER		36
-#define FIELD_SOFTWARE			37
-#define	FIELD_MATTEING			38
-#define	FIELD_BADFAXLINES		39
-#define	FIELD_CLEANFAXDATA		40
-#define	FIELD_BADFAXRUN			41
-#define FIELD_DATATYPE			42
-#define FIELD_IMAGEDEPTH		43
-#define FIELD_TILEDEPTH			44
-#define FIELD_INKSET			45
-#define	FIELD_LUMACOEFS			46
-#define FIELD_YCBCRSAMPLING		47
-#define FIELD_JPEGPROC			48
-#define FIELD_JPEGQTABLEPREC		49
-#define FIELD_JPEGQTABLES		50
-#define FIELD_JPEGDCTABLES		51
-#define FIELD_JPEGACTABLES		52
-#define	FIELD_LAST			52
+#define	FIELD_GROUP3OPTIONS		22
+#define	FIELD_GROUP4OPTIONS		23
+#define	FIELD_RESOLUTIONUNIT		24
+#define	FIELD_PAGENUMBER		25
+#define	FIELD_STRIPBYTECOUNTS		26
+#define	FIELD_STRIPOFFSETS		27
+#define	FIELD_COLORMAP			28
+#define FIELD_PREDICTOR			29
+#define FIELD_ARTIST			30
+#define FIELD_DATETIME			31
+#define FIELD_HOSTCOMPUTER		32
+#define FIELD_SOFTWARE			33
+#define	FIELD_MATTEING			34
+#define	FIELD_BADFAXLINES		35
+#define	FIELD_CLEANFAXDATA		36
+#define	FIELD_BADFAXRUN			37
+#define FIELD_SAMPLEFORMAT		38
+#define	FIELD_SMINSAMPLEVALUE		39
+#define	FIELD_SMAXSAMPLEVALUE		40
+#define FIELD_IMAGEDEPTH		41
+#define FIELD_TILEDEPTH			42
+#define	FIELD_HALFTONEHINTS		43
+#ifdef YCBCR_SUPPORT
+#define FIELD_YCBCRCOEFFICIENTS		44
+#define FIELD_YCBCRSUBSAMPLING		45
+#define FIELD_YCBCRPOSITIONING		46
+#endif
+#ifdef JPEG_SUPPORT
+#define FIELD_JPEGPROC			47
+#define FIELD_JPEGRESTARTINTERVAL	48
+#define FIELD_JPEGQTABLES		49
+#define FIELD_JPEGDCTABLES		50
+#define FIELD_JPEGACTABLES		51
+#endif
+#ifdef COLORIMETRY_SUPPORT
+#define	FIELD_REFBLACKWHITE		52
+#define	FIELD_WHITEPOINT		53
+#define	FIELD_PRIMARYCHROMAS		54
+#define	FIELD_TRANSFERFUNCTION		55
+#endif
+#ifdef CMYK_SUPPORT
+#define	FIELD_INKSET			56
+#define	FIELD_INKNAMES			57
+#define	FIELD_DOTRANGE			58
+#define	FIELD_TARGETPRINTER		59
+#endif
+#define	FIELD_LAST			59
 
-#define BITFIELDn(tif, n)		((tif)->tif_dir.td_fieldsset[(n)/32]) 
+#define	TIFFExtractData(tif, type, v) \
+    ((tif)->tif_header.tiff_magic == TIFF_BIGENDIAN ? \
+        ((v) >> (tif)->tif_typeshift[type]) & (tif)->tif_typemask[type] : \
+	(v) & (tif)->tif_typemask[type])
+#define	TIFFInsertData(tif, type, v) \
+    ((tif)->tif_header.tiff_magic == TIFF_BIGENDIAN ? \
+        ((v) & (tif)->tif_typemask[type]) << (tif)->tif_typeshift[type] : \
+	(v) & (tif)->tif_typemask[type])
+
+typedef	struct {
+	u_short	field_tag;		/* field's tag */
+	short	field_readcount;	/* read count (-1 for unknown) */
+	short	field_writecount;	/* write count (-1 for unknown) */
+	TIFFDataType field_type;	/* type of associated data */
+	u_short	field_bit;		/* bit in fieldsset bit vector */
+	u_short	field_oktochange;	/* if true, can change while writing */
+	char	*field_name;		/* ASCII name */
+} TIFFFieldInfo;
+
+#define	FIELD_IGNORE	((u_short)-1)	/* tags processed but ignored */
+
+#define	TIFF_ANY	TIFF_NOTYPE	/* for field descriptor searching */
+#define	TIFF_VARIABLE	-1		/* marker for variable length tags */
+#define	TIFF_SPP	-2		/* marker for SamplesPerPixel tags */
+
+extern	const TIFFFieldInfo tiffFieldInfo[];/* table of field descriptors */
+extern	const int tiffDataWidth[];	/* table of tag datatype widths */
+
 #define BITn(n)				(((unsigned)1L)<<((n)&0x1f)) 
+#define BITFIELDn(tif, n)		((tif)->tif_dir.td_fieldsset[(n)/32]) 
 #define TIFFFieldSet(tif, field)	(BITFIELDn(tif, field) & BITn(field)) 
 #define TIFFSetFieldBit(tif, field)	(BITFIELDn(tif, field) |= BITn(field))
 #define TIFFClrFieldBit(tif, field)	(BITFIELDn(tif, field) &= ~BITn(field))
+
+#define	FieldSet(fields, f)		(fields[(f)/32] & BITn(f))
+#define	ResetFieldBit(fields, f)	(fields[(f)/32] &= ~BITn(f))
 
 struct tiff {
 	char	*tif_name;		/* name of open file */
@@ -178,13 +234,15 @@ struct tiff {
 #define	TIFF_MYBUFFER		0x40	/* my raw data buffer; free on close */
 #define	TIFF_ISTILED		0x80	/* file is tile, not strip- based */
 #define	TIFF_MAPPED		0x100	/* file is mapped into memory */
+#define	TIFF_POSTENCODE		0x200	/* need call to postencode routine */
 	long	tif_diroff;		/* file offset of current directory */
 	long	tif_nextdiroff;		/* file offset of following directory */
 	TIFFDirectory tif_dir;		/* internal rep of current directory */
 	TIFFHeader tif_header;		/* file's header block */
-	int	tif_typeshift[6];	/* data type shift counts */
-	long	tif_typemask[6];	/* data type masks */
+	int const *tif_typeshift;	/* data type shift counts */
+	long const *tif_typemask;	/* data type masks */
 	long	tif_row;		/* current scanline */
+	int	tif_curdir;		/* current directory (index) */
 	int	tif_curstrip;		/* current strip for read/write */
 	long	tif_curoff;		/* current offset for read/write */
 /* tiling support */
@@ -251,13 +309,27 @@ struct tiff {
 #if defined(__cplusplus)
 extern "C" {
 #endif
-extern	int TIFFNoEncode(TIFF*, u_char*, int, u_int);
-extern	int TIFFNoDecode(TIFF*, u_char*, int, u_int);
+extern	TIFFFieldInfo const *TIFFFindFieldInfo(u_short, TIFFDataType);
+extern	TIFFFieldInfo const *TIFFFieldWithTag(u_short);
+extern	int _TIFFgetfield(TIFFDirectory*, int, ...);
+extern	int TIFFNoRowEncode(TIFF*, u_char*, int, u_int);
+extern	int TIFFNoStripEncode(TIFF*, u_char*, int, u_int);
+extern	int TIFFNoTileEncode(TIFF*, u_char*, int, u_int);
+extern	int TIFFNoRowDecode(TIFF*, u_char*, int, u_int);
+extern	int TIFFNoStripDecode(TIFF*, u_char*, int, u_int);
+extern	int TIFFNoTileDecode(TIFF*, u_char*, int, u_int);
 #if defined(__cplusplus)
 }
 #endif
 #else
-extern	int TIFFNoEncode();
-extern	int TIFFNoDecode();
+extern	TIFFFieldInfo const *TIFFFindFieldInfo();
+extern	TIFFFieldInfo const *TIFFFieldWithTag();
+extern	int _TIFFgetfield();
+extern	int TIFFNoRowEncode();
+extern	int TIFFNoStripEncode();
+extern	int TIFFNoTileEncode();
+extern	int TIFFNoRowDecode();
+extern	int TIFFNoStripDecode();
+extern	int TIFFNoTileDecode();
 #endif
 #endif /* _TIFFIOP_ */

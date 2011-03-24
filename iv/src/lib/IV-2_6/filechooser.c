@@ -22,22 +22,23 @@
  * OF THIS SOFTWARE.
  */
 
-#include <IV-look/2.6/InterViews/adjuster.h>
-#include <IV-look/2.6/InterViews/border.h>
-#include <IV-look/2.6/InterViews/button.h>
-#include <IV-look/2.6/InterViews/filebrowser.h>
-#include <IV-look/2.6/InterViews/filechooser.h>
-#include <IV-look/2.6/InterViews/frame.h>
-#include <IV-look/2.6/InterViews/scrollbar.h>
-#include <IV-look/2.6/InterViews/streditor.h>
 #include <InterViews/event.h>
-#include <InterViews/sensor.h>
-#include <InterViews/2.6/InterViews/box.h>
-#include <InterViews/2.6/InterViews/glue.h>
-#include <InterViews/2.6/InterViews/message.h>
+#include <IV-2_6/InterViews/adjuster.h>
+#include <IV-2_6/InterViews/border.h>
+#include <IV-2_6/InterViews/button.h>
+#include <IV-2_6/InterViews/filebrowser.h>
+#include <IV-2_6/InterViews/filechooser.h>
+#include <IV-2_6/InterViews/frame.h>
+#include <IV-2_6/InterViews/scrollbar.h>
+#include <IV-2_6/InterViews/streditor.h>
+#include <IV-2_6/InterViews/box.h>
+#include <IV-2_6/InterViews/glue.h>
+#include <IV-2_6/InterViews/sensor.h>
+#include <IV-2_6/InterViews/message.h>
+#include <OS/math.h>
 #include <string.h>
 
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/_enter.h>
 
 FileChooser::FileChooser(
     const char* t, const char* subt, const char* d, 
@@ -77,12 +78,12 @@ void FileChooser::Init(const char* t, const char* subt) {
     if (*t == '\0') {
         title = new MarginFrame(new VGlue(0, 0));
     } else {
-        title = new MarginFrame(new Message(t));
+        title = new MarginFrame(new class Message(t));
     }
     if (*subt == '\0') {
         subtitle = new MarginFrame(new VGlue(0, 0));
     } else {
-        subtitle = new MarginFrame(new Message(subt));
+        subtitle = new MarginFrame(new class Message(subt));
     }
 }
 

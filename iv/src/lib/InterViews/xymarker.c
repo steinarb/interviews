@@ -87,7 +87,9 @@ static void do_damage(
 
 void XYMarker::unmark() {
     if (marked_) {
-        do_damage(canvas_, left_, bottom_, right_, top_);
+	if (canvas_ != nil) {
+	    do_damage(canvas_, left_, bottom_, right_, top_);
+	}
         marked_ = false;
     }
 }
@@ -139,24 +141,25 @@ void XYMarker::mark(Coord left, Coord bottom, Coord right, Coord top) {
     marked_ = true;
 }
 
-void XYMarker::allocate(Canvas* canvas, const Allocation& a, Extension& ext) {
-    MonoGlyph::allocate(canvas, a, ext);
-    Extension e;
-    e.xy_extents(a.left() - th, a.right() + th, a.bottom() - th, a.top() + th);
-    ext.extend(e);
-    canvas_ = canvas;
+void XYMarker::allocate(Canvas* c, const Allocation& a, Extension& ext) {
+    MonoGlyph::allocate(c, a, ext);
+    ext.merge_xy(
+	c, a.left() - th, a.bottom() - th, a.right() + th, a.top() + th
+    );
+    canvas_ = c;
 }
 
 void XYMarker::draw(Canvas* c, const Allocation& a) const {
-    if (c != nil) {
-        if (marked_ && underlay_ != nil) {
-            do_draw(c, underlay_, left_, bottom_, right_, top_);
-        }
+    if (marked_ && underlay_ != nil) {
+	do_draw(c, underlay_, left_, bottom_, right_, top_);
     }
     MonoGlyph::draw(c, a);
-    if (c != nil) {
-        if (marked_ && overlay_ != nil) {
-            do_draw(c, overlay_, left_, bottom_, right_, top_);
-        }
+    if (marked_ && overlay_ != nil) {
+	do_draw(c, overlay_, left_, bottom_, right_, top_);
     }
+}
+
+void XYMarker::undraw() {
+    MonoGlyph::undraw();
+    canvas_ = nil;
 }

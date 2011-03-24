@@ -29,7 +29,15 @@
 
 #include <InterViews/scene.h>
 
+class ButtonState;
 class ClassBuffer;
+class ClassEditor;
+class CompletionEditor;
+class FileDialog;
+class MarginFrame;
+class StringBrowser;
+class StringDialog;
+class TextBuffer;
 
 class IClass : public MonoScene {
 public:
@@ -78,21 +86,21 @@ private:
     void SelectCurClass();
     void UnselectCurClass();
 private:
-    class ButtonState* _state;
+    ButtonState* _state;
     ClassBuffer* _cbuf;
-    class CompletionEditor* _curClass;
+    CompletionEditor* _curClass;
     Interactor* _focus;
-    class StringBrowser* _classes;
+    StringBrowser* _classes;
     StringBrowser* _children;
     StringBrowser* _parents;
-    class MarginFrame* _fileIndic;
-    class FileDialog* _scanner;
-    class StringDialog* _fwdSearch;
-    class StringDialog* _bwdSearch;
-    class StringDialog* _goto;
+    MarginFrame* _fileIndic;
+    FileDialog* _scanner;
+    StringDialog* _fwdSearch;
+    StringDialog* _bwdSearch;
+    StringDialog* _goto;
 
-    class TextBuffer* _text;
-    class ClassEditor* _editor;
+    TextBuffer* _text;
+    ClassEditor* _editor;
     const char** _completions;
     char* _lastFile;
     char* _buf;

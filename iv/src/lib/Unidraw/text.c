@@ -44,9 +44,11 @@
 #include <Unidraw/Tools/tool.h>
 
 #include <InterViews/event.h>
-#include <InterViews/painter.h>
-#include <InterViews/textbuffer.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/textbuffer.h>
 #include <InterViews/transformer.h>
+
+#include <IV-2_6/_enter.h>
 
 #include <ctype.h>
 #include <math.h>
@@ -305,11 +307,11 @@ Graphic* TextView::GetGraphic () {
 
 /****************************************************************************/
 
-TextGraphic::TextGraphic (const char* s, int h, Graphic* gr) : Label(s, gr) { 
+TextGraphic::TextGraphic (const char* s, int h, Graphic* gr) : ULabel(s, gr) { 
     _lineHt = h;
 }
 
-TextGraphic::TextGraphic (const char* s, Graphic* gr) : Label(s, gr) { 
+TextGraphic::TextGraphic (const char* s, Graphic* gr) : ULabel(s, gr) { 
     _lineHt = gr->GetFont()->Height();
 }
 

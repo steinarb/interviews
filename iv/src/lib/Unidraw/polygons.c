@@ -27,8 +27,10 @@
 #include <Unidraw/globals.h>
 #include <Unidraw/Graphic/polygons.h>
 
-#include <InterViews/painter.h>
+#include <IV-2_6/InterViews/painter.h>
 #include <InterViews/transformer.h>
+
+#include <IV-2_6/_enter.h>
 
 /*****************************************************************************/
 

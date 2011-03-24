@@ -45,9 +45,11 @@
 #include <Unidraw/Tools/tool.h>
 
 #include <InterViews/event.h>
-#include <InterViews/rubgroup.h>
-#include <InterViews/rubline.h>
+#include <IV-2_6/InterViews/rubgroup.h>
+#include <IV-2_6/InterViews/rubline.h>
 #include <InterViews/transformer.h>
+
+#include <IV-2_6/_enter.h>
 
 #include <math.h>
 #include <stdlib.h>
@@ -401,9 +403,10 @@ Command* LinkView::InterpretManipulator (Manipulator* m) {
     Editor* ed = dm->GetViewer()->GetEditor();
     Tool* tool = dm->GetTool();
     Transformer* rel = dm->GetTransformer();
+    Command* cmd = nil;
 
     if (tool->IsA(GRAPHIC_COMP_TOOL)) {
-        return InterpLinkCompManip(dm);
+        cmd = InterpLinkCompManip(dm);
 
     } else if (tool->IsA(MOVE_TOOL)) {
         SlidingLine* sl;
@@ -417,20 +420,21 @@ Command* LinkView::InterpretManipulator (Manipulator* m) {
             rel->InvTransform(float(x0), float(y0), fx0, fy0);
             rel->InvTransform(float(x1), float(y1), fx1, fy1);
         }
-        return new MoveCmd(ed, fx1-fx0, fy1-fy0);
+        cmd = new MoveCmd(ed, fx1-fx0, fy1-fy0);
 
     } else if (tool->IsA(SCALE_TOOL)) {
         ScalingLine* sl = (ScalingLine*) dm->GetRubberband();
         float sxy = sl->CurrentScaling();
 
-        return new ScaleCmd(ed, sxy, sxy);
+        cmd = new ScaleCmd(ed, sxy, sxy);
 
     } else if (tool->IsA(ROTATE_TOOL)) {
         RotatingLine* rl = (RotatingLine*) dm->GetRubberband();
         float angle = rl->CurrentAngle() - rl->OriginalAngle();
 
-        return new RotateCmd(ed, angle);
+        cmd = new RotateCmd(ed, angle);
     }
+    return cmd;
 }
 
 void LinkView::First (Iterator& i) { i.SetValue(_connView1); }
@@ -536,16 +540,30 @@ boolean PSLink::IsA (ClassId id) {
 PSLink::PSLink (LinkComp* subj) : PostScriptView(subj) { }
 
 boolean PSLink::Definition (ostream& out) {
-    Coord x0, y0, x1, y1;
-
     LinkComp* comp = (LinkComp*) GetSubject();
-    comp->GetLine()->GetOriginal(x0, y0, x1, y1);
+    Graphic* link = comp->GetGraphic();
+    Line* line = comp->GetLine();
+
+    Transformer* link_t = link->GetTransformer();
+    Transformer* line_t = line->GetTransformer();
+    Transformer* temp_t = new Transformer(line_t);
+
+    Resource::ref(link_t);
+    temp_t->postmultiply(*link_t);
+    link->SetTransformer(temp_t);
+
+    Coord x0, y0, x1, y1;
+    line->GetOriginal(x0, y0, x1, y1);
 
     out << "Begin " << MARK << " Line\n";
     MinGS(out);
     out << MARK << "\n";
     out << x0 << " " << y0 << " " << x1 << " " << y1 << " Line\n";
     out << "End\n\n";
+
+    link->SetTransformer(link_t);
+    Resource::unref(link_t);
+    Resource::unref(temp_t);
 
     return out.good();
 }

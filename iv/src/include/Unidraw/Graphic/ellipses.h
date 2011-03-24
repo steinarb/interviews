@@ -29,6 +29,8 @@
 
 #include <Unidraw/Graphic/graphic.h>
 
+#include <IV-2_6/_enter.h>
+
 class Ellipse : public Graphic {
 public:
     void GetOriginal(Coord&, Coord&, int&, int&);
@@ -127,5 +129,7 @@ public:
 
     virtual Graphic* Copy();
 };
+
+#include <IV-2_6/_leave.h>
 
 #endif

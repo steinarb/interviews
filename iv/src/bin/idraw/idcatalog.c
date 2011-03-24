@@ -41,7 +41,7 @@
 #include <Unidraw/Graphic/ellipses.h>
 #include <Unidraw/Graphic/polygons.h>
 #include <Unidraw/Graphic/rasterrect.h>
-#include <Unidraw/Graphic/stencil.h>
+#include <Unidraw/Graphic/ustencil.h>
 
 #include <InterViews/bitmap.h>
 #include <InterViews/raster.h>
@@ -49,6 +49,7 @@
 #include <InterViews/transformer.h>
 
 #include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <stream.h>
 #include <string.h>
@@ -392,6 +393,7 @@ void IdrawCatalog::PSReadTextGS (istream& in, Graphic* gs) {
 		r = g = b = 49152;
 	    }
 	}
+
 	PSColor* fgcolor = FindColor(c, r, g, b);
 	gs->SetColors(fgcolor, nil);
 
@@ -485,7 +487,7 @@ void IdrawCatalog::PSReadFgColor (istream& in, Graphic* gs) {
 	char lookahead = 'u';
 	boolean undefined = false;
 	char name[100];
-	float fr = 0, fg = 0, fb = 0;
+	ColorIntensity r = 0, g = 0, b = 0;
 
 	in >> lookahead; 
 	in.putback(lookahead);
@@ -497,7 +499,7 @@ void IdrawCatalog::PSReadFgColor (istream& in, Graphic* gs) {
 	    in >> name;
 
 	    if (_psversion >= PSV_FGANDBGCOLOR) {
-		in >> fr >> fg >> fb;
+		in >> r >> g >> b;
 	    }
 	}
 
@@ -505,10 +507,11 @@ void IdrawCatalog::PSReadFgColor (istream& in, Graphic* gs) {
 	    gs->SetColors(nil, gs->GetBgColor());
 
 	} else {
-	    int r = round(fr * 0xffff);
-	    int g = round(fg * 0xffff);
-	    int b = round(fb * 0xffff);
-	    PSColor* fgcolor = FindColor(name, r, g, b);
+	    int ir = round(r * float(0xffff));
+	    int ig = round(g * float(0xffff));
+	    int ib = round(b * float(0xffff));
+
+	    PSColor* fgcolor = FindColor(name, ir, ig, ib);
 	    gs->SetColors(fgcolor, gs->GetBgColor());
 	}
     }
@@ -526,7 +529,7 @@ void IdrawCatalog::PSReadBgColor (istream& in, Graphic* gs) {
 	char lookahead = 'u';
 	boolean undefined = false;
 	char name[100];
-	float fr = 0, fg = 0, fb = 0;
+	ColorIntensity r = 0, g = 0, b = 0;
 
 	in >> lookahead;
 	in.putback(lookahead);
@@ -534,17 +537,18 @@ void IdrawCatalog::PSReadBgColor (istream& in, Graphic* gs) {
 	if (lookahead == 'u') {
 	    undefined = true;
 	} else {
-	    in >> name >> fr >> fg >> fb;
+	    in >> name >> r >> g >> b;
 	}
 
 	if (undefined || !in.good()) {
 	    gs->SetColors(gs->GetFgColor(), nil);
 
 	} else {
-	    int r = round(fr * 0xffff);
-	    int g = round(fg * 0xffff);
-	    int b = round(fb * 0xffff);
-	    PSColor* bgcolor = FindColor(name, r, g, b);
+	    int ir = round(r * float(0xffff));
+	    int ig = round(g * float(0xffff));
+	    int ib = round(b * float(0xffff));
+
+	    PSColor* bgcolor = FindColor(name, ir, ig, ib);
 	    gs->SetColors(gs->GetFgColor(), bgcolor);
 	}
     }
@@ -760,7 +764,9 @@ GraphicComp* IdrawCatalog::ReadBSpline (istream& in) {
     Coord* x, *y;
     int n;
 
-    PSReadPoints(in, x, y, n);
+    const Coord* cx, * cy;
+    PSReadPoints(in, cx, cy, n);
+    x = (Coord*)cx; y = (Coord*)cy;
 
     float mag;
     if (_psversion < PSV_UNIDRAW) {
@@ -785,7 +791,9 @@ GraphicComp* IdrawCatalog::ReadClosedBSpline (istream& in) {
     Coord* x, *y;
     int n;
 
-    PSReadPoints(in, x, y, n);
+    const Coord* cx, * cy;
+    PSReadPoints(in, cx, cy, n);
+    x = (Coord*)cx; y = (Coord*)cy;
     return new ClosedSplineComp(new SFH_ClosedBSpline(x, y, n, &gs));
 }
 
@@ -809,7 +817,9 @@ GraphicComp* IdrawCatalog::ReadPolygon (istream& in) {
     Coord* x, *y;
     int n;
 
-    PSReadPoints(in, x, y, n);
+    const Coord* cx, * cy;
+    PSReadPoints(in, cx, cy, n);
+    x = (Coord*)cx; y = (Coord*)cy;
     return new PolygonComp(new SF_Polygon(x, y, n, &gs));
 }
 
@@ -846,7 +856,9 @@ GraphicComp* IdrawCatalog::ReadMultiLine (istream& in) {
     Coord* x, *y;
     int n;
 
-    PSReadPoints(in, x, y, n);
+    const Coord* cx, * cy;
+    PSReadPoints(in, cx, cy, n);
+    x = (Coord*)cx; y = (Coord*)cy;
 
     float mag;
     if (_psversion < PSV_UNIDRAW) {
@@ -923,7 +935,7 @@ GraphicComp* IdrawCatalog::ReadSStencil (istream& in) {
     Bitmap* bitmap = new Bitmap((void*) nil, w, h);
     ReadBitmapData(bitmap, in);
 
-    return new StencilComp(new Stencil(bitmap, bitmap, &gs));
+    return new StencilComp(new UStencil(bitmap, bitmap, &gs));
 }
 
 GraphicComp* IdrawCatalog::ReadFStencil (istream& in) {
@@ -938,7 +950,7 @@ GraphicComp* IdrawCatalog::ReadFStencil (istream& in) {
     Bitmap* bitmap = new Bitmap((void*) nil, w, h);
     ReadBitmapData(bitmap, in);
 
-    return new StencilComp(new Stencil(bitmap, nil, &gs));
+    return new StencilComp(new UStencil(bitmap, nil, &gs));
 }
 
 GraphicComp* IdrawCatalog::ReadRaster (istream& in) {
@@ -978,6 +990,8 @@ void IdrawCatalog::PSReadTextData (istream& in, char* sbuf, int len) {
 	char c = ' ';
         int dot = 0;
 
+	while (c != '[' && in.get(c));
+
 	while (in >> c && c != ']') {
 	    while (c != '(' && in.get(c));
 
@@ -998,12 +1012,16 @@ void IdrawCatalog::PSReadTextData (istream& in, char* sbuf, int len) {
 	    }
 	    dot += stext.Insert(dot, "\n", 1);
 	}
-	stext.Delete(--dot, 1); // buffer must not terminate in '\n'
+	if (dot > 0) {
+	    stext.Delete(--dot, 1); // buffer must not terminate in '\n'
+	}
     
     } else if (_psversion >= PSV_NONREDUNDANT) {
 	Skip(in);
 	char c = ' ';
         int dot = 0;
+
+	while (c != '[' && in.get(c));
 
 	while (in >> c && c != ']') {
 	    while (c != '(' && in.get(c));
@@ -1016,7 +1034,9 @@ void IdrawCatalog::PSReadTextData (istream& in, char* sbuf, int len) {
 	    }
 	    stext.Insert(dot++, &nl, 1);
 	}
-	stext.Delete(--dot, 1); // buffer must not terminate in '\n'
+	if (dot > 0) {
+	    stext.Delete(--dot, 1); // buffer must not terminate in '\n'
+	}
 
     } else {
         int dot = 0;
@@ -1030,7 +1050,9 @@ void IdrawCatalog::PSReadTextData (istream& in, char* sbuf, int len) {
 	    stext.Insert(dot, _buf, buflen);
 	    dot += buflen;
 	}
-	stext.Delete(--dot, 1); // buffer must not terminate in '\n'
+	if (dot > 0) {
+	    stext.Delete(--dot, 1); // buffer must not terminate in '\n'
+	}
     }
     stext.Insert(stext.Length(), &null, 1);
 }

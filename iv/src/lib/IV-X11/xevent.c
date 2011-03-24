@@ -30,36 +30,66 @@
 #include <InterViews/display.h>
 #include <InterViews/event.h>
 #include <InterViews/handler.h>
-#include <InterViews/sensor.h>
 #include <InterViews/session.h>
 #include <InterViews/window.h>
-#include <InterViews/world.h>
 #include <IV-X11/Xlib.h>
 #include <IV-X11/Xutil.h>
 #include <IV-X11/xcanvas.h>
 #include <IV-X11/xdisplay.h>
+#include <IV-X11/xdrag.h>
 #include <IV-X11/xevent.h>
 #include <IV-X11/xwindow.h>
-#include <stddef.h>             // CC 2.x's sys/types.h fails to include this
+#include <X11/keysymdef.h>
 #include <string.h>
 
 Event::Event() {
-    EventRep* e = new EventRep;
-    rep_ = e;
-    e->display_ = nil;
-    e->window_ = nil;
-    e->xevent_.type = LASTEvent;
-    e->pointer_x_ = 0;
-    e->pointer_y_ = 0;
-    e->clear();
+    if (sizeof(EventRep) <= sizeof(free_store_)) {
+	rep_ = (EventRep*)free_store_;
+    } else {
+	rep_ = new EventRep;
+    }
+    EventRep& e = *rep_;
+    e.display_ = nil;
+    e.window_ = nil;
+    e.xevent_.type = LASTEvent;
+    e.pointer_x_ = 0;
+    e.pointer_y_ = 0;
+    e.clear();
+
+    /* backward compatibility */
+    target = nil;
+    timestamp = 0;
+    eventType = undefined;
+    x = 0;
+    y = 0;
+    control = false;
+    meta = false;
+    shift = false;
+    shiftlock = false;
+    leftmouse = false;
+    middlemouse = false;
+    rightmouse = false;
+    button = 0;
+    len = 0;
+    keystring = keydata;
+    w = nil;
+    wx = 0;
+    wy = 0;
 }
 
 Event::Event(const Event& e) {
+    if (sizeof(EventRep) <= sizeof(free_store_)) {
+	rep_ = (EventRep*)free_store_;
+    } else {
+	rep_ = new EventRep;
+    }
     *this = e;
 }
 
 Event::~Event() {
-    delete rep_;
+    if (rep_ != (EventRep*)free_store_) {
+	delete rep_;
+    }
 }
 
 Event& Event::operator =(const Event& e) {
@@ -96,6 +126,8 @@ void Event::copy_rep(const Event& e) {
 
 void Event::display(Display* d) { rep()->display_ = d; }
 Display* Event::display() const { return rep()->display_; }
+void Event::window(Window* w) { rep()->window_ = w; }
+Window* Event::window() const { return rep()->window_; }
 
 boolean Event::pending() const {
     Event e;
@@ -119,23 +151,25 @@ void Event::unread() { rep()->display_->put(*this); }
 void Event::poll() {
     EventRep& e = *rep();
     if (e.display_ == nil) {
-	e.display_ = Session::instance()->default_display();
+	if (e.window_ == nil) {
+	    e.display_ = Session::instance()->default_display();
+	} else {
+	    e.display_ = e.window_->display();
+	}
     }
     DisplayRep& d = *(e.display_->rep());
     XMotionEvent& m = e.xevent_.xmotion;
+    if (e.window_ == nil) {
+	m.window = d.root_;
+    } else {
+	m.window = e.window_->rep()->xwindow_;
+    }
     XQueryPointer(
-	d.display_, d.root_, &m.root, &m.subwindow,
+	d.display_, m.window, &m.root, &m.subwindow,
 	&m.x_root, &m.y_root, &m.x, &m.y, &m.state
     );
     m.type = MotionNotify;
     e.clear();
-    e.window_ = WindowRep::find(m.subwindow, d.wtable_);
-    w = World::current();
-    wx = m.x_root;
-    wy = m.y_root;
-    x = m.x;
-    y = e.display_->pheight() - 1 - m.y;
-    GetKeyState(m.state);
 }
 
 Handler* Event::handler() const {
@@ -148,7 +182,10 @@ Handler* Event::handler() const {
 }
 
 void Event::handle() {
-    Handler* h = grabber();
+    Handler* h = nil;
+    if (rep()->xevent_.type != KeyPress) {
+	h = grabber();
+    }
     if (h == nil) {
 	h = handler();
     }
@@ -162,9 +199,14 @@ void Event::handle() {
     }
 }
 
-void Event::grab(Handler* h) { rep()->display_->grab(h); }
-void Event::ungrab(Handler* h) { rep()->display_->ungrab(h); }
+void Event::grab(Handler* h) const {
+    EventRep& e = *rep();
+    e.display_->grab(e.window_, h);
+}
+
+void Event::ungrab(Handler* h) const { rep()->display_->ungrab(h); }
 Handler* Event::grabber() const { return rep()->display_->grabber(); }
+
 boolean Event::is_grabbing(Handler* h) const {
     return rep()->display_->is_grabbing(h);
 }
@@ -172,6 +214,8 @@ boolean Event::is_grabbing(Handler* h) const {
 EventType Event::type() const {
     switch (rep()->xevent_.type) {
     case MotionNotify:
+    case EnterNotify:
+    case LeaveNotify:
 	return motion;
     case ButtonPress:
 	return down;
@@ -188,6 +232,8 @@ unsigned long Event::time() const {
     XEvent& xe = rep()->xevent_;
     switch (xe.type) {
     case MotionNotify:
+    case EnterNotify:
+    case LeaveNotify:
 	return xe.xmotion.time;
     case ButtonPress:
     case ButtonRelease:
@@ -209,6 +255,18 @@ Coord Event::pointer_y() const {
     EventRep& e = *rep();
     e.locate();
     return e.pointer_y_;
+}
+
+Coord Event::pointer_root_x() const {
+    EventRep& e = *rep();
+    e.locate();
+    return e.pointer_root_x_;
+}
+
+Coord Event::pointer_root_y() const {
+    EventRep& e = *rep();
+    e.locate();
+    return e.pointer_root_y_;
 }
 
 EventButton Event::pointer_button() const {
@@ -264,19 +322,25 @@ boolean Event::right_is_down() const { return check_key(this, Button3Mask); }
 
 unsigned char Event::keycode() const {
     XEvent& xe = rep()->xevent_;
-    switch (xe.type) {
-    case KeyPress:
+    if (xe.type == KeyPress) {
 	return xe.xkey.keycode;
-    default:
-	return 0;
     }
+    return 0;
+}
+
+unsigned long Event::keysym() const {
+    XEvent& xe = rep()->xevent_;
+    if (xe.type == KeyPress) {
+	return XLookupKeysym(&xe.xkey, 0);
+    }
+    return XK_VoidSymbol;
 }
 
 unsigned int Event::mapkey(char* buf, unsigned int len) const {
+    unsigned int n = 0;
     XEvent& xe = rep()->xevent_;
-    switch (xe.type) {
-    case KeyPress:
-	unsigned int n = XLookupString(&xe.xkey, buf, len, nil, nil);
+    if (xe.type == KeyPress) {
+	n = XLookupString(&xe.xkey, buf, len, nil, nil);
 	/*
 	 * R5 internationalization might make this superfluous.
 	 */
@@ -285,164 +349,8 @@ unsigned int Event::mapkey(char* buf, unsigned int len) const {
 		buf[i] |= 0200;
 	    }
 	}
-	return n;
-    default:
-	return 0;
     }
-}
-
-Mask motionmask = PointerMotionMask;
-Mask keymask = KeyPressMask;
-Mask entermask = EnterWindowMask;
-Mask leavemask = LeaveWindowMask;
-Mask focusmask = FocusChangeMask;
-Mask substructmask = SubstructureRedirectMask;
-Mask upmask = ButtonReleaseMask|OwnerGrabButtonMask;
-Mask downmask = ButtonPressMask|OwnerGrabButtonMask;
-Mask initmask = PointerMotionHintMask;
-
-boolean Sensor::Caught(const Event& e) const {
-    XEvent& xe = e.rep()->xevent_;
-    switch (xe.type) {
-    case MotionNotify:
-	return (mask & motionmask) != 0;
-    case FocusIn:
-    case FocusOut:
-	return (mask & focusmask) != 0;
-    case KeyPress:
-    case ButtonPress:
-	return ButtonIsSet(down, e.button);
-    case ButtonRelease:
-	return ButtonIsSet(up, e.button);
-    case EnterNotify:
-	return (mask & entermask) != 0 &&
-	    e.rep()->xevent_.xcrossing.detail != NotifyInferior;
-    case LeaveNotify:
-	return (mask & leavemask) != 0 &&
-	    e.rep()->xevent_.xcrossing.detail != NotifyInferior;
-    }
-    return false;
-}
-
-void Event::GetInfo() {
-    EventRep& e = *rep();
-    w = World::current();
-    XEvent& xe = e.xevent_;
-    switch (xe.type) {
-    case MotionNotify:
-	GetMotionInfo();
-	break;
-    case KeyPress:
-	GetKeyInfo();
-	break;
-    case ButtonPress:
-	GetButtonInfo(DownEvent);
-	break;
-    case ButtonRelease:
-	GetButtonInfo(UpEvent);
-	break;
-    case FocusIn:
-	eventType = FocusInEvent;
-	break;
-    case FocusOut:
-	eventType = FocusOutEvent;
-	break;
-    case EnterNotify:
-	GetCrossingInfo(EnterEvent);
-	break;
-    case LeaveNotify:
-	GetCrossingInfo(LeaveEvent);
-	break;
-    }
-}
-
-void Event::GetMotionInfo() {
-    rep()->acknowledge_motion();
-
-    XMotionEvent& m = rep()->xevent_.xmotion;
-    eventType = MotionEvent;
-    timestamp = m.time;
-    x = m.x;
-    y = m.y;
-    wx = m.x_root;
-    wy = m.y_root;
-    GetKeyState(m.state);
-}
-
-void Event::GetButtonInfo(EventType t) {
-    XButtonEvent& b = rep()->xevent_.xbutton;
-    eventType = t;
-    timestamp = b.time;
-    x = b.x;
-    y = b.y;
-    wx = b.x_root;
-    wy = b.y_root;
-    button = b.button - 1;
-    len = 0;
-    GetKeyState(b.state | (Button1Mask << button));
-}
-
-void Event::GetKeyInfo() {
-    XKeyEvent& k = rep()->xevent_.xkey;
-    char buf[4096];
-
-    eventType = KeyEvent;
-    timestamp = k.time;
-    x = k.x;
-    y = k.y;
-    wx = k.x_root;
-    wy = k.y_root;
-    button = k.keycode;
-    len = mapkey(buf, sizeof(buf));
-    if (len != 0) {
-	if (len < sizeof(keydata)) {
-	    keystring = keydata;
-	} else {
-	    keystring = new char[len+1];
-	}
-	strncpy(keystring, buf, len);
-	keystring[len] = '\0';
-    } else {
-	keystring = keydata;
-	keydata[0] = '\0';
-    }
-    GetKeyState(k.state);
-}
-
-void Event::GetKeyState(unsigned state) {
-    shift = (state & ShiftMask) != 0;
-    control = (state & ControlMask) != 0;
-    meta = (state & Mod1Mask) != 0;
-    shiftlock = (state & LockMask) != 0;
-    leftmouse = (state & Button1Mask) != 0;
-    middlemouse = (state & Button2Mask) != 0;
-    rightmouse = (state & Button3Mask) != 0;
-}
-
-void Event::GetCrossingInfo(EventType t) {
-    XCrossingEvent& c = rep()->xevent_.xcrossing;
-    eventType = t;
-    if (c.detail != NotifyInferior) {
-	timestamp = c.time;
-	x = c.x;
-	y = c.y;
-	wx = c.x_root;
-	wy = c.y_root;
-	GetKeyState(c.state);
-    }
-}
-
-void Event::GetAbsolute(_lib_iv2_6(Coord)& absx, _lib_iv2_6(Coord)& absy) {
-    absx = wx;
-    absy = rep()->display_->pheight() - wy;
-}
-
-void Event::GetAbsolute(
-    World*& wd, _lib_iv2_6(Coord)& absx, _lib_iv2_6(Coord)& absy
-) {
-    wd = w;
-    absx = wx;
-    absy = rep()->display_->pheight() - wy;
+    return n;
 }
 
 /** class EventRep **/
@@ -452,8 +360,9 @@ void EventRep::clear() {
 }
 
 void EventRep::locate() {
-    if (!location_valid_) {
-	int x, y, root_x, root_y;
+    if (!location_valid_ && window_ != nil) {
+	PixelCoord x, y, root_x = 0, root_y = 0;
+	boolean has_root_location = true;
 	XEvent& xe = xevent_;
 	switch (xe.type) {
 	case MotionNotify:
@@ -477,10 +386,18 @@ void EventRep::locate() {
 	    break;
 	case EnterNotify:
 	case LeaveNotify:
-	    x = xe.xcrossing.x_root;
-	    y = xe.xcrossing.y_root;
-	    root_x = xe.xcrossing.x;
-	    root_y = xe.xcrossing.y;
+	    x = xe.xcrossing.x;
+	    y = xe.xcrossing.y;
+	    root_x = xe.xcrossing.x_root;
+	    root_y = xe.xcrossing.y_root;
+	    break;
+	case ClientMessage: /* drag & drop */
+	    if (!XDrag::isDrag(xe)) {
+		has_pointer_location_ = false;
+		return;
+	    }
+	    XDrag::locate(xe, x, y);
+	    has_root_location = false;
 	    break;
 	default:
 	    has_pointer_location_ = false;
@@ -488,14 +405,18 @@ void EventRep::locate() {
 	}
 	has_pointer_location_ = true;
 	pointer_x_ = display_->to_coord(x);
-	pointer_y_ = display_->to_coord(window_->pheight() - y);
+	pointer_y_ = display_->to_coord(window_->canvas()->pheight() - y);
+	pointer_root_x_ = display_->to_coord(root_x);
+	pointer_root_y_ = display_->to_coord(display_->pheight() - root_y);
 	location_valid_ = true;
 
 	/*
 	 * As a side effect, the pointer location tells us the root-relative
 	 * location of the window.
 	 */
-	window_->rep()->move(window_, root_x - x, root_y - y);
+	if (has_root_location) {
+	    window_->rep()->move(window_, root_x - x, root_y - y);
+	}
     }
 }
 

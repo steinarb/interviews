@@ -31,6 +31,8 @@
 #include <Unidraw/globals.h>
 #include <Unidraw/Graphic/grblock.h>
 
+#include <IV-2_6/_enter.h>
+
 class Damage;
 class Editor;
 class GraphicComp;
@@ -38,23 +40,26 @@ class GraphicView;
 class Grid;
 class KeyMap;
 class Manipulator;
-class Page;
 class Rubberband;
 class Selection;
 class State;
 class TextDisplay;
 class Tool;
 class Transformer;
+class UPage;
+class ViewerView;
 
 class Viewer : public GraphicBlock {
 public:
     Viewer(
-        Editor*, GraphicView*, Page*, Grid* = nil, 
-        Coord = 0, Coord = 0, Orientation = Normal
+        Editor*, GraphicView*, UPage*, Grid* = nil, 
+        Coord = 0, Coord = 0, Orientation = Normal,
+	Alignment = Center, Zooming = Binary
     );
     Viewer(
-        const char*, Editor*, GraphicView*, Page*, Grid* = nil, 
-        Coord = 0, Coord = 0, Orientation = Normal
+        const char*, Editor*, GraphicView*, UPage*, Grid* = nil, 
+        Coord = 0, Coord = 0, Orientation = Normal,
+	Alignment = Center, Zooming = Binary
     );
     virtual ~Viewer();
 
@@ -65,14 +70,14 @@ public:
     virtual void Draw();
 
     virtual void SetGraphicView(GraphicView*);
-    virtual void SetPage(Page*);
+    virtual void SetPage(UPage*);
     virtual void SetGrid(Grid*);
     virtual void SetMagnification(float);
     virtual void SetOrientation(Orientation);
 
     virtual Graphic* GetGraphic();
     virtual GraphicView* GetGraphicView();
-    virtual Page* GetPage();
+    virtual UPage* GetPage();
     virtual Grid* GetGrid();
     virtual Orientation GetOrientation();
     virtual Editor* GetEditor();
@@ -90,8 +95,8 @@ public:
     virtual void UseTool(Tool*);
     virtual void Align(GraphicComp*, Alignment);
 protected:
-    void Init(Editor*, GraphicView*, Page*, Grid*, Coord, Coord, Orientation);
-    void Init(Editor*, GraphicView*, Page*, Grid*);
+    void Init(Editor*, GraphicView*, UPage*, Grid*, Coord, Coord, Orientation);
+    void Init(Editor*, GraphicView*, UPage*, Grid*);
     Tool* CurTool();
     Transformer* GetTransformer();
 
@@ -103,6 +108,7 @@ protected:
     virtual void Reorient();
     virtual void UpdateMagnifVar();
     virtual float LimitMagnification(float);
+    virtual ClassId ViewCategory();
 
     virtual void Redraw(Coord, Coord, Coord, Coord);
     virtual void Resize();
@@ -110,10 +116,12 @@ private:
     Editor* _editor;
     Damage* _damage;
     GraphicView* _gview;
-    Page* _page;
+    UPage* _page;
     Grid* _grid;
     Orientation _orientation;
-    class ViewerView* _viewerView;
+    ViewerView* _viewerView;
 };
+
+#include <IV-2_6/_leave.h>
 
 #endif

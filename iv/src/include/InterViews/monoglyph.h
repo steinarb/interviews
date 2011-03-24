@@ -45,6 +45,7 @@ public:
     virtual void draw(Canvas*, const Allocation&) const;
     virtual void print(Printer*, const Allocation&) const;
     virtual void pick(Canvas*, const Allocation&, int depth, Hit&);
+    virtual void undraw();
 
     virtual void append(Glyph*);
     virtual void prepend(Glyph*);

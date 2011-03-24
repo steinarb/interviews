@@ -40,7 +40,7 @@ class ItemView : public MonoGlyph, public Handler {
 public:
     ItemView (DocumentViewer*, ItemView*);
 
-    virtual void event (Event&);
+    virtual boolean event (Event&);
     virtual void allocate (Canvas*, const Allocation&, Extension&);
 
     virtual boolean command (const char*);

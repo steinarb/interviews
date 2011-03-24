@@ -27,6 +27,8 @@
 #ifndef unidraw_components_psformat_h
 #define unidraw_components_psformat_h
 
+#include <Unidraw/enter-scope.h>
+
 static const float PSV_UNIDRAW       = 10; // Unidraw-based version
 static const float PSV_ISOLATIN1     =  9; // removed '/' from PostScript fonts
                                            // (they're def'ed in IdrawDict now)

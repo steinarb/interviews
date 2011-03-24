@@ -34,13 +34,15 @@
 #include <InterViews/font.h>
 #include <InterViews/handler.h>
 #include <InterViews/hit.h>
-#include <InterViews/sensor.h>
-#include <InterViews/world.h>
-#include <InterViews/2.6/InterViews/interactor.h>
-#include <InterViews/2.6/InterViews/iwindow.h>
-#include <InterViews/2.6/InterViews/painter.h>
-#include <InterViews/2.6/InterViews/scene.h>
-#include <InterViews/2.6/InterViews/shape.h>
+#include <InterViews/style.h>
+#include <IV-2_6/InterViews/ihandler.h>
+#include <IV-2_6/InterViews/interactor.h>
+#include <IV-2_6/InterViews/iwindow.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/scene.h>
+#include <IV-2_6/InterViews/sensor.h>
+#include <IV-2_6/InterViews/shape.h>
+#include <IV-2_6/InterViews/world.h>
 #include <IV-X11/Xlib.h>
 #include <IV-X11/Xutil.h>
 #include <IV-X11/xcanvas.h>
@@ -69,18 +71,8 @@ void Interactor::request(Requisition& r) const {
     r.require(Dimension_Y, ry);
 }
 
-/*
- * If an allocation changes, we must ensure that the subwindows
- * are destroyed so that the next draw will recreate them.
- */
-
-void Interactor::allocate(Canvas*, const Allocation& a, Extension& ext) {
-    ext.xy_extents(a);
-    if (window != nil && window->bound()) {
-	WindowRep* w = window->rep();
-	XDestroyWindow(w->display_->rep()->display_, w->xwindow_);
-	window->unbind();
-    }
+void Interactor::allocate(Canvas* c, const Allocation& a, Extension& ext) {
+    ext.set(c, a);
 }
 
 /*
@@ -93,38 +85,106 @@ void Interactor::allocate(Canvas*, const Allocation& a, Extension& ext) {
  */
 
 void Interactor::draw(Canvas* c, const Allocation& a) const {
-    if (window != nil && window->bound()) {
-	/* already allocated */
-	return;
-    }
     Interactor* i = (Interactor*)this;
-    Window* cw = c->window();
-    Display* d = cw->rep()->display_;
-    if (i->window == nil) {
-	i->window = new InteractorWindow(i, cw);
-	i->canvas = window->canvas();
-    }
-    i->window->display(d);
-    i->window->double_buffered(false);
-
-    CanvasRep* cr = i->canvas->rep();
     const Allotment& ax = a.allotment(Dimension_X);
     const Allotment& ay = a.allotment(Dimension_Y);
-    cr->width_ = ax.span();
-    cr->height_ = ay.span();
-    cr->pwidth_ = d->to_pixels(cr->width_);
-    cr->pheight_ = d->to_pixels(cr->height_);
+    Coord width = ax.span();
+    Coord height = ay.span();
+    unsigned int pwidth = c->to_pixels(width);
+    unsigned int pheight = c->to_pixels(height);
+    int x0 = c->to_pixels(ax.origin());
+    int y0 = c->rep()->pheight_ - c->to_pixels(ay.origin()) - pheight;
+    if (window != nil && window->bound()) {
+	CanvasRep& cr = *canvas->rep();
+	WindowRep& wr = *window->Window::rep();
+	DisplayRep& dr = *wr.display_->rep();
+	if (x0 != wr.xpos_ || y0 != wr.ypos_ ||
+	    cr.pwidth_ != pwidth || cr.pheight_ != pheight
+	) {
+	    cr.width_ = width;
+	    cr.height_ = height;
+	    cr.pwidth_ = pwidth;
+	    cr.pheight_ = pheight;
+	    cr.status_ = Canvas::unmapped;
+	    wr.xpos_ = x0;
+	    wr.ypos_ = y0;
+	    Allotment& w_ax = wr.allocation_.x_allotment();
+	    w_ax.origin(0.0);
+	    w_ax.span(width);
+	    w_ax.alignment(0.0);
+	    Allotment& w_ay = wr.allocation_.y_allotment();
+	    w_ay.origin(0.0);
+	    w_ay.span(height);
+	    w_ay.alignment(0.0);
+	    XMoveResizeWindow(
+		dr.display_, wr.xwindow_, x0, y0, pwidth, pheight
+	    );
+	    i->xmax = pwidth - 1;
+	    i->ymax = pheight - 1;
+	    i->Resize();
+	}
+	if (cr.status_ == Canvas::unmapped) {
+	    XMapRaised(dr.display_, wr.xwindow_);
+	    cr.status_ = Canvas::mapped;
+	}
+	return;
+    }
+    Window* cw = c->window();
+    Display* d = cw->rep()->display_;
+    delete i->window;
+    i->window = new InteractorWindow(i, cw);
+    i->window->display(d);
+    style->attribute("double_buffered", "false");
+    style->attribute("overlay", "false");
+    i->window->style(style);
+    i->canvas = window->canvas();
 
-    WindowRep* w = i->window->Window::rep();
-    w->xpos_ = d->to_pixels(ax.origin());
-    w->ypos_ = c->rep()->pheight_ - d->to_pixels(ay.origin()) - cr->pheight_;
+    CanvasRep& cr = *i->canvas->rep();
+    cr.width_ = width;
+    cr.height_ = height;
+    cr.pwidth_ = pwidth;
+    cr.pheight_ = pheight;
+
+    WindowRep& w = *i->window->Window::rep();
+    w.xpos_ = x0;
+    w.ypos_ = y0;
+    Allotment& w_ax = w.allocation_.x_allotment();
+    w_ax.origin(0.0);
+    w_ax.span(width);
+    w_ax.alignment(0.0);
+    Allotment& w_ay = w.allocation_.y_allotment();
+    w_ay.origin(0.0);
+    w_ay.span(height);
+    w_ay.alignment(0.0);
 
     i->window->bind();
-    i->xmax = cr->pwidth_ - 1;
-    i->ymax = cr->pheight_ - 1;
-    cr->status_ = Canvas::mapped;
+    i->xmax = pwidth - 1;
+    i->ymax = pheight - 1;
+    cr.status_ = Canvas::mapped;
     i->Resize();
-    XMapRaised(d->rep()->display_, w->xwindow_);
+    XMapRaised(d->rep()->display_, w.xwindow_);
+}
+
+/*
+ * Note that our allocation has been given to someone else.
+ * We need to unmap the window so that it doesn't interfere
+ * with whoever is now allocated the area.
+ */
+
+void Interactor::undraw() {
+    if (window != nil) {
+	WindowRep& w = *window->rep();
+	if (w.xwindow_ != WindowRep::unbound) {
+	    DisplayRep& d = *w.display_->rep();
+	    if (w.toplevel_->bound()) {
+		XUnmapWindow(d.display_, w.xwindow_);
+		canvas->rep()->status_ = Canvas::unmapped;
+	    } else {
+		XDestroyWindow(d.display_, w.xwindow_);
+		window->unbind();
+	    }
+	}
+    }
 }
 
 /*
@@ -151,21 +211,16 @@ Handler* InteractorWindow::target(const Event& e) const {
  * to an uninterested interactor.
  */
 
-class InteractorHandler : public Handler {
-public:
-    InteractorHandler(Interactor*);
-    virtual ~InteractorHandler();
-
-    virtual void event(Event&);
-private:
-    Interactor* interactor_;
-};
-
 static boolean grabbing;
 
-void Interactor::pick(Canvas*, const Allocation&, int depth, Hit& h) {
+void Interactor::pick(Canvas*, const Allocation& a, int depth, Hit& h) {
     const Event* ep = h.event();
-    if (ep != nil) {
+    if (ep != nil &&
+	parent != nil || (
+	    h.left() < a.right() && h.right() >= a.left() &&
+	    h.bottom() < a.top() && h.top() >= a.bottom()
+	)
+    ) {
 	Event& e = *(Event*)ep;
 	e.GetInfo();
 	Sensor* s = cursensor == nil ? input : cursensor;
@@ -177,7 +232,7 @@ void Interactor::pick(Canvas*, const Allocation&, int depth, Hit& h) {
 	    } else if (e.eventType == UpEvent) {
 		grabbing = false;
 	    }
-	    h.target(depth, this, 0, new InteractorHandler(this));
+	    h.target(depth, this, 0, handler_);
 	}
     }
 }
@@ -196,12 +251,24 @@ InteractorHandler::~InteractorHandler() { }
  * to learn to grab, but it isn't worth trying to change them.
  */
 
-void InteractorHandler::event(Event& e) {
+boolean InteractorHandler::event(Event& e) {
     Interactor* i = interactor_;
+    XEvent& xe = e.rep()->xevent_;
+    switch (xe.type) {
+    case FocusIn:
+	e.eventType = FocusInEvent;
+	break;
+    case FocusOut:
+	e.eventType = FocusOutEvent;
+	break;
+    default:
+	break;
+    }
     Sensor* s = i->cursensor == nil ? i->input : i->cursensor;
     if (s != nil && s->Caught(e)) {
 	i->Handle(e);
     }
+    return true;
 }
 
 void Interactor::Listen(Sensor* s) {
@@ -220,6 +287,20 @@ void Interactor::Listen(Sensor* s) {
 
 int Interactor::CheckQueue() { return QLength(window->rep()->dpy()); }
 
+void Interactor::Poll(Event& e) {
+    e.window(nil);
+    e.poll();
+    XMotionEvent& m = e.rep()->xevent_.xmotion;
+    e.w = World::current();
+    e.wx = m.x_root;
+    e.wy = m.y_root;
+    e.GetKeyState(m.state);
+    IntCoord x, y;
+    GetPosition(x, y);
+    e.x = m.x - x;
+    e.y = e.display()->pheight() - 1 - m.y - y;
+}
+
 void Interactor::GetPosition(IntCoord& left, IntCoord& bottom) const {
     if (window == nil) {
 	/* try to cause an error */
@@ -237,7 +318,7 @@ void Interactor::GetPosition(IntCoord& left, IntCoord& bottom) const {
 	dpy, w->xwindow_, d->rep()->root_, 0, 0, &x, &y, &child
     );
     left = x;
-    bottom = d->pheight() - y - window->pheight();
+    bottom = d->pheight() - y - window->canvas()->pheight();
 }
 
 InteractorWindow::InteractorWindow(Interactor* i) : Window(i) {
@@ -253,46 +334,61 @@ InteractorWindow::InteractorWindow(Interactor* i, Window* w) : Window(i) {
 InteractorWindow::~InteractorWindow() { }
 
 void InteractorWindow::set_attributes() {
-    WindowRep* w = Window::rep();
-    w->xattrmask_ |= CWBackPixmap;
-    w->xattrs_.background_pixmap = ParentRelative;
+    Interactor* i = interactor_;
+    WindowRep& w = *Window::rep();
 
-    w->xattrmask_ |= CWWinGravity;
-    w->xattrs_.win_gravity = UnmapGravity;
+    if (w.visual_ == nil) {
+	w.visual_ = WindowVisual::find_visual(w.display_, i->style);
+    }
 
-    w->xattrmask_ |= CWEventMask;
+    w.xattrmask_ |= CWBackPixmap;
+    w.xattrs_.background_pixmap = ParentRelative;
+
+    w.xattrmask_ |= CWWinGravity;
+    w.xattrs_.win_gravity = UnmapGravity;
+
+    w.xattrmask_ |= CWEventMask;
     Mask m = ExposureMask;
-    Sensor* s = interactor_->cursensor;
-    if (s == nil) {
-	s = interactor_->input;
-	interactor_->cursensor = s;
+    Sensor* input = i->cursensor;
+    if (input == nil) {
+	input = i->input;
+	i->cursensor = input;
     }
-    if (s != nil) {
-	m |= s->mask;
+    if (input != nil) {
+	m |= input->mask;
     }
-    w->xattrs_.event_mask = m;
+    w.xattrs_.event_mask = m;
 
-    if (interactor_->cursor_ != nil) {
-	w->xattrmask_ |= CWCursor;
-	w->xattrs_.cursor = interactor_->cursor_->rep()->xid(w->display_);
+    if (i->cursor_ != nil) {
+	w.xattrmask_ |= CWCursor;
+	w.xattrs_.cursor = i->cursor_->rep()->xid(w.display_, w.visual_);
     }
 
-    switch (interactor_->canvas_type_) {
+    Style& s = *w.style_;
+    switch (i->canvas_type_) {
     case CanvasShapeOnly:
     case CanvasInputOutput:
 	break;
     case CanvasInputOnly:
-	w->xclass_ = InputOnly;
+	w.xclass_ = InputOnly;
 	break;
     case CanvasSaveUnder:
-	save_under(true);
+	s.attribute("saveUnder", "true");
+	w.xattrmask_ |= CWSaveUnder;
+	w.xattrs_.save_under = true;
 	break;
     case CanvasSaveContents:
-	save_contents(true);
+	s.attribute("backingStore", "true");
+	w.xattrmask_ |= CWBackingStore;
+	w.xattrs_.backing_store = WhenMapped;
 	break;
     case CanvasSaveBoth:
-	save_under(true);
-	save_contents(true);
+	s.attribute("saveUnder", "true");
+	w.xattrmask_ |= CWSaveUnder;
+	w.xattrs_.save_under = true;
+	s.attribute("backingStore", "true");
+	w.xattrmask_ |= CWBackingStore;
+	w.xattrs_.backing_store = WhenMapped;
     }
 }
 
@@ -301,12 +397,12 @@ void InteractorWindow::bind() {
 	parent_ = interactor_->parent->window;
     }
 
-    WindowRep* w = Window::rep();
-    WindowRep* pw = parent_->Window::rep();
-    CanvasRep* c = canvas()->rep();
-    w->toplevel_ = pw->toplevel_;
-    w->do_bind(this, pw->xwindow_, w->xpos_, w->ypos_);
-    w->init_renderer(this);
+    WindowRep& w = *Window::rep();
+    WindowRep& pw = *parent_->Window::rep();
+    CanvasRep& c = *canvas()->rep();
+    w.toplevel_ = pw.toplevel_;
+    w.do_bind(this, pw.xwindow_, w.xpos_, w.ypos_);
+    w.init_renderer(this);
 }
 
 void InteractorWindow::unbind() {
@@ -315,7 +411,7 @@ void InteractorWindow::unbind() {
 }
 
 void InteractorWindow::receive(const Event& e) {
-    int ymax = pheight() - 1;
+    int ymax = canvas()->pheight() - 1;
     int itop;
     XEvent& xe = e.rep()->xevent_;
     switch (xe.type) {
@@ -393,7 +489,7 @@ void World::InsertApplication(Interactor* i) {
     i->managed_window = w;
     w->display(display_);
     w->map();
-    Handler* h = new InteractorHandler(i);
+    Handler* h = i->handler_;
     w->focus_event(h, h);
 }
 
@@ -408,7 +504,7 @@ void World::InsertApplication(
     w->pplace(left, bottom);
     AlignPosition(w, a);
     w->map();
-    Handler* h = new InteractorHandler(i);
+    Handler* h = i->handler_;
     w->focus_event(h, h);
 }
 
@@ -426,7 +522,7 @@ void World::InsertToplevel(Interactor* i, Interactor* leader) {
     }
     w->group_leader(g);
     w->map();
-    Handler* h = new InteractorHandler(i);
+    Handler* h = i->handler_;
     w->focus_event(h, h);
 }
 
@@ -449,13 +545,31 @@ void World::InsertToplevel(
     }
     w->group_leader(g);
     w->map();
-    Handler* h = new InteractorHandler(i);
+    Handler* h = i->handler_;
     w->focus_event(h, h);
+}
+
+class InteractorPopupWindow : public Window {
+public:
+    InteractorPopupWindow(Glyph*);
+    virtual ~InteractorPopupWindow();
+protected:
+    virtual void set_attributes();
+};
+
+InteractorPopupWindow::InteractorPopupWindow(Glyph* g) : Window(g) { }
+InteractorPopupWindow::~InteractorPopupWindow() { }
+
+void InteractorPopupWindow::set_attributes() {
+    Window::set_attributes();
+    WindowRep& w = *rep();
+    w.xattrmask_ |= CWOverrideRedirect;
+    w.xattrs_.override_redirect = True;
 }
 
 void World::InsertPopup(Interactor* i) {
     delete i->insert_window;
-    Window* w = new PopupWindow(i);
+    Window* w = new InteractorPopupWindow(i);
     i->insert_window = w;
     i->managed_window = nil;
     w->display(display_);
@@ -466,7 +580,7 @@ void World::InsertPopup(
     Interactor* i, IntCoord left, IntCoord bottom, Alignment a
 ) {
     delete i->insert_window;
-    Window* w = new PopupWindow(i);
+    Window* w = new InteractorPopupWindow(i);
     i->insert_window = w;
     i->managed_window = nil;
     w->display(display_);
@@ -485,12 +599,12 @@ void World::InsertTransient(Interactor* i, Interactor* primary) {
     if (primary == i) {
 	pw = w;
     } else {
-	pw = primary->window;
+	pw = primary->managed_window;
     }
     w->group_leader(pw);
     w->transient_for(pw);
     w->map();
-    Handler* h = new InteractorHandler(i);
+    Handler* h = i->handler_;
     w->focus_event(h, h);
 }
 
@@ -509,12 +623,12 @@ void World::InsertTransient(
     if (primary == i) {
 	pw = w;
     } else {
-	pw = primary->window;
+	pw = primary->managed_window;
     }
     w->group_leader(pw);
     w->transient_for(pw);
     w->map();
-    Handler* h = new InteractorHandler(i);
+    Handler* h = i->handler_;
     w->focus_event(h, h);
 }
 
@@ -525,7 +639,7 @@ void World::InsertIcon(Interactor* i) {
     i->managed_window = w;
     w->display(display_);
     w->map();
-    Handler* h = new InteractorHandler(i);
+    Handler* h = i->handler_;
     w->focus_event(h, h);
 }
 
@@ -540,7 +654,7 @@ void World::InsertIcon(
     w->pplace(left, bottom);
     AlignPosition(w, a);
     w->map();
-    Handler* h = new InteractorHandler(i);
+    Handler* h = i->handler_;
     w->focus_event(h, h);
 }
 
@@ -563,14 +677,15 @@ void World::Lower(Interactor* i) {
 }
 
 void World::Change(Interactor* i) {
-    if (i->window != nil) {
-	WindowRep* w = i->window->rep();
+    Window* iw = i->insert_window;
+    if (iw != nil) {
+	WindowRep* w = iw->rep();
 	XWindow xw = w->xwindow_;
 	if (xw != CanvasRep::unbound) {
 	    CanvasRep* c = i->canvas->rep();
 	    Shape* s = i->GetShape();
 	    if (c->pwidth_ != s->width || c->pheight_ != s->height) {
-		i->insert_window->resize();
+		iw->resize();
 	    } else {
 		i->Resize();
 	    }
@@ -612,6 +727,7 @@ void Scene::Place(
 
     Display* d = window->display();
     InteractorWindow* iw = i->window;
+    XDisplay* dpy = d->rep()->display_;
     XWindow old_xwindow;
     if (iw == nil) {
 	old_xwindow = WindowRep::unbound;
@@ -622,7 +738,7 @@ void Scene::Place(
 	old_xwindow = iw->Window::rep()->xwindow_;
     }
     iw->display(d);
-    iw->double_buffered(false);
+    iw->style(i->style);
 
     WindowRep* w = iw->Window::rep();
     CanvasRep* c = i->canvas->rep();
@@ -633,16 +749,15 @@ void Scene::Place(
     c->width_ = d->to_coord(width);
     c->height_ = d->to_coord(height);
 
-    iw->bind();
+    if (old_xwindow == WindowRep::unbound) {
+	iw->bind();
+    } else {
+	XMoveResizeWindow(dpy, old_xwindow, x, y, width, height);
+    }
     i->xmax = width - 1;
     i->ymax = height - 1;
     c->status_ = Canvas::mapped;
     i->Resize();
-
-    XDisplay* dpy = d->rep()->display_;
-    if (old_xwindow != WindowRep::unbound) {
-	XDestroyWindow(dpy, old_xwindow);
-    }
     if (map) {
 	XMapRaised(dpy, w->xwindow_);
     }

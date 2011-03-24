@@ -1,8 +1,8 @@
-/* $Header: /usr/people/sam/tiff/libtiff/RCS/tiffcompat.h,v 1.15 91/07/26 10:13:05 sam Exp $ */
+/* $Header: /usr/people/sam/tiff/libtiff/RCS/tiffcompat.h,v 1.21 92/03/30 18:31:03 sam Exp $ */
 
 /*
- * Copyright (c) 1990, 1991 Sam Leffler
- * Copyright (c) 1991 Silicon Graphics, Inc.
+ * Copyright (c) 1990, 1991, 1992 Sam Leffler
+ * Copyright (c) 1991, 1992 Silicon Graphics, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and 
  * its documentation for any purpose is hereby granted without fee, provided
@@ -39,16 +39,29 @@
  */
 #if (defined(__STDC__) || defined(__EXTENDED__)) && !defined(USE_PROTOTYPES)
 #define	USE_PROTOTYPES	1
+#define	USE_CONST	1
+#endif
+
+#if !USE_CONST && !defined(const)
+#define	const
 #endif
 
 #ifdef THINK_C
 #include <unix.h>
+#include <math.h>
 #endif
 #if USE_PROTOTYPES
 #include <stdio.h>
 #endif
+#ifndef THINK_C
 #include <sys/types.h>
+#endif
+#ifdef VMS
+#include <file.h>
+#include <unixio.h>
+#else
 #include <fcntl.h>
+#endif
 #if defined(THINK_C) || defined(applec)
 #include <stdlib.h>
 #endif
@@ -56,8 +69,10 @@
 /*
  * Workarounds for BSD lseek definitions.
  */
-#ifdef SYSV
+#if defined(SYSV) || defined(VMS)
+#if defined(SYSV)
 #include <unistd.h>
+#endif
 #define	L_SET	SEEK_SET
 #define	L_INCR	SEEK_CUR
 #define	L_XTND	SEEK_END
@@ -72,10 +87,10 @@
  * SVID workarounds for BSD bit
  * string manipulation routines.
  */
-#if defined(SYSV) || defined(THINK_C) || defined(applec)
-#define	bzero(dst,len)		memset(dst, 0, len)
-#define	bcopy(src,dst,len)	memcpy(dst, src, len)
-#define	bcmp(src, dst, len)	memcmp(dst, src, len)
+#if defined(SYSV) || defined(THINK_C) || defined(applec) || defined(VMS)
+#define	bzero(dst,len)		memset((char *)dst, 0, len)
+#define	bcopy(src,dst,len)	memcpy((char *)dst, (char *)src, len)
+#define	bcmp(src, dst, len)	memcmp((char *)dst, (char *)src, len)
 #endif
 
 /*
@@ -155,15 +170,15 @@ extern	long lseek();
 #define	WriteOK(fd, buf, size)	(write(fd, (char *)buf, size) == size)
 #endif
 
-#if defined(__MACH__)
+#if defined(__MACH__) || defined(THINK_C)
 extern	void *malloc(size_t size);
 extern	void *realloc(void *ptr, size_t size);
-#else /* !__MACH__ */
+#else /* !__MACH__ && !THINK_C */
 #if defined(MSDOS)
 #include <malloc.h>
 #else /* !MSDOS */
 #if defined(_IBMR2)
-extern	void *realloc();
+#include <stdlib.h>
 #else /* !_IBMR2 */
 extern	char *malloc();
 extern	char *realloc();

@@ -22,8 +22,7 @@
 
 /*
  * Version number information.
- * $Header: ibversion.h,v 1.3 91/09/27 15:29:16 vlis Exp $
  */
 
 static const char* VERSION =
-    "ibuild - Version 1.0.1.  By Steve Tang and John Vlissides.";
+    "ibuild - Version 1.1.  By Steve Tang and John Vlissides.";

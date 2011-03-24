@@ -115,30 +115,30 @@ inline int demerits(int badness, int penalty, int linepenalty) {
 }
 
 inline int badness(Coord size, Coord natural, Coord stretch, Coord shrink) {
+    int r;
+    Coord gsr;
     if (size >= natural) {
         if (stretch == 0) {
             return PenaltyBad;
         } else {
-            Coord gsr = (size - natural)/stretch;
+            gsr = (size - natural)/stretch;
             if (gsr > BADGSR) {
                 return PenaltyBad;
             } else {
-                int badness = int(100 * gsr * gsr * gsr);
-                return Math::min(badness, PenaltyBad);
+                r = int(100 * gsr * gsr * gsr);
+                return Math::min(r, PenaltyBad);
             }
         }
-    } else if (size < natural) {
-        if (shrink == 0 || size < natural - shrink) {
-            return -PenaltyBad;
-        } else {
-            Coord gsr = (size - natural)/shrink;
-            if (gsr < -BADGSR) {
-                return -PenaltyBad;
-            } else {
-                int badness = int(100 * gsr * gsr * gsr);
-                return Math::max(badness, -PenaltyBad);
-            }
-        }
+    } else if (shrink == 0 || size < natural - shrink) {
+	return -PenaltyBad;
+    } else {
+	gsr = (size - natural)/shrink;
+	if (gsr < -BADGSR) {
+	    return -PenaltyBad;
+	} else {
+	    r = int(100 * gsr * gsr * gsr);
+	    return Math::max(r, -PenaltyBad);
+	}
     }
 }
 

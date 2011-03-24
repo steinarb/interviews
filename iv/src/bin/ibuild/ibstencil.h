@@ -33,14 +33,16 @@
 
 class IStencilComp : public IComp {
 public:
-    IStencilComp(Stencil* = nil);
+    IStencilComp(UStencil* = nil);
 
     virtual ClassId GetSubstId(const char*& delim);
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
+protected:
+    virtual void ReadStateVars(istream&);
 };
 
-class StencilCode : public CodeView {
+class StencilCode : public GraphicCodeView {
 public:
     StencilCode(IStencilComp* = nil);
 
@@ -51,6 +53,14 @@ public:
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
 protected:
+    virtual boolean GCoreConstDecls(ostream&);
+    virtual boolean GCoreConstInits(ostream&);
+    virtual boolean GConstDecls(ostream&);
+    virtual boolean GConstInits(ostream&);
+
+    virtual const char* GetGHeader();
+    virtual const char* GetCVHeader();
+
     virtual boolean EmitIncludeHeaders(ostream&);
 };
 

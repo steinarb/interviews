@@ -34,11 +34,16 @@
 #include <Unidraw/Components/component.h>
 #include <Unidraw/Components/grview.h>
 
-#include <InterViews/sensor.h>
+#include <InterViews/event.h>
+#include <InterViews/session.h>
+#include <InterViews/style.h>
+#include <InterViews/target.h>
 #include <InterViews/window.h>
-#include <InterViews/world.h>
 
-#include <string.h>
+#include <OS/list.h>
+
+declarePtrList(EditorImpl,TransientWindow)
+implementPtrList(EditorImpl,TransientWindow)
 
 /*****************************************************************************/
 
@@ -57,15 +62,17 @@ static void DetachComponentViews (Editor* ed) {
 
 /*****************************************************************************/
 
-Editor::Editor () {
-    _ref = 0;
+Editor::Editor() : InputHandler(nil, new Style(Session::instance()->style())) {
     _window = nil;
-    input = new Sensor;
-    input->Catch(KeyEvent);
+    _impl = new EditorImpl;
 }
 
-Editor::~Editor () { 
-    delete _window;
+Editor::~Editor () {
+    for (ListItr(EditorImpl) i(*_impl); i.more(); i.next()) {
+	TransientWindow* t = i.cur();
+	delete t;
+    }
+    delete _impl;
 }
 
 Component* Editor::GetComponent () { return nil; }
@@ -92,43 +99,61 @@ void Editor::Close () {
     DetachComponentViews(this);
 }
 
-void Editor::Handle (Event& e) {
-    if (e.eventType == KeyEvent) {
-        HandleKey(e);
+void Editor::Insert(Interactor* i) {
+    body(new Target(i, TargetPrimitiveHit));
+}
+
+void Editor::SetClassName(const char* s) {
+    style()->alias(s);
+}
+
+void Editor::SetInstance(const char* s) {
+    style()->name(s);
+}
+
+void Editor::keystroke(const Event& e) {
+    char buf[100];
+    int n = e.mapkey(buf, sizeof(buf) - 1);
+    if (n > 0) {
+	buf[n] = '\0';
+	GetKeyMap()->Execute(buf);
     }
 }
 
-void Editor::HandleKey (Event& e) {
-    char* kcode;
-
-    if (e.len > 0) {
-	kcode = new char[e.len + 1];
-	strncpy(kcode, e.keystring, e.len);
-	kcode[e.len] = '\0';
-	GetKeyMap()->Execute(kcode);
-	delete kcode;
-    }
-}
-
-void Editor::InsertDialog (Interactor* dialog) { 
+void Editor::InsertDialog (Glyph* g) { 
     ManagedWindow* w = GetWindow();
     if (w != nil) w->deiconify();
-
-    World* world = GetWorld();
-
-    Coord x, y;
-    Align(Center, 0, 0, x, y);
-    GetRelative(x, y, world);
-
-    world->InsertTransient(dialog, this, x, y, Center);
+    TransientWindow* dialog = nil;
+    for (ListItr(EditorImpl) i(*_impl); i.more(); i.next()) {
+	TransientWindow* t = i.cur();
+	if (t->glyph() == g) {
+	    dialog = t;
+	    break;
+	}
+    }
+    if (dialog == nil) {
+	dialog = new TransientWindow(g);
+	_impl->prepend(dialog);
+    }
+    dialog->transient_for(w);
+    dialog->place(
+	w->left() + w->width() * 0.5, w->bottom() + w->height() * 0.5
+    );
+    dialog->align(0.5, 0.5);
+    dialog->map();
 }
 
-void Editor::RemoveDialog (Interactor* dialog) {
-    GetWorld()->Remove(dialog);
+void Editor::RemoveDialog (Glyph* g) {
+    for (ListUpdater(EditorImpl) i(*_impl); i.more(); i.next()) {
+	TransientWindow* t = i.cur();
+	if (t->glyph() == g) {
+	    t->unmap();
+	    i.remove_cur();
+	    delete t;
+	    break;
+	}
+    }
 }
-
-void Editor::Ref () { ++_ref; }
-void Editor::Unref () { if (--_ref == 0) delete this; }
 
 void Editor::Update () { 
     Viewer* v;

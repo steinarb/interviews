@@ -33,6 +33,7 @@ enum PSFigViewMode { PSDraft, PSFinal };
 
 class Glyph;
 class PSFigView;
+class PSFigViewInfo_List;
 
 class PSFigItem : public Item {
 public:
@@ -68,7 +69,7 @@ protected:
     float _hoffset;
     float _voffset;
     float _rotate;
-    class PSFigViewInfo_List* _view;
+    PSFigViewInfo_List* _view;
 };
 
 #endif

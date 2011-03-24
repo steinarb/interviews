@@ -35,7 +35,7 @@
 
 class PatternRep;
 
-class Pattern : virtual public Resource {
+class Pattern : public Resource {
 public:
     enum {
 	solid = 0xffff,

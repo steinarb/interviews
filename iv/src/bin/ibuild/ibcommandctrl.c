@@ -21,11 +21,11 @@
  */
 
 /*
- * Implementation of PanelCtrl
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibcommandctrl.c,v 1.2 91/09/27 14:07:34 tang Exp $
+ * Implementation of CommandCtrl
  */
 
 #include "ibclasses.h"
+#include "ibcmds.h"
 #include "ibtext.h"
 #include "ibdialogs.h"
 #include "ibed.h"
@@ -36,12 +36,12 @@
 #include "ibcommandctrl.h"
 
 #include <Unidraw/iterator.h>
-#include <Unidraw/page.h>
 #include <Unidraw/statevars.h>
 #include <Unidraw/selection.h>
 #include <Unidraw/viewer.h>
 #include <Unidraw/ulist.h>
 #include <Unidraw/unidraw.h>
+#include <Unidraw/upage.h>
 #include <Unidraw/Tools/tool.h>
 #include <Unidraw/Components/text.h>
 #include <Unidraw/Commands/command.h>
@@ -52,6 +52,7 @@
 #include <InterViews/transformer.h>
 
 #include <math.h>
+#include <stdio.h>
 #include <stream.h>
 #include <string.h>
 
@@ -81,7 +82,12 @@ boolean CommandCtrlComp::IsA (ClassId id) {
 
 void CommandCtrlComp::Instantiate () {
     if (_toolname == nil) {
-        _toolname = new TrackNameVar("NOPCmd");
+        _toolname = new MemberNameVar("NOPCmd");
+        _toolname->GenNewName();
+        SubclassNameVar* svar = _toolname->GetSubclass();
+        svar->SetBaseClass("NOPCmd");
+        svar->SetName("NOPCmd");
+        _toolname->SetIDVar(new IDVar);
     }
     PanelCtrlComp::Instantiate();
 }
@@ -134,7 +140,32 @@ void CommandCtrlComp::Resize () {
 }
 
 void CommandCtrlComp::Interpret(Command* cmd) {
-    if (!cmd->IsA(GETCONFLICT_CMD)) {
+    if (cmd->IsA(GETNAMEVARS_CMD)) {
+        GrBlockComp::Interpret(cmd);
+        GetNameVarsCmd* gcmd = (GetNameVarsCmd*) cmd;
+        gcmd->AppendExtras(_toolname);
+        gcmd->AppendExtras(_toolname->GetSubclass());
+
+    } else if (cmd->IsA(GETCONFLICT_CMD)) {
+        GetConflictCmd* gcmd = (GetConflictCmd*) cmd;
+        const char* cname = gcmd->GetCName();
+        UList* conflictlist = gcmd->GetConflict();
+        const char* toolm = _toolname->GetName();
+        SubclassNameVar* toolnamer = _toolname->GetSubclass();
+        const char* tools = toolnamer->GetName();
+        const char* toolb = toolnamer->GetBaseClass();
+        
+        if (strcmp(tools, cname) == 0 || strcmp(toolb, cname) == 0) {
+            conflictlist->Append(
+                new UList(toolnamer)
+            );
+        }
+        if (strcmp(toolm, cname) == 0) {
+            conflictlist->Append(
+                new UList(_toolname->GetMemberSharedName())
+            );
+        }
+    } else {
         PanelCtrlComp::Interpret(cmd);
     }
 }
@@ -153,6 +184,20 @@ boolean CommandCtrlComp::IsRelatableTo (InteractorComp* comp) {
     return ok;
 }
 
+/*****************************************************************************/
+static const int comID[] = {
+    ALIGN_CMD, ALIGN_CMD, ALIGN_CMD, ALIGN_CMD, ALIGN_CMD,
+    ALIGN_CMD, ALIGN_CMD, ALIGN_CMD, ALIGN_CMD, ALIGN_CMD,
+    ALIGN_CMD, ALIGNTOGRID_CMD, BACK_CMD, BRUSH_CMD, CENTER_CMD,
+    CLOSEEDITOR_CMD, COLOR_CMD, COLOR_CMD, COPY_CMD, CUT_CMD,
+    DELETE_CMD, DUP_CMD, FONT_CMD, FRONT_CMD, GRAVITY_CMD,
+    GRID_CMD, GRIDSPACING_CMD, GROUP_CMD, IMPORT_CMD, MOVE_CMD,
+    NEWCOMP_CMD, NOP_CMD, NORMSIZE_CMD, ORIENTATION_CMD, PATTERN_CMD,
+    PASTE_CMD, PRINT_CMD, QUIT_CMD, REDO_CMD, REDTOFIT_CMD,
+    REVERT_CMD, ROTATE_CMD, ROTATE_CMD, SAVECOMP_CMD, SAVECOMPAS_CMD,
+    SCALE_CMD, SCALE_CMD, SLCTALL_CMD, UNDO_CMD, UNGROUP_CMD,
+    VIEWCOMP_CMD
+};
 /*****************************************************************************/
 
 CommandCtrlView::CommandCtrlView (
@@ -195,12 +240,11 @@ InfoDialog* CommandCtrlView::GetInfoDialog () {
     ButtonState* state = info->GetState();
     CommandCtrlComp* comComp = GetCommandCtrlComp();
 
-    IBNameVar* comName = comComp->GetToolName();
+    MemberNameVar* comName = comComp->GetToolName();
     MemberNameVar* edVar = comComp->GetEditorVar();
 
-    NameChooserView* comChooser = new NameChooserView(
-        comName, state, ibed,
-        "Library commands: ", "Command Name: "
+    SMemberNameVarView* comChooser = new SMemberNameVarView(
+        comName, state, comComp, ibed, "Command", comID
     );
 
     comChooser->Append("AlignCmd Bottom Bottom");
@@ -233,7 +277,9 @@ InfoDialog* CommandCtrlView::GetInfoDialog () {
     comChooser->Append("GroupCmd");
     comChooser->Append("ImportCmd");
 
+    comChooser->Append("MoveCmd 0.0 0.0");
     comChooser->Append("NewCompCmd");
+    comChooser->Append("NOPCmd");
     comChooser->Append("NormSizeCmd");
     comChooser->Append("OrientationCmd");
     comChooser->Append("PatternCmd");
@@ -267,7 +313,10 @@ InfoDialog* CommandCtrlView::GetInfoDialog () {
 
 CommandCtrlCode::CommandCtrlCode (
     CommandCtrlComp* subj
-) : PanelCtrlCode(subj) { }
+) : PanelCtrlCode(subj) { 
+    _emitToolInits = false;
+    _emitBaseclass = false;
+}
 
 CommandCtrlComp* CommandCtrlCode::GetCommandCtrlComp() {
     return (CommandCtrlComp*) GetSubject();
@@ -281,7 +330,11 @@ boolean CommandCtrlCode::IsA(ClassId id) {
 
 boolean CommandCtrlCode::Definition (ostream& out) {
     char coreclass[CHARBUFSIZE];
-    char Keycode[16], Com[16], Arg1[16], Arg2[16];
+    char Keycode[64], Coms[64], Comb[64];
+    char Kidname[64];
+    char Arg1s[64], Arg2s[64];
+    char Arg1b[64], Arg2b[64];
+
     boolean ok = true;
     Iterator i;
 
@@ -291,29 +344,52 @@ boolean CommandCtrlCode::Definition (ostream& out) {
     TextComp* textcomp = (TextComp*) ctrlComp->GetKeyLabel()->GetTarget();
     TextGraphic* textgr = textcomp->GetText();
     MemberNameVar* edVar = ctrlComp->GetEditorVar();
+    MemberNameVar* comm = ctrlComp->GetToolName();
+
+    SubclassNameVar* comnamer = comm->GetSubclass();
     const char* edname = edVar->GetName();
 
     const char* text = textgr->GetOriginal();
-    const char* com = ctrlComp->GetToolName()->GetName();
+    const char* coms = comnamer->GetName();
+    const char* comb = comnamer->GetBaseClass();
 
     const char* subclass = snamer->GetName();
     const char* baseclass = snamer->GetBaseClass();
     const char* mname = mnamer->GetName();
     strcpy(Keycode, text);
+
+    *Arg1s = '\0';
+    *Arg2s = '\0';
+    
+    /* some sscanfs need writable string */
+    char* writable_com = strnew(coms);
+    sscanf(writable_com, "%s%s%s", Coms, Arg1s, Arg2s);
+    delete writable_com;
+    writable_com = strnew(comb);
+    sscanf(writable_com, "%s%s%s", Comb, Arg1b, Arg2b);
+    delete writable_com;
+            
+
     HashKeyCode(Keycode);
     InteractorComp* dummy;
 
     GetCoreClassName(coreclass);
     if (*edname == '\0') {
-        strcat(_errbuf, mname);
-        strcat(_errbuf, " has undefined Editor.\n");
+        if (_err_count < 10) {
+            strcat(_errbuf, mname);
+            strcat(_errbuf, " has undefined Editor.\n");
+            _err_count++;
+        }
         return false;
 
     } else if (!Search(edVar, dummy)) {
-        strcat(_errbuf, mname);
-        strcat(
-            _errbuf, "'s Editor is not in the same hierachy.\n"
-        );
+        if (_err_count < 10) {
+            strcat(_errbuf, mname);
+            strcat(
+                _errbuf, "'s Editor is not in the same hierachy.\n"
+            );
+            _err_count++;
+        } 
         return false;
     }
 
@@ -324,14 +400,14 @@ boolean CommandCtrlCode::Definition (ostream& out) {
             _instancelist->Append(new UList((void*)mname));
 
             ok = ok && EmitGraphicState(out);
-
             for(First(i); !Done(i); Next(i)) {
                 CodeView* kid = (CodeView*) GetView(i);
                 ok = ok && EmitInstanceDecls(kid, out);
             }
+
             ok = ok && Iterate(out);
 
-            const char* kidname = nil;
+            SubclassNameVar* kidclass = nil;
 
             if (!SingleKid()) {
                 out << "    GraphicComps* " << mname;
@@ -339,84 +415,94 @@ boolean CommandCtrlCode::Definition (ostream& out) {
                 
                 for(First(i); !Done(i); Next(i)) {
                     CodeView* kid = (CodeView*) GetView(i);
-                    MemberNameVar* kmnamer=kid->GetIComp()->GetMemberNameVar();
+                    IComp* kidcomp = kid->GetIComp();
+                    MemberNameVar* kmnamer = kidcomp->GetMemberNameVar();
+                    SubclassNameVar* kidcclass = kidcomp->GetCClassNameVar();
                     const char* kmname = kmnamer->GetName();
                     out << "    " << mname << "_comp->Append(";
-                    out << kmname << "_comp);\n";
+                    out << kmname << ");\n";
                 }
-                kidname = mname;
+                strcpy(Kidname, mname);
+                strcat(Kidname, "_comp");
 
             } else {
                 First(i);
                 CodeView* kidv = (CodeView*) GetView(i);
-                MemberNameVar* kmnamer=kidv->GetIComp()->GetMemberNameVar();
-                kidname = kmnamer->GetName();
+                MemberNameVar* kmnamer = kidv->GetIComp()->GetMemberNameVar();
+                strcpy(Kidname, kmnamer->GetName());
+                kidclass = kidv->GetIComp()->GetCClassNameVar();
             }
             out << "    ControlInfo* " << mname;
             out << "_info = new ControlInfo(";
 
-            *Arg1 = '\0';
-            *Arg2 = '\0';
-	    /* some sscanfs need writable string */
-	    char* writable_com = strnew(com);
-            sscanf(writable_com, "%s%s%s", Com, Arg1, Arg2);
-	    delete writable_com;
-            
-            out << kidname << "_comp, \"" << text << "\", \"";
+            out << Kidname << ", \"" << text << "\", \"";
             out << Keycode << "\");\n";
+
+            if (!comm->GetExport() || _emitMain) {
+                out << "    " << Coms << "* " << comm->GetName() <<";\n";
+            }
+            out << "    " << comm->GetName() << " = new ";
             
-            out << "    Command* " << mname << "_com = new ";
-            
-            if (*com == '\0') {
-                strcat(_errbuf, mname);
-                strcat(_errbuf, " has undefined Command.\n");
+            if (*Comb == '\0') {
+                if (_err_count < 10) {
+                    strcat(_errbuf, mname);
+                    strcat(_errbuf, " has undefined Command.\n");
+                }
                 return false;
             }
             
-            if (strcmp(Com, "NewCompCmd") == 0) {
-                out << Com << "(" << mname << "_info, new GraphicComps);\n";
-
+            if (strcmp(Comb, "NewCompCmd") == 0) {
+                out << Coms << "(" << mname << "_info, new ";
+                if (
+                    kidclass != nil && 
+                    strcmp(kidclass->GetBaseClass(), "GraphicComps") == 0
+                ) {
+                    out << kidclass->GetName() << ";\n";
+                } else {
+                    out << "GraphicComps);\n";
+                }
             } else if (
-                strcmp(Com, "ScaleCmd") == 0 ||
-                strcmp(Com, "AlignCmd") == 0
+                strcmp(Comb, "ScaleCmd") == 0 ||
+                strcmp(Comb, "AlignCmd") == 0 ||
+                strcmp(Comb, "MoveCmd") == 0
             ) {
-                out << Com << "(" << mname << "_info, ";
-                out << Arg1 << ", " << Arg2 << ");\n";
+                out << Coms << "(" << mname << "_info, ";
+                out << Arg1s << ", " << Arg2s << ");\n";
 
-            } else if (strcmp(Com, "RotateCmd") == 0) {
-                out << Com << "(" << mname << "_info, ";
-                out << Arg1 << ");\n";
+            } else if (strcmp(Comb, "RotateCmd") == 0) {
+                out << Coms << "(" << mname << "_info, ";
+                out << Arg1s << ");\n";
 
-            } else if (strcmp(Com, "FontCmd") == 0) {
-                out << Com << "(\n        " << mname << "_info, ";
-                out << kidname << "_comp->GetGraphic()->GetFont()\n    );\n";
+            } else if (strcmp(Comb, "FontCmd") == 0) {
+                out << Coms << "(\n        " << mname << "_info, ";
+                out << Kidname << "->GetGraphic()->GetFont()\n    );\n";
 
-            } else if (strcmp(Com, "BrushCmd") == 0) {
-                out << Com << "(\n        " << mname << "_info, ";
-                out << kidname << "_comp->GetGraphic()->GetBrush()\n    );\n";
+            } else if (strcmp(Comb, "BrushCmd") == 0) {
+                out << Coms << "(\n        " << mname << "_info, ";
+                out << Kidname << "->GetGraphic()->GetBrush()\n    );\n";
 
-            } else if (strcmp(Com, "PatternCmd") == 0) {
-                out << Com << "(\n        " << mname << "_info, ";
-                out << kidname <<"_comp->GetGraphic()->GetPattern()\n    );\n";
+            } else if (strcmp(Comb, "PatternCmd") == 0) {
+                out << Coms << "(\n        " << mname << "_info, ";
+                out << Kidname << "->GetGraphic()->GetPattern()\n    );\n";
 
-            } else if (strcmp(Com, "ColorCmd") == 0) {
-                out << Com << "(" << mname << "_info, ";
-                if (strcmp(Arg1, "fg") == 0) {
-                    out << kidname;
-                    out << "_comp->GetGraphic()->GetFgColor(), nil\n    );\n";
+            } else if (strcmp(Comb, "ColorCmd") == 0) {
+                out << Coms << "(" << mname << "_info, ";
+                if (strcmp(Arg1s, "fg") == 0) {
+                    out << Kidname;
+                    out << "->GetGraphic()->GetFgColor(), nil\n    );\n";
 
-                } else if (strcmp(Arg1, "bg") == 0) {
-                    out << "nil, " << kidname;
-                    out << "_comp->GetGraphic()->GetBgColor()\n    );\n";
+                } else if (strcmp(Arg1s, "bg") == 0) {
+                    out << "nil, " << Kidname;
+                    out << "->GetGraphic()->GetBgColor()\n    );\n";
 
                 } else {
-                    out << kidname << "_comp->GetGraphic()->GetFgColor(), ";
-                    out << kidname;
-                    out << "_comp->GetGraphic()->GetBgColor()\n    );\n";
+                    out << Kidname << "->GetGraphic()->GetFgColor(), ";
+                    out << Kidname;
+                    out << "->GetGraphic()->GetBgColor()\n    );\n";
                 }
 
             } else {
-                out << Com << "(" << mname << "_info);\n";
+                out << Coms << "(" << mname << "_info);\n";
             }
 
             BeginInstantiate(out);
@@ -426,16 +512,37 @@ boolean CommandCtrlCode::Definition (ostream& out) {
             EndInstantiate(out);
             out << "    GetKeyMap()->Register(";
             out << mname << ");\n";
-            out << "    " << mname << "_com->SetEditor(this);\n";
+            out << "    " << comm->GetName() << "->SetEditor(this);\n";
         }
-
-    } else if (_emitBSDecls || _emitBSInits) {
-        ok = true;
-
     } else {
-	ok = ok && PanelCtrlCode::Definition(out);
+        SubclassNameVar* clonenamer = (SubclassNameVar*) comnamer->Copy();
+        clonenamer->SetName(Coms);
+        clonenamer->SetBaseClass(Comb);
+        clonenamer->ref();
+        comnamer->ref();
+        comm->SetSubclass(clonenamer);
+        
+        if (_emitForward) {
+            if (_scope) {
+                ok = ok && GrBlockCode::Definition(out);
+                if (
+                    comm->GetExport() && !_namelist->Search(coms)
+                ) {
+                    _namelist->Append(coms);
+                    out << "class " << coms << ";\n";
+                }
+            }
+        } else if (_emitBSDecls || _emitBSInits) {
+            ok = true;
+            
+        } else {
+            ok = ok && PanelCtrlCode::Definition(out);
+        }
+        comm->SetSubclass(comnamer);
+        clonenamer->unref();
+        comnamer->unref();
     }
-    _emitGraphicComp = true;
+    _emitGraphicComp = false;
 
     return out.good() && ok;
 }
@@ -449,11 +556,12 @@ boolean CommandCtrlCode::CoreConstInits(ostream& out) {
     InteractorComp* icomp = GetIntComp();
     SubclassNameVar* snamer = icomp->GetClassNameVar();
     const char* baseclass = snamer->GetBaseClass();
+    const char* subclass = snamer->GetName();
 
     out << "(\n    const char* name, ControlInfo* info";
     out << "\n) : ";
     out << baseclass << "(name, info) {\n";
-    out << "    perspective = new Perspective;\n";
+    out << "    SetClassName(\"" << subclass << "\");\n";
     out << "}\n\n";
 
     return out.good();
@@ -475,10 +583,361 @@ boolean CommandCtrlCode::ConstInits(ostream& out) {
     return out.good();
 }
 
+boolean CommandCtrlCode::ToolCoreConstDecls(ostream& out) { 
+    boolean ok = true;
+    CommandCtrlComp* ccComp = GetCommandCtrlComp();
+    MemberNameVar* comm = ccComp->GetToolName();
+    SubclassNameVar* comnamer = comm->GetSubclass();
+
+    const char* coms = comnamer->GetName();
+    const char* comb = comnamer->GetBaseClass();
+
+    char coreclass[CHARBUFSIZE];
+
+    char Coms[64], Comb[64];
+    char Arg1s[64], Arg2s[64];
+    char Arg1b[64], Arg2b[64];
+
+
+    *Arg1s = '\0';
+    *Arg2s = '\0';
+    
+    /* some sscanfs need writable string */
+    char* writable_com = strnew(coms);
+    sscanf(writable_com, "%s%s%s", Coms, Arg1s, Arg2s);
+    delete writable_com;
+    writable_com = strnew(comb);
+    sscanf(writable_com, "%s%s%s", Comb, Arg1b, Arg2b);
+    delete writable_com;
+
+    strcpy(coreclass, Coms);
+    strcat(coreclass, "_core");
+
+    out << "class " << coreclass << " : public " << Comb << " {\n";
+    out << "public:\n";
+    out << "    " << coreclass << "(ControlInfo* = nil";
+
+    ok = ok && EmitParameters(Comb, out);
+    out << ");\n";
+    out << "    virtual ClassId GetClassId();\n";
+    out << "    virtual boolean IsA(ClassId);\n";
+    out << "};\n\n";
+
+    return out.good() && ok;
+}
+
+boolean CommandCtrlCode::ToolCoreConstInits(ostream& out) {
+    boolean ok = true;
+    CommandCtrlComp* ccComp = GetCommandCtrlComp();
+    MemberNameVar* comm = ccComp->GetToolName();
+    SubclassNameVar* comnamer = comm->GetSubclass();
+    IDVar* idvar = comm->GetIDVar();
+
+    const char* coms = comnamer->GetName();
+    const char* comb = comnamer->GetBaseClass();
+
+    char coreclass[CHARBUFSIZE];
+
+    char Coms[64], Comb[64];
+    char Arg1s[64], Arg2s[64];
+    char Arg1b[64], Arg2b[64];
+
+
+    *Arg1s = '\0';
+    *Arg2s = '\0';
+    
+    /* some sscanfs need writable string */
+    char* writable_com = strnew(coms);
+    sscanf(writable_com, "%s%s%s", Coms, Arg1s, Arg2s);
+    delete writable_com;
+    writable_com = strnew(comb);
+    sscanf(writable_com, "%s%s%s", Comb, Arg1b, Arg2b);
+    delete writable_com;
+
+    strcpy(coreclass, Coms);
+    strcat(coreclass, "_core");
+
+    out << coreclass << "::" << coreclass << "(\n";
+    out << "    ControlInfo* ctrlinfo";
+    
+    _emitToolInits = true;
+
+    ok = ok && EmitParameters(Comb, out);
+    out << "\n) : " << Comb << "(ctrlinfo";
+
+    _emitBaseclass = true;
+    ok = ok && EmitParameters(Comb, out);
+    _emitBaseclass = false;
+
+    _emitToolInits = false;
+    out << ") {}\n\n";
+
+    out << "ClassId " << coreclass << "::GetClassId() { return ";
+    out << comm->GetIDVar()->GetID() << ";}\n";
+    out << "boolean " << coreclass << "::IsA(ClassId id) {\n";
+    out << "    return id == " << comm->GetIDVar()->GetID() << " || ";
+    out << Comb << "::IsA(id);\n";
+    out << "}\n";
+    return out.good() && ok;
+}
+
+boolean CommandCtrlCode::ToolConstDecls(ostream& out) {
+    boolean ok = true;
+    CommandCtrlComp* ccComp = GetCommandCtrlComp();
+    MemberNameVar* comm = ccComp->GetToolName();
+    SubclassNameVar* comnamer = comm->GetSubclass();
+
+    const char* coms = comnamer->GetName();
+    const char* comb = comnamer->GetBaseClass();
+
+    char coreclass[CHARBUFSIZE];
+
+    char Coms[64], Comb[64];
+    char Arg1s[64], Arg2s[64];
+    char Arg1b[64], Arg2b[64];
+
+
+    *Arg1s = '\0';
+    *Arg2s = '\0';
+    
+    /* some sscanfs need writable string */
+    char* writable_com = strnew(coms);
+    sscanf(writable_com, "%s%s%s", Coms, Arg1s, Arg2s);
+    delete writable_com;
+    writable_com = strnew(comb);
+    sscanf(writable_com, "%s%s%s", Comb, Arg1b, Arg2b);
+    delete writable_com;
+
+    strcpy(coreclass, Coms);
+    strcat(coreclass, "_core");
+
+    out << "class " << Coms << " : public " << coreclass << " {\n";
+    out << "public:\n";
+    out << "    " << Coms << "(ControlInfo* = nil";
+    ok = ok && EmitParameters(Comb, out);
+    out << ");\n";
+    out << "};\n\n";
+
+    return out.good() && ok;
+}
+
+boolean CommandCtrlCode::ToolConstInits(ostream& out) {
+    boolean ok = true;
+    CommandCtrlComp* ccComp = GetCommandCtrlComp();
+    MemberNameVar* comm = ccComp->GetToolName();
+    SubclassNameVar* comnamer = comm->GetSubclass();
+
+    const char* coms = comnamer->GetName();
+    const char* comb = comnamer->GetBaseClass();
+
+    char coreclass[CHARBUFSIZE];
+
+    char Coms[64], Comb[64];
+    char Arg1s[64], Arg2s[64];
+    char Arg1b[64], Arg2b[64];
+
+
+    *Arg1s = '\0';
+    *Arg2s = '\0';
+    
+    /* some sscanfs need writable string */
+    char* writable_com = strnew(coms);
+    sscanf(writable_com, "%s%s%s", Coms, Arg1s, Arg2s);
+    delete writable_com;
+    writable_com = strnew(comb);
+    sscanf(writable_com, "%s%s%s", Comb, Arg1b, Arg2b);
+    delete writable_com;
+
+    strcpy(coreclass, Coms);
+    strcat(coreclass, "_core");
+
+    out << Coms << "::" << Coms << "(\n";
+    out << "    ControlInfo* ctrlinfo";
+
+    _emitToolInits = true;
+
+    ok = ok && EmitParameters(Comb, out);
+    out << "\n) : " << coreclass << "(ctrlinfo";
+
+    _emitBaseclass = true;
+    ok = ok && EmitParameters(Comb, out);
+    _emitBaseclass = false;
+
+    _emitToolInits = false;
+
+    out << ") {}\n\n";
+
+    return out.good() && ok;
+}
+
+boolean CommandCtrlCode::EmitParameters(const char* com, ostream& out) {
+    if (strcmp(com, "AlignCmd") == 0) {
+        if (_emitToolInits) {
+            if (_emitBaseclass) {
+                out << ", a1, a2";
+            } else {
+                out << ", Alignment a1, Alignment a2";
+            }
+        } else {
+            out << ", Alignment = Left, Alignment = Left";
+        }
+    } else if (strncmp(com, "ColorCmd", 8) == 0) {
+        if (_emitToolInits) {
+            if (_emitBaseclass) {
+                out << ", fg, bg";
+            } else {
+                out << ", PSColor* fg, PSColor* bg";
+            }
+        } else {
+            out << ", PSColor* fg = nil, PSColor* bg = nil";
+        }
+    } else if (strcmp(com, "BrushCmd") == 0) {
+        if (_emitToolInits) {
+            if (_emitBaseclass) {
+                out << ", psbrush";
+            } else {
+                out << ", PSBrush* psbrush";
+            }
+        } else {
+            out << ", PSBrush* = nil";
+        }
+    } else if (
+        strcmp(com, "CutCmd") == 0 || strcmp(com, "CopyCmd") == 0 ||
+        strcmp(com, "PasteCmd") == 0 || 
+        strcmp(com, "DupCmd") == 0 || strcmp(com, "DeleteCmd") == 0
+    ) {
+        if (_emitToolInits) {
+            if (_emitBaseclass) {
+                out << ", cb";
+            } else {
+                out << ", Clipboard* cb";
+            }
+        } else {
+            out << ", Clipboard* = nil";
+        }
+    } else if (strcmp(com, "ConnectCmd") == 0) {
+        if (_emitToolInits) {
+            if (_emitBaseclass) {
+                out << ", c1, c2";
+            } else {
+                out << ", Connector* c1, Connector* c2";
+            }
+        } else {
+            out << ", Connector* = nil, Connector* = nil";
+        }
+    } else if (strcmp(com, "MobilityCmd") == 0) {
+        if (_emitToolInits) {
+            if (_emitBaseclass) {
+                out << ", mb";
+            } else {
+                out << ", Mobility mb";
+            }
+        } else {
+            out << ", Mobility = Fixed";
+        }
+    } else if (strcmp(com, "ReplaceCmd") == 0 || strcmp(com, "GroupCmd") == 0){
+        if (_emitToolInits) {
+            if (_emitBaseclass) {
+                out << ", grcomp";
+            } else {
+                out << ", GraphicComp* grcomp";
+            } 
+        } else {
+            out << ", GraphicComp* = nil";
+        }
+    } else if (strcmp(com, "FontCmd") == 0) {
+        if (_emitToolInits) {
+            if (_emitBaseclass) {
+                out << ", psfont";
+            } else {
+                out << ", PSFont* psfont";
+            } 
+        } else {
+            out << ", PSFont* = nil";
+        }
+    } else if (strcmp(com, "PatternCmd") == 0) {
+        if (_emitToolInits) {
+            if (_emitBaseclass) {
+                out << ", pspattern";
+            } else {
+                out << ", PSPattern* pspattern";
+            }
+        } else {
+            out << ", PSPattern* = nil";
+        }
+    } else if (
+        strcmp(com, "ImportCmd") == 0 || strcmp(com, "ViewCompCmd") == 0 ||
+        strcmp(com, "SaveCompAsCmd") == 0
+    ) {
+        if (_emitToolInits) {
+            if (_emitBaseclass) {
+                out << ", fc";
+            } else {
+                out << ", FileChooser* fc";
+            }
+        } else {
+            out << ", FileChooser* = nil";
+        }
+    } else if (strcmp(com, "PrintCmd") == 0) {
+        if (_emitToolInits) {
+            if (_emitBaseclass) {
+                out << ", pdialog";
+            } else {
+                out << ", PrintDialog* pdialog";
+            }
+        } else {
+            out << ", PrintDialog* = nil";
+        }
+    } else if (strcmp(com, "MoveCmd") == 0) {
+        if (_emitToolInits) {
+            if (_emitBaseclass) {
+                out << ", m1, m2";
+            } else {
+                out << ", float m1, float m2";
+            }
+        } else {
+            out << ", float = 0.0, float = 0.0";
+        }
+    } else if (strcmp(com, "ScaleCmd") == 0) {
+        if (_emitToolInits) {
+            if (_emitBaseclass) {
+                out << ", s1, s2";
+            } else {
+                out << ", float s1, float s2";
+            }
+        } else {
+            out << ", float = 1.0, float = 1.0, Alignment = Center";
+        }
+    } else if (strcmp(com, "RotateCmd") == 0) {
+        if (_emitToolInits) {
+            if (_emitBaseclass) {
+                out << ", r";
+            } else {
+                out << ", float r";
+            }
+        } else {
+            out << ", float = 0.0";
+        }
+    } else if (strcmp(com, "NewCompCmd") == 0) {
+        if (_emitToolInits) {
+            if (_emitBaseclass) {
+                out << ", prototype";
+            } else {
+                out << ", Component* prototype";
+            }
+        } else {
+            out << ", Component* prototype = nil";
+        }
+    } 
+    return out.good();
+}
+
 boolean CommandCtrlCode::EmitIncludeHeaders(ostream& out) {
+    boolean ok = true;
     GrBlockCode::EmitIncludeHeaders(out);
     CommandCtrlComp* ctrlComp = GetCommandCtrlComp();
-    const char* com = ctrlComp->GetToolName()->GetName();
+    SubclassNameVar* cnamer = ctrlComp->GetToolName()->GetSubclass();
+    const char* com = cnamer->GetName();
     SubclassNameVar* snamer = ctrlComp->GetClassNameVar();
 
 
@@ -495,66 +954,104 @@ boolean CommandCtrlCode::EmitIncludeHeaders(ostream& out) {
             _namelist->Append("grcomp");
             out << "#include <Unidraw/Components/grcomp.h>\n";
         }
-        if (!_namelist->Search("catcmds")) {
-            _namelist->Append("catcmds");
-            out << "#include <Unidraw/Commands/catcmds.h>\n";
+        if (!cnamer->IsSubclass()) {
+            ok = ok && EmitCommonHeaders(com, out);
         }
-        if (!_namelist->Search("edit")) {
-            _namelist->Append("edit");
-            out << "#include <Unidraw/Commands/edit.h>\n";
+    }
+
+    return out.good() && ok;
+}
+
+boolean CommandCtrlCode::EmitCommonHeaders(const char* com, ostream& out) {
+    if (strncmp(com, "Align", 5) == 0 && !_namelist->Search("align")) {
+        _namelist->Append("align");
+        out << "#include <Unidraw/Commands/align.h>\n";
+    }
+    if (
+        strcmp(com, "BackCmd") == 0 || strcmp(com, "FrontCmd") == 0 ||
+        strcmp(com, "GroupCmd") == 0 || strcmp(com, "UngroupCmd") == 0
+    ) {
+        if (!_namelist->Search("struct")) {
+            _namelist->Append("struct");
+            out << "#include <Unidraw/Commands/struct.h>\n";
         }
-        if (!_namelist->Search("transforms")) {
-            _namelist->Append("transforms");
-            out << "#include <Unidraw/Commands/transforms.h>\n";
-        }
+    } else if (strcmp(com, "BrushCmd") == 0 && !_namelist->Search("brushcmd")){
+        _namelist->Append("brushcmd");
+        out << "#include <Unidraw/Commands/brushcmd.h>\n";
+    } else if (
+        strcmp(com, "NormSizeCmd") == 0 || strcmp(com, "RedToFitCmd") == 0 ||
+        strcmp(com, "CenterCmd") == 0 || strncmp(com, "Grid", 4) == 0 ||
+        strcmp(com, "GravityCmd") == 0 || strcmp(com, "OrientationCmd") == 0 ||
+        strcmp(com, "CloseEditorCmd") == 0
+    ) {
         if (!_namelist->Search("viewcmds")) {
             _namelist->Append("viewcmds");
             out << "#include <Unidraw/Commands/viewcmds.h>\n";
         }
-        if (strncmp(com, "ScaleCmd", 8) == 0 || strncmp(com, "RotateCmd", 9)== 0) {
-            if (!_namelist->Search("struct")) {
-                _namelist->Append("struct");
-                out << "#include <Unidraw/Commands/struct.h>\n";
-            }
-        }  
-        if (strcmp(com, "ImportCmd") == 0) {
-            if (!_namelist->Search("import")) {
-                _namelist->Append("import");
-                out << "#include <Unidraw/Commands/import.h>\n";
-            } 
+    } else if (
+        strncmp(com, "ColorCmd", 8) == 0 && !_namelist->Search("colorcmd")
+    ) {
+        _namelist->Append("colorcmd");
+        out << "#include <Unidraw/Commands/colorcmd.h>\n";
+    } else if (
+        strcmp(com, "UndoCmd") == 0 || strcmp(com, "RedoCmd") == 0 ||
+        strcmp(com, "CutCmd") == 0 || strcmp(com, "CopyCmd") == 0 ||
+        strcmp(com, "PasteCmd") == 0 || strcmp(com, "ReplaceCmd") == 0 ||
+        strcmp(com, "DupCmd") == 0 || strcmp(com, "DeleteCmd") == 0 ||
+        strcmp(com, "SlctAllCmd") == 0 || strcmp(com, "ConnectCmd") == 0 ||
+        strcmp(com, "MobilityCmd") == 0
+    ) {
+        if (!_namelist->Search("edit")) {
+            _namelist->Append("edit");
+            out << "#include <Unidraw/Commands/edit.h>\n";
         }
-        if (strcmp(com, "FontCmd") == 0) {
-            if (!_namelist->Search("font")) {
-                _namelist->Append("font");
-                out << "#include <Unidraw/Commands/font.h>\n";
-            } 
+    } else if (strncmp(com, "FontCmd", 8) == 0 && !_namelist->Search("font")) {
+        _namelist->Append("font");
+        out << "#include <Unidraw/Commands/font.h>\n";
+    } else if (
+        strncmp(com, "ImportCmd", 8) == 0 && !_namelist->Search("import")
+    ) {
+        _namelist->Append("import");
+        out << "#include <Unidraw/Commands/import.h>\n";
+    } else if (
+        strncmp(com, "ColorCmd", 8) == 0 && !_namelist->Search("colorcmd")
+    ) {
+        _namelist->Append("colorcmd");
+        out << "#include <Unidraw/Commands/colorcmd.h>\n";
+    } else if (
+        strcmp(com, "NewCompCmd") == 0 || strcmp(com, "RevertCmd") == 0 ||
+        strcmp(com, "ViewCompCmd") == 0 || strcmp(com, "SaveCompCmd") == 0 ||
+        strcmp(com, "SaveCompAsCmd") == 0 || strcmp(com, "PrintCmd") == 0 ||
+        strcmp(com, "QuitCmd") == 0 
+    ) {
+        if (!_namelist->Search("catcmds")) {
+            _namelist->Append("catcmds");
+            out << "#include <Unidraw/Commands/catcmds.h>\n";
         }
-        if (strcmp(com, "BrushCmd") == 0) {
-            if (!_namelist->Search("brushcmd")) {
-                _namelist->Append("brushcmd");
-                out << "#include <Unidraw/Commands/brushcmd.h>\n";
-            } 
+    } else if (
+        strncmp(com, "MoveCmd", 7) == 0 || strncmp(com, "ScaleCmd", 8) == 0 ||
+        strncmp(com, "RotateCmd", 9) == 0
+    ) {
+        if (!_namelist->Search("transforms")) {
+            _namelist->Append("transforms");
+            out << "#include <Unidraw/Commands/transforms.h>\n";
         }
-        if (strcmp(com, "PatternCmd") == 0) {
-            if (!_namelist->Search("patcmd")) {
-                _namelist->Append("patcmd");
-                out << "#include <Unidraw/Commands/patcmd.h>\n";
-            } 
-        }
-        if (strncmp(com, "ColorCmd", 8) == 0) {
-            if (!_namelist->Search("colorcmd")) {
-                _namelist->Append("colorcmd");
-                out << "#include <Unidraw/Commands/colorcmd.h>\n";
-            } 
-        }
-        if (strcmp(com, "AlignToGridCmd") == 0 || strncmp(com, "AlignCmd", 8)==0) {
-            if (!_namelist->Search("align")) {
-                _namelist->Append("align");
-                out << "#include <Unidraw/Commands/align.h>\n";
-            } 
-        }
+    } else if (strcmp(com, "NOPCmd") == 0 && !_namelist->Search("nop")) {
+        _namelist->Append("nop");
+        out << "#include <Unidraw/Commands/nop.h>\n";
+    } else if (strcmp(com, "BrushCmd") == 0 && strcmp(com, "BrushCmd") == 0) {
+        if (!_namelist->Search("brushcmd")) {
+            _namelist->Append("brushcmd");
+            out << "#include <Unidraw/Commands/brushcmd.h>\n";
+        } 
+    } else if (
+        strcmp(com, "PatternCmd") == 0 && strcmp(com, "PatternCmd") == 0
+    ) {
+        if (!_namelist->Search("patcmd")) {
+            _namelist->Append("patcmd");
+            out << "#include <Unidraw/Commands/patcmd.h>\n";
+        } 
     }
 
     return out.good();
 }
-

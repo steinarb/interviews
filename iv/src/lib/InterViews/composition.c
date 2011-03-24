@@ -27,9 +27,8 @@
 #include <InterViews/canvas.h>
 #include <InterViews/composition.h>
 #include <InterViews/compositor.h>
-#include <InterViews/fixedspan.h>
-#include <InterViews/glue.h>
 #include <InterViews/hit.h>
+#include <InterViews/layout.h>
 #include <InterViews/patch.h>
 #include <InterViews/tile.h>
 #include <OS/list.h>
@@ -40,8 +39,8 @@ public:
     Glyph* glyph_;
 };
 
-declareList(CompositionComponent_List,CompositionComponent);
-implementList(CompositionComponent_List,CompositionComponent);
+declareList(CompositionComponent_List,CompositionComponent)
+implementList(CompositionComponent_List,CompositionComponent)
 
 static const int BreakViewed = 0x01;
 static const int BreakValid = 0x02;
@@ -92,8 +91,8 @@ inline void Break::valid(boolean v) {
     }
 }
 
-declareList(Break_List,Break);
-implementList(Break_List,Break);
+declareList(Break_List,Break)
+implementList(Break_List,Break)
 
 const float epsilon = 0.1;
 
@@ -136,10 +135,11 @@ static GlyphIndex prev_forced_break(
     GlyphIndex i, CompositionComponent_List* component
 ) {
     while (i >= 0) {
-        CompositionComponent& comp = component->item(i);
-        if (comp.glyph_ != nil) {
+        const CompositionComponent& comp = component->item_ref(i);
+	Glyph* g = comp.glyph_;
+        if (g != nil) {
             Requisition r;
-            comp.glyph_->request(r);
+            g->request(r);
             if (r.penalty() == PenaltyGood) {
                 break;
             }
@@ -154,10 +154,11 @@ static GlyphIndex next_forced_break(
 ) {
     GlyphIndex count = component->count();
     while (i < count) {
-        CompositionComponent& comp = component->item(i);
-        if (comp.glyph_ != nil) {
+        const CompositionComponent& comp = component->item_ref(i);
+	Glyph* g = comp.glyph_;
+        if (g != nil) {
             Requisition r;
-            comp.glyph_->request(r);
+            g->request(r);
             if (r.penalty() == PenaltyGood) {
                 break;
             }
@@ -183,10 +184,11 @@ static GlyphIndex fill_arrays (
         __shrink[index] = 0;
         __penalties[index] = PenaltyBad;
 
-        CompositionComponent& comp = component->item(last);
-        if (comp.glyph_ != nil) {
+        const CompositionComponent& comp = component->item_ref(last);
+	Glyph* g = comp.glyph_;
+        if (g != nil) {
             Requisition r;
-            comp.glyph_->request(r);
+            g->request(r);
             Requirement& req = r.requirement(dimension);
             if (req.defined()) {
                 __natural[index] = req.natural();
@@ -206,8 +208,11 @@ static GlyphIndex fill_arrays (
 
 Composition::Composition(
     Glyph* context, Compositor* compositor, Glyph* separator,
-    DimensionName dimension, Coord span, GlyphIndex size
-) : MonoGlyph(context) {
+    DimensionName dimension, Coord span, Coord stretch, Coord shrink,
+    GlyphIndex size
+) : MonoGlyph(
+    LayoutKit::instance()->variable_span(context, stretch, shrink)
+) {
     compositor_ = compositor;
     component_ = new CompositionComponent_List(size);
     breaks_ = new Break_List(size/50);
@@ -222,25 +227,38 @@ Composition::Composition(
     item_ = 0;  
     dimension_ = dimension;
     span_ = span;
+    resizable_ = (
+	!Math::equal(stretch, Coord(0), float(1e-4)) ||
+	!Math::equal(shrink, Coord(0), float(1e-4))
+    );
 }
 
 Composition::~Composition() {
-    if (separator_ != nil) {
-        separator_->unref();
-        separator_ = nil;
-    }
+    Resource::unref(separator_);
     compositor_ = nil;
     GlyphIndex count = component_->count();
     for (GlyphIndex i = 0; i < count; ++i) {
-        CompositionComponent& component = component_->item(i);
-        if (component.glyph_ != nil) {
-            component.glyph_->unref();
-        }
+        CompositionComponent& component = component_->item_ref(i);
+	Resource::unref(component.glyph_);
     }
     delete component_;
-    component_ = nil;
     delete breaks_;
-    breaks_ = nil;
+}
+
+void Composition::allocate(Canvas* c, const Allocation& a, Extension& ext) {
+    if (resizable_) {
+	Coord size = a.allotment(dimension_).span();
+	if (!Math::equal(size, span_, float(1e-4))) {
+	    span_ = size;
+	    GlyphIndex break_count = breaks_->count();
+	    for (GlyphIndex b = 0; b < break_count; b++) {
+		breaks_->item_ref(b).valid(false);
+	    }
+	    damage(0, component_->count() - 1);
+	    repair();
+	}
+    }
+    MonoGlyph::allocate(c, a, ext);
 }
 
 void Composition::damage(GlyphIndex first, GlyphIndex last) {
@@ -264,7 +282,7 @@ boolean Composition::repair() {
         GlyphIndex break_index = 0;
         for (;;) {
 	    if (break_index < break_count) {
-		Break& br = breaks_->item(break_index);
+		const Break& br = breaks_->item_ref(break_index);
                 if (br.first_ <= forced && br.last_ < forced) {
 		    ++break_index;
 		} else {
@@ -281,7 +299,7 @@ boolean Composition::repair() {
             GlyphIndex count = next - forced;
 	    GlyphIndex b;
             for (b = 0; b < count && (b+break_index) < break_count; ++b) {
-                Break& br = breaks_->item(b + break_index);
+                const Break& br = breaks_->item_ref(b + break_index);
                 __spans[b] = span_ - br.begin_ - br.end_;
             }
             if (b < count) {
@@ -316,7 +334,7 @@ void Composition::do_repair(
     for (GlyphIndex i = 0; i < count; ++i) {
         Break b;
         if (break_index < breaks_->count()) {
-            Break& br = breaks_->item(break_index);
+            const Break& br = breaks_->item_ref(break_index);
             b.begin_ = br.begin_;
             b.end_ = br.end_;
         } else {
@@ -327,7 +345,7 @@ void Composition::do_repair(
         b.last_ = first_component + (breaks[i] - 1);
 	boolean re_break = (break_index == breaks_->count());
 	if (!re_break) {
-	    Break& br = breaks_->item(break_index);
+	    const Break& br = breaks_->item_ref(break_index);
 	    re_break = (
 		!br.valid() || br.first_ != b.first_ || br.last_ != b.last_
 	    );
@@ -335,7 +353,7 @@ void Composition::do_repair(
 	if (re_break) {
             while (
                 break_index < breaks_->count() - 1 &&
-                breaks_->item(break_index + 1).last_ <= b.last_
+                breaks_->item_ref(break_index + 1).last_ <= b.last_
             ) {
                 contents->remove(break_index * 2 + 1);
                 contents->remove(break_index * 2);
@@ -343,7 +361,7 @@ void Composition::do_repair(
             }
 	    re_break = (break_index == breaks_->count());
 	    if (!re_break) {
-		Break& br = breaks_->item(break_index);
+		const Break& br = breaks_->item_ref(break_index);
 		re_break = (
 		    (i < count-1 &&
 			br.last_ >= first_component + breaks[i+1] - 1)
@@ -356,7 +374,7 @@ void Composition::do_repair(
                 contents->insert(break_index * 2 + 1, separator(b));
                 breaks_->insert(break_index, b);
             } else {
-		Break& br = breaks_->item(break_index);
+		Break& br = breaks_->item_ref(break_index);
 		if (br.patch_ != nil) {
 		    br.patch_->redraw();
 		}
@@ -373,7 +391,7 @@ void Composition::view(GlyphIndex first, GlyphIndex last) {
     GlyphIndex bc = breaks_->count();
     Glyph* contents = body();
     for (GlyphIndex b = 0; b < bc; ++b) {
-        Break& br = breaks_->item(b);
+        Break& br = breaks_->item_ref(b);
         if (br.last_ >= first && br.first_ <= last) {
             if (!br.viewed()) {
                 contents->replace(b * 2, make_item(br, true));
@@ -391,7 +409,7 @@ Glyph* Composition::separator(Break& b) {
     if (b.last_ >= component_->count()-1) {
         return separator_;
     } else {
-        Glyph* inbreak = component_->item(b.last_ + 1).glyph_;
+        Glyph* inbreak = component_->item_ref(b.last_ + 1).glyph_;
         if (inbreak != nil) {
             Glyph* g = inbreak->compose(in_break);
             if (g != nil) {
@@ -408,7 +426,7 @@ Glyph* Composition::separator(Break& b) {
 void Composition::margin(CompositorIndex item, Coord begin, Coord end) {
     CompositorIndex b = item/2;
     if (b < breaks_->count() && item%2 == 0) {
-        Break& br = breaks_->item(b);
+        Break& br = breaks_->item_ref(b);
         if (br.begin_ != begin || br.end_ != end) {
             br.begin_ = begin;
             br.end_ = end;
@@ -420,12 +438,12 @@ void Composition::margin(CompositorIndex item, Coord begin, Coord end) {
 
 GlyphIndex Composition::beginning_of(CompositorIndex item) const {
     CompositorIndex i = Math::max(0L, Math::min(item/2, breaks_->count()-1));
-    return breaks_->item(i).first_;
+    return breaks_->item_ref(i).first_;
 }
 
 GlyphIndex Composition::end_of(CompositorIndex item) const {
     CompositorIndex i = Math::max(0L, Math::min(item/2, breaks_->count()-1));
-    return breaks_->item(i).last_;
+    return breaks_->item_ref(i).last_;
 }
 
 GlyphIndex Composition::count() const {
@@ -433,14 +451,14 @@ GlyphIndex Composition::count() const {
 }
 
 Glyph* Composition::component(GlyphIndex index) const {
-    return component_->item(index).glyph_;
+    return component_->item_ref(index).glyph_;
 }
 
 void Composition::change(GlyphIndex index) {
-    CompositionComponent& component = component_->item(index);
+    CompositionComponent& component = component_->item_ref(index);
     Glyph* contents = body();
     for (CompositorIndex b = item(index)/2; b < breaks_->count(); ++b) {
-        Break& br = breaks_->item(b);
+        Break& br = breaks_->item_ref(b);
         if (br.viewed() && index >= br.first_ && index <= br.last_+1) {
             contents->component(2 * b)->change(index - br.first_ + 2);
             contents->change(2 * b);
@@ -468,7 +486,7 @@ void Composition::insert(GlyphIndex index, Glyph* glyph) {
     component_->insert(index, component);
     Glyph* contents = body();
     for (CompositorIndex b = item(index)/2; b < breaks_->count(); ++b) {
-        Break& br = breaks_->item(b);
+        Break& br = breaks_->item_ref(b);
         if (br.viewed() && index >= br.first_ && index <= br.last_+1) {
             br.valid(false);
             contents->component(2 * b)->insert(index - br.first_ + 2, nil);
@@ -485,14 +503,14 @@ void Composition::insert(GlyphIndex index, Glyph* glyph) {
 }
 
 void Composition::remove(GlyphIndex index) {
-    CompositionComponent& component = component_->item(index);
+    CompositionComponent& component = component_->item_ref(index);
     if (component.glyph_ != nil) {
         component.glyph_->unref();
     }
     component_->remove(index);
     Glyph* contents = body();
     for (CompositorIndex b = item(index)/2; b < breaks_->count(); ++b) {
-        Break& br = breaks_->item(b);
+        Break& br = breaks_->item_ref(b);
         if (br.viewed() && index >= br.first_ && index <= br.last_+1) {
             br.valid(false);
             contents->component(2 * b)->remove(index - br.first_ + 2);
@@ -514,7 +532,7 @@ void Composition::replace(GlyphIndex index, Glyph* glyph) {
         glyph->request(newr);
         glyph->ref();
     }
-    CompositionComponent& component = component_->item(index);
+    CompositionComponent& component = component_->item_ref(index);
     if (component.glyph_ != nil) {
         component.glyph_->request(oldr);
         component.glyph_->unref();
@@ -522,7 +540,7 @@ void Composition::replace(GlyphIndex index, Glyph* glyph) {
     component.glyph_ = glyph;
     Glyph* contents = body();
     for (CompositorIndex b = item(index)/2; b < breaks_->count(); ++b) {
-        Break& br = breaks_->item(b);
+        Break& br = breaks_->item_ref(b);
         if (br.viewed() && index >= br.first_-1 && index <= br.last_+1) {
             if (newr.equals(oldr, epsilon)) {
                 Glyph* g = (
@@ -548,10 +566,10 @@ CompositorIndex Composition::item(GlyphIndex index) const {
     CompositorIndex count = breaks_->count();
     Composition* c = (Composition*)this;
     c->item_ = Math::min(Math::max(0L, item_), count-1);
-    while (c->item_ < count-1 && c->breaks_->item(item_).last_ < index) {
+    while (c->item_ < count-1 && c->breaks_->item_ref(item_).last_ < index) {
 	c->item_ += 1;
     }
-    while (c->item_ > 0 && c->breaks_->item(item_).first_ > index) {
+    while (c->item_ > 0 && c->breaks_->item_ref(item_).first_ > index) {
         c->item_ -= 1;
     }
     return Math::max(0L, c->item_) * 2;
@@ -561,7 +579,7 @@ void Composition::allotment(
     GlyphIndex i, DimensionName res, Allotment& a
 ) const {
     for (GlyphIndex b = item(i)/2; b < breaks_->count(); ++b) {
-        Break& br = breaks_->item(b);
+        Break& br = breaks_->item_ref(b);
         if (i >= br.first_ && i <= br.last_+1) {
             if (br.viewed()) {
                 body()->component(2*b)->allotment(i - br.first_ + 2, res, a);
@@ -603,7 +621,7 @@ void Composition::pick(
 		 * Hit on a line: calculate the character index by adding
 		 * the line's start to the offset into the line.
 		 */
-		Break& br = breaks_->item(b_index);
+		const Break& br = breaks_->item_ref(b_index);
 		index = br.first_ + h.index(depth+1) - 2;
 		index = Math::max(br.first_, Math::min(br.last_ + 1, index));
 	    } else {
@@ -611,7 +629,7 @@ void Composition::pick(
 		 * This case only seems to happen when there is
 		 * a float at the end of the composition.
 		 */
-		index = breaks_->item(b_count - 1).last_ + 1;
+		index = breaks_->item_ref(b_count - 1).last_ + 1;
 	    }
 	} else {
 	    GlyphIndex b_index = item / 2 + 1;
@@ -620,13 +638,13 @@ void Composition::pick(
 		 * Hit on the separator between lines: assume that
 		 * the hit refers to the beginning of the following line.
 		 */
-		index = breaks_->item(b_index).first_;
+		index = breaks_->item_ref(b_index).first_;
 	    } else {
 		/*
 		 * Hit on separator at the end of the composition:
 		 * return the end of the last line.
 		 */
-		index = breaks_->item(b_index - 1).last_ + 1;
+		index = breaks_->item_ref(b_index - 1).last_ + 1;
 	    }
         }
 
@@ -644,12 +662,13 @@ void Composition::pick(
 }
 
 Glyph* Composition::make_item(Break& nb, boolean created) {
+    LayoutKit* layout = LayoutKit::instance();
     nb.valid(true);
     nb.viewed(created);
     if (created) {
         Glyph* g = make(nb);
         if (span_ > 0 && span_ < fil) {
-            g = new FixedSpan(g, dimension_, span_);
+            g = layout->fixed_span_dimension(g, dimension_, span_);
         }
 	nb.patch_ = new Patch(g);
 	return nb.patch_;
@@ -664,7 +683,7 @@ Glyph* Composition::make_item(Break& nb, boolean created) {
         }
         GlyphIndex index = 0;
         if (nb.first_ > 0) {
-            Glyph* g = component_->item(nb.first_ - 1).glyph_;
+            Glyph* g = component_->item_ref(nb.first_ - 1).glyph_;
             if (g != nil) {
                 g = g->compose(post_break);
             }
@@ -674,7 +693,7 @@ Glyph* Composition::make_item(Break& nb, boolean created) {
             }
         }
         for (GlyphIndex k = nb.first_; k <= nb.last_; ++k) {
-            Glyph* g = component_->item(k).glyph_;
+            Glyph* g = component_->item_ref(k).glyph_;
             if (g != nil) {
                 g = g->compose(no_break);
             }
@@ -684,7 +703,7 @@ Glyph* Composition::make_item(Break& nb, boolean created) {
             }
         }
         if (nb.last_ < component_->count()-1) {
-            Glyph* g = component_->item(nb.last_ + 1).glyph_;
+            Glyph* g = component_->item_ref(nb.last_ + 1).glyph_;
             if (g != nil) {
                 g = g->compose(pre_break);
             }
@@ -717,7 +736,7 @@ Glyph* Composition::make_item(Break& nb, boolean created) {
         Align align(cross);
         align.request(index, __req, r);
 	nb.patch_ = nil;
-        return new Glue(r);
+        return layout->glue(r);
     }
 }
 
@@ -727,14 +746,17 @@ Glyph* Composition::make(Break&) {
 
 LRComposition::LRComposition(
     Glyph* context, Compositor* compositor, Glyph* separator,
-    Coord width, GlyphIndex size
-) : Composition(context, compositor, separator, Dimension_X, width, size) { }
+    Coord width, Coord stretch, Coord shrink, GlyphIndex size
+) : Composition(
+    context, compositor, separator, Dimension_X, width, stretch, shrink, size
+) { }
 
 LRComposition::~LRComposition() { }
 
 Glyph* LRComposition::make(Break& nb) {
-    Glyph* glyph = new LRBox(nb.last_ - nb.first_ + 5);
-    glyph->append(new HGlue(nb.begin_, 0, 0, 0.0));
+    LayoutKit* layout = LayoutKit::instance();
+    Glyph* glyph = layout->hbox(nb.last_ - nb.first_ + 5);
+    glyph->append(layout->hglue(nb.begin_, 0, 0, 0.0));
     if (nb.first_ > 0) {
         Glyph* g = component(nb.first_ - 1);
         if (g != nil) {
@@ -763,20 +785,23 @@ Glyph* LRComposition::make(Break& nb) {
     } else {
         glyph->append(nil);
     }
-    glyph->append(new HGlue(nb.end_, 0, 0, 1.0));
+    glyph->append(layout->hglue(nb.end_, 0, 0, 1.0));
     return glyph;
 }
 
 TBComposition::TBComposition(
     Glyph* context, Compositor* compositor, Glyph* separator, 
-    Coord height, GlyphIndex size
-) : Composition(context, compositor, separator, Dimension_Y, height, size) { }
+    Coord height, Coord stretch, Coord shrink, GlyphIndex size
+) : Composition(
+    context, compositor, separator, Dimension_Y, height, stretch, shrink, size
+) { }
 
 TBComposition::~TBComposition() { }
 
 Glyph* TBComposition::make(Break& nb) {
-    Glyph* glyph = new TBBox(nb.last_ - nb.first_ + 5);
-    glyph->append(new VGlue(nb.begin_, 0, 0, 1.0));
+    LayoutKit* layout = LayoutKit::instance();
+    Glyph* glyph = layout->vbox(nb.last_ - nb.first_ + 5);
+    glyph->append(layout->vglue(nb.begin_, 0, 0, 1.0));
     if (nb.first_ > 0) {
         Glyph* g = component(nb.first_ - 1);
         if (g != nil) {
@@ -805,6 +830,6 @@ Glyph* TBComposition::make(Break& nb) {
     } else {
         glyph->append(nil);
     }
-    glyph->append(new VGlue(nb.end_, 0, 0, 0.0));
+    glyph->append(layout->vglue(nb.end_, 0, 0, 0.0));
     return glyph;
 }

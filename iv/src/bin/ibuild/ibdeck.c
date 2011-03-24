@@ -22,7 +22,6 @@
 
 /*
  * Implementation of Deck component and derived classes.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibdeck.c,v 1.2 91/09/27 14:07:53 tang Exp $
  */
 
 #include "ibclasses.h"
@@ -121,13 +120,21 @@ boolean DeckCode::IsA (ClassId id) {return DECK_CODE==id || CodeView::IsA(id);}
 DeckCode::DeckCode (DeckComp* subj) : CodeView(subj) { }
 DeckComp* DeckCode::GetDeckComp () { return (DeckComp*) GetSubject(); }
 
+void DeckCode::Update () {
+    CodeView::Update();
+    InteractorComp* subj = GetIntComp();
+    Graphic* gr = subj->GetGraphic();
+    gr->SetColors(nil, nil);
+    gr->SetFont(nil);
+}    
+
 boolean DeckCode::Definition (ostream& out) {
     boolean ok = true;
     Iterator i;
 
     if (
-        _emitInstanceDecls || _emitForward || 
-        _emitProperty || _emitClassHeaders || _emitHeaders
+        _emitInstanceDecls || _emitForward || _emitProperty ||
+        _emitClassHeaders || _emitHeaders
     ) {
 	ok = ok && CodeView::Definition(out);
         ok = ok && Iterate(out);
@@ -185,7 +192,8 @@ boolean DeckCode::Definition (ostream& out) {
 
     } else if (
 	_emitBSDecls || _emitBSInits || 
-	_emitFunctionDecls || _emitFunctionInits
+	_emitFunctionDecls || _emitFunctionInits ||
+        _emitCreatorHeader || _emitCreatorSubj || _emitCreatorView
     ) {
         ok = ok && Iterate(out);
 
@@ -211,9 +219,12 @@ boolean DeckCode::CoreConstInits(ostream& out) {
     InteractorComp* icomp = GetIntComp();
     SubclassNameVar* snamer = icomp->GetClassNameVar();
     const char* baseclass = snamer->GetBaseClass();
+    const char* subclass = snamer->GetName();
 
     out << "(\n    const char* name\n) : " << baseclass;
-    out << "(name) {}\n\n";
+    out << "(name) {\n";
+    out << "    SetClassName(\"" << subclass << "\");\n";
+    out << "}\n\n";
     return out.good();
 }
 

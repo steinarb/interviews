@@ -22,7 +22,6 @@
 
 /*
  * Implementation of Viewport component and derived classes.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibviewport.c,v 1.2 91/09/27 14:12:36 tang Exp $
  */
 
 #include "ibclasses.h"
@@ -30,6 +29,7 @@
 #include "ibvars.h"
 #include "ibviewport.h"
 
+#include <Unidraw/clipboard.h>
 #include <Unidraw/editor.h>
 #include <Unidraw/iterator.h>
 #include <Unidraw/ulist.h>
@@ -41,6 +41,7 @@
 #include <Unidraw/creator.h>
 
 #include <Unidraw/Commands/brushcmd.h>
+#include <Unidraw/Commands/align.h>
 
 #include <InterViews/shape.h>
 #include <InterViews/painter.h>
@@ -79,11 +80,9 @@ public:
     virtual void Bequeath();
 
     void SetViewportGraphic(ViewportGraphic*);
+    boolean GetClip();
     void SetClip(boolean);
     
-    void SetDamage(boolean);
-    boolean GetDamage();
-
 protected:
     virtual void getExtent(float&, float&, float&, float&, float&, Graphic*);
     virtual void draw(Canvas*, Graphic*);
@@ -91,23 +90,19 @@ protected:
 protected:
     ViewportGraphic* _viewportgr;
     boolean _clipped;
-    boolean _damage;
 };
-
-void ViewportClipper::SetDamage (boolean damage) { _damage = damage; }
-
-boolean ViewportClipper::GetDamage () { return _damage; }
 
 void ViewportClipper::SetViewportGraphic(ViewportGraphic* vgr) {
     _viewportgr = vgr;
 }
 
-void ViewportClipper::SetClip(boolean clipped) { _clipped = clipped; }
+void ViewportClipper::SetClip (boolean clipped) { _clipped = clipped; }
+
+boolean ViewportClipper::GetClip () { return _clipped; }
 
 ViewportClipper::ViewportClipper (CanvasVar* c, Graphic* g) : IBGraphic(c, g) {
     _viewportgr = nil;
     _clipped = true;
-    _damage = false;
 }
 
 void ViewportClipper::Bequeath () {
@@ -116,7 +111,12 @@ void ViewportClipper::Bequeath () {
     Append(_viewportgr);
 }
 
-void ViewportClipper::SetColors(PSColor* , PSColor* ) { } 
+void ViewportClipper::SetColors(PSColor* fg, PSColor* bg) {
+    IBGraphic::SetColors(fg, bg);
+    if (_viewportgr != nil) {
+        _viewportgr->SetColors(fg, bg);
+    }
+} 
 
 void ViewportClipper::SetBrush(PSBrush*) { } 
 
@@ -202,17 +202,46 @@ void ViewportComp::Interpret (Command* cmd) {
     if (cmd->IsA(UNGROUP_CMD) || cmd->IsA(MONOSCENE_CMD)) {
         Editor* ed = cmd->GetEditor();
         if (ed->GetComponent() != this) {
-            ViewportClipper* vc = (ViewportClipper*) GetGraphic();
-            vc->SetDamage(true);
             Notify();
         }
         MonoSceneComp::Interpret(cmd);
 
-    } else if (cmd->IsA(NAVIGATE_CMD)) {
-        ViewportClipper* vc = (ViewportClipper*) GetGraphic();
-        vc->SetDamage(true);
-        MonoSceneComp::Interpret(cmd);
+    } else if (cmd->IsA(ALIGN_CMD)) {
+        AlignCmd* alignCmd = (AlignCmd*) cmd;
+        Alignment al;
+        alignCmd->GetAlignment(al, al);
+        InteractorComp* kid = GetKid();
+        if (al != Left && al != Right && al != Top && al != Bottom) {
+            cmd->Store(this, new VoidData((void*)_viewportgr->GetAlignment()));
+            _viewportgr->SetAlignment(al);
+            
+            if (kid != nil) {
+                Graphic* kidgr = kid->GetGraphic();
+                _viewportgr->Align(al, kidgr, al);
+                kid->Notify();
+            }
+        } else {
+            //cmd->GetClipboard()->Remove(this);  /* not implemented */
+        }
+        if (!cmd->GetClipboard()->Includes(this)) {
+            if (kid != nil) {
+                kid->Interpret(cmd);
+            }
+        } else {
+            Propagate(cmd);
+        }
 
+    } else if (cmd->IsA(COLOR_CMD)) {
+        GraphicComps::Interpret(cmd);
+        if (!cmd->GetClipboard()->Includes(this)) {
+            InteractorComp* kid = GetKid();
+            if (kid != nil) {
+                kid->Interpret(cmd);
+            }
+        } else {
+            Propagate(cmd);
+        }
+        
     } else {
         MonoSceneComp::Interpret(cmd);
     }
@@ -222,17 +251,42 @@ void ViewportComp::Uninterpret (Command* cmd) {
     if (cmd->IsA(UNGROUP_CMD) || cmd->IsA(MONOSCENE_CMD)) {
         Editor* ed = cmd->GetEditor();
         if (ed->GetComponent() != this) {
-            ViewportClipper* vc = (ViewportClipper*) GetGraphic();
-            vc->SetDamage(true);
             Notify();
         }
         MonoSceneComp::Uninterpret(cmd);
 
-    } else if (cmd->IsA(NAVIGATE_CMD)) {
-        ViewportClipper* vc = (ViewportClipper*) GetGraphic();
-        vc->SetDamage(true);
-        MonoSceneComp::Uninterpret(cmd);
+    } else if (cmd->IsA(ALIGN_CMD)) {
+        VoidData* vd = (VoidData*) cmd->Recall(this);
+	Alignment al = (Alignment) vd->_void;
 
+        InteractorComp* kid = GetKid();
+        if (al != Left && al != Right && al != Top && al != Bottom) {
+            _viewportgr->SetAlignment(al);
+            if (kid != nil) {
+                Graphic* kidgr = kid->GetGraphic();
+                _viewportgr->Align(al, kidgr, al);
+                kid->Notify();
+            }
+        }
+        if (!cmd->GetClipboard()->Includes(this)) {
+            if (kid != nil) {
+                kid->Uninterpret(cmd);
+            }
+        } else {
+            Unpropagate(cmd);
+        }
+
+    } else if (cmd->IsA(COLOR_CMD)) {
+        GraphicComps::Uninterpret(cmd);
+        if (!cmd->GetClipboard()->Includes(this)) {
+            InteractorComp* kid = GetKid();
+            if (kid != nil) {
+                kid->Uninterpret(cmd);
+            }
+        } else {
+            Unpropagate(cmd);
+        }
+        
     } else {
         MonoSceneComp::Uninterpret(cmd);
     }
@@ -253,7 +307,6 @@ void ViewportComp::Reconfig () {
 void ViewportComp::Resize () {
     InteractorComp* kid = GetKid();
     if (kid != nil) {
-        
         Shape* s = kid->GetShapeVar()->GetShape();
         int w = s->width; 
         int h = s->height; 
@@ -262,8 +315,9 @@ void ViewportComp::Resize () {
         Coord x1, y1, x2, y2;
         
         Graphic* kidgr = kid->GetGraphic();
-        kidgr->Align(Center, _viewportgr, Center);
-        _viewportgr->GetCenter(cx, cy);
+        Alignment al = _viewportgr->GetAlignment();
+        kidgr->Align(al, _viewportgr, al);
+        kidgr->GetCenter(cx, cy);
         
         x1 = round(cx) - w/2;
         y1 = round(cy) - h/2;
@@ -338,6 +392,11 @@ ViewportView::ViewportView (ViewportComp* subj) : MonoSceneView(subj) {
     _viewportgr = nil;
 }
 
+ViewportView::~ViewportView () {
+    GetGraphic()->Remove(_viewportgr);
+    delete _viewportgr;
+}
+
 ViewportComp* ViewportView::GetViewportComp () { 
     return (ViewportComp*) GetSubject();
 }
@@ -369,16 +428,20 @@ void ViewportView::Update () {
     Viewer* viewer = GetViewer();
     
     ViewportGraphic* viewportgr = GetViewportComp()->GetViewportGraphic();
-    vcomp->SetDamage(false);
-    IncurDamage(vview);
-    *(Graphic*)vview = *(Graphic*)vcomp;
-    *(Graphic*)_viewportgr = *(Graphic*)viewportgr;
-    UpdateCanvasVar();
-    IncurDamage(vview);
     if (viewer != nil && viewer->GetGraphicView() == this) {
-	ViewportClipper* vc = (ViewportClipper*) GetGraphic();
-	vc->SetClip(false);
-    }	
+        boolean clipped = vview->GetClip();
+        if (clipped) {
+            vview->SetClip(false);
+            IncurDamage(vview);
+            vview->Remove(_viewportgr);
+        }
+    } else {
+        IncurDamage(vview);
+        *(Graphic*)vview = *(Graphic*)vcomp;
+        *(Graphic*)_viewportgr = *(Graphic*)viewportgr;
+        UpdateCanvasVar();
+        IncurDamage(vview);
+    }
     GraphicViews::Update();
 }
 
@@ -454,9 +517,13 @@ boolean ViewportCode::Definition (ostream& out) {
         if (!_instancelist->Find((void*) mname)) {
             _instancelist->Append(new UList((void*) mname));
 
+            Alignment al = vcomp->GetViewportGraphic()->GetAlignment();
 	    BeginInstantiate(out);
             out << "(";
-            InstanceName(out, ")");
+            InstanceName(out);
+            out << "nil, ";
+            ok = ok && Align(al, out);
+            out << ")";
             EndInstantiate(out);
 	}
 
@@ -476,7 +543,8 @@ boolean ViewportCode::Definition (ostream& out) {
 
     } else if (
 	_emitBSDecls || _emitBSInits || 
-	_emitFunctionDecls || _emitFunctionInits
+	_emitFunctionDecls || _emitFunctionInits ||
+        _emitCreatorHeader || _emitCreatorSubj || _emitCreatorView
     ) {
         if (kview != nil) {
             ok = ok && kview->Definition(out);
@@ -498,7 +566,7 @@ boolean ViewportCode::Definition (ostream& out) {
 }
 
 boolean ViewportCode::CoreConstDecls(ostream& out) { 
-    out << "(const char*);\n";
+    out << "(const char*, Interactor*, Alignment);\n";
     return out.good();
 }
 
@@ -506,14 +574,17 @@ boolean ViewportCode::CoreConstInits(ostream& out) {
     InteractorComp* icomp = GetIntComp();
     SubclassNameVar* snamer = icomp->GetClassNameVar();
     const char* baseclass = snamer->GetBaseClass();
+    const char* subclass = snamer->GetName();
 
-    out << "(\n    const char* name\n) : " << baseclass;
-    out << "(name) {}\n\n";
+    out << "(\n    const char* name, Interactor* i, Alignment a\n) : ";
+    out << baseclass << "(name, i, a) {\n";
+    out << "    SetClassName(\"" << subclass << "\");\n";
+    out << "}\n\n";
     return out.good();
 }
 
 boolean ViewportCode::ConstDecls(ostream& out) {
-    out << "(const char*);\n";
+    out << "(const char*, Interactor*, Alignment);\n";
     return out.good();
 }
 
@@ -521,8 +592,8 @@ boolean ViewportCode::ConstInits(ostream& out) {
     char coreclass[CHARBUFSIZE];
     GetCoreClassName(coreclass);
 
-    out << "(\n    const char* name\n) : " << coreclass;
-    out << "(name) {}\n\n";
+    out << "(\n    const char* name, Interactor* i, Alignment a\n) : ";
+    out << coreclass << "(name, i, a) {}\n\n";
     return out.good();
 }
 
@@ -538,13 +609,17 @@ boolean ViewportCode::EmitIncludeHeaders(ostream& out) {
 
 /*************************************************************************/
 
-ViewportGraphic::ViewportGraphic (CanvasVar* c, Graphic* g) : IBGraphic(c, g) {}
+ViewportGraphic::ViewportGraphic (
+    CanvasVar* c, Graphic* g, Alignment align
+) : IBGraphic(c, g) {
+    _align = align;
+}
 
 void ViewportGraphic::getExtent (
     float& l, float& b, float& cx, float& cy, float& tol, Graphic* gs
 ) {
     CanvasVar* cvar = GetCanvasVar();
-
+    l = b = cx = cy = 0.0;
     if (cvar != nil) {
         CalcExtent(cvar->Width(), cvar->Height(), l,b,cx,cy,tol,gs);
     }
@@ -553,16 +628,21 @@ void ViewportGraphic::getExtent (
 
 Graphic* ViewportGraphic::Copy () {
     Iterator i;
-    ViewportGraphic* copy = new ViewportGraphic(nil, this);
+    ViewportGraphic* copy = new ViewportGraphic(nil, this, _align);
     return copy;
 }
 
 void ViewportGraphic::Read (istream& in) {
     ReadGS(in);
+    float version = unidraw->GetCatalog()->FileVersion();
+    if (version > 1.05) {
+        in >> _align;
+    }
 }
 
 void ViewportGraphic::Write (ostream& out) {
     WriteGS(out);
+    out << _align << " ";
 }
 
 ClassId ViewportGraphic::GetClassId () { return VIEWPORT_GRAPHIC; }

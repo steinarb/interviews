@@ -21,8 +21,7 @@
  */
 
 /*
- * Button component declarations.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibadjuster.h,v 1.2 91/09/27 14:12:49 tang Exp $
+ * Adjuster component declarations.
  */
 
 #ifndef ibadjuster_h
@@ -86,6 +85,7 @@ class AdjusterCode : public CodeView {
 public:
     AdjusterCode(AdjusterComp* = nil);
 
+    virtual void Update();
     virtual boolean Definition(ostream&);
     AdjusterComp* GetAdjusterComp();
 
@@ -106,7 +106,6 @@ public:
 	Bitmap* = nil, Bitmap* = nil, int h = 0, int w = 0
     );
     virtual ~AdjusterGraphic();
-    virtual void Init(Bitmap* fg_map, Bitmap* bg_map, int h, int w);
     virtual const char* GetClassName();
     virtual void Read(istream&);
     virtual void Write(ostream&);
@@ -115,6 +114,7 @@ public:
     virtual boolean IsA(ClassId);
 
     void GetSize(int&, int&);
+    virtual void Init(Bitmap* fg_map, Bitmap* bg_map, int h, int w);
 protected:
     virtual void getExtent(float&, float&, float&, float&, float&, Graphic*);
     virtual void draw(Canvas*, Graphic*);

@@ -23,37 +23,80 @@
  */
 
 #include <InterViews/action.h>
+#include <OS/list.h>
 
 Action::Action() { }
 Action::~Action() { }
 
+declarePtrList(MacroActionList,Action)
+implementPtrList(MacroActionList,Action)
+
 Macro::Macro(Action* a0, Action* a1, Action* a2, Action* a3) : Action() {
-    actions_ = new Action*[10];
-    append(a0);
-    append(a1);
-    append(a2);
-    append(a3);
+    list_ = new MacroActionList;
+    if (a0 != nil) {
+	list_->append(a0);
+    }
+    if (a1 != nil) {
+	list_->append(a1);
+    }
+    if (a2 != nil) {
+	list_->append(a2);
+    }
+    if (a3 != nil) {
+	list_->append(a3);
+    }
 }
 
 Macro::~Macro() {
-    for (int i = 0; i < count_; ++i) {
-        if (actions_[i] != nil) {
-            actions_[i]->unref();
-        }
+    for (ListItr(MacroActionList) i(*list_); i.more(); i.next()) {
+	Action* a = i.cur();
+	Resource::unref(a);
     }
-    delete actions_;
+    delete list_;
 }
 
-void Macro::append(Action* action) {
-    if (action != nil) {
-        actions_[count_] = action;
-        actions_[count_]->ref();
-        ++count_;
+void Macro::prepend(Action* a) {
+    Resource::ref(a);
+    list_->prepend(a);
+}
+
+void Macro::append(Action* a) {
+    Resource::ref(a);
+    list_->append(a);
+}
+
+void Macro::insert(MacroIndex i, Action* a) {
+    Resource::ref(a);
+    list_->insert(i, a);
+}
+
+void Macro::remove(MacroIndex i) {
+    if (i >= 0 && i < list_->count()) {
+	Action* a = list_->item(i);
+	Resource::unref(a);
+	list_->remove(i);
     }
+}
+
+MacroIndex Macro::count() const {
+    return list_->count();
+}
+
+Action* Macro::action(MacroIndex i) const {
+    Action* a;
+    if (i >= 0 && i < list_->count()) {
+	a = list_->item(i);
+    } else {
+	a = nil;
+    }
+    return a;
 }
 
 void Macro::execute() {
-    for (int i = 0; i < count_; ++i) {
-        actions_[i]->execute();
+    for (ListItr(MacroActionList) i(*list_); i.more(); i.next()) {
+	Action* a = i.cur();
+	if (a != nil) {
+	    a->execute();
+	}
     }
 }

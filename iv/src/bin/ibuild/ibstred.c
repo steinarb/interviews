@@ -21,8 +21,7 @@
  */
 
 /*
- * StrEdit component definitions.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibstred.c,v 1.2 91/09/27 14:12:02 tang Exp $
+ * StrEditor component definitions.
  */
 
 #include "ibclasses.h"
@@ -109,63 +108,69 @@ Command* StrEditView::InterpretManipulator (Manipulator* m) {
 
 /*****************************************************************************/
 
-StrEditCode::StrEditCode (StrEditComp* subj) : CodeView(subj) { }
+StrEditCode::StrEditCode (StrEditComp* subj) : ButtonCode(subj) { }
 StrEditComp* StrEditCode::GetStrEditComp(){return (StrEditComp*) GetSubject();}
 ClassId StrEditCode::GetClassId () { return STREDIT_CODE; }
 
 boolean StrEditCode::IsA(ClassId id) {
-    return STREDIT_CODE == id || CodeView::IsA(id);
+    return STREDIT_CODE == id || ButtonCode::IsA(id);
 }
 
 boolean StrEditCode::Definition (ostream& out) {
     boolean ok = true;
+    InteractorComp* icomp = GetIntComp();
+    MemberNameVar* mnamer = icomp->GetMemberNameVar();
+    SubclassNameVar* snamer = icomp->GetClassNameVar();
+    ButtonStateVar* bsVar = icomp->GetButtonStateVar();
     if (
-	_emitProperty || _emitInstanceDecls ||
+	_emitProperty || _emitInstanceDecls || _emitForward ||
 	_emitBSDecls || _emitBSInits || _emitHeaders ||
 	_emitFunctionDecls || _emitFunctionInits || _emitClassHeaders
     ) {
-        return CodeView::Definition(out);
+        ok = ok && ButtonCode::Definition(out);
 
-    } else if (_emitForward) {
-        if (_scope) {
-            ok = ok && CodeView::Definition(out);
-            ButtonStateVar* bsVar = GetStrEditComp()->GetButtonStateVar();
-            if (
-                bsVar->GetExport() &&
-                !_bsdeclslist->Search("ButtonState")
-            ) {
-                _bsdeclslist->Append("ButtonState");
-                out << "class ButtonState;\n";
-            }
-        }
     } else if (_emitExpHeader) {
-	InteractorComp* icomp = GetIntComp();
-	MemberNameVar* mnamer = icomp->GetMemberNameVar();
-        SubclassNameVar* snamer = icomp->GetClassNameVar();
-        if (!snamer->IsSubclass()) {
-            if (
-                _scope && mnamer->GetExport() && 
-                !_namelist->Search("streditor")
-            ) {
-                _namelist->Append("streditor");
-                out << "#include <InterViews/streditor.h>\n";
+        if (!snamer->IsSubclass() || !bsVar->IsSubclass()) {
+            if (_scope) {
+                if (
+                    mnamer->GetExport()&&!_namelist->Search("streditor") &&
+                    !snamer->IsSubclass()
+                ) {
+                    _namelist->Append("streditor");
+                    out << "#include <InterViews/streditor.h>\n";
+                }
+                if (
+                    bsVar->GetExport() && !_namelist->Search("button") &&
+                    !bsVar->IsSubclass()
+                ) {
+                    _namelist->Append("button");
+                    out << "#include <InterViews/button.h>\n";
+                }
             }
-            ButtonStateVar* bvar = icomp->GetButtonStateVar();
-            if (_scope && bvar->GetExport() && !_namelist->Search("button")) {
-                _namelist->Append("button");
-                out << "#include <InterViews/button.h>\n";
-            }
+            ok = ok && ButtonCode::Definition(out);
+
         } else {
-            ok = ok && CodeView::Definition(out);
+            ok = ok && ButtonCode::Definition(out);
         }
     } else if (_emitCorehHeader) {
-	InteractorComp* icomp = GetIntComp();
-        SubclassNameVar* snamer = icomp->GetClassNameVar();
         const char* subclass = snamer->GetName();
+        const char* bsclass = bsVar->GetSubclassName();
+        const char* fwname = GetFirewall();
+
         if (snamer->IsSubclass() && strcmp(subclass, _classname) == 0) {
             if (!_namelist->Search("streditor")) {
                 _namelist->Append("streditor");
                 out << "#include <InterViews/streditor.h>\n";
+            }
+        }
+        if (bsVar->IsSubclass() && strcmp(bsclass, _classname) == 0) {
+            if (!_namelist->Search("button")) {
+                _namelist->Append("button");
+                out << "#include <InterViews/button.h>\n";
+            }
+            if (fwname != nil && !_namelist->Search(fwname)) {
+                _namelist->Append(fwname);
+                out << "#include \"" << fwname << "-core.h\"\n";
             }
         }
     } else if (_emitInstanceInits) {
@@ -190,7 +195,7 @@ boolean StrEditCode::Definition (ostream& out) {
     } else if (
         _emitCoreDecls || _emitCoreInits || _emitClassDecls || _emitClassInits
     ) {
-	ok = ok && CodeView::Definition(out);
+	ok = ok && ButtonCode::Definition(out);
         
     } else if (_emitMain) {
 	ok = ok && CodeView::Definition(out);
@@ -208,11 +213,12 @@ boolean StrEditCode::CoreConstInits(ostream& out) {
     InteractorComp* icomp = GetIntComp();
     SubclassNameVar* snamer = icomp->GetClassNameVar();
     const char* baseclass = snamer->GetBaseClass();
+    const char* subclass = snamer->GetName();
 
     out << "(\n    const char* name, ButtonState* bs, const char* sample\n)";
     out << " : " << baseclass;
     out << "(name, bs, sample) {\n";
-    out << "    perspective = new Perspective;\n";
+    out << "    SetClassName(\"" << subclass << "\");\n";
     out << "}\n\n";
     return out.good();
 }
@@ -234,12 +240,13 @@ boolean StrEditCode::ConstInits(ostream& out) {
 
 boolean StrEditCode::EmitIncludeHeaders(ostream& out) {
     SubclassNameVar* snamer = GetIntComp()->GetClassNameVar();
+    ButtonStateVar* bsVar = GetIntComp()->GetButtonStateVar();
 
     if (!snamer->IsSubclass() && !_namelist->Search("streditor")) {
         _namelist->Append("streditor");
         out << "#include <InterViews/streditor.h> \n";
     }
-    if (!_namelist->Search("button")) {
+    if (!bsVar->IsSubclass() && !_namelist->Search("button")) {
         _namelist->Append("button");
         out << "#include <InterViews/button.h> \n";
     }

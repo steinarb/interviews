@@ -28,7 +28,10 @@
 #ifndef unidraw_graphic_pspaint_h
 #define unidraw_graphic_pspaint_h
 
-#include <InterViews/paint.h>
+#include <IV-2_6/InterViews/paint.h>
+#include <Unidraw/enter-scope.h>
+
+#include <IV-2_6/_enter.h>
 
 static const int patternWidth = 16;
 static const int patternHeight = 16;
@@ -67,8 +70,10 @@ public:
     virtual ~PSColor();
 
     const char* GetName();
+    void GetIntensities(ColorIntensity&, ColorIntensity&, ColorIntensity&);
 private:
     char* _name;			// stores name passed into constructor
+    ColorIntensity _r, _g, _b;		// stores intensities passed to ctor
 };
 
 inline const char* PSColor::GetName () { return _name; }
@@ -119,5 +124,7 @@ inline boolean PSPattern::None () { return _none; }
 inline float PSPattern::GetGrayLevel () { return _graylevel; }
 inline const int* PSPattern::GetData () { return _data; }
 inline int PSPattern::GetSize () { return _size; }
+
+#include <IV-2_6/_leave.h>
 
 #endif

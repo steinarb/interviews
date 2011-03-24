@@ -22,7 +22,6 @@
 
 /*
  * Box component declarations.
- * $Header: /master/3.0/iv/src/bin/ibuild/RCS/ibbox.h,v 1.2 91/09/27 14:13:00 tang Exp $
  */
 
 #ifndef ibbox_h
@@ -31,6 +30,9 @@
 #include "ibscene.h"
 
 class PointObj;
+class Shape;
+
+struct BoxCanonical;
 
 class BoxComp : public SceneComp {
 public:
@@ -42,9 +44,9 @@ public:
 protected:
     BoxComp();
 
-    virtual void ComputeShape(class Shape*);
+    virtual void ComputeShape(Shape*);
     virtual void GetActual(int&, int&);
-    virtual void GetCanonical(Shape*, struct BoxCanonical&);
+    virtual void GetCanonical(Shape*, BoxCanonical&);
     virtual void PlaceElement(InteractorComp*, Coord, int, int, PointObj&);
 private:
     int MinorPos();
@@ -59,7 +61,7 @@ public:
 private:
     virtual void ComputeShape(Shape*);
     virtual void GetActual(int&, int&);
-    virtual void GetCanonical(Shape*, struct BoxCanonical&);
+    virtual void GetCanonical(Shape*, BoxCanonical&);
     virtual void PlaceElement(InteractorComp*, Coord, int, int, PointObj&);
 };
 
@@ -72,7 +74,7 @@ public:
 private:
     virtual void ComputeShape(Shape*);
     virtual void GetActual(int&, int&);
-    virtual void GetCanonical(Shape*, struct BoxCanonical&);
+    virtual void GetCanonical(Shape*, BoxCanonical&);
     virtual void PlaceElement(InteractorComp*, Coord, int, int, PointObj&);
 };
 
@@ -80,6 +82,7 @@ class BoxCode : public CodeView {
 public:
     BoxCode(BoxComp* = nil);
 
+    virtual void Update();
     virtual boolean Definition(ostream&);
     BoxComp* GetBoxComp();
 

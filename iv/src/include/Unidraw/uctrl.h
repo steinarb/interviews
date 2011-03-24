@@ -29,7 +29,10 @@
 #ifndef unidraw_uctrl_h
 #define unidraw_uctrl_h
 
-#include <InterViews/control.h>
+#include <IV-2_6/InterViews/control.h>
+#include <Unidraw/enter-scope.h>
+
+#include <IV-2_6/_enter.h>
 
 class ControlInfo;
 class Graphic;
@@ -70,5 +73,7 @@ protected:
 private:
     void Init(ControlInfo*);
 };
+
+#include <IV-2_6/_leave.h>
 
 #endif

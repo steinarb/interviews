@@ -27,19 +27,32 @@
 
 #include <InterViews/iv.h>
 
+#ifndef MAKEDEPEND
+
+#include <InterViews/_undefs.h>
 #include <InterViews/_defines.h>
 
 #ifdef iv2_6_compatible
-#include <InterViews/2.6/_enter.h>
+#include <IV-2_6/_enter.h>
 #endif
 
-#ifndef nil
-#define nil 0
-#endif
+#ifndef os__scope_h
 
-#ifndef String
-#include <OS/os.h>
+/*
+ * Use OS boolean and String definitions.
+ */
+
+#include <OS/enter-scope.h>
+#include <OS/leave-scope.h>
+
 #define String _lib_os(String)
+#define boolean _lib_os(boolean)
+#define true _lib_os(true)
+#define false _lib_os(false)
+#define u_char _lib_os(u_char)
+
+#endif
+
 #endif
 
 #endif

@@ -27,7 +27,10 @@
 #ifndef unidraw_uhash_h
 #define unidraw_uhash_h
 
-#include <InterViews/defs.h>
+#include <InterViews/enter-scope.h>
+#include <Unidraw/enter-scope.h>
+
+#include <InterViews/_enter.h>
 
 class Iterator;
 class UList;
@@ -63,6 +66,7 @@ public:
 protected:
     virtual UHashElem* CreateElem();
     virtual int Hash(void*);
+    virtual boolean Equal(void* key1, void* key2);
 protected:
     int _nslots;
 private:
@@ -72,5 +76,7 @@ private:
 private:
     UList** _slot;
 };
+
+#include <InterViews/_leave.h>
 
 #endif

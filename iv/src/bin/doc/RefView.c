@@ -29,8 +29,9 @@
 #include "Document.h"
 #include "RefItem.h"
 
-#include <InterViews/box.h>
-#include <InterViews/listener.h>
+#include "doc-listener.h"
+
+#include <InterViews/layout.h>
 #include <InterViews/patch.h>
 
 #include <string.h>
@@ -56,7 +57,7 @@ void RefView::update () {
     if (text != nil) {
         _patch->redraw();
         int l = strlen(text);
-        LRBox* box = new LRBox(l);
+        Glyph* box = LayoutKit::instance()->hbox_first_aligned(l);
         for (int i = 0; i < l; ++i) {
             box->append(_ref->document()->character(text[i], style));
         }

@@ -62,19 +62,19 @@ void Stencil::request(Requisition& requisition) const {
     }
 }
 
-void Stencil::allocate(Canvas*, const Allocation& a, Extension& ext) {
+void Stencil::allocate(Canvas* c, const Allocation& a, Extension& ext) {
     if (mask_ != nil) {
         Coord x = a.x();
         Coord y = a.y();
-	ext.xy_extents(
-	    x - mask_->left_bearing(), x + mask_->right_bearing(),
-	    y - mask_->descent(), y + mask_->ascent()
+	ext.set_xy(
+	    c, x - mask_->left_bearing(), y - mask_->descent(),
+	    x + mask_->right_bearing(), y + mask_->ascent()
 	);
     }
 }
 
 void Stencil::draw(Canvas* c, const Allocation& a) const {
-    if (c != nil && mask_ != nil) {
+    if (mask_ != nil) {
 	c->stencil(mask_, color_, a.x(), a.y());
     }
 }

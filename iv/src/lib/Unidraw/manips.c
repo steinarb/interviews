@@ -34,12 +34,14 @@
 #include <Unidraw/Components/grview.h>
 #include <Unidraw/Graphic/graphic.h>
 
-#include <InterViews/painter.h>
-#include <InterViews/rubverts.h>
-#include <InterViews/textbuffer.h>
-#include <InterViews/textdisplay.h>
+#include <IV-2_6/InterViews/painter.h>
+#include <IV-2_6/InterViews/rubverts.h>
+#include <IV-2_6/InterViews/textbuffer.h>
+#include <IV-2_6/InterViews/textdisplay.h>
 #include <InterViews/transformer.h>
-#include <InterViews/world.h>
+#include <IV-2_6/InterViews/world.h>
+
+#include <IV-2_6/_enter.h>
 
 #include <ctype.h>
 #include <math.h>

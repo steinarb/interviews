@@ -25,7 +25,6 @@
 #ifndef iv_color_h
 #define iv_color_h
 
-#include <InterViews/boolean.h>
 #include <InterViews/resource.h>
 
 #include <InterViews/_enter.h>
@@ -34,11 +33,12 @@ class ColorImpl;
 class ColorRep;
 class Display;
 class String;
+class WindowVisual;
 
 typedef float ColorIntensity;
 typedef unsigned int ColorOp;
 
-class Color : virtual public Resource {
+class Color : public Resource {
 public:
     enum { Copy, Xor, Invisible };
 
@@ -65,6 +65,7 @@ public:
     virtual void intensities(
 	Display*, ColorIntensity& r, ColorIntensity& g, ColorIntensity& b
     ) const;
+    virtual float alpha() const;
 
     virtual const Color* brightness(float adjust) const;
 
@@ -74,14 +75,14 @@ public:
 	ColorIntensity& r, ColorIntensity& g, ColorIntensity& b
     ) const;
 
-    ColorRep* rep(Display*) const;
+    ColorRep* rep(WindowVisual*) const;
 private:
     ColorImpl* impl_;
 
-    void remove(Display*) const;
+    void remove(WindowVisual*) const;
 
     ColorRep* create(
-	Display*, ColorIntensity, ColorIntensity, ColorIntensity,
+	WindowVisual*, ColorIntensity, ColorIntensity, ColorIntensity,
 	float, ColorOp
     ) const;
     void destroy(ColorRep*);

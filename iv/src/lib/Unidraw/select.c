@@ -35,7 +35,9 @@
 #include <Unidraw/Tools/select.h>
 
 #include <InterViews/event.h>
-#include <InterViews/rubrect.h>
+#include <IV-2_6/InterViews/rubrect.h>
+
+#include <IV-2_6/_enter.h>
 
 /*****************************************************************************/
 

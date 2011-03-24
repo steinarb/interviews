@@ -174,9 +174,10 @@ PSColor* ArrowInteractor::GetFgColor () { return _fg; }
 PSColor* ArrowInteractor::GetBgColor () { return _bg; }
 
 void ArrowInteractor::Reconfig () { 
+    Painter* p = new Painter(output);
+    Ref(p);
     Unref(output);
-    output = new Painter(output);
-    Ref(output);
+    output = p;
 }
 
 void ArrowInteractor::Redraw (Coord, Coord, Coord, Coord) {

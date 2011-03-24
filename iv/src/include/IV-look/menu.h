@@ -23,53 +23,87 @@
  */
 
 /*
- * Menu - a visible list of Actions
+ * Menu -- visible list of actions
  */
 
 #ifndef ivlook_menu_h
 #define ivlook_menu_h
 
-#include <InterViews/handler.h>
-#include <InterViews/monoglyph.h>
+#include <InterViews/input.h>
+#include <InterViews/observe.h>
+
+#include <InterViews/_enter.h>
 
 class Action;
-class Listener;
 class Menu;
-class MenuItemList;
+class MenuImpl;
 class Patch;
-class Telltale;
+class TelltaleState;
 class Window;
 
-class Menu : public MonoGlyph, public Handler {
+class MenuItem : public Observer {
 public:
-    Menu(Glyph*, float x1, float y1, float x2, float y2);
+    MenuItem(Glyph*, TelltaleState*);
+    MenuItem(Glyph*, TelltaleState*, Action*);
+    MenuItem(Glyph*, TelltaleState*, Menu*, Window* = nil);
+    virtual ~MenuItem();
+
+    Glyph* body() const;
+    TelltaleState* state() const;
+
+    virtual void action(Action*);
+    Action* action() const;
+    virtual void menu(Menu*, Window* = nil);
+    Menu* menu() const;
+    Window* window() const;
+
+    virtual void update(Observable*);
+private:
+    friend class Menu;
+    friend class MenuImpl;
+
+    Patch* patch_;
+    TelltaleState* state_;
+    Action* action_;
+    Menu* menu_;
+    Window* window_;
+
+    void init(Glyph*, TelltaleState*);
+};
+
+inline TelltaleState* MenuItem::state() const { return state_; }
+inline Action* MenuItem::action() const { return action_; }
+inline Menu* MenuItem::menu() const { return menu_; }
+inline Window* MenuItem::window() const { return window_; }
+
+class Menu : public InputHandler {
+public:
+    Menu(Glyph*, Style*, float x1, float y1, float x2, float y2);
     virtual ~Menu();
 
-    virtual void body(Glyph*);
-    virtual Glyph* body() const;
+    virtual void append_item(MenuItem*);
+    virtual void prepend_item(MenuItem*);
+    virtual void insert_item(GlyphIndex, MenuItem*);
+    virtual void remove_item(GlyphIndex);
+    virtual void replace_item(GlyphIndex, MenuItem*);
 
-    virtual void item(GlyphIndex, Telltale*, Action*, Menu*, Window* = nil);
-    virtual void add_item(Telltale*, Action*, Menu*, Window* = nil);
-    virtual void add_item(Telltale*, Action*);
-    virtual void add_item(Telltale*, Menu*, Window* = nil);
-    virtual void add_item(Telltale*);
+    virtual GlyphIndex item_count() const;
+    virtual MenuItem* item(GlyphIndex) const;
 
-    virtual Telltale* telltale(GlyphIndex) const;
-    virtual Action* action(GlyphIndex) const;
-    virtual Menu* menu(GlyphIndex) const;
-    virtual Window* window(GlyphIndex) const;
+    virtual void select(GlyphIndex);
+    virtual GlyphIndex selected() const;
+    virtual void unselect();
 
-    void select(GlyphIndex);
+    virtual void press(const Event&);
+    virtual void drag(const Event&);
+    virtual void release(const Event&);
 
-    virtual void event(Event&);
+    virtual void open();
+    virtual void close();
 private:
-    MenuItemList* itemlist_;
-    GlyphIndex item_;
-    float x1_, y1_, x2_, y2_;
-
-    Glyph* contents_;
-    Listener* listener_;
-    Patch* patch_;
+    MenuImpl* impl_;
 };
+
+#include <InterViews/_leave.h>
 
 #endif

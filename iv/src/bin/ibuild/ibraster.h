@@ -40,7 +40,7 @@ public:
     virtual boolean IsA(ClassId);
 };
 
-class RasterCode : public CodeView {
+class RasterCode : public GraphicCodeView {
 public:
     RasterCode(IRasterComp* = nil);
 
@@ -51,6 +51,14 @@ public:
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
 protected:
+    virtual boolean GCoreConstDecls(ostream&);
+    virtual boolean GCoreConstInits(ostream&);
+    virtual boolean GConstDecls(ostream&);
+    virtual boolean GConstInits(ostream&);
+
+    virtual const char* GetGHeader();
+    virtual const char* GetCVHeader();
+
     virtual boolean EmitIncludeHeaders(ostream&);
 };
 

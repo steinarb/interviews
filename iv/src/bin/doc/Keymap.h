@@ -29,6 +29,7 @@
 
 #include <InterViews/boolean.h>
 
+class DocKeymapInfo_List;
 class DocumentViewer;
 class Event;
 
@@ -40,7 +41,7 @@ public:
     virtual boolean map (Event& e);
 protected:
     DocumentViewer* _viewer;
-    class DocKeymapInfo_List* _info;
+    DocKeymapInfo_List* _info;
 };
 
 #endif
