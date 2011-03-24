@@ -37,10 +37,10 @@ static OptionDesc options[] = {
 };
 
 int main (int argc, char* argv[]) {
-    World* world = new World("logo", props, options, argc, argv);
+    World* world = new World("logo", argc, argv, options, props);
     
     if (argc == 1) {
-        world->Insert(new Logo);
+        world->InsertApplication(new Logo);
     } else {
         fprintf(stderr, "Usage: [-bitmap file] [-rainbow count]\n");
         exit(1);

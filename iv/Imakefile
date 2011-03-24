@@ -1,85 +1,12 @@
-/**/#
-/**/# iv - root of the InterViews directory tree
-/**/# 
-/**/# "make bootstrap" installs executables needed by "make World".
-/**/# "make World" builds InterViews for the first time.
-/**/# "make install" installs everything except the man pages.
-/**/# "make install.man" installs the man pages.
-/**/# "make format" formats the InterViews manual.
-/**/# "make print" formats and sends the InterViews manual to the printer.
-/**/# "make clean" removes the current platform's binaries and libraries.
-/**/#
+XCOMM
+XCOMM "make CPU" prints the name you should assign to CPU.
+XCOMM "make World" builds everything.
+XCOMM "make install" installs everything.
+XCOMM
 
-#define IHaveSubdirs
+WORLDOPTS = -k
+SUBDIRS = src
 
-WORLDOPTS	= -k
-BOOTSTRAPCFLAGS	= 
-SUBDIRS		= src
-
-MakeSubdirs($(SUBDIRS))
-DependSubdirs($(SUBDIRS))
-InstallManSubdirs($(SUBDIRS))
-FormatSubdirs($(SUBDIRS))
-PrintSubdirs($(SUBDIRS))
-
-/**/#
-/**/# Bootstrap executables that must be installed before InterViews
-/**/# can be built.
-/**/#
-
-bootstrap::
-	@echo "##############################################################"
-	@echo "Did you remember to check the configuration parameters in the"
-	@echo "the directory src/config and set BOOTSTRAPCFLAGS if needed?"
-	@echo "##############################################################"
-	@echo ""
-	@CPU=`$(BOOTSTRAPCPUCMD)` $(MAKE) createdirs
-
-BootstrapSubdirs($(SUBDIRS))
-
-bootstrap::
-	@echo ""
-	@echo "##############################################################"
-	@echo "Extend your PATH if necessary and put CPU in your environment"
-	@echo "before continuing with the rest of the build process."
-	@echo "##############################################################"
-
-/**/#
-/**/# Build InterViews for the first time.  Warning: clean removes
-/**/# make.log and make.out.
-/**/#
-
-World::
-	@echo ""
-	@echo "Building InterViews 2.6"
-	@echo ""
-	@echo "##############################################################"
-	@echo "Did you remember to extend your PATH to include imake et al"
-	@echo "and put CPU in your environment?"
-	@echo "##############################################################"
-	@echo ""
-	@date
-	@echo ""
-	@$(MAKE) Makefile
-	@$(MAKE) Makefiles
-	@$(MAKE) clean_maybe
-	@$(MAKE) depend
-	@$(MAKE) $(WORLDOPTS)
-	@echo ""
-	@date
-	@echo ""
-	@echo "Build of InterViews 2.6 complete."
-	@echo ""
-
-#if CompileInMachineDepSubdir
-clean_maybe:: /* don't clean */
-#else
-clean_maybe:: clean
-#endif
-
-/**/# 
-/**/# Create the directories in which to install files if necessary.
-/**/# 
-
-install:: createdirs
-MakeDirectories(createdirs,$(USRLIBDIR) $(BINDIR) $(LOCALBINDIR))
+MakeCPU()
+MakeWorld($(WORLDOPTS))
+MakeInSubdirs($(SUBDIRS))

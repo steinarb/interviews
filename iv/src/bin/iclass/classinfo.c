@@ -36,7 +36,7 @@
 ClassInfo::ClassInfo (const char* name, const char* path, int lineno) {
     const int defaultSize = 8;
 
-    _name = strdup(name);
+    _name = strnew(name);
     _path = nil;
     _lineno = lineno;
     Path(path);
@@ -49,15 +49,13 @@ ClassInfo::ClassInfo (const char* name, const char* path, int lineno) {
 ClassInfo::~ClassInfo () {
     delete _name;
     delete _path;
-    Clear(_childbuf, _childcount);
-    Clear(_parentbuf, _parentcount);
     delete _childbuf;
     delete _parentbuf;
 }
 
 void ClassInfo::Path (const char* path) {
     delete _path;
-    _path = (path == nil) ? nil : strdup(path);
+    _path = (path == nil) ? nil : strnew(path);
 }
 
 void ClassInfo::IncludeChild (ClassInfo* child) {

@@ -1,0 +1,237 @@
+%Doc-1.0
+\documentstyle{manual}
+
+%Doc-1.0
+
+\begin{document}
+\float{figure}{0-\pagenumber{0}}%379.44 -642 -2
+%
+%
+\preamble{Release Notes}%
+%
+The InterViews 3.0 distribution contains a README file and a single
+subdirectory, {\font{Helvetica}\size{10}iv}, that contains the source
+and documentation.  InterViews can be compiled with any C++ compiler
+that accepts the 2.0 or 2.1 revisions of the language, and can run
+on X11R4 or X11R5.  You can specify your compiler and other site definitions
+in the file \252iv/src/config/InterViews/local.de{\font{Helvetica}\size{10}f}\272.
+
+\quad The README{\font{Helvetica} }file describes how to build InterViews.  Under
+\252iv/src\272, the directory \252include{\font{Helvetica}\size{10}\272
+}contains include directories, \252bin\272 contains applications (each
+in its own subdirectory), \252lib\272 contains libraries (each in
+its own subdirectory), \252config\272 contains configuration-specific
+files, \252man\272 contains PostScript or troff for the manual, and
+papers contains PostScript for user tutorials.
+
+\quad \quad The work at Stanford has been supported by Fujitsu America,
+Digital Equipment Corporation, and NASA CASIS project under Contract
+NAGW 419, and a grant from the Charles Lee Powell Foundation.  Special
+thanks to Ira Machefsky of Digital and Charles Brauer of Fujitsu America
+for their assistance.  We are also grateful to the ever-growing InterViews
+user community for its encouragement and support.
+
+\quad Please address questions or comments about InterViews to\smallskip
+\quad \quad \quad Mark Linton
+
+\quad \quad \quad linton@sgi.com\pagebreak
+%
+%
+\preamble{{\align{center}Differences between
+
+}Versions 2.6{\align{center} and} 3.0}%
+%
+InterViews 3.0 supports very lightweight user interface objects (called
+``glyphs''), contains the Unidraw library for building graphical editors,
+an interface builder (ibuild), and a simple WYSIWYG document editor
+(doc).  We include Sam Leffler's TIFF image format library.  We no
+longer include g++, the GNU C++ compiler.
+
+\quad The InterViews source is partitioned into six directories (both
+under lib and include):\smallskip
+\quad \quad InterViews -- Intrinsics\
+\quad \quad IV-2\_6 -- Classes for compatibility with 2.6\
+\quad \quad IV-X11 --  X11-dependent implementation\
+\quad \quad IV-look -- Classes with a concrete user interface\
+\quad \quad TIFF -- Image file reader\
+\quad \quad Unidraw -- drawing framework\
+\quad \quad Dispatch -- Low-level access to input events and IPC support\
+\quad \quad OS -- operating system support classes\
+\quad \quad graphic -- Structured graphics library with same classes
+as in 2.6.\smallskip
+The source is built into a single library binary, libIV.a, from the
+\252lib/IV\272 directory.%
+%
+\heading{Configuration}%
+%
+We have simplified the writing of application Imakefiles by defining
+macros that expand to the appropriate definitions and understand the
+dependencies between libraries.  Use the macro {\sf {\size{10}Use\_libInterViews}}
+for a program that uses the base library (the macro will automatically
+include the IV, Xext, X11, and system math libraries.  Use the macro
+{\sf {\size{10}Use\_libUnidraw}} instead if the program uses the Unidraw
+library, or the macro {\sf {\size{10}Use\_libgraphic}} instead if
+the program uses the structured graphics library.%
+%
+\heading{Coords}%
+%
+The Coord type is now a float.  The default units are printers points,
+not pixels.  This change simplifies many applications (such as document
+editors) that want to deal with fonts, bitmaps, and graphics in units
+useful for printing.  Applications compiled with 2.6 compatibility
+still have Coord defined as an integer.%
+%
+\heading{Glyphs}%
+%
+Glyphs are the basic unit for building the presentation side of a
+user interface.  Glyphs define no storage by default and are passed
+all contextual information for display.  \quad The InterViews library
+defines three kinds of glyph subclasses.  Primitives are glyphs whose
+instances are leaves, such as characters, labels, glue, and images.  Composite
+glyphs contain several components and typically arrange them in some
+form.  Glyphs that contain a single component are called monoglyphs;
+they alter the component's appearance or behavior.
+
+\quad Interactor is now a subclass of Glyph.  However, interactors
+are still allocated their own X subwindows.\smallskip
+{\font{Times-Bold}\size{18}Styles}\smallskip
+A style is similar to an environment in a document processing system.  Styles
+may be nested hierarchically and attributes are inherited from ancestors.  Attribute
+names may use a wildcard notation, providing compatibility with X
+resources.  Styles provide a unified framework for managing user-customizable
+attributes, document formatting information, and structured graphics
+state.\smallskip
+{\font{Times-Bold}\size{18}Kits}\smallskip
+A kit is an object that creates user interface objects with a concrete
+look-and-feel, such as pulldown menus, push buttons, and scrollbars.  Kits
+isolate the application from specific look-and-feel issues, as well
+as the details of how a concrete component is implemented.%
+%
+\heading{Windows}%
+%
+A window is an object that can be mapped onto a display and receive
+input.  Associated with a window is a glyph that is the root of a
+hierarchy or acyclic graph.  The window draws the glyph to refresh
+the display and calls pick on the glyph to determine what to do with
+input events.  Two subclasses of window are provided:  ManagedWindow,
+for defining information for a window manager, and PopupWindow, for
+windows that should be mapped outside of window manager control.  Subclasses
+of ManagedWindow include ApplicationWindow, TopLevelWindow, TransientWindow,
+and IconWindow. %
+%
+\heading{Unidraw}%
+%
+The Unidraw library defines basic abstractions for building graphical
+editors.  Components represent the data that the user is editing,
+commands are undo-able actions, tools are direct manipulation objects
+for creating or changing components, and external representations
+store the components in a domain-specific format.  An important subclass
+of component is connector, which supports both graphical connectivity
+and dataflow among components.  The InterViews drawing editor (idraw)
+has been re-implemented using Unidraw.  The interface builder (ibuild)
+is also implemented with Unidraw. %
+%
+\heading{Dispatcher}%
+%
+Applications that only read user input need not be concerned with
+the implementation of input dispatching.  For applications that need
+to integrate timeouts or IPC with user input handling, however, the
+dispatcher is important.  There is one dispatcher object per application.  Dispatcher::instance
+is a static member function that retrieves this object.  The dispatcher
+allows a file descriptor to be associated with an IOHandler object
+whose inputReady member function is called when input is available
+from the file descriptor.  For convenience, a generic IOCallback(T)
+type is provided to define a simple IOHandler as a pointer-to-member
+function for an existing type T.
+
+\quad The Dispatch library also defines classes for performing RPC
+to other processes.  The rpcstream class uses the approach of the
+standard C++ iostream class, except the data can be sent/received
+as binary.  The rpcbuf class is a subclass of the standard streambuf
+and provides an interface for opening and closing a stream (TCP) socket.
+%
+%
+\heading{Interface Builder}%
+%
+InterViews 3.0 contains ibuild, a tool for interactively building
+a user interface.  Ibuild allows the user to arrange and connect common
+interactors and scenes, generate the C++ code for the interface, compile
+the code and execute the resulting mini-application.  The generated
+code defines a base class from which subclasses can be written to
+complete the application.  This approach allows the interface to be
+modified later without affecting the subclasses.  Ibuild currently
+does not support glyphs. %
+%
+\heading{Document Editor}%
+%
+InterViews 3.0 contains a new application, doc, that is a simple WYSIWYG
+document editor.  Doc represents each character in the document as
+a (shared) object and uses a TeXCompositor object to compose glyphs
+into a layout using the TeX formatting algorithm.  Doc reads and writes
+files using a LaTex-like format, can read idraw figures or pbm images
+and place them in the document, and can generate a PostScript file
+for printing. %
+%
+\heading{Class names}%
+%
+C++ class names are global.  To avoid possible name conflicts, the
+InterViews header files automatically define class names to have the
+prefix ``iv''.  This prefix is defined in InterViews/iv.h and can
+be changed if desired. %
+%
+\heading{Compatibility}%
+%
+As much as possible, we have tried to make it easy for applications
+based on InterViews 2.6 to work.  To build a 2.6-based application
+with 3.0, use the {\sf {\size{10}Use\_2\_6}} macro in the application's
+Imakefile in addition to the {\sf {\size{10}Use\_libInterViews}},
+{\sf {\size{10}Use\_libUnidraw}}, or {\sf {\size{10}Use\_libgraphic}}
+macros.
+
+\quad The InterViews configuration files have been rewritten to eliminate
+unused parameters and rules, and to reorganize the remaining parameters.  Many
+parameters and make variables were renamed for greater consistency
+and to avoid conflicting with X11R4 and X11R5 parameters for C.  Experience
+has shown us that separate parameters and make variables are desirable
+to support C++.  Since users will need to edit application Imakefiles
+to use the appropriate macros anyway, we have also replaced a few
+obsolete macros, rules, and make variables with new ones.  In particular,
+CompileInMachineDepSubdir and InMachineDepSubdir have been replaced
+by the single macro InObjectCodeDir, MachineDepSubdir and DependMachineDepSubdir
+have been replaced by the single rule MakeInObjectCodeDir, and MakeSubdirs
+and DependSubdirs have been replaced by the single rule MakeInSubdirs.
+
+\quad Some 2.6 features are not retained in 3.0.  The event types
+ChannelEvent and TimerEvent no longer exist.  The functionality can
+be achieved more easily and reliably using the new Dispatcher class.
+
+\quad The WorldView class no longer exists.  The IPC classes (Connection,
+ChiefDeputy, Deputy, Packet, ObjectSpace, Space\-Manager, Object\-Stub,
+ObjectTag, and ObjectTable) have been replaced by a smaller set of
+classes in the Dispatch library that provide more functionality.  The
+old IPC classes were not particularly portable, did not work properly
+across a network, and were hard to integrate with the user interface
+side of an application.
+
+\quad The following Interactor window-oriented operations no longer
+exist because they are superseded by Window and ManagedWindow operations:\smallskip
+{\font{Helvetica}\size{10}\quad \quad SetName, GetName, SetGeometry,
+GetGeometry
+
+\quad \quad SetInteractorType, GetInteractorType, SetTransientFor,
+GetTransientFor
+
+\quad \quad SetIconName, GetIconName, SetIconInteractor, GetIconInteractor
+
+\quad \quad SetIconGeometry, GetIconGeometry, SetIconBitmap, GetIconBitmap
+
+\quad \quad SetIconMask, GetIconMask, SetStartIconic, GetStartIconic
+
+\quad \quad Iconify, DeIconify}\smallskip
+The operation Interactor::GetTopLevelWindow is now provided to allow
+direct access to the managed window associated with a top-level interactor.
+
+\quad Finally, the functionality provided by the StringPool, StringTable,
+and Table classes has been moved to the OS directory.  StringPool
+and StringTable have been replaced by the UniqueString class.%
+\end{document}

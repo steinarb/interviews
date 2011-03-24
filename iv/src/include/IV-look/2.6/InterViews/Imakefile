@@ -1,0 +1,8 @@
+XCOMM
+XCOMM include files for using old 2.6 look+feel classes
+XCOMM
+
+HEADERS = *.h
+DEST = $(INCDIR)/IV-look/2.6/InterViews
+
+InstallMultipleFlags($(HEADERS),$(DEST),$(INSTINCFLAGS))

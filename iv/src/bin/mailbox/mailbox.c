@@ -24,6 +24,8 @@
  * Watch a mailbox and display its contents.
  */
 
+#include <Dispatch/dispatcher.h>
+#include <Dispatch/iocallback.h>
 #include <InterViews/border.h>
 #include <InterViews/box.h>
 #include <InterViews/frame.h>
@@ -74,7 +76,7 @@ protected:
 
 class MailBeep : public MailView {
 public:
-    MailBeep(MailBox* m) : (m) { lastcount = 0; }
+    MailBeep(MailBox* m) : MailView(m) { lastcount = 0; }
     void Update();
 private:
     int lastcount;
@@ -109,6 +111,10 @@ const int MaxItemSize = 100;
 
 enum Status { All, New, Unread };
 
+class MailBox;
+
+declare(IOCallback,MailBox);
+
 class MailBox : public MonoScene {
 public:
     MailBox(
@@ -127,7 +133,7 @@ public:
     void Handle(Event&);
     void Notify();
     void Scan();
-    void Tick();
+    void Tick(long, long);
 private:
     int width;
     int height;
@@ -135,14 +141,18 @@ private:
     char* mailboxpath;
     off_t lastsize;
     Status status;
-    int count;
+    int count_;
     char* items[MaxItemCount];
+    int delay_;
+    IOHandler* tick_;
 
     virtual void Reconfig();
 };
 
+implement(IOCallback,MailBox);
+
 inline char* MailBox::GetItem (int i) { return items[i]; }
-inline int MailBox::GetCount () { return count; }
+inline int MailBox::GetCount () { return count_; }
 
 MailView::MailView (MailBox* m) {
     mailbox = m;
@@ -153,14 +163,14 @@ MailView::~MailView () {
      mailbox->Remove(this);
 }
 
-MailText::MailText (MailBox* m, int r, int c) : (m) {
+MailText::MailText (MailBox* m, int r, int c) : MailView(m) {
     rows = r;
     cols = c;
 }
 
 void MailText::Reconfig () {
     if (rows != 0 && cols != 0) {
-	Font* f = output->GetFont();
+	const Font* f = output->GetFont();
 	shape->width = cols * f->Width("m");
 	shape->height = rows * f->Height();
     }
@@ -185,13 +195,13 @@ void MailText::Redraw (Coord x1, Coord y1, Coord x2, Coord y2) {
 void MailBeep::Update() {
     int count = mailbox->GetCount();
     if (count > lastcount) {
-	world->RingBell(0);
-	world->RingBell(0);
+	::world->RingBell(0);
+	::world->RingBell(0);
     }
     lastcount = count;
 }
 
-MailFlag::MailFlag (MailBox* m, boolean count) : (m) {
+MailFlag::MailFlag (MailBox* m, boolean count) : MailView(m) {
     showcount = count;
     lastcount = 0;
     highlight = nil;
@@ -206,7 +216,7 @@ void MailFlag::Reconfig () {
     highlight = new Painter(output);
     highlight->Reference();
     highlight->SetColors(output->GetBgColor(), output->GetFgColor());
-    Font* f = output->GetFont();
+    const Font* f = output->GetFont();
     shape->width = f->Width("M") + 6;
     shape->height = f->Height();
     shape->Rigid(0, vfil/1000, 0, vfil);
@@ -240,7 +250,7 @@ void MailFlag::Update () {
 
 void MailFlag::Redraw (Coord x1, Coord y1, Coord x2, Coord y2) {
     Painter* p = (lastcount > 0) ? highlight : output;
-    Font* f = p->GetFont();
+    const Font* f = p->GetFont();
     int height = f->Height();
     p->ClearRect(canvas, x1, y1, x2, y2);
     if (ymax+1 < height) {
@@ -276,9 +286,10 @@ MailBox::MailBox(
     for (int i = 0; i < MaxItemCount; i++) {
 	items[i] = nil;
     }
-    count = 0;
+    count_ = 0;
+    delay_ = delay;
+    tick_ = new IOCallback(MailBox)(this, &MailBox::Tick);
     input = new Sensor;
-    input->CatchTimer(delay, 0);
     input->Catch(KeyEvent);
     views = nil;
     if (!silent) {
@@ -317,15 +328,8 @@ void MailBox::Reconfig () {
 }
 
 void MailBox::Handle (Event &e) {
-    switch (e.eventType) {
-	case TimerEvent:
-	    Tick();
-	    break;
-	case KeyEvent:
-	    if (e.keystring[0] == 'q') {
-		e.target = nil;
-	    }
-	    break;
+    if (e.eventType == KeyEvent && e.len > 0 && e.keystring[0] == 'q') {
+	e.target = nil;
     }
 }
 
@@ -371,21 +375,22 @@ void MailBox::Notify() {
     }
 }
 
-void MailBox::Tick () {
+void MailBox::Tick(long /* sec */, long /* usec */) {
     struct stat statBuffer;
 
     if (lstat(mailboxpath,&statBuffer) >= 0) {
 	if (statBuffer.st_size != lastsize) {
-	    count = 0;
+	    count_ = 0;
 	    Scan();
 	    lastsize = statBuffer.st_size;
 	    Notify();
 	}
     } else if (lastsize > 0) {
-	count = 0;
+	count_ = 0;
 	lastsize = 0;
 	Notify();
     }
+    Dispatcher::instance().startTimer(delay_, 0, tick_);
 }
 
 void MailBox::Scan () {
@@ -462,9 +467,9 @@ void MailBox::Scan () {
 		items[i+1] = items[i];
 	    }
 	    items[0] = new char[MaxItemSize];
-	    strcpy(items[0], mail);
+	    strncpy(items[0], mail, MaxItemSize - 1);
 	    *mail = '\0';
-	    ++count;
+	    ++count_;
         }
     }
     fclose(f);
@@ -493,9 +498,8 @@ static OptionDesc options[] = {
 int main (int argc, char *argv[]) {
     int i, p1, p2;
     char* curarg;
-    char buffer[128];
 
-    world = new World("mailbox", options, argc, argv);
+    world = new World("mailbox", argc, argv, options);
     for (i = 1; i < argc; i++) {
 	curarg = argv[i];
 	if (sscanf(curarg, "delay=%d", &p1) == 1) {
@@ -552,7 +556,7 @@ int main (int argc, char *argv[]) {
 	world->InsertApplication(mailbox, xpos, ypos);
     }
 
-    mailbox->Tick();
+    mailbox->Tick(0, 0);
     mailbox->Run();
     return 0;
 }

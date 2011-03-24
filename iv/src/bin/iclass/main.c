@@ -27,6 +27,7 @@
 #include "classbuffer.h"
 #include "iclass.h"
 
+#include <InterViews/window.h>
 #include <InterViews/world.h>
 
 #include <string.h>
@@ -34,32 +35,39 @@
 /*****************************************************************************/
 
 static PropertyData properties[] = {
-    { "*Dialog*Message*font",       "*helvetica-bold-r-normal--12*" },
     { "*Message*font",              "*helvetica-bold-r-normal--10*" },
+    { "*Dialog*Message*font",       "*helvetica-bold-r-normal--12*" },
+    { "*path*font",                 "*helvetica-bold-r-normal--12*" },
     { "*PulldownMenu*Message*font", "*helvetica-bold-r-normal--12*" },
     { "*PushButton*font",           "*helvetica-bold-r-normal--12*" },
     { "*StringBrowser*font",        "*helvetica-bold-r-normal--10*" },
+    { "*dirBrowser*font",           "*helvetica-bold-r-normal--10*" },
     { "*StringEditor*font",         "*helvetica-bold-r-normal--10*" },
     { "*recursive",                 "false" },
     { "*verbose",                   "false" },
+    { "*CPlusPlusFiles",            "false" },
     { "*showButton",                "true" },
+    { "*dirBrowser*singleClick",    "on" },
     { nil }
 };
 
 static OptionDesc options[] = {
     { "-r", "*recursive", OptionValueImplicit, "true" },
     { "-v", "*verbose", OptionValueImplicit, "true" },
+    { "-c", "*CPlusPlusFiles", OptionValueImplicit, "true" },
     { nil }
 };
 
 /*****************************************************************************/
 
 int main (int argc, char** argv) {
-    World* world = new World("iclass", properties, options, argc, argv);
-    const char* recursive = world->GetAttribute("recursive");
-    const char* verbose = world->GetAttribute("verbose");
+    World world("iclass", argc, argv, options, properties);
+    const char* recursive = world.GetAttribute("recursive");
+    const char* verbose = world.GetAttribute("verbose");
+    const char* CPlusPlusFiles = world.GetAttribute("CPlusPlusFiles");
     ClassBuffer* buffer = new ClassBuffer(
-        strcmp(recursive, "true") == 0, strcmp(verbose, "true") == 0
+        strcmp(recursive, "true") == 0, strcmp(verbose, "true") == 0,
+	strcmp(CPlusPlusFiles, "true") == 0
     );
 
     for (int i = 1; i < argc; ++i) {
@@ -67,10 +75,10 @@ int main (int argc, char** argv) {
     }
 
     IClass* iclass = new IClass(buffer);
-    iclass->SetName("InterViews class browser");
-    iclass->SetIconName("iclass");
-
-    world->InsertApplication(iclass);
+    ApplicationWindow* window = new ApplicationWindow(iclass);
+    window->name("InterViews class browser");
+    window->icon_name("iclass");
+    window->map();
     iclass->Run();
     return 0;
 }

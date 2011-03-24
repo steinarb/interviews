@@ -1,0 +1,42 @@
+XCOMM
+XCOMM source files for building the Graphic library
+XCOMM
+
+#ifdef InObjectCodeDir
+
+LIB = graphic
+VERSION = 3.0
+
+Use_2_6()
+MakeLibrary($(LIB),$(VERSION))
+
+#define Obj(file) MakeObjectFromSrc(file)
+
+Obj(base)
+Obj(cache)
+Obj(damage)
+Obj(ellipses)
+Obj(geomobjs)
+Obj(grblock)
+Obj(grconstruct)
+Obj(hash)
+Obj(instance)
+Obj(label)
+Obj(lines)
+Obj(objman)
+Obj(persistent)
+Obj(pfile)
+Obj(picture)
+Obj(polygons)
+Obj(ppaint)
+Obj(rasterrect)
+Obj(ref)
+Obj(reflist)
+Obj(splines)
+Obj(stencil)
+
+#else
+
+MakeInObjectCodeDir()
+
+#endif

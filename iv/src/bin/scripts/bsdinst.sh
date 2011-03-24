@@ -9,13 +9,27 @@ flags=""
 dst=""
 src=""
 dostrip=""
+owner=""
+mode=""
 
 while [ x$1 != x ]; do
     case $1 in 
 	-c) shift
 	    continue;;
 
-	-[mog]) flags="$flags $1 $2 "
+	-m) flags="$flags $1 $2 "
+	    mode="$2"
+	    shift
+	    shift
+	    continue;;
+
+	-o) flags="$flags -u $2 "
+	    owner="$2"
+	    shift
+	    shift
+	    continue;;
+
+	-g) flags="$flags $1 $2 "
 	    shift
 	    shift
 	    continue;;
@@ -35,15 +49,27 @@ while [ x$1 != x ]; do
     esac
 done
 
+case "$mode" in
+"")
+	;;
+*)
+#	case "$owner" in
+#	"")
+#		flags="$flags -u root"
+#		;;
+#	esac
+	;;
+esac
+
 if [ x$src = x ] 
 then
-	echo "bsdinstall:  no input file specified"
+	echo "bsdinst:  no input file specified"
 	exit 1
 fi
 
 if [ x$dst = x ] 
 then
-	echo "bsdinstall:  no destination specified"
+	echo "bsdinst:  no destination specified"
 	exit 1
 fi
 
@@ -58,10 +84,10 @@ srcdir="."
 if [ ! -d $dst ]
 then
 	dstbase=`basename $dst`
-	cp $src /tmp/$dstbase
-	rmcmd="rm -f /tmp/$dstbase"
+	cp $src /usr/tmp/$dstbase
+	rmcmd="rm -f /usr/tmp/$dstbase"
 	src=$dstbase
-	srcdir=/tmp
+	srcdir=/usr/tmp
 	dst="`echo $dst | sed 's,^\(.*\)/.*$,\1,'`"
 	if [ x$dst = x ]
 	then
@@ -73,26 +99,37 @@ then
 fi
 
 
-# If the src file has a directory, copy it to /tmp to make install happy
+# If the src file has a directory, copy it to /usr/tmp to make install happy
 
 srcbase=`basename $src`
 
 if [ "$src" != "$srcbase" -a "$src" != "./$srcbase" ] 
 then
-	cp $src /tmp/$srcbase
+	cp $src /usr/tmp/$srcbase
 	src=$srcbase
-	srcdir=/tmp
-	rmcmd="rm -f /tmp/$srcbase"
+	srcdir=/usr/tmp
+	rmcmd="rm -f /usr/tmp/$srcbase"
 fi
 
-# do the actual install (remove destination since SysV install doesn't)
+# do the actual install
 
+if [ -f /usr/sbin/install ]
+then
+	installcmd=/usr/sbin/install
+elif [ -f /etc/install ]
+then
+	installcmd=/etc/install
+else
+	installcmd=install
+fi
+
+# This rm is commented out because some people want to be able to
+# install through symbolic links.  Uncomment it if it offends you.
+## It offends me because it means I can't install over running apps.
 rm -f $dst/$srcbase
-(cd $srcdir ; /etc/install -f $dst $flags $src)
+(cd $srcdir ; $installcmd -f $dst $flags $src)
 
-# strip the installed file if necessary
-
-if [ x$dostrip != x ] 
+if [ x$dostrip = xstrip ]
 then
 	strip $dst/$srcbase
 fi

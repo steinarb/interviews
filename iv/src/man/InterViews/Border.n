@@ -1,0 +1,20 @@
+.TH Border 3I "" "InterViews Reference Manual"
+.SH NAME
+Border \- solid area around a glyph
+.SH SYNOPSIS
+.B #include <InterViews/border.h>
+.SH DESCRIPTION
+A border glyph draws a thick solid area under the outside of a given glyph.
+The natural size of a border glyph is the natural size of the interior glyph,
+so it is necessary to use a margin to dedicate space to the border.
+.SH PUBLIC OPERATIONS
+.TP
+.B "Border(Glyph*, Color*)"
+Create a border around the given glyph of the given color.
+The border thickness will be one coordinate unit.
+.TP
+.B "Border(Glyph*, Color*, Coord thickness)"
+Create a border around the given glyph of the given color
+with the given thickness.
+.SH SEE ALSO
+Color(3I), Glyph(3I), Margin(3I)

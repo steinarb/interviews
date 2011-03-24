@@ -1,22 +1,12 @@
-/**/#
-/**/# src - root of the InterViews sources' directory tree
-/**/# 
-
-#define IHaveSubdirs
+XCOMM
+XCOMM everything to be built or installed
+XCOMM
 
 SUBDIRS = \
 	config \
-	InterViews \
-	libInterViews \
-	libgraphic \
-	bin
+	include \
+	lib \
+	bin \
+	man
 
-MakeSubdirs($(SUBDIRS))
-DependSubdirs($(SUBDIRS))
-BootstrapSubdirs(bin)
-InstallManSubdirs(man)
-FormatSubdirs(man)
-PrintSubdirs(man)
-
-subinstall:
-	$(MAKE) install SUBDIRS="libInterViews libgraphic bin"
+MakeInSubdirs($(SUBDIRS))

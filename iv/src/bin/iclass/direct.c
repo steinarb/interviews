@@ -24,32 +24,41 @@
  * Directory object implementation.
  */
 
-#include <bstring.h>
-#include <pwd.h>
-#include <os/auth.h>
-#include <os/fs.h>
-#include <string.h>
-#include <sys/param.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <dirent.h>
-
 #include "direct.h"
 #include "globals.h"
+#include <OS/directory.h>
+#include <OS/leave-scope.h>
+#include <stddef.h>
+#include <osfcn.h>
+#include <pwd.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#define SysDir _lib_os(Directory)
+#define SysDirInfo _lib_os(DirectoryInfo)
+
+class DirectoryRep {
+private:
+    friend class Directory;
+
+    SysDir* dir;
+};
+
+static const int MAX_PATH_LENGTH = 256;
 
 /*****************************************************************************/
 
 Directory::Directory (const char* name) {
-    const int defaultSize = 256;
-
-    strbufsize = defaultSize;
-    strbuf = new char*[strbufsize];
-    strcount = 0;
+    rep_ = new DirectoryRep;
+    rep_->dir = nil;
     LoadDirectory(name);
 }
 
 Directory::~Directory () {
-    Clear();
+    delete rep_->dir;
+    delete rep_;
 }
 
 const char* Directory::RealPath (const char* path) {
@@ -64,7 +73,7 @@ const char* Directory::RealPath (const char* path) {
 }
 
 boolean Directory::LoadDirectory (const char* name) {
-    char buf[MAXPATHLEN+2];
+    char buf[MAX_PATH_LENGTH+2];
     const char* path = buf;
 
     strcpy(buf, ValidDirectories(RealPath(name)));
@@ -72,28 +81,17 @@ boolean Directory::LoadDirectory (const char* name) {
 }
 
 int Directory::Index (const char* name) {
-    for (int i = 0; i < strcount; ++i) {
-        if (strcmp(strbuf[i], name) == 0) {
-            return i;
-        }
-    }
-    return -1;
+    return rep_->dir == nil ? -1 : rep_->dir->index(name);
 }
 
-boolean Directory::Reset (const char* path) {
-    DIR* dir = opendir(path);
-    boolean successful = dir != NULL;
-    struct dirent* d;
-
-    if (successful) {
-        Clear();
-
-        for (d = readdir(dir); d != NULL; d = readdir(dir)) {
-            Insert(d->d_name, Position(d->d_name));
-        }
-        closedir(dir);
+boolean Directory::Reset (char* path) {
+    SysDirInfo* info = SysDir::open(path);
+    if (info != nil) {
+	delete rep_->dir;
+	rep_->dir = new SysDir(info);
+	return true;
     }
-    return successful; 
+    return false;
 }
 
 boolean Directory::IsADirectory (const char* path) {
@@ -102,9 +100,17 @@ boolean Directory::IsADirectory (const char* path) {
     return filestats.st_mode & S_IFDIR;
 }
 
+int Directory::Count() {
+    return rep_->dir == nil ? 0 : rep_->dir->count();
+}
+
+const char* Directory::File(int index) {
+    return rep_->dir == nil ? nil : rep_->dir->name(index);
+}
+
 const char* Directory::Home (const char* name) {
     struct passwd* pw =
-        (name == nil) ? getpwuid(getuid()) : getpwnam(name);
+	(name == nil) ? getpwuid(getuid()) : getpwnam(name);
     return (pw == nil) ? nil : pw->pw_dir;
 }
 
@@ -122,7 +128,7 @@ inline boolean DotDotSlash (const char* path) {
 }
 
 const char* Directory::Normalize (const char* path) {
-    static char newpath[MAXPATHLEN+1];
+    static char newpath[MAX_PATH_LENGTH+1];
     const char* buf;
 
     buf = InterpSlashSlash(path);
@@ -148,7 +154,7 @@ const char* Directory::Normalize (const char* path) {
 }
 
 const char* Directory::ValidDirectories (const char* path) {
-    static char buf[MAXPATHLEN+1];
+    static char buf[MAX_PATH_LENGTH+1];
     strcpy(buf, path);
     int i = strlen(path);
 
@@ -169,7 +175,7 @@ const char* Directory::InterpSlashSlash (const char* path) {
 }
 
 const char* Directory::ElimDot (const char* path) {
-    static char newpath[MAXPATHLEN+1];
+    static char newpath[MAX_PATH_LENGTH+1];
     const char* src;
     char* dest = newpath;
 
@@ -213,7 +219,7 @@ static boolean CollapsedDotDotSlash (const char* path, const char*& start) {
 }
 
 const char* Directory::ElimDotDot (const char* path) {
-    static char newpath[MAXPATHLEN+1];
+    static char newpath[MAX_PATH_LENGTH+1];
     const char* src;
     char* dest = newpath;
 
@@ -229,9 +235,9 @@ const char* Directory::ElimDotDot (const char* path) {
 }
 
 const char* Directory::InterpTilde (const char* path) {
-    static char realpath[MAXPATHLEN+1];
+    static char realpath[MAX_PATH_LENGTH+1];
     const char* beg = strrchr(path, '~');
-    boolean validTilde = beg != NULL && (beg == path || *(beg-1) == '/');
+    boolean validTilde = beg != nil && (beg == path || *(beg-1) == '/');
 
     if (validTilde) {
         const char* end = strchr(beg, '/');
@@ -254,39 +260,10 @@ const char* Directory::ExpandTilde (const char* tildeName, int length) {
     const char* name = nil;
 
     if (length > 1) {
-        static char buf[MAXNAMLEN+1];
+        static char buf[MAX_PATH_LENGTH+1];
         strncpy(buf, tildeName+1, length-1);
         buf[length-1] = '\0';
         name = buf;
     }
     return Home(name);
 }        
-
-void Directory::Insert (const char* s, int index) {
-    BufInsert(strdup(s), index, (void**&) strbuf, strbufsize, strcount);
-}
-
-void Directory::Remove (int index) {
-    if (0 <= index && index < strcount) {
-        delete strbuf[index];
-        BufRemove(index, (void**) strbuf, strcount);
-    }
-}
-
-void Directory::Clear () {
-    for (int i = 0; i < strcount; ++i) {
-        delete strbuf[i];
-    }
-    strcount = 0;
-}
-
-int Directory::Position (const char* s) {
-    int i;
-
-    for (i = 0; i < strcount; ++i) {
-        if (strcmp(s, strbuf[i]) < 0) {
-            return i;
-        }
-    }
-    return strcount;
-}

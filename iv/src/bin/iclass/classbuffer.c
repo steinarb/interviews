@@ -29,15 +29,14 @@
 #include "direct.h"
 #include "globals.h"
 
-#include <InterViews/defs.h>
 #include <InterViews/regexp.h>
 #include <InterViews/textbuffer.h>
 
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stream.h>
 #include <string.h>
+#include <sys/param.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -134,10 +133,13 @@ void Classes::Clear () {
 
 /*****************************************************************************/
 
-ClassBuffer::ClassBuffer (boolean recursive, boolean verbose) {
+ClassBuffer::ClassBuffer (
+	boolean recursive, boolean verbose, boolean CPlusPlusFiles
+    ) {
     _classes = new Classes;
     _recursive = recursive;
     _verbose = verbose;
+    _CPlusPlusFiles = CPlusPlusFiles;
 }
 
 ClassBuffer::~ClassBuffer () {
@@ -185,9 +187,15 @@ inline boolean HeaderFile (const char* file) {
     return file[length-1] == 'h' && file[length-2] == '.';
 }
 
+inline boolean CPlusPlusFile (const char* file) {
+    int length = strlen(file);
+
+    return file[length-1] == 'C' && file[length-2] == '.';
+}
+
 static boolean IsADirectory (const char* path, struct stat& filestats) {
     stat(path, &filestats);
-    return filestats.st_mode & S_IFDIR;
+    return S_ISDIR(filestats.st_mode);
 }
 
 void ClassBuffer::Search (const char* path) {
@@ -200,7 +208,7 @@ void ClassBuffer::Search (const char* path) {
             SearchDir(path);
         }
 
-    } else if (HeaderFile(path)) {
+    } else if (HeaderFile(path) || (_CPlusPlusFiles && CPlusPlusFile(path))) {
         SearchFile(path, filestats);
     }
 }
@@ -209,13 +217,13 @@ void ClassBuffer::SearchDir (const char* path) {
     Directory dir(path);
 
     if (_verbose) {
-        cout << "searching directory " << path << "\n";
+	printf("searching directory %s\n", path);
     }
 
     for (int i = 0; i < dir.Count(); ++i) {
         const char* file = dir.File(i);
 
-        if (HeaderFile(file)) {
+        if (HeaderFile(file) || (_CPlusPlusFiles && CPlusPlusFile(path))) {
             struct stat filestats;
             char filePath[MAXPATHLEN+1];
             strcpy(filePath, dir.Normalize(path));
@@ -232,7 +240,7 @@ void ClassBuffer::SearchDirs (const char* path) {
     Directory dir(path);
 
     if (_verbose) {
-        cout << "recursively searching directory " << path << "\n";
+	printf("recursively searching directory %s\n", path);
     }
 
     for (int i = 0; i < dir.Count(); ++i) {
@@ -248,33 +256,41 @@ void ClassBuffer::SearchDirs (const char* path) {
     }
 }
 
-void ClassBuffer::SearchFile (const char* path, struct stat& filestats) {
-    FILE* f = fopen(path, "r");
+#include <OS/file.h>
+#include <OS/memory.h>
 
+void ClassBuffer::SearchFile (const char* path, struct stat&) {
+    InputFile* f = InputFile::open(path);
     if (f == nil) {
-        return;
+	return;
+    }
+    const char* buf;
+    int len = f->read(buf);
+    if (len <= 0) {
+	return;
     }
     if (_verbose) {
-        cout << "searching file " << path << "\n";
+	printf("searching file %s\n", path, len);
     }
 
-    int bufsize = max(round(filestats.st_size * 1.2), MINTEXTSIZE);
-    char* buf = new char[bufsize];
-    char* b = buf;
-    int remaining = bufsize;
+    /*
+     * stupid regular expression requires writable strings to guarantee
+     * null-termination
+     */
+    char* tbuf = new char[len + 1];
+    Memory::copy(buf, tbuf, len);
+    tbuf[len] = '\0';
 
-    while (remaining > 1 && fgets(b, remaining, f) != nil) {
-        int l = strlen(b);
-        remaining -= l;
-        b += l;
-    }
-    fclose(f);
-    TextBuffer textbuf(buf, b-buf, bufsize);
+    TextBuffer textbuf(tbuf, len, len);
 
     SearchTextBuffer(&textbuf, path);
 
-    delete buf;
+    delete tbuf;
+    f->close();
+    delete f;
 }
+
+#include <OS/leave-scope.h>
 
 void ClassBuffer::SearchTextBuffer (TextBuffer* tb, const char* path) {
     int beg = 0;
@@ -326,6 +342,9 @@ inline boolean KeyWord (const char* string) {
 char* ClassBuffer::ParentName (TextBuffer* tb, int& beg) {
     Regexp delimiter("{");
     int delim = tb->ForwardSearch(&delimiter, beg);
+    if (delim < 0) {
+	return nil;
+    }
 
     for (;;) {
         char* string = Identifier(tb, beg);
@@ -389,7 +408,7 @@ char* ClassBuffer::Identifier (TextBuffer* tb, int& beg) {
         }
     }
     if (j < tb->Length()) {
-        string = strndup(&text[i], j-i);
+        string = strnnew(&text[i], j-i);
         beg = j;
     }
     return string;

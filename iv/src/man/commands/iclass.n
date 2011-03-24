@@ -5,6 +5,7 @@ iclass \- class browser
 .B iclass
 .RB [ -r ]
 .RB [ -v ]
+.RB [ -c ]
 .I path
 .RI [ path... ]
 .SH DESCRIPTION
@@ -21,13 +22,17 @@ of the class definition shows the source code from the header file
 that defines the selected class.
 .SH ARGUMENTS
 \fIIclass\fP interprets arguments that specify the header files to
-search for class definitions.  Each non-option argument on the command
-line should specify a pathname to a header file or a directory
-containing header files.  If the pathname is a filename ending in the
-suffix ``.h'', then \fIiclass\fP will scan that header file.  If the
-pathname is a directory, then it will scan every header file in that
-directory.  \fIIclass\fP will ignore filenames that do not end in the
-suffix ``.h''.
+search for class definitions.
+Each non-option argument on the command line should specify a pathname
+to a header file or a directory containing header files.
+If the pathname is a filename ending in the suffix ``.h'',
+then \fIiclass\fP will scan that header file.
+If the pathname is a directory,
+then it will scan every header file in that directory.
+\fIIclass\fP will ignore filenames that do not end in the suffix ``.h'',
+unless the ``\-c'' option is given.
+In this case \fIiclass\fP will search both ``.h'' and ``.C'' files for
+class definitions.
 .PP
 You may use any of the standard options accepted by InterViews
 programs in addition to the following options:
@@ -38,12 +43,24 @@ scanning a directory.
 .TP
 .B \-v
 Verbosely print the name of every header file scanned.
+.TP
+.B \-c
+Allow \fIiclass\fP to search ``.C'' files as well as ``.h'' for class
+definitions.
+This option should be used carefully.
+Because of the way that iclass searches for definitions, it is possible
+for it to get confused by code in a ``.C'' file and think it is a definition.
+Nonetheless, this is a useful option if there are C++ input files that
+contain definitions.
 .SH COMMANDS
 \fIIclass\fP provides pull-down menus for issuing commands.  The
 ``File'' menu includes the following commands:
 .TP 4
 .B "Scan Files/Directories..."
 Prompt for additional pathnames to scan.
+.TP
+.B "Clear Classes"
+Purge iclass of all classes it has scanned.
 .TP
 .B Quit
 Close the window and exit.
@@ -58,7 +75,7 @@ buffer if necessary.
 .B "Backward Search..."
 Search backward for a match with a given regexp.
 .TP
-.B "Go to line..."
+.B "Go to Line..."
 Move the cursor to the beginning of the given line, scrolling the
 display if necessary.
 .SH MOUSE BINDINGS

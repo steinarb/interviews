@@ -24,11 +24,16 @@
  * digital clockface class
  */
 
+#include <Dispatch/dispatcher.h>
+#include <Dispatch/iocallback.h>
 #include "dclock.h"
 #include "dface.h"
 #include "digit.h"
 #include "clocktime.h"
 #include <string.h>
+
+declare(IOCallback,DFace);
+implement(IOCallback,DFace);
 
 static const int FadeDelay = 10000;
 
@@ -42,19 +47,21 @@ void DFace::DrawColon () {
 }
 
 void DFace::DrawAMPM (Painter *painter) {
-    if (AMPMmode != BLANK) {
-	if (AMPMmode == AM) {
-	    painter->FillPolygon(canvas, A.x, A.y, A.count);
-	} else {
-	    painter->FillPolygon(canvas, P.x, P.y, P.count);
+    if (canvas != nil) {
+	if (AMPMmode != BLANK) {
+	    if (AMPMmode == AM) {
+		painter->FillPolygon(canvas, A.x, A.y, A.count);
+	    } else {
+		painter->FillPolygon(canvas, P.x, P.y, P.count);
+	    }
+	    painter->FillPolygon(canvas, M.x, M.y, M.count);
 	}
-	painter->FillPolygon(canvas, M.x, M.y, M.count);
     }
 }
 
 void DFace::DrawDate () {
     if (showDate && date.len != 0) {
-	Font* f = output->GetFont();
+	const Font* f = output->GetFont();
 	Coord dateYPos = ymax - f->Height();
 	Coord dateXPos = 2;
 
@@ -81,16 +88,20 @@ void DFace::DrawBorder () {
     }
 }
 
-void DFace::Tick () {
+void DFace::Tick (long /* sec */, long /* usec */) {
     int nextTick = clock->NextTick();
-    if (nextTick > 0) {
-	input->CatchTimer(nextTick + 1, 0); // this extra second makes sure the
-    } else {				    // timeout is after the next minute
+    if (nextTick <= 0) {
 	int h, m, s;
 	char date[50];
 	clock->GetTime(date, h, m, s);
 	Set(date, h, m);
+	nextTick = clock->NextTick();
     }
+    /*
+     * The +1 below is an extra second to make sure the timeout
+     * is after the next minute.
+     */
+    Dispatcher::instance().startTimer(nextTick + 1, 0, tick);
 }
 
 void DFace::Set (char *today, int hours, int minutes) {
@@ -103,34 +114,26 @@ void DFace::Set (char *today, int hours, int minutes) {
 	}
     }
 
-    Event e;
-    Sensor* wait = new Sensor;
-    wait->CatchTimer(0,0);
-    Listen(wait);
-    unsigned long lasttime;
     unsigned long fade = FadeDelay * (1 << (min(4,max(0,FadeRate))) );
-
-    boolean done = false;
-    while (showTime && !done) {
-	Read(e);
-	lasttime = e.timestamp;
-	done = true;
-	if (mode == CIVIL && h < 10) {
-	    done &= ht->Set(-1);		// blank digit
-	} else {
-	    done &= ht->Set(h/10);
+    Event e;
+    boolean done_fading = false;
+    while (showTime && !done_fading && !done) {
+	if (Read(0, fade, e)) {
+	    e.target->Handle(e);
+	    if (done) {
+		return;
+	    }
 	}
-	done &= hu->Set(h%10);
-	done &= mt->Set(minutes/10);
-	done &= mu->Set(minutes%10);
-
-	wait->CatchTimer(0, 0);
-	Read(e);
-	wait->CatchTimer(0, int(lasttime+fade - e.timestamp));
+	done_fading = true;
+	if (mode == CIVIL && h < 10) {
+	    done_fading &= ht->Set(-1);		// blank digit
+	} else {
+	    done_fading &= ht->Set(h/10);
+	}
+	done_fading &= hu->Set(h%10);
+	done_fading &= mt->Set(minutes/10);
+	done_fading &= mu->Set(minutes%10);
     }
-
-    Listen(input);
-    Unref(wait);
 
     if (showTime && mode==CIVIL) {
 	AMPMMODE newAMPM = (hours >= 12) ? PM : AM;
@@ -180,8 +183,8 @@ DFace::DFace (
     shape->Rigid(hfil, hfil, vfil, vfil);
     invertor = nil;
     input = new Sensor;
-    input->CatchTimer(0, 0);
     input->Catch(KeyEvent);
+    tick = new IOCallback(DFace)(this, DFace::Tick);
 }
 
 void DFace::Reconfig () {
@@ -265,25 +268,16 @@ void DFace::Draw () {
     }
 }
 
-void DFace::Handle (Event &event) {
-    switch (event.eventType) {
-	case KeyEvent:
-	    if (event.len > 0 && event.keystring[0] == 'q') {
-		done = true;
-	    }
-	    break;
-	case TimerEvent:
-	    Tick();
-	    break;
+void DFace::Handle (Event& e) {
+    if (e.eventType == KeyEvent && e.len > 0 && e.keystring[0] == 'q') {
+	done = true;
+	GetWorld()->quit();
     }
 }
 
 void DFace::Run () {
-    Event event;
-
-    while (!done) {
-	Read(event);
-	Handle(event);
-	Tick();
+    Tick(0, 0);
+    if (!done) {
+	GetWorld()->run();
     }
 }

@@ -40,13 +40,13 @@ public:
     boolean Command(char);
 
     void ScanCmd();
+    void ClearCmd();
     void QuitCmd();
     void ForwardSearchCmd();
     void BackwardSearchCmd();
     void GotoCmd();
 
     virtual void Handle(Event&);
-protected:
     virtual void Update();
 private:
     void Init(ClassBuffer*);
@@ -73,7 +73,6 @@ private:
     void UpdateChildBrowser();
     void UpdateCurClass();
     void UpdateCurClass(const char*);
-    void UpdateEditor();
     void UnselectBrowsers();
 
     void SelectCurClass();

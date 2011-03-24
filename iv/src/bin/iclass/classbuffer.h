@@ -33,7 +33,10 @@ class ClassInfo;
 
 class ClassBuffer {
 public:
-    ClassBuffer(boolean recursive = false, boolean verbose = false);
+    ClassBuffer(
+	boolean recursive = false, boolean verbose = false,
+	boolean CPlusPlusFiles = false
+    );
     virtual ~ClassBuffer();
 
     void Search(const char* path);
@@ -56,7 +59,7 @@ private:
     char* Identifier(TextBuffer*, int&);
 private:
     class Classes* _classes;
-    boolean _recursive, _verbose;
+    boolean _recursive, _verbose, _CPlusPlusFiles;
 };
 
 #endif

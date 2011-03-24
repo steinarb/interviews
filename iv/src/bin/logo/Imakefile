@@ -1,26 +1,18 @@
-/**/#
-/**/# logo - InterViews logo
-/**/#
+XCOMM
+XCOMM logo - InterViews logo
+XCOMM
 
-#if CompileInMachineDepSubdir && !defined(InMachineDepSubdir)
-#define IHaveMachineDepSubdirs
+#ifdef InObjectCodeDir
 
-MakeMachineDepSubdir()
-DependMachineDepSubdir()
-
-#else
-
-LOCAL_LIBRARIES	= $(LIBINTERVIEWS)
-SYS_LIBRARIES	= -l$X -lm
-
-SRCS		= $(SRC)//**/*.c
-OBJS		= \
-	logo.o\
-	main.o
-
+Use_libInterViews()
+Use_2_6()
 ComplexProgramTarget(logo)
 
 MakeObjectFromSrc(logo)
 MakeObjectFromSrc(main)
 
-#endif /* if compiling in subdirectory */
+#else
+
+MakeInObjectCodeDir()
+
+#endif

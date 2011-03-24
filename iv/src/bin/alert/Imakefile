@@ -1,18 +1,16 @@
-/**/#
-/**/# alert - builds a dialog box from standard input text
-/**/#
+XCOMM
+XCOMM alert - dialog box built from standard input
+XCOMM
 
-#if CompileInMachineDepSubdir && !defined(InMachineDepSubdir)
-#define IHaveMachineDepSubdirs
+#ifdef InObjectCodeDir
 
-MakeMachineDepSubdir()
-DependMachineDepSubdir()
+Use_libInterViews()
+ComplexProgramTarget(alert)
+
+MakeObjectFromSrc(main)
 
 #else
 
-LOCAL_LIBRARIES	= $(LIBINTERVIEWS)
-SYS_LIBRARIES	= -l$X -lm
+MakeInObjectCodeDir()
 
-SimpleProgramTarget(alert)
-
-#endif /* if compiling in subdirectory */
+#endif

@@ -35,7 +35,7 @@ World *world;
 static void DoArgs(int argc, char *argv[]);
 
 int main (int argc, char * argv[]) {
-    world = new World("dclock", argc, argv);
+    world = new World("Dclock", argc, argv);
     DoArgs(argc, argv);
     InitData();
     switch (CreateMode) {

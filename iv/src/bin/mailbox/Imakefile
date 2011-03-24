@@ -1,23 +1,17 @@
-/**/#
-/**/# mailbox - shows incoming mail
-/**/#
+XCOMM
+XCOMM mailbox - incoming mail display
+XCOMM
 
-#if CompileInMachineDepSubdir && !defined(InMachineDepSubdir)
-#define IHaveMachineDepSubdirs
+#ifdef InObjectCodeDir
 
-MakeMachineDepSubdir()
-DependMachineDepSubdir()
-
-#else
-
-LOCAL_LIBRARIES	= $(LIBINTERVIEWS)
-SYS_LIBRARIES	= -l$X -lm
-
-SRCS = ${SRC}//**/*.c
-OBJS = mailbox.o
-
+Use_libInterViews()
+Use_2_6()
 ComplexProgramTarget(mailbox)
 
 MakeObjectFromSrc(mailbox)
 
-#endif /* if compiling in subdirectory */
+#else
+
+MakeInObjectCodeDir()
+
+#endif

@@ -27,7 +27,6 @@
 #include "classbuffer.h"
 #include "classeditor.h"
 #include "classinfo.h"
-#include "compeditor.h"
 #include "dialogs.h"
 #include "globals.h"
 #include "iclass.h"
@@ -36,6 +35,7 @@
 #include <InterViews/border.h>
 #include <InterViews/box.h>
 #include <InterViews/button.h>
+#include <InterViews/compeditor.h>
 #include <InterViews/filebrowser.h>
 #include <InterViews/font.h>
 #include <InterViews/frame.h>
@@ -44,7 +44,7 @@
 #include <InterViews/message.h>
 #include <InterViews/regexp.h>
 #include <InterViews/painter.h>
-#include <InterViews/scroller.h>
+#include <InterViews/scrollbar.h>
 #include <InterViews/sensor.h>
 #include <InterViews/strbrowser.h>
 #include <InterViews/streditor.h>
@@ -82,6 +82,9 @@ static const int MINTEXTSIZE = 10000;
 #define SCAN_LBL "^V"
 #define SCAN_CODE '\026'
 
+#define CLEAR_LBL "^C"
+#define CLEAR_CODE '\003'
+
 /*****************************************************************************/
 
 class Command : public MenuItem {
@@ -96,7 +99,7 @@ private:
 
 Command::Command (
     const char* lbl, const char* klbl, char kcode, IClass* s
-) : ((Interactor*) nil) {
+) : MenuItem((Interactor*) nil) {
     Insert(
        new HBox(
             new Message(lbl, Left, 2, hfil),
@@ -119,6 +122,7 @@ struct MenuInfo {
 /*****************************************************************************/
 
 IClass::IClass (ClassBuffer* cb) {
+    SetClassName("IClass");
     Init(cb);
     Visit("");
     _editor->Edit(_text);
@@ -152,7 +156,7 @@ void IClass::Init (ClassBuffer* cb) {
     _editor = new ClassEditor(_state, 24, 80, 8, Reversed);
     _editor->SetScrollAlignment(TopLeft);
 
-    _scanner = nil;
+    _scanner = new FileDialog("Scan through files/directories:", ".");
     _fwdSearch = nil;
     _bwdSearch = nil;
     _goto = nil;
@@ -164,7 +168,6 @@ void IClass::Init (ClassBuffer* cb) {
 
     input = new Sensor;
     input->Catch(KeyEvent);
-    input->Reference();
 
     Insert(Interior());
     UpdateClassesBrowser();
@@ -172,12 +175,12 @@ void IClass::Init (ClassBuffer* cb) {
 
 void IClass::Visit (const char* filename) {
     if (_lastFile == nil || strcmp(_lastFile, filename) != 0) {
-        class Message* msg = new Message(filename);
+        class Message* msg = new Message(_scanner->FullPath(filename));
         _fileIndic->Insert(msg);
         _fileIndic->Change(msg);
 
         delete _lastFile;
-        _lastFile = strdup(filename);
+        _lastFile = strnew(filename);
 
         delete _buf;
         delete _text;
@@ -185,7 +188,8 @@ void IClass::Visit (const char* filename) {
         FILE* f = nil;
 
         if (strlen(filename) != 0) {
-            f = fopen(filename, "r");
+	    /* cast to work around bug in prototype on some systems */
+            f = fopen((char*)filename, "r");
         }
 
         if (f != nil) {
@@ -217,6 +221,10 @@ void IClass::Run () {
 
     do {
         Read(e);
+	if (e.target == nil) {
+	    /* probably quit from window manager */
+	    break;
+	}
         Handle(e);
 
         _state->GetValue(value);
@@ -254,6 +262,7 @@ boolean IClass::Command (char c) {
         case GOTO_CODE:          GotoCmd(); break;
         case QUIT_CODE:          QuitCmd(); break;
         case SCAN_CODE:          ScanCmd(); break;
+        case CLEAR_CODE:         ClearCmd(); break;
         default:                 executed = false; break;
     }
     return executed;
@@ -278,7 +287,7 @@ boolean IClass::BackwardSearch (const char* string) {
     boolean successful = false;
 
     if (
-        _text->BackwardSearch(&re, _editor->Dot()) >= 0
+        _text->BackwardSearch(&re, _editor->Mark()) >= 0
         || _text->BackwardSearch(&re, _text->EndOfText()) >= 0
     ) {
         _editor->Select(re.EndOfMatch(), re.BeginningOfMatch());
@@ -473,6 +482,7 @@ Interactor* IClass::Interior () {
 
 static MenuInfo fileMenu[] = {
     { "Scan Files/Directories...", SCAN_LBL, SCAN_CODE },
+    { "Clear Classes", CLEAR_LBL, CLEAR_CODE },
     { "Quit", QUIT_LBL, QUIT_CODE },
     { nil }
 };
@@ -480,7 +490,7 @@ static MenuInfo fileMenu[] = {
 static MenuInfo searchMenu[] = {
     { "Forward Search...", FSRCH_LBL, FSRCH_CODE },
     { "Backward Search...", BSRCH_LBL, BSRCH_CODE },
-    { "Go to line...", GOTO_LBL, GOTO_CODE },
+    { "Go to Line...", GOTO_LBL, GOTO_CODE },
     { nil }
 };
 
@@ -566,32 +576,22 @@ Interactor* IClass::AddScroller (Interactor* i) {
     return new HBox(
         new MarginFrame(i, 2),
         new VBorder,
-        new VBox(
-            new UpMover(i, 1),
-            new HBorder,
-            new VScroller(i),
-            new HBorder,
-            new DownMover(i, 1)
-        )                
+	new VScrollBar(i)
     );
 }
 
 void IClass::InsertDialog (Interactor* dialog) {
-    Frame* framedDialog = new Frame(dialog, 2);
     World* world = GetWorld();
-    Coord x, y;
 
+    Coord x, y;
     Align(Center, 0, 0, x, y);
     GetRelative(x, y, world);
-    world->InsertTransient(framedDialog, this, x, y, Center);
+
+    world->InsertTransient(dialog, this, x, y, Center);
 }
 
 void IClass::RemoveDialog (Interactor* dialog) {
-    Frame* framedDialog = (Frame*) dialog->Parent();
-
-    GetWorld()->Remove(framedDialog);
-    framedDialog->Remove(dialog);
-    delete framedDialog;
+    GetWorld()->Remove(dialog);
 }
 
 void IClass::Complain (const char* msg) {
@@ -608,10 +608,6 @@ void IClass::Complain (const char* msg) {
 }
 
 void IClass::ScanCmd () {
-/*
-    if (_scanner == nil) {
-        _scanner = new FileDialog("Scan through files/directories:", ".");
-    }
     InsertDialog(_scanner);
 
     if (_scanner->Accept()) {
@@ -619,15 +615,35 @@ void IClass::ScanCmd () {
 
         for (int i = 0; i < browser->Selections(); ++i) {
             int index = browser->Selection(i);
-            _cbuf->Search(browser->String(index));
+            _cbuf->Search(browser->Path(index));
         }
     }
     RemoveDialog(_scanner);
-*/
-    AcknowledgeDialog unimplemented("Sorry, scanning not yet implemented.");
-    InsertDialog(&unimplemented);
-    unimplemented.Acknowledge();
-    RemoveDialog(&unimplemented);
+    UpdateClassesBrowser();
+}
+
+void IClass::ClearCmd () {
+    ConfirmDialog dialog("Really clear all classes?");
+    InsertDialog(&dialog);
+    boolean accepted = dialog.Confirm() == 'y';
+    RemoveDialog(&dialog);
+
+    if (accepted) {
+        World* world = GetWorld();
+        const char* recursive = world->GetAttribute("recursive");
+        const char* verbose = world->GetAttribute("verbose");
+        const char* CPlusPlusFiles = world->GetAttribute("CPlusPlusFiles");
+
+        delete _cbuf;
+        _cbuf = new ClassBuffer(
+            strcmp(recursive, "true") == 0, strcmp(verbose, "true") == 0,
+            strcmp(CPlusPlusFiles, "true") == 0
+        );
+
+        UpdateClassesBrowser();
+        UpdateParentBrowser();
+        UpdateChildBrowser();
+    }
 }
 
 void IClass::QuitCmd () { _state->SetValue(QUIT_CODE); }

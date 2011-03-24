@@ -21,20 +21,21 @@
  */
 
 #include <InterViews/button.h>
+#include <InterViews/window.h>
 #include <InterViews/world.h>
 #include <stdio.h>
 
 #include "fontbrowser.h"
 
 static PropertyData properties[] = {
-    { "ifb*sample", "The quick brown fox..." },
-    { "ifb*choice*font",
+    { "*sample", "The quick brown fox..." },
+    { "*choice*font",
         "*-*-times-medium-r-normal-*-*-120-*-*-*-*-iso8859-1"
     },
-    { "ifb*label*font",
+    { "*label*font",
         "*-*-times-bold-r-normal-*-*-120-*-*-*-*-iso8859-1"
     },
-    { "ifb*PushButton*font",
+    { "*PushButton*font",
         "*-*-times-medium-i-normal-*-*-140-*-*-*-*-iso8859-1"
     },
     { nil }
@@ -46,23 +47,23 @@ static OptionDesc options[] = {
 };
 
 int main (int argc, char* argv[]) {
-    World* world = new World("ifb", properties, options, argc, argv);
+    World world("Ifb", argc, argv, options, properties);
     ButtonState* quit = new ButtonState(false);
     FontBrowser* browser = new FontBrowser(
-        quit, world->GetAttribute("sample")
+        quit, world.GetAttribute("sample")
     );
 
-    browser->SetName("InterViews font browser");
-    browser->SetIconName("ifb");
-
-    world->InsertApplication(browser);
+    ApplicationWindow* w = new ApplicationWindow(browser);
+    w->name("InterViews font browser");
+    w->icon_name("ifb");
+    w->map();
     browser->Accept();
-    world->Remove(browser);
+    w->unmap();
 
     puts(browser->Fontname());
 
-    delete browser;
-    Unref(quit);
-    delete world;
+    Resource::unref(browser);
+    delete w;
+    Resource::unref(quit);
     return 0;
 }

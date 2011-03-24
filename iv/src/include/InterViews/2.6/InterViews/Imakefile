@@ -1,0 +1,10 @@
+XCOMM
+XCOMM include files for using old 2.6 InterViews classes
+XCOMM
+
+HEADERS = *.h
+DEST = $(INCDIR)/InterViews/2.6/InterViews
+SUBDIRS = Graphic
+
+InstallMultipleFlags($(HEADERS),$(DEST),$(INSTINCFLAGS))
+MakeInSubdirs($(SUBDIRS))

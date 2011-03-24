@@ -1,0 +1,689 @@
+%Doc-1.0
+\documentstyle{manual}
+
+%Doc-1.0
+%counter{chapter}[arabic] = 3
+%label{session}{4.1}
+%label{options}{4.1}
+%label{display}{4.3}
+%label{window}{4.4}
+%label{cursor}{4.5}
+%label{managed-window}{4.6}
+%label{managed-window-subclasses}{4.7}
+%label{session-example}{4.2}
+
+\begin{document}
+%
+%
+\chapter{Display Management}%
+%
+\float{figure}{4-\pagenumber{00}}%374.96 -644.72 -2
+\float{figure}{4-\pagenumber{00}}%374.64 -644.88 0
+The previous chapters covered glyphs and graphics operations.  This
+chapter discusses the other objects necessary to manage the workstation
+display where glyphs are drawn.  A {\bf window} is an object that
+can be mapped onto a {\bf {\font{Times-Roman}screen}} and receive
+input.  Associated with a window is the root of a directed acyclic
+graph of glyphs.  The window creates a {\bf canvas} that is bound
+to a portion of the screen when the window is mapped.  The window
+calls {\font{Times-Italic}draw} on the root glyph to refresh the canvas
+and {\font{Times-Italic}pick} to determine what to do with input events.
+
+\quad A {\bf display} is the unit of window system control; typically
+it consists of a single screen, keyboard, and a mouse or other pointing
+devices.  A {\font{Times-Bold}session} is an object provided for convenience
+to manage the flow of control associated with an application.  A session
+can interact with more than one display and can access all the screens
+associated with a single display.%
+%
+\section{Session}%
+%
+Figure%
+%
+\code{class PropertyData \{\
+public:\
+\quad const char* path;\
+ * value;\
+\quad const char* value;\
+\};\smallskip
+class OptionDesc \{\
+public:\
+\quad const char* name;\
+\quad const char* path;\
+\quad OptionStyle format;\
+\quad const char* value;\
+\};\smallskip
+class Session \{\
+public:\
+\quad Session(\
+\quad \quad const char*, int\& argc, char** argv,\
+\quad \quad const OptionDesc* = nil, const PropertyData* = nil\
+\quad );\
+\quad static Session* instance();\
+\quad const char* name() const;\
+\quad const char* classname() const;\
+\quad int argc() const;\
+\quad char** argv() const;\
+\quad Style* style() const;\
+\quad void default\_display(Display*);\
+\quad Display* default\_display() const;\
+\quad virtual Display* connect(const String\&);\
+\quad virtual Display* connect(const char*);\
+\quad virtual void disconnect(Display*);\
+\quad virtual int run();\
+\quad virtual int run\_window(Window*);\
+\quad virtual void quit();\
+\quad virtual boolean done() const;\
+\quad virtual boolean pending() const;\
+\quad virtual void read(Event\&);\
+\quad virtual boolean read(long sec, long usec, Event\&);\
+\quad virtual void unread(Event\&);\
+\quad virtual void poll(Event\&);\
+\};%
+%
+\figurecaption{Session class interface\label{session}.}%
+%
+%-0.719994 1.19995 1
+}%
+%
+ \ref{session} shows the session class interface.  A session must
+be constructed before any other InterViews objects are created.  The
+constructor takes a string that specifies the session's class name,
+command-line arguments, optional argument description, and optional
+initial style settings.  The session's instance name comes from the
+``-name'' command-line option if one is given, or the environment
+variable RESOURCE\_NAME if it is defined, or the value of argv[0]
+with all leading directories stripped.  The session class and instance
+names are used as the name and prefix for the root style.
+
+\quad The option description is an array of structures that describe
+command-line arguments.  The structure contains four fields: a {\it name}
+that is the command-line string, a {\it path} specifying a style attribute,
+a {\it format} specifying where the associated value is, and a default
+{\it value}.  Valid formats are OptionPropertyNext (use the next argument
+as an attribute:value pair), OptionValueNext (use the next argument
+as the value), OptionValueImplicit (use the default value), OptionValueIsArg
+(use argument as value), and OptionValueAfter (use remainder of argument
+as value).  If a command-line argument is found that matches an option
+description, it will be interpreted and removed from {\it argv}.  The
+argument count ({\it argc}) will be set to the number of uninterpreted
+command-line arguments.
+
+\quad In addition to the program-specified options, the session constructor
+automatically matches the options listed in Table~\ref{options}.%
+%
+\table{\begin{tabular}{|l|l|}
+\hline
+{\align{justify}-background}&
+{\align{justify}next argument sets
+the background color}\\
+\hline
+{\align{justify}-bg}&
+{\align{justify}same as -background}\\
+\hline
+{\align{justify}-dbu\size{10}f}&
+{\align{justify}double-buffer
+windows by default}\\
+\hline
+{\align{justify}-display}&
+{\align{justify}next argument
+specifies the target workstation display}\\
+\hline
+{\align{justify}-dpi}&
+{\align{justify}next
+argument is coordinates-to-pixels ratio}\\
+\hline
+{\align{justify}-fg}&
+{\align{justify}same
+as -foreground}\\
+\hline
+{\align{justify}-flat}&
+{\align{justify}next argument
+sets the base color for bevels}\\
+\hline
+{\align{justify}-fn}&
+{\align{justify}same
+as -font}\\
+\hline
+{\align{justify}-font}&
+{\align{justify}next argument sets
+the default text font}\\
+\hline
+{\align{justify}-foreground}&
+{\align{justify}next
+argument sets the foreground color}\\
+\hline
+{\align{justify}-geometry}&
+{\align{justify}next
+argument sets the first window's position and size}\\
+\hline
+{\align{justify}-iconic}&
+{\align{justify}starts
+up first window in iconic form}\\
+\hline
+{\align{justify}-malloc}&
+{\align{justify}run
+with memory-management debugging on}\\
+\hline
+{\align{justify}-monochrome}&
+{\align{justify}use
+monochrome style}\\
+\hline
+{\align{justify}-motif}&
+{\align{justify}use Motif
+style}\\
+\hline
+{\align{justify}-name}&
+{\align{justify}next argument sets the
+instance name of the session}\\
+\hline
+{\align{justify}-nodbuf}&
+{\align{justify}do
+not double-buffer windows}\\
+\hline
+{\align{justify}-openlook}&
+{\align{justify}use
+OpenLook style}\\
+\hline
+{\align{justify}-synchronous}&
+{\align{justify}force
+synchronous operation with the window system}\\
+\hline
+{\align{justify}-title}&
+{\align{justify}next
+argument sets the session's default title bar name}\\
+\hline
+{\align{justify}-visual}&
+{\align{justify}next
+argument is visual class to use for windows}\\
+\hline
+{\align{justify}-visual\_id}&
+{\align{justify}next
+argument is visual id number to use for windows}\\
+\hline
+{\align{justify}-xrm}&
+next
+argument is \252name:value\272; sets named attribute\\
+\hline
+\end{tabular}%
+%
+%
+\tablecaption{Predef\label{options}ined command-line options}%
+%
+%18 -352.8 2
+}%
+%
+  The optional initial style settings are specified by a nil-terminated
+array of pairs {\font{Helvetica}<s1,s2>}, where s1 is an attribute
+name and s2 is the value.  User defaults will override any initial
+settings, and command-line arguments will override user defaults.
+
+\quad Session::instance returns the session object, allowing any routine
+to access session operations.  Session::name, Session::classname,
+Session::argc, and Session::argv return information about the session.
+
+\quad Session::default\_display sets and gets the default display
+for the session.  Initially, the default display is the display first
+opened when the session is created.  The name of the first display
+is either the value after the \252-display\272 command-line argument,
+if present, or the value of the DISPLAY environment variable.  Session::style
+returns the root style associated with the default display.
+
+\quad Session::connect opens a new connection to the display with
+the given name.  If successful, the session will begin receiving events
+from the display and returns a pointer to it.  If not successful,
+Session::connect returns nil.  Session::disconnect stops receiving
+events from the given display.
+
+\quad Several operations are provided for reading events from one
+of the connected displays.  Generally, applications need not call
+these operations directly--they can simply return Session::run at
+the end of their main function.  Session::run reads events from the
+display, handling them as they arrive, and stops after a call to Session::quit.  Session::run\_window
+is short-hand for mapping the window and then calling Session::run.  Session::done
+returns whether Session::quit has been called.
+
+\quad Session::pending returns whether any events are waiting to be
+read.  Session::read gets the next event from the display.  Session::read
+returns with any event, not necessarily an event understood directly
+by the toolkit.  For example, an application running on the X Window
+System will get a DestroyNotify event when a window is destroyed.  The
+Event class defines no specific type for this event (it will be \252other\272)
+and takes no default action.  However, it will be returned by Session::read.
+
+\quad Session::read optionally can be called with a timeout.  It returns
+true if an event is read before the timeout occurs, or false if no
+event occurred before the specified time expires.  Note that a timeout
+is not the same as a timer.  To interleave timing information with
+normal events, use the Dispatcher class.
+
+\quad Session::unread puts an event back at the front of the input
+queue associated with the display.  Putting an event back is not necessarily
+the same as not reading it because the target window could be modified
+(even destroyed) between the time the event is first read and when
+it is re-read.  Session::poll returns the current event information
+for the default display.
+
+\quad Figure%
+%
+\code{static PropertyData props[] = \{\
+\quad \{ "*quitbutton", "OK, OK . . ." \},\
+\quad \{ "*transient", "on" \},\
+\quad \{ nil \}\
+\};\smallskip
+static OptionDesc options[] = \{\
+\quad \{ "-button", "*quitbutton", OptionValueNext \},\
+\quad \{ "-top", "*transient", OptionValueImplicit, "off" \},\
+\quad \{ nil \}\
+\};\smallskip
+int main(int argc, char** argv) \{\
+\quad Session* session = new Session("Alert", argc, argv, options,
+props);\
+\quad \quad . . . create window . . .\
+\quad return session->run\_window(window);\
+\};%
+%
+\figurecaption{Session example\label{session-example}.}%
+%
+%1.19998 -34.32 3
+}%
+%
+ \ref{session-example} shows an example use of a session in the main
+function for the alert application.  The application defines two attributes,
+\252quitbutton\272 and \252transient\272, with initial values \252OK,
+OK . . .\272 and \252on\272, respectively.  Two command-line options
+are provided to set these attributes.  The option \252-button\272
+is followed on the command-line by the quitbutton string, and the
+option \252-top\272 sets the value of the transient attribute to \252off\272.%
+%
+\section{Display}%
+%
+Figure%
+%
+\code{class Display \{\
+protected:\
+\quad Display(DisplayRep*);\
+public:\
+\quad static Display* open(const String\&);\
+\quad static Display* open(const char*);\
+\quad static Display* open();\
+\quad virtual void close();\smallskip
+\quad virtual Coord width() const;\
+\quad virtual Coord height() const;\
+\quad virtual Coord a\_width() const;\
+\quad virtual Coord a\_height() const;\
+\quad int to\_pixels(Coord) const;\
+\quad Coord to\_coord(int) const;\smallskip
+\quad virtual void set\_screen(int);\smallskip
+\quad virtual void style(Style*);\
+\quad virtual Style* style() const;\smallskip
+\quad virtual void repair();\
+\quad virtual void flush();\
+\quad virtual void sync()\smallskip
+\quad virtual void ring\_bell(int);\
+\quad virtual void set\_key\_click(int);\
+\quad virtual void set\_auto\_repeat(boolean);\
+\quad virtual void set\_pointer\_feedback(int thresh, int scale);\
+\quad virtual void move\_pointer(Coord x, Coord y);\
+\};%
+%
+\figurecaption{Display class interface\label{display}.}%
+%
+%0.240005 -196.56 4
+}%
+%
+ \ref{display} shows the display class interface.  Display::open is
+a static member function that opens a connection to the display with
+the given name.  The interpretation of a display name is system-dependent.  On
+X, the name is {\font{Times-Italic}host:number} where {\font{Times-Italic}host}
+is a machine's hostname and {\font{Times-Italic}number} is the index
+for the display connected to that host (typically 0).  If successful,
+Display::open returns a pointer to a display object.  If not successful,
+it returns nil.  Display::close terminates the connection.
+
+\quad Display::width and Display::height return the dimensions in
+coordinates of the display's current screen.  Display::a\_width and
+Display::a\_height return the dimensions in points (72 points = one
+inch).
+
+\quad Display::to\_pixels and Display::to\_coord convert between coordinates
+and pixels.  The conversion is a function of the {\font{Times-Italic}dpi}
+attribute, which is 75 by default.  One coordinate unit length is
+a printer's point, defined as 72/{\font{Times-Italic}dpi} pixels.
+
+\quad Display::set\_screen sets the current screen to use for display
+operations.  Initially, current screen is set to 0.
+
+\quad Display::repair calls Window::repair for each window on the
+display that has a canvas with damage.  It is not necessary to call
+Display::repair directly, as windows will automatically be repaired
+before blocking for input events.
+
+\quad Display::flush and Display::sync are used to synchronize with
+the window system.  Display::flush repairs all damaged windows on
+the display and ensures that any pending requests have been sent to
+the window system.  Display::sync is the same as Display::flush, but
+additionally waits for an acknowledgement from the window system.
+
+\quad Display::ring\_bell sounds the workstation's bell at a specified
+volume.  The parameter should be between 0 and 100, where 0 is silent
+and 100 is the loudest possible bell.
+
+\quad The operations set\_key\_click, set\_auto\_repeat, and set\_pointer\_feedback
+modify the key click volume, the flag determining whether keys should
+repeat, and the pointer interpretation parameters, respectively.  Display::move\_pointer
+changes the position of the input pointer.  This operation can have
+surprising effects to the user and should generally be avoided.%
+%
+\section{Window}%
+%
+The base class window is abstract; applications do not instantiate
+it directly.  Two subclasses  are provided:  ManagedWindow, for defining
+information for a window manager, and PopupWindow for windows not
+controlled by the window manager.  Popups should only be used for
+immediate feedback, such as for popup or pulldown menus.  ManagedWindow
+is also an abstract class, with concrete subclasses provided for application,
+icon, top-level, and transient windows.
+
+\quad Figure \ref{window} shows the Window base class interface.%
+%
+\code{class Window \{\
+protected:\
+\quad Window(Glyph* = nil);\
+public:\
+\quad virtual void display(Display*);\
+\quad virtual Display* display() const;\
+\quad virtual Canvas* canvas() const;\
+\quad virtual void double\_buffered(boolean);\
+\quad virtual boolean double\_buffered() const;\
+\quad virtual void cursor(Cursor*);\
+\quad virtual Cursor* cursor() const;\
+\
+\quad virtual void place(Coord left, Coord bottom);\
+\quad virtual void align(float x, float y);\
+\quad virtual Coord left() const;\
+\quad virtual Coord bottom() const;\
+\quad virtual Coord width() const;\
+\quad virtual Coord height() const;\
+\
+\quad virtual void map();\
+\quad virtual void unmap();\
+\quad virtual void raise();\
+\quad virtual void lower();\
+\quad virtual void move(Coord left, Coord bottom);\
+\quad virtual void resize();\
+\
+\quad virtual void receive(const Event\&);\
+\quad virtual Handler* target(const Event\&) const;\
+\quad virtual void grab\_pointer(Cursor* = nil) const;\
+\quad virtual void ungrab\_pointer() const;\
+\quad virtual void repair();\
+\}; %
+%
+\figurecaption{Window base class interface\label{window}}%
+%
+%-3.05176e-05 -0.959991 6
+}%
+%
+  Window::display sets or gets the display that a window is mapped
+on (or nil if the window is not currently mapped).  Window::canvas
+returns the canvas that the window passes to its glyph for drawing.  Window::double\_buffered
+sets or gets the flag requesting that all drawing be performed into
+an off-screen area and switched to the screen in one operation instead
+of drawing directly onto the screen.  Windows are double-buffered
+by default.
+
+\quad Window::cursor sets or gets the image that tracks a pointing
+device's position when the it is inside the window.  Cursors are defined
+by two bitmaps and a ``hot spot''.  The mask bitmap specifies which
+pixels are to be drawn, and the pattern bitmap specifies which pixels
+are in foreground color and which are in background color.  The hot
+spot specifies the location of the pointing device relative to the
+cursor's lower-left corner.  Figure \ref{cursor} shows the Cursor
+class interface.%
+%
+\code{class Cursor : virtual public Resource \{\
+public:\
+\quad Cursor(\
+\quad \quad short x, short y, const int* pattern, const int* mask,\
+\quad \quad const Color* fg = nil, const Color* bg = nil\
+\quad );\
+\quad Cursor(\
+\quad \quad const Bitmap* pat, const Bitmap* mask,\
+\quad \quad const Color* fg = nil, const Color* bg = nil\
+\quad );\
+\quad Cursor(\
+\quad \quad const Font*, int pattern, int mask,\
+\quad \quad const Color* fg = nil, const Color* bg = nil\
+\quad );\
+\quad Cursor(int index, const Color* fg = nil, const Color* bg = nil);\
+\}; %
+%
+\figurecaption{Cursor class interface\label{cursor}}%
+%
+%3.8147e-05 -2.87997 7
+}%
+%
+ A cursor can be created from specific data, pattern and mask bitmaps,
+a character in a font, or an index into the standard cursor information
+for the target window system.  If the cursor is specified with bitmaps,
+the hot spot is the origin of the pattern bitmap; if specified with
+a character, it is the origin of the character's bitmap in the font.  An
+index implies both bitmaps as well as the hot spot.  Specific values
+for the index are usually defined in an include file.  For example,
+standard X11 cursors are defined in the file <X11/cursorfont.h>.
+
+\quad Window::place specifies the desired screen coordinates for a
+window. Window::align specifies a desired alignment.  The alignment
+values are fractions that indicate where the window should appear
+relative to its coordinates as specified by a call to Window::place.  For
+example, an alignment of 0.0,1.0 means the placement specifies the
+upper-left corner of the window.  An alignment of 0.5,0.5 means the
+placement specifies the center of the window.  Unless specified, the
+alignment will be 0.0,0.0, meaning the placement coordinates specify
+the lower-left corner of the window.
+
+\quad Window::map requests the window to be mapped onto the screen.  If
+no display has been set, then the session default display is used.  Window::map
+need {\it not} be synchronous--one cannot assume the window is usable
+immediately after calling map.  Window::unmap requests that the window
+be removed from the screen.
+
+\quad Window::raise and Window::lower control the stacking order of
+a window on the screen.  Window::raise makes the window above all
+the other windows on the screen; Window::lower make the window below
+all the others.  These operations usually are neither necessary nor
+appropriate, as stacking order should normally be under control of
+the user through a window manager.
+
+\quad The window systems delivers input events to a particular window,
+which in turn tries to find a handler to process each event.  Window::receive
+examines an event, handling window maintenance events internally.  For
+example, X expose and configure events are handled directly by Window::receive.  Window::target
+determines if there is a suitable handler for an event.
+
+\quad Window::grab\_pointer takes control of pointer input events
+for the display.  Other applications will not receive pointer events
+until Window::ungrab\_pointer is called to release control.  If a
+cursor is passed to Window::grab\_pointer, it will be used when the
+pointer is outside the window during the grab.
+
+\quad If any part of a window's canvas has been damaged, Window::repair
+will call draw on the root glyph and perform the necessary screen
+update when double-buffering.  All windows on a display will be repaired
+automatically before blocking for input from the display, so applications
+usually need not call Window::repair directly. %
+%
+\subsection{ManagedWindow}%
+%
+A managed window provides operations to specify information for a
+window manager to use.  ManagedWindow is an abstract base class with
+four predefined descendants: ApplicationWindow, TopLevelWindow, TransientWindow,
+and IconWindow.  An application should create one application window,
+which makes information about command-line arguments available to
+a session manager, if present on the system.  After the application
+window, normal windows are top-level.  A top-level window can have
+a ``group leader'', which is typically the application window.  A
+window manager may allow quick control of all windows with the same
+group leader, such as when iconifying or deiconifying.
+
+\quad A transient window is often treated specially by window managers.  It
+may be decorated differently (or not at all), or automatically unmapped
+when the main window is iconified.  Transient windows are used for
+temporary controls, such as dialog boxes, but not for unmanaged windows
+such as popups or pulldowns.  A transient is usually associated with
+another managed window.
+
+\quad An icon window is a window that is mapped when its associated
+window is iconified and unmapped when its associated window is deiconified.  Calling
+Window::map on an icon window will therefore bind it to the window
+system, but will not map it on the screen.
+
+\quad Figure \ref{managed-window} shows the ManagedWindow class interface.%
+%
+\code{class ManagedWindow : public Window \{\
+protected:\
+\quad ManagedWindow(Glyph*);\
+public:\
+\quad virtual void geometry(const String\&);\
+\quad virtual void geometry(const char*);\
+\quad virtual const String* geometry() const;\
+\quad virtual void name(const String\&);\
+\quad virtual void name(const char*);\
+\quad virtual const String* name() const;\
+\quad virtual void icon\_name(const String\&);\
+\quad virtual void icon\_name(const char*);\
+\quad virtual const String* icon\_name() const;\
+\quad virtual void icon\_geometry(const String\&);\
+\quad virtual void icon\_geometry(const char*);\
+\quad virtual const String* icon\_geometry() const;\
+\quad virtual void icon\_bitmap(Bitmap*);\
+\quad virtual Bitmap* icon\_bitmap() const;\
+\quad virtual void icon\_mask(Bitmap*);\
+\quad virtual Bitmap* icon\_mask() const;\
+\
+\quad virtual void icon(Window*);\
+\quad virtual Window* icon() const;\
+\
+\quad virtual void iconic(boolean);\
+\quad virtual boolean iconic() const;\
+\quad virtual void iconify();\
+\quad virtual void deiconify();\
+\
+\quad virtual void focus\_event(Handler* in, Handler* out);\
+\quad virtual void wm\_delete(Handler*);\
+\}; %
+%
+\figurecaption{ManagedWindow class interface\label{managed-window}}%
+%
+%0.960014 -10.56 9
+}%
+%
+ Most of the operations on a managed window set or return information
+associated with the window.  ManagedWindow::geometry sets or returns
+the desired geometry for a window.  Geometry specifications are strings
+of the form ``WxH+X+Y'' where W is the width, H the height, X the
+left corner, and Y the top corner of the window.  Either the position
+or the size may be omitted, and the position can use ``--'' instead
+of ``+'' to denote distance from the opposite of the display to the
+opposite side of the window.  For example, a --X value specifies that
+the right side of the window should be a distance of X from the right
+edge of the screen.  The ManagedWindow::geometry get function  returns
+nil if no geometry has been specified.  ManagedWindow::name specifies
+a string the window manager is expected to display with the window,
+typically in a headline bar.  ManagedWindow::icon\_name specifies
+a string to display with the window when it is iconified.  ManagedWindow::icon\_geometry
+specifies the size of a window's icon, using the same format as ManagedWindow::geometry.  ManagedWindow::icon\_bitmap
+and ManagedWindow::icon\_mask specify two bitmaps to use to draw an
+icon.  The mask defines the area to be drawn and the bitmap defines
+the foreground and background areas.  Pixels that correspond to a
+one in the bitmap and a one in the mask are drawn with the foreground
+color.  Pixels that correspond to a zero in the bitmap and a one in
+the mask are draw with the background color.  Pixels that correspond
+to a zero in the mask are not drawn.
+
+\quad ManagedWindow::icon specifies a second window to map when the
+first window is iconified.  Using a window as an icon overrides the
+other icon information.  Therefore, it does not make sense to use
+ManagedWindow::icon in conjunction with icon\_name, icon\_geometry,
+icon\_bitmap, or icon\_mask.  An icon window cannot have an icon window
+or icon information.
+
+\quad ManagedWindow::iconic specifies the initial state of a window.  If
+iconic is true, mapping a window will actually map its icon instead.  ManagedWindow::iconic
+need not be called directly by an application; it is called automatically
+if specified by user customization information.
+
+\quad ManagedWindow::iconify requests the window be unmapped and the
+window's icon be mapped to the screen.  ManagedWindow::deiconify reverse
+s the operation, unmapping the icon and mapping the original window.  It
+does not make sense to iconify or deiconify an icon window.
+
+\quad ManagedWindow::focus\_event specifies handlers for the window
+receiving and losing keyboard focus from the window manager.  ManagedWindow::wm\_delete
+specifies a handler for a request from the window manager to delete
+the window.  If the handler is nil (which is the initial value), then
+the response to this event will be to call Session::quit.
+
+\quad Figure \ref{managed-window-subclasses} shows the operations
+on the ManagedWindow subclasses.%
+%
+\code{class ApplicationWindow : public ManagedWindow \{\
+public:\
+\quad ApplicationWindow(Glyph*);\
+\};\
+\
+class TopLevelWindow : public ManagedWindow \{\
+public:\
+\quad TopLevelWindow(Glyph*);\
+\quad virtual void group\_leader(ManagedWindow*);\
+\quad virtual ManagedWindow* group\_leader() const;\
+\};\
+\
+class TransientWindow : public TopLevelWindow \{\
+public:\
+\quad TransientWindow(Glyph*);\
+\quad virtual void transient\_for(ManagedWindow*);\
+\quad virtual void ManagedWindow* transient\_for() const;\
+\};\
+\
+class IconWindow : public ManagedWindow \{\
+public:\
+\quad IconWindow(Glyph*);\
+\}; %
+%
+\figurecaption{ManagedWindow subclasses\label{managed-window-subclasses}}%
+%
+%4.57764e-05 0.959991 10
+}%
+%
+  ApplicationWindow and IconWindow provide no additional operations
+beyond a constructor.  TopLevelWindow provides an operation to set
+or return its group leader.  TransientWindow is a subclass to TopLevelWindow
+that can additionally be associated with a primary window with TransientWindow::transient\_for.
+%
+%
+\subsection{PopupWindow}%
+%
+A popup window is mapped directly to a screen without window manager
+interaction (or knowledge).  In the X  Window System, a popup window
+will override the normal redirection of map requests to window managers.  Popups
+on X also will request that the pixels under the popup be saved to
+avoid a subsequent exposure when the popup is unmapped.
+
+\quad Popups should only be used for temporary windows, such as popup
+or pulldown menus.  Because they do not go through the window manager,
+popups should be placed explicitly.  Here is an example of using a
+popup that appears below a menubar, aligning the top of the popup
+to the lower left corner of the menubar:\smallskip
+{\sf {\small \quad \quad void pulldown(Window* menubar, Glyph* g)
+\{\
+\quad \quad \quad PopupWindow* popup = new PopupWindow(g);\
+\quad \quad \quad \quad popup->place(menubar->left(), menubar()->bottom());\
+\quad \quad \quad \quad popup->align(0.0, 1.0);\
+\quad \quad \quad \quad popup->map(); \
+\quad \quad \}\
+}}
+
+%
+\end{document}

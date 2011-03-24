@@ -1,0 +1,8 @@
+XCOMM
+XCOMM data files for defining application defaults
+XCOMM
+
+FILES = Doc
+DEST = $(LIBALLDIR)/app-defaults
+
+InstallMultipleFlags($(FILES),$(DEST),$(INSTDATFLAGS))

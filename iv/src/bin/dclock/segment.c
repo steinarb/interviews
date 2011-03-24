@@ -28,6 +28,8 @@
 #include "segment.h"
 #include <stdio.h>
 
+Painter* Segment::fadePainter[17];
+
 // pattern initialization
 const int myPatSeed[17] = {
     0x0000, 0x8000, 0x8020, 0xA020,
@@ -39,7 +41,7 @@ const int myPatSeed[17] = {
 
 Pattern* Segment::MakePattern (int seed) {
     Pattern* pat;
-    int dat[patternHeight];
+    int dat[16];
     unsigned int Row[4];
 
     for (int i = 0; i <= 3; i++) {
@@ -49,7 +51,7 @@ Pattern* Segment::MakePattern (int seed) {
 	Row[i] |= Row[i]<<16;
 	seed >>= 4;
     }
-    for (i = 0; i <= patternHeight-1; i++) {
+    for (i = 0; i < 16; i++) {
 	dat[i] = Row[i%4];
     }
     pat = new Pattern(dat);
@@ -63,7 +65,7 @@ Segment::Segment (Seg s, float Xoff, float Yoff) {
     p.count = SegData[whichSeg].count;
     fade = 0;		// initially off
     fullFade = 16;
-
+    canvas = nil;
 }
 
 void Segment::Reconfig (Painter* output) {
@@ -90,7 +92,9 @@ void Segment::Resize (Canvas* c, int height) {
 }
 
 void Segment::Draw() {
-    fadePainter[fade]->FillPolygon(canvas, p.x, p.y, p.count);
+    if (canvas != nil) {
+	fadePainter[fade]->FillPolygon(canvas, p.x, p.y, p.count);
+    }
 }
 
 void Segment::Redraw () {

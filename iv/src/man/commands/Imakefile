@@ -1,33 +1,11 @@
-/**/#
-/**/# commands - man pages for programs run by user
-/**/#
+XCOMM
+XCOMM man pages for using InterViews applications
+XCOMM
 
-all::
-depend::
-install.man:: install
-
-FORMATTED	= commands.PS
+TROFFSRCS	= *.n
 TROFFFLAGS 	= -man
-TROFFSRCS	= \
-	CC.n \
-	alert.n \
-	dclock.n \
-	graphics.n \
-	iclass.n \
-	idraw.n \
-	ifb.n \
-	ifc.n \
-	istat.n \
-	logo.n \
-	mailbox.n \
-	mkclass.n \
-	remind.n \
-	spaceman.n \
-	squares.n \
-	sted.n
+TROFFOUTPUT	= commands.PS
+DEST		= $(MANDIR)/mann
 
-TroffSources($(FORMATTED))
-InstallMultipleFlags($(TROFFSRCS),$(MANDIR),$(INSTMANFLAGS))
-#if InstallRelative
-InstallMultipleFlags($(TROFFSRCS),$(RELATIVEMANDIR),$(INSTMANFLAGS))
-#endif
+TroffSources($(TROFFOUTPUT))
+InstallMultipleFlags($(TROFFSRCS),$(DEST),$(INSTMANFLAGS))

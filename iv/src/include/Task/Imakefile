@@ -1,0 +1,8 @@
+XCOMM
+XCOMM include files for using the Task library
+XCOMM
+
+HEADERS = *.h
+DEST = $(INCDIR)/Task
+
+InstallMultipleFlags($(HEADERS),$(DEST),$(INSTINCFLAGS))

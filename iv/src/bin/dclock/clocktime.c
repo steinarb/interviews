@@ -40,7 +40,11 @@ int Clock::NextTick () {
 void Clock::GetTime (char* date, int& h, int& m, int& s) {
     struct tm local;
 
+#ifdef hpux
+    local = * localtime((time_t*)&gmt.tv_sec);
+#else
     local = * localtime(&gmt.tv_sec);
+#endif
     h = local.tm_hour;
     m = local.tm_min;
     s = local.tm_sec;

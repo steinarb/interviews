@@ -1,0 +1,506 @@
+%Doc-1.0
+\documentstyle{manual}
+
+%Doc-1.0
+%counter{chapter}[arabic] = 6
+%label{bevel}{7.1}
+%label{button}{7.2}
+%label{menu}{7.3}
+%label{adjustable}{7.4}
+%label{valuator}{7.5}
+%label{field-editor}{7.6}
+
+\begin{document}
+%
+%
+\chapter{Kits}%
+%
+\float{figure}{7-\pagenumber{00}}%378.8 -642.8 -2
+\float{figure}{7-\pagenumber{00}}%378.8 -642.8 0
+A kit is an object that creates user interface objects with a concrete
+look-and-feel.  Typically, an application uses a kit to create specific
+components, such as pulldown menus, push buttons, and scrollbars.  Kits
+isolate the application from specific look-and-feel issues and the
+details of how a concrete component is implemented.  Using glyphs,
+many components are simply defined using instances of existing classes.  For
+example, a push button with a string label is created using a button,
+label, telltale, and two bevel objects.
+
+\quad InterViews provides a base kit class for creating common user
+interface objects.  Subclasses are provided for implementing concrete
+objects based on the Motif (default) and OpenLook user interfaces.  A
+kit subclass is also provided for monochrome screens.
+
+\quad Kit::instance is a static member function that returns a default
+kit.  If a kit has not yet been created, Kit::instance creates one
+using the session's style to determine which kit subclass to construct.  If
+the \252openlook\272 or \252monochrome\272 attributes are defined,
+then the associated kit is used.  Otherwise, the Motif-based kit is
+used.  Currently, neither the Motif nor OpenLook kits are fully compliant
+with their respective definitions.
+
+\quad Instead of listing all the Kit functions together, we present
+the functions in groups corresponding to the different kinds of objects.  In
+the context of the Kit functions, we also describe the support classes
+for basic look-and-feel functionality.%
+%
+\section{Bevels}%
+%
+On color displays, it is often desirable to frame objects with a beveled
+look to give a 3D appearance.  The Kit class provides the following
+three functions for creating beveled frames:\smallskip
+\quad virtual Glyph* inset\_frame(Glyph*, Style*) const;\
+\quad virtual Glyph* outset\_frame(Glyph*, Style*) const;\
+\quad virtual Glyph* flat\_frame(Glyph*, Style*) const;\smallskip
+Kit:inset\_frame uses dark shading in the upper left and light shading
+in the lower right to make the contents of the frame appear to be
+recessed.  Kit::outset\_frame reverses the shading to make the contents
+appear to project out of the frame.  Kit::flat\_frame uses equal shading
+throughout the frame to look \252in-between\272 the inset and outset
+frames.
+
+\quad Kits use the bevel class to implement frames.  A bevel is a
+monoglyph that draws a border around its body using multiple colors
+to make an object look raised or lowered relative to other objects.  Figure%
+%
+\code{typedef void (*Beveler)(\
+\quad Canvas*, const Color*, const Color*, const Color*,\
+\quad Coord thickness, Coord left, Coord bottom, Coord right, Coord
+top\
+);\smallskip
+class Bevel : public MonoGlyph \{\
+public:\
+\quad Bevel(\
+\quad \quad Glyph*, Beveler,\
+\quad \quad const Color* upper-left, const Color* center, const Color*
+lower-right,\
+\quad \quad Coord thickness\
+\quad );\smallskip
+\quad static void rect(\
+\quad \quad Canvas*, const Color*, const Color*, const Color*, Coord,\
+\quad \quad Coord, Coord, Coord, Coord\
+\quad );\
+\quad static void left\_arrow(\
+\quad \quad Canvas*, const Color*, const Color*, const Color*, Coord,\
+\quad \quad Coord, Coord, Coord, Coord\
+\quad );\
+\quad static void right\_arrow(\
+\quad \quad Canvas*, const Color*, const Color*, const Color*, Coord,\
+\quad \quad Coord, Coord, Coord, Coord\
+\quad );\
+\quad static void up\_arrow(\
+\quad \quad Canvas*, const Color*, const Color*, const Color*, Coord,\
+\quad \quad Coord, Coord, Coord, Coord\
+\quad );\
+\quad static void down\_arrow(\
+\quad \quad Canvas*, const Color*, const Color*, const Color*, Coord,\
+\quad \quad Coord, Coord, Coord, Coord\
+\quad );\
+\};%
+%
+\figurecaption{Bevel class interface and kit operations\label{bevel}.}%
+%
+%1.2 5.04007 1
+}%
+%
+ \ref{bevel} shows the bevel class interface.  The bevel constructor
+takes the glyph body; a drawing function for the bevel; colors for
+the upper-left, center, and lower-right portions of the frame; and
+a thickness.  Bevel::rect draws a rectangular bevel, shading the upper-left
+and lower-right portions of the rectangle.  Bevel::left\_arrow, Bevel::right\_arrow,
+Bevel::up\_arrow, and Bevel::down\_arrow perform similar shading for
+arrows.  For example, the following code can be used to create an
+inset frame for a glyph {\font{Times-Italic}g}, style {\font{Times-Italic}s},
+and width {\font{Times-Italic}w}:\smallskip
+\quad new Bevel(g, \&Bevel::rect, s->dark(), s->dull(), s->light(),
+w);%
+%
+\section{Labels}%
+%
+A label is a string of text in a given font and color.  The kit class
+provides two operations for creating labels:\smallskip
+\quad \quad virtual Glyph* label(const char*, Style*) const;\
+\quad \quad virtual Glyph* label(const String\&, Style*) const;\smallskip
+These operations are simply short-hand for creating a label glyph
+with the style's font and foreground color.%
+%
+\section{Buttons}%
+%
+A button is an object that can perform an action when pressed.  The
+kit class provides the following operations for creating common buttons:\smallskip
+\quad Button* simple\_push\_button(const char*, Style*, Action*) const;\
+\quad Button* simple\_push\_button(const String\&, Style*, Action*)
+const;\
+\quad virtual Button* push\_button(Glyph*, Style*, Action*) const;\smallskip
+\quad Button* simple\_toggle\_button(const char*, Style*, Action*)
+const;\
+\quad Button* simple\_toggle\_button(const String\&, Style*, Action*)
+const;\
+\quad virtual Button* toggle\_button(Glyph*, Style*, Action*) const;\
+\quad virtual Action* quit() const;\smallskip
+The Kit::simple\_* functions are short-hand for creating a label from
+a string and using the label as the glyph for the button body.  A
+push button executes its action when a pointer button is pressed and
+released inside the body of the button.  The push button appearance
+changes when it is pressed.  A toggle button is similar to a push
+button, but shows a binary state as to whether it is currently chosen.  Initially,
+a toggle button is not chosen, and each press switches its state between
+chosen and not chosen.  Kit::quit returns an action that calls Session::quit.
+
+\quad The base button class inherits from monoglyph and pointer-handler.  The
+body of a button is a {\font{Times-Bold}telltale}, which is a monoglyph
+that modifies its appearance depending on whether it is enabled, highlighted,
+or chosen.  A {\font{Times-Bold}choice} {\font{Times-Bold}item} is
+a telltale that uses a deck to switch between appearances defined
+for all possible combinations of the state.
+
+\quad Figure%
+%
+\code{class Button : public MonoGlyph, public PointerHandler \{\
+public:\
+\quad Button(Action*, Telltale*);\
+\quad Action* action() const;\
+\quad Telltale* telltale() const;\smallskip
+\quad virtual void drag(Event\&);\
+\quad virtual void release(Event\&);\
+\quad virtual void commit(Event\&);\
+\};\smallskip
+class Telltale : public MonoGlyph \{\
+public:\
+\quad Telltale(Glyph*);\smallskip
+\quad virtual void highlight(boolean);\
+\quad virtual boolean highlighted() const;\
+\quad virtual void choose(boolean);\
+\quad virtual boolean chosen() const;\
+\quad virtual void enable(boolean);\
+\quad virtual boolean enabled() const;\
+protected:\
+\quad virtual void redraw() const;\
+\};\smallskip
+class ChoiceItem : public Telltale \{\
+public:\
+\quad ChoiceItem();\
+\quad ChoiceItem(Glyph* nomarl, Glyph* pressed);\smallskip
+\quad enum \{\
+\quad \quad is\_enabled = 0x1, is\_inside = 0x2, is\_pressed = 0x4,
+is\_chosen = 0x8,\
+\quad \};\
+\quad unsigned int numlooks() const;\
+\quad boolean contains\_looks(unsigned int set, unsigned int subset)
+const;\
+\quad virtual void look(unsigned int bitset, Glyph*);\
+\quad virtual Glyph* look(unsigned int bitset) const;\
+\};%
+%
+\figurecaption{Button, telltale, and choice item class interfaces\label{button}.}%
+%
+%1.20001 -15.12 3
+}%
+%
+ \ref{button} shows the button, telltale, and choice item class interfaces.  Button::drag
+overrides PointerHandler::drag to highlight or unhighlight the telltale.  Button::release
+extends PointerHandler::release to unhighlight its telltale.  Button::commit
+overrides PointerHandler::commit to execute the button's action.
+
+\quad Telltale provides independent operations to set and get whether
+the telltale should be enabled, highlighted, or chosen.  Telltale::redraw
+is a function for subclasses to note that the state of the telltale
+has changed and it should be redrawn (it does not actually do any
+drawing).  The telltale set operations call Telltale::redraw.
+
+\quad The choice item class allows one to define separate glyphs for
+each possible look of a telltale.  The possible looks are all combinations
+of the flags ChoiceItem::is\_enabled, ChoiceItem::is\_inside, ChoiceItem::is\_pressed,
+and ChoiceItem::is\_chosen.  ChoiceItem::numlooks returns the number
+of possible looks, and ChoiceItem::contains\_look determines if a
+bitset of looks contains a specified subset.  ChoiceItem::look sets
+and gets the glyph for a particular set of flags.  For convenience,
+a ChoiceItem constructor is provided that uses two looks, one for
+all sets containing ChoiceItem::is\_pressed, and one for all other
+sets.%
+%
+\section{Menus}%
+%
+A menu is similar to a group of related buttons, called the menu items.  Like
+a button, the look of a menu item is a telltale.  Menus can associate
+actions with items, which are executed when the item is chosen.  Menus
+can also associate nested menus with items, in which case the submenu
+is opened when the item is highlighted.
+
+\quad The kit class provides the following functions for creating
+menus and items:\smallskip
+\quad \quad virtual Menu* menubar(Style*) const;\
+\quad \quad virtual Menu* pulldown(Style*) const;\
+\quad \quad virtual Menu* pullright(Style*) const;\
+\quad \quad virtual Telltale* menubar\_item(Glyph*, Style*) const;\
+\quad \quad virtual Telltale* menu\_item(Glyph*, Style*) const;\
+\quad \quad virtual Telltale* menu\_item\_separator(Style*) const;\smallskip
+\quad Kit::menubar creates a horizontal menu with a small amount of
+white space between items.  Kit::pulldown and Kit::pullright create
+vertical menus.  The top of a pulldown menu will be aligned to the
+bottom of the menubar, while a pullright's top will be aligned to
+the top right of its containing item.
+
+\quad Kit::menubar\_item creates an item centered horizontally with
+a small amount of white space on each side.  Kit::menu\_item creates
+a left-adjusted item, possibly with room on the left for a checkmark
+or other indication that the item is currently selected.  Kit::menu\_item\_separator
+returns a telltale for visually separating other items (such as a
+horizontal line).  As with buttons, there are also Kit::simple\_*\_item
+with string arguments for label items.
+
+\quad The menu base class interface is shown in Figure%
+%
+\code{class Menu : public MonoGlyph, public Handler \{\
+public:\
+\quad Menu(Glyph*, float x1, float y1, float x2, float y2);\smallskip
+\quad virtual void item(\
+\quad \quad GlyphIndex, Telltale*, Action*, Menu*, Window* = nil\
+\quad );\
+\quad virtual void add\_item(Telltale*, Action*, Menu*, Window* =
+nil);\
+\quad virtual void add\_item(Telltale*, Action*);\
+\quad virtual void add\_item(Telltale*, Menu*, Window* = nil);\
+\quad virtual void add\_item(Telltale*);\smallskip
+\quad virtual Telltale* telltale(GlyphIndex) const;\
+\quad virtual Action* action(GlyphIndex) const;\
+\quad virtual Menu* menu(GlyphIndex) const;\
+\quad virtual Window* window(GlyphIndex) const;\smallskip
+\quad void select(GlyphIndex);\
+\};%
+%
+\figurecaption{Menu class interface\label{menu}.}%
+%
+%0.240036 -334.8 4
+}%
+%
+ \ref{menu}.  The menu constructor is given a body in which to insert
+items and two alignments.  Each alignment is specified by a fraction
+for the relative position in the X and Y dimensions.  The alignments
+are used when opening submenus.  The first alignment is a position
+in the menu, the second alignment is the position in the submenu.
+
+\quad Menu::item sets the item at a specific index within the body.  Menu::add\_item
+puts a new item at the end of the menu.  Each item must have a telltale
+to specify the item's appearance.  Items may also have an action to
+execute, a submenu to open, and a window to use for the submenu.  The
+window is useful when the menu has a half-tone shadow and double-buffering
+is inappropriate.  Menu::select chooses an item, executing an action
+or opening a submenu as defined by the item.%
+%
+\section{Adjusters}%
+%
+Scrollbars and mover buttons are examples of interactive objects that
+\252adjust\272 the view shown by another object.  An {\font{Times-Bold}adjustable}
+is an object that handles requests to modify its view.  An {\font{Times-Bold}adjuster}
+is an object that can make requests on an adjustable.
+
+\quad The kit class provides the following functions for creating
+common adjusters:\smallskip
+\quad \quad virtual Glyph* hscroll\_bar(Adjustable*, Style*) const;\
+\quad \quad virtual Glyph* vscroll\_bar(Adjustable*, Style*) const;\
+\quad \quad virtual Glyph* panner(Adjustable*, Adjustable*, Style*)
+const;\
+\quad \quad virtual Button* enlarger(Adjustable*, Style*) const;\
+\quad \quad virtual Button* reducer(Adjustable*, Style*) const;\
+\quad \quad virtual Button* up\_mover(Adjustable*, Style*) const;\
+\quad \quad virtual Button* down\_mover(Adjustable*, Style*) const;\
+\quad \quad virtual Button* left\_mover(Adjustable*, Style*) const;\
+\quad \quad virtual Button* right\_mover(Adjustable*, Style*) const;\smallskip
+Kit::hscroll\_bar and Kit::vscroll\_bar return controls for scrolling
+a view in the horizontal and vertical dimensions, respectively.  Kit::panner
+returns a control for scrolling two adjustables at once.  One adjustable
+is controlled by the horizontal position of the panner, one by the
+vertical position.  Typically, the same adjustable is passed to both
+parameters when creating a panner.
+
+\quad Kit::enlarger and Kit::reducer return buttons that zoom the
+adjustable in or out, respectively.  Kit::*\_mover returns a button
+to scroll a view a fixed amount in a specific dimension.
+
+\quad Figure%
+%
+\code{class Adjustable \{\
+protected:\
+\quad Adjustable();\
+public:\
+\quad virtual void attach(Adjuster*);\
+\quad virtual void detach(Adjuster*);\
+\quad virtual Coord lower(DimensionName) const = 0;\
+\quad virtual Coord upper(DimensionName) const = 0;\
+\quad virtual Coord length(DimensionName) const = 0;\
+\quad virtual Coord cur\_lower(DimensionName) const = 0;\
+\quad virtual Coord cur\_upper(DimensionName) const = 0;\
+\quad virtual Coord cur\_length(DimensionName) const = 0;\
+\quad virtual void scroll\_forward(DimensionName);\
+\quad virtual void scroll\_backward(DimensionName);\
+\quad virtual void page\_forward(DimensionName);\
+\quad virtual void page\_backward(DimensionName);\
+\quad virtual void scroll\_to(DimensionName, Coord position);\
+\quad virtual void scale\_to(DimensionName, float fraction\_visible);\
+\quad virtual void zoom\_to(float magnification);\
+protected:\
+\quad virtual void constrain(DimensionName, Coord\& position) const;\
+\quad virtual void notify() const;\
+\quad virtual void notify(DimensionName) const;\
+\};\smallskip
+class Adjuster \{\
+protected:\
+\quad Adjuster(Adjustable* = nil);\
+public:\
+\quad virtual Adjustable* subject() const;\
+\quad virtual void update(DimensionName);\
+\quad virtual void update\_all();\
+\quad virtual void connect(Adjustable*);\
+\quad virtual void disconnect(Adjustable*);\
+\};%
+%
+\figurecaption{Adjustable and adjuster class interfaces\label{adjustable}.}%
+%
+%1.20001 -3.59998 6
+}%
+%
+ \ref{adjustable} shows the base adjustable and adjuster classes.  Adjustable::attach
+and Adjustable::detach add an adjuster to the list of objects notified
+when an adjustable's dimensions change.  Adjustable::lower and Adjustable::upper
+define a coordinate range for adjustment in a particular dimension.  Adjustable::length
+is equivalent to Adjustable::upper minus Adjustable::lower.  Adjustable::cur\_lower
+and Adjustable::cur\_upper define the region within a coordinate range
+that is currently in view.  Adjustable::cur\_length is equivalent
+to Adjustable::cur\_upper minus Adjustable::cur\_lower.
+
+\quad Adjustable::scroll\_forward and Adjustable::scroll\_backward
+add a small fixed amount to Adjustable::cur\_lower (where the amount
+is determined by the adjustable.  Adjustable::page\_forward and Adjustable::page\_backward
+add a larger fixed amount.  Adjustable::scroll\_to sets Adjustable::cur\_lower
+to a specific value.  Adjustable::scale\_to sets Adjustable::cur\_length
+to a given fraction of Adjustable::length.  Adjustable::zoom\_to sets
+the scale in all dimensions.
+
+\quad Adjustable::constrain is a protected function that subclasses
+use to restrict a value to be within lower and upper bounds.  Adjustable::notify
+updates all adjusters, either for a particular dimension or for all
+dimensions.
+
+\quad The adjuster constructor can be passed the target adjustable,
+which can be retrieved with Adjustable::subject and set with Adjuster::connect.  Adjuster::disconnect
+detaches the adjuster from its subject.  Adjustable::notify calls
+Adjuster::update or Adjuster::update\_all, depending on whether a
+dimension is specified or not.
+
+\quad Figure%
+%
+\code{Valuator::Valuator(Coord lower, Coord upper) \{\
+\quad lower\_ = lower;\
+\quad span\_ = upper - lower;\
+\quad curvalue\_ = (lower + upper) / 2;\
+\}\smallskip
+Coord Valuator::lower(DimensionName) const \{ return lower\_; \}\
+Coord Valuator::upper(DimensionName) const \{ return lower\_ + span\_;
+\}\
+Coord Valuator::length(DimensionName) const \{ return span\_; \}\
+Coord Valuator::cur\_lower(DimensionName) const \{\
+\quad return curvalue\_ - cur\_length() / 2;\
+\}\
+Coord Valuator::cur\_upper(DimensionName) const \{\
+\quad return cur\_lower() + cur\_length();\
+\}\
+Coord Valuator::cur\_length(DimensionName) const \{ return 10.0; \}\smallskip
+void Valuator::scroll\_to(DimensionName d, Coord position) \{\
+\quad Coord p = position;\
+\quad constrain(d, p);\
+\quad if (p != curvalue\_) \{\
+\quad \quad curvalue\_ = p;\
+\quad \quad notify();\
+\quad \}\
+\}%
+%
+\figurecaption{Example adjustable subclass\label{valuator}.}%
+%
+%1.20001 2.16003 7
+}%
+%
+ \ref{valuator} shows an example of an adjustable subclass.  A valuator
+contains a value (a coordinate in this case) that is constrained to
+a certain range.  The value does not have a length, so a fixed length
+of 10.0 is specified to ensure that a scrolling thumb is visible.%
+%
+\section{Editors}%
+%
+Many application need simple editors for entering or browsing data.  Currently,
+InterViews only provides a field editor for text strings.  A field
+editor is suitable for incorporating into other components, such as
+a dialog box.  Figure%
+%
+\code{class FieldEditor : public MonoGlyph \{\
+public:\
+\quad FieldEditor(\
+\quad \quad const char* sample, Style*, Action* ok = nil, Action*
+cancel = nil\
+\quad );\
+\quad FieldEditor(\
+\quad \quad const String\& sample, Style*, Action* ok = nil, Action*
+cancel = nil\
+\quad );\smallskip
+\quad void field(const char*);\
+\quad void field(const String\&);\
+\quad void select(int pos);\
+\quad void select(int left, int right);\
+\quad void edit();\
+\quad void edit(const char*, int left, int right);\
+\quad void edit(const String\&, int left, int right);\
+\quad const char* text() const;\
+\quad void text(String\&) const;\
+\};%
+%
+\figurecaption{Field editor class interface\label{field-editor}.}%
+%
+%0.240021 -1.67999 8
+}%
+%
+ \ref{field-editor} shows the field editor class interface.
+
+\quad Clicking inside the editor (or calling FieldEditor::edit) initiates
+an edit.  Subsequent keyboard events, regardless of the pointer location,
+are interpreted as editing operations on the text.  Clicking outside
+the editor terminates the editing.
+
+\quad Text is selected with the pointer or with the keyboard.  A single
+click of the left button selects a new insertion point between characters.  Dragging
+across the text selects a range of characters.  A set of control characters
+is mapped into common editing operations.  A character not specifically
+associated with commands is inserted in place of the current selection,
+the replaced text is discarded, and the selection becomes an insertion
+point following the inserted character.  The commands defined are:\smallskip
+\quad \quad character-left (^B)\
+\quad \quad character-right (^F)\
+\quad \quad beginning-of-text (^A)\
+\quad \quad end-of-text (^E)\
+\quad \quad erase (^H or DEL)\
+\quad \quad delete (^D)\
+\quad \quad select-all (^U)\
+\quad \quad select-word(^W)\smallskip
+Strings that are too long to fit into the editor can be scrolled horizontally.  Clicking
+the middle button inside the editor initiates \252grab-scrolling\272.  While
+the button is down the editor scrolls the text to follow the pointer,
+giving the appearance that the user is dragging the text.  Clicking
+the right button engages \252rate-scrolling\272, a joy-stick-like
+scrolling interface in which the scrolling rate increases as the user
+drags the pointer away from the initial click location.
+
+\quad The field editor constructor is passed a sample string, used
+to compute its natural size, a style for customization, an action
+to execute when editing returns normally, and an action to execute
+when editing is terminated.  Editing normally completes when a carriage
+return or tab is entered; abnormally when an escape character is entered.
+
+\quad FieldEditor::field sets the contents of the string being edited.  FieldEditor::select
+sets the insertion point or subrange within the edit string.  FieldEditor::edit
+initiates an edit.  Specifying a string and selection range is short-hand
+for first calling FieldEditor::field and FieldEditor::select.  FieldEditor::text
+returns the current value of the string being edited.  The caller
+must copy the string to save the contents, as it will be modified
+by a subsequent edit.
+
+%
+\end{document}

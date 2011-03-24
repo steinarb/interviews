@@ -1,0 +1,11 @@
+XCOMM
+XCOMM man pages for using the Graphic library
+XCOMM
+
+TROFFSRCS	= *.n
+TROFFFLAGS	= -man
+TROFFOUTPUT	= libgraphic.PS
+DEST		= $(MANDIR)/mann
+
+TroffSources($(TROFFOUTPUT))
+InstallMultipleFlags($(TROFFSRCS),$(DEST),$(INSTMANFLAGS))

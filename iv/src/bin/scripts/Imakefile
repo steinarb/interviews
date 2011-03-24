@@ -1,23 +1,23 @@
-/**/#
-/**/# utility shell scripts
-/**/#
+XCOMM
+XCOMM scripts - miscellaneous shell scripts
+XCOMM
 
-PROGRAMS	= cpu ivmkmf mkclass nmunch
-BINDIR		= $(LOCALBINDIR)
-USRLIBDIR	= UsrLibDir
+/*
+ * We assume X11 already has bsdinst and/or mkdirhier in its BINDIR.
+ */
+PROGRAMS = cpu ibmkmf ivmkmf remind
+CONFIGDIRSPEC = -T IMAKE_TEMPLATE -I$(ABSCONFIGDIR) -I$(XCONFIGDIR)
+REMIND_MACROS = /usr/local/lib/remind/macros
 
-all:: $(PROGRAMS)
-depend::
+AllTarget($(PROGRAMS))
+
+CppScriptTarget(cpu,cpu.cpp,-DCPU='"'"$(ARCH)"'"',always)
+CppScriptTarget(ibmkmf,ibmkmf.cpp,-DCONFIGDIRSPEC='$(CONFIGDIRSPEC)',always)
+CppScriptTarget(ivmkmf,ivmkmf.cpp,-DCONFIGDIRSPEC='$(CONFIGDIRSPEC)',always)
+CppScriptTarget(remind,remind.cpp,-DREMIND_MACROS='$(REMIND_MACROS)',always)
+
+InstallMultipleFlags($(PROGRAMS),$(BINDIR),$(INSTBINFLAGS))
+
+always:
 clean::
-	$(RM) cpu ivmkmf makedepend xmkmf
-
-CppScriptTarget(cpu,cpu.cpp,-DCPU='"'"$$CPU"'"',)
-CppScriptTarget(ivmkmf,xmkmf.cpp,-DCONFIGDIRSPEC='-T $(IMAKETMPL) -I$(XCONFIGDIR)/InterViews -I$(XCONFIGDIR)',)
-CppScriptTarget(makedepend,mdepend.cpp,-DPREPROC='"'"$(PREPROCESSCMD)"'"',)
-CppScriptTarget(xmkmf,xmkmf.cpp,-DCONFIGDIRSPEC='-I$(XCONFIGDIR)',)
-
-BootstrapTarget()
-#if SystemV
-InstallNonExec(bsdinst.sh,$(BINDIR)/bsdinstall)
-#endif
-InstallMultiple($(PROGRAMS),$(BINDIR))
+	$(RM) $(PROGRAMS)

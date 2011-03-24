@@ -1,27 +1,11 @@
-/**/#
-/**/# dclock - scalable digital clock
-/**/#
+XCOMM
+XCOMM dclock - scalable digital clock
+XCOMM
 
-#if CompileInMachineDepSubdir && !defined(InMachineDepSubdir)
-#define IHaveMachineDepSubdirs
+#ifdef InObjectCodeDir
 
-MakeMachineDepSubdir()
-DependMachineDepSubdir()
-
-#else
-
-LOCAL_LIBRARIES	= $(LIBINTERVIEWS)
-SYS_LIBRARIES	= -l$X -lm
-
-SRCS		= $(SRC)//**/*.c
-OBJS		= \
-	clocktime.o \
-	data.o \
-	dclock.o \
-	dface.o \
-	digit.o \
-	segment.o
-
+Use_libInterViews()
+Use_2_6()
 ComplexProgramTarget(dclock)
 
 MakeObjectFromSrc(clocktime)
@@ -31,4 +15,8 @@ MakeObjectFromSrc(dface)
 MakeObjectFromSrc(digit)
 MakeObjectFromSrc(segment)
 
-#endif /* if compiling in subdirectory */
+#else
+
+MakeInObjectCodeDir()
+
+#endif

@@ -36,13 +36,13 @@
 
 StringButton::StringButton (
     ButtonState* s, const char* sample
-) : (sample, s, nil) {
+) : RadioButton(sample, s, nil) {
     Init();
 }
 
 StringButton::StringButton (
     const char* name, ButtonState* s, const char* sample
-) : (sample, s, nil) {
+) : RadioButton(sample, s, nil) {
     SetInstance(name);
     Init();
 }
@@ -50,6 +50,7 @@ StringButton::StringButton (
 StringButton::~StringButton () {
     delete text;
     delete display;
+    text = nil;
 }
 
 void StringButton::Init () {

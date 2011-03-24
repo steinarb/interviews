@@ -57,7 +57,7 @@ protected:
     void Redraw(Coord left, Coord bottom, Coord right, Coord top);
     void RedrawList(int, Coord[], Coord[], Coord[], Coord[]);
     void Set(char* today, int hours, int minutes);
-    void Tick();
+    void Tick(long, long);
 private:
     Clock* clock;
     TMode mode;				/* civil or military */
@@ -77,6 +77,8 @@ private:
 	int len;
 	char text[50];
     } date;
+
+    class IOHandler* tick;
 };
 
 #endif

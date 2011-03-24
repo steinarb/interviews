@@ -27,7 +27,7 @@
 #ifndef direct_h
 #define direct_h
 
-#include <InterViews/defs.h>
+#include <InterViews/boolean.h>
 
 class Directory {       
 public:
@@ -52,22 +52,9 @@ private:
     const char* ExpandTilde(const char*, int);
     const char* RealPath(const char*);
 
-    boolean Reset(const char*);
-    void Clear();
-    void Insert(const char*, int index);
-    void Append(const char*);
-    void Remove(int index);
-    virtual int Position(const char*);
+    boolean Reset(char*);
 private:
-    char** strbuf;
-    int strcount;
-    int strbufsize;
+    class DirectoryRep* rep_;
 };
-
-inline int Directory::Count () { return strcount; }
-inline void Directory::Append (const char* s) { Insert(s, strcount); }
-inline const char* Directory::File (int index) { 
-    return (0 <= index && index < strcount) ? strbuf[index] : nil;
-}
 
 #endif

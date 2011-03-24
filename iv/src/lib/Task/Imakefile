@@ -1,0 +1,32 @@
+XCOMM
+XCOMM source files for building the Task library
+XCOMM
+
+#ifdef InObjectCodeDir
+
+APP_CCDEFINES = -D_BSD_COMPAT
+M = ArchitectureName
+LIB = Task
+VERSION = 3.0
+
+MakeLibrary($(LIB),$(VERSION))
+
+#define Obj(file) MakeObjectFromSrc(file)
+#define Asm(file)							@@\
+$(AOUT): file.o								@@\
+file.o: $(SRC)/file.s							@@\
+	$(RM) $@; $(AS) -o file.o $(SRC)/file.s
+
+Obj(os)
+Obj(sched)
+Obj(semaphore)
+Obj(task)
+Obj($M-machine)
+Asm($M-float)
+Asm($M-save)
+
+#else
+
+MakeInObjectCodeDir()
+
+#endif

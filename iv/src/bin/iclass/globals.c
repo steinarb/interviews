@@ -25,21 +25,20 @@
  */
 
 #include "globals.h"
-
-#include <InterViews/defs.h>
-
-#include <bstring.h>
+#include <InterViews/enter-scope.h>
+#include <OS/memory.h>
+#include <stdlib.h>
 #include <string.h>
 
 /*****************************************************************************/
 
-char* strdup (const char* s) {
+char* strnew (const char* s) {
     char* dup = new char[strlen(s) + 1];
     strcpy(dup, s);
     return dup;
 }
 
-char* strndup (const char* s, int len) {
+char* strnnew (const char* s, int len) {
     char* dup = new char[len + 1];
     strncpy(dup, s, len);
     dup[len] = '\0';
@@ -53,7 +52,7 @@ void BufCheck (const void**& buf, int& bufsize, int count, int index) {
         int length = count*sizeof(void*);
         bufsize = (index+1) * 2;
         newbuf = new void*[bufsize];
-        bcopy(buf, newbuf, length);
+        Memory::copy(buf, newbuf, length);
         delete buf;
         buf = newbuf;
     }
@@ -68,7 +67,7 @@ void BufInsert (
     if (index < count) {
         BufCheck(buf, bufsize, count, count+1);
         spot = &buf[index];
-        bcopy(spot, spot+1, (count - index)*sizeof(void*));
+        Memory::copy(spot, spot+1, (count - index)*sizeof(void*));
 
     } else {
         BufCheck(buf, bufsize, count, index);
@@ -81,7 +80,7 @@ void BufInsert (
 void BufRemove (int index, const void** buf, int& count) {
     if (index < --count) {
         const void** spot = &buf[index];
-        bcopy(spot+1, spot, (count - index)*sizeof(void*));
+        Memory::copy(spot+1, spot, (count - index)*sizeof(void*));
     }
 }
 

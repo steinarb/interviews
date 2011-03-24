@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1987, 1988, 1989 Stanford University
+ * Copyright (c) 1990, 1991 Stanford University
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided
@@ -20,35 +20,62 @@
  * WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-// $Header: main.c,v 1.11 89/10/09 14:48:57 linton Exp $
-// runs idraw.
+/*
+ * Idraw editor main program.
+ */
 
-#include "idraw.h"
+#include "idcatalog.h"
+#include "idcreator.h"
+#include "ided.h"
+
+#include <Unidraw/unidraw.h>
+
 #include <InterViews/world.h>
 
-// Predefine default properties for the window size, paint menus, and
-// history.
+#include <stream.h>
+
+/*****************************************************************************/
 
 static PropertyData properties[] = {
-    { "*font1",		"*-courier-medium-r-*-80-*    Courier 8" },
-    { "*font2",		"*-courier-medium-r-*-100-*   Courier 10" },
-    { "*font3",		"*-courier-bold-r-*-120-*     Courier-Bold 12" },
-    { "*font4",		"*-helvetica-medium-r-*-120-* Helvetica 12" },
-    { "*font5",		"*-helvetica-medium-r-*-140-* Helvetica 14" },
-    { "*font6",		"*-helvetica-bold-r-*-140-*   Helvetica-Bold 14" },
-    { "*font7",		"*-helvetica-medium-o-*-140-* Helvetica-Oblique 14" },
-    { "*font8",		"*-times-medium-r-*-120-*     Times-Roman 12" },
-    { "*font9",		"*-times-medium-r-*-140-*     Times-Roman 14" },
-    { "*font10",	"*-times-bold-r-*-140-*       Times-Bold 14" },
-    { "*font11",	"*-times-medium-i-*-140-*     Times-Italic 14" },
+    { "*domain",  "drawing" },
+    { "*initialbrush",  "2" },
+    { "*initialfgcolor","1" },
+    { "*initialbgcolor","10" },
+    { "*initialfont",   "4" },
+    { "*initialpattern","1" },
+    { "*initialarrow", "none" },
+    { "*font1", "-*-courier-medium-r-normal-*-8-*-*-*-*-*-*-* Courier 8" },
+    { "*font2", "-*-courier-medium-r-normal-*-10-*-*-*-*-*-*-* Courier 10" },
+    { "*font3", "-*-courier-bold-r-normal-*-12-*-*-*-*-*-*-* Courier-Bold 12" },
+    { "*font4",
+	"-*-helvetica-medium-r-normal-*-12-*-*-*-*-*-*-* Helvetica 12"
+    },
+    { "*font5",
+	"-*-helvetica-medium-r-normal-*-14-*-*-*-*-*-*-* Helvetica 14"
+    },
+    { "*font6",
+	"-*-helvetica-bold-r-normal-*-14-*-*-*-*-*-*-* Helvetica-Bold 14"
+    },
+    { "*font7",
+	"-*-helvetica-medium-o-normal-*-14-*-*-*-*-*-*-* Helvetica-Oblique 14"
+    },
+    { "*font8",
+	"-*-times-medium-r-normal-*-12-*-*-*-*-*-*-*  Times-Roman 12"
+    },
+    { "*font9", "-*-times-medium-r-normal-*-14-*-*-*-*-*-*-* Times-Roman 14" } ,
+    { "*font10", "-*-times-bold-r-normal-*-14-*-*-*-*-*-*-*  Times-Bold 14" },
+    { "*font11",
+	"-*-times-medium-i-normal-*-14-*-*-*-*-*-*-* Times-Italic 14"
+    },
     { "*brush1",	"none" },
-    { "*brush2",	"ffff 1 0 0" },
-    { "*brush3",	"ffff 1 1 0" },
-    { "*brush4",	"ffff 1 0 1" },
-    { "*brush5",	"ffff 1 1 1" },
-    { "*brush6",	"3333 1 0 0" },
-    { "*brush7",	"3333 2 0 0" },
-    { "*brush8",	"ffff 2 0 0" },
+    { "*brush2",	"ffff 0" },
+    { "*brush3",	"ffff 1" },
+    { "*brush4",	"ffff 2" },
+    { "*brush5",	"ffff 3" },
+    { "*brush6",	"fff0 0" },
+    { "*brush7",	"fff0 1" },
+    { "*brush8",	"fff0 2" },
+    { "*brush9",	"fff0 3" },
     { "*pattern1",	"none" },
     { "*pattern2",	"0.0" },
     { "*pattern3",	"1.0" },
@@ -87,40 +114,35 @@ static PropertyData properties[] = {
     { "*bgcolor10",	"White" },
     { "*bgcolor11",	"LtGray 50000 50000 50000" },
     { "*bgcolor12",	"DkGray 33000 33000 33000" },
-    { "*initialfont",	"2" },
-    { "*initialbrush",	"2" },
-    { "*initialpattern","2" },
-    { "*initialfgcolor","1" },
-    { "*initialbgcolor","10" },
     { "*history",	"20" },
-    { "*reverseVideo",	"off" },
-    { "*small",		"true" },
     { nil }
 };
-
-// Define window size options.
 
 static OptionDesc options[] = {
-    { "-l", "*small", OptionValueImplicit, "false" },
-    { "-s", "*small", OptionValueImplicit, "true" },
     { nil }
 };
 
-// main creates a connection to the display server, creates idraw, and
-// opens idraw's window.  After idraw stops running, main closes
-// idraw's window, deletes everything it created, and returns success.
+/*****************************************************************************/
 
 int main (int argc, char** argv) {
-    World* world = new World("Idraw", properties, options, argc, argv);
-    Idraw* idraw = new Idraw(argc, argv);
+    int exit_status = 0;
+    IdrawCreator creator;
+    Unidraw* unidraw = new Unidraw(
+        new IdrawCatalog("idraw", &creator), argc, argv, options, properties
+    );
 
-    world->InsertApplication(idraw);
-    idraw->Run();
-    world->Remove(idraw);
+    if (argc > 2) {
+	cerr << "Usage: idraw [file]" << "\n";
+	exit_status = 1;
 
-    delete idraw;
-    delete world;
+    } else {
+	const char* initial_file = (argc == 2) ? argv[1] : nil;
+	IdrawEditor* ed = new IdrawEditor(initial_file);
 
-    const int SUCCESS = 0;
-    return SUCCESS;
+	unidraw->Open(ed);
+	unidraw->Run();
+    }
+
+    delete unidraw;
+    return exit_status;
 }

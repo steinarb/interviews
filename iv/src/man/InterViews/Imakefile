@@ -1,0 +1,11 @@
+XCOMM
+XCOMM man pages for using the InterViews library
+XCOMM
+
+TROFFSRCS	= *.n
+TROFFFLAGS	= -man
+TROFFOUTPUT	= libInterViews.PS
+DEST		= $(MANDIR)/mann
+
+TroffSources($(TROFFOUTPUT))
+InstallMultipleFlags($(TROFFSRCS),$(DEST),$(INSTMANFLAGS))

@@ -1,41 +1,24 @@
-/**/#
-/**/# iclass - class browser
-/**/#
+XCOMM
+XCOMM iclass - class browser
+XCOMM
 
-#if CompileInMachineDepSubdir && !defined(InMachineDepSubdir)
-#define IHaveMachineDepSubdirs
+#ifdef InObjectCodeDir
 
-MakeMachineDepSubdir()
-DependMachineDepSubdir()
-
-#else
-
-LOCAL_LIBRARIES	= $(LIBINTERVIEWS)
-SYS_LIBRARIES	= -l$X -lm
-# CDEBUGFLAGS     = -g
-
-SRCS = $(SRC)//**/*.c
-OBJS = \
-    classbuffer.o\
-    classeditor.o\
-    classinfo.o\
-    compeditor.o\
-    dialogs.o\
-    direct.o\
-    globals.o\
-    iclass.o\
-    main.o
-
+Use_libInterViews()
+Use_2_6()
 ComplexProgramTarget(iclass)
 
 MakeObjectFromSrc(classbuffer)
 MakeObjectFromSrc(classeditor)
 MakeObjectFromSrc(classinfo)
-MakeObjectFromSrc(compeditor)
 MakeObjectFromSrc(dialogs)
 MakeObjectFromSrc(direct)
 MakeObjectFromSrc(globals)
 MakeObjectFromSrc(iclass)
 MakeObjectFromSrc(main)
 
-#endif /* if compiling in subdirectory */
+#else
+
+MakeInObjectCodeDir()
+
+#endif

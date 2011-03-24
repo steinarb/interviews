@@ -1,0 +1,8 @@
+XCOMM
+XCOMM include files for using the Graphic library
+XCOMM
+
+HEADERS = *.h
+DEST = $(INCDIR)/InterViews/2.6/InterViews/Graphic
+
+InstallMultipleFlags($(HEADERS),$(DEST),$(INSTINCFLAGS))

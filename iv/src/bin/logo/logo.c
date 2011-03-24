@@ -26,12 +26,13 @@
 
 #include "logo.h"
 #include <InterViews/bitmap.h>
+#include <InterViews/color.h>
 #include <InterViews/painter.h>
 #include <InterViews/pattern.h>
 #include <InterViews/sensor.h>
 #include <InterViews/shape.h>
 #include <InterViews/transformer.h>
-#include <InterViews/color.h>
+#include <InterViews/world.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -48,7 +49,7 @@ Logo::Logo () {
 
 void Logo::Handle (Event& e) {
     if (e.eventType == KeyEvent && e.keystring[0] == 'q') {
-        e.target = nil;
+	Session::instance()->quit();
     }    
 }
 
@@ -56,22 +57,19 @@ void Logo::Reconfig () {
     const char* name = GetAttribute("bitmap");
     rainbow = atoi(GetAttribute("rainbow"));
 
-    if (bitmap == nil) {
-        if (name != nil) {
-            bitmap = new Bitmap(name);
-        }
+    if (bitmap == nil && name != nil) {
+	bitmap = Bitmap::open(name);
+	if (bitmap == nil) {
+	    fprintf(stderr, "logo: cannot open bitmap file `%s'\n", name);
+	    exit(1);
+	}
     }
     if (bitmap != nil) {
-//        if (bitmap->Valid()) {
-            shape->width = bitmap->Width();
-            shape->height = bitmap->Height();
-//        } else {
-//            fprintf(stderr, "logo: cannot open bitmap file `%s'\n", name);
-//            exit(1);
-//        }
+	shape->width = bitmap->Width();
+	shape->height = bitmap->Height();
     } else {
-        shape->width = 65;
-        shape->height = 65;
+	shape->width = 65;
+	shape->height = 65;
     }
 }
 
@@ -134,13 +132,13 @@ static float green_profile[] =  { 0.0, 0.5, 1.0, 0.8, 0.0, 0.0, 0.0 };
 static float blue_profile[] =   { 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 };
 static int profile_count = sizeof(red_profile)/sizeof(float);
 
-static unsigned intensity (float hue, float* profile, int count) {
+static ColorIntensity intensity (float hue, float* profile, int count) {
     int index = min(int(floor(hue * (count-1))), count-1);
     float i = (
         profile[index]
         + (hue * (count-1) - index) * (profile[index+1] - profile[index])
     );
-    return unsigned(i * 65535);
+    return i;
 }
 
 static Color** colors;
@@ -160,7 +158,7 @@ void Logo::Redraw (Coord, Coord, Coord, Coord) {
             }
         }
         float h = float(ymax+1)/rainbow;
-        Color* oldfg = output->GetFgColor();
+        const Color* oldfg = output->GetFgColor();
         for (int c = 0; c < rainbow; ++c) {
             output->SetColors(colors[c], nil);
             output->FillRect(canvas, 0, Coord(c * h), xmax, Coord((c+1) * h));

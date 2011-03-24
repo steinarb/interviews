@@ -1,35 +1,18 @@
-/**/#
-/**/# bin - root of the InterViews programs' directory tree
-/**/#
+XCOMM
+XCOMM applications
+XCOMM
 
-#define IHaveSubdirs
-
-/*
- * Don't change this order - the order is important when bootstrapping.
- */
-BOOTSTRAPSUBDIRS = \
-	imake \
-	makedepend \
-	CC \
-	scripts
-
-SUBDIRS	= \
+SUBDIRS = \
 	alert \
 	dclock \
-	graphics \
+	doc \
+	ibuild \
 	iclass \
 	idraw \
 	ifb \
 	ifc \
-	istat \
 	logo \
 	mailbox \
-	spaceman \
-	squares \
-	sted
+	scripts
 
-MakeSubdirs($(SUBDIRS))
-DependSubdirs($(SUBDIRS))
-BootstrapSubdirs($(BOOTSTRAPSUBDIRS))
-CleanSubdirs($(BOOTSTRAPSUBDIRS))
-MakefileSubdirs($(BOOTSTRAPSUBDIRS))
+MakeInSubdirs($(SUBDIRS))

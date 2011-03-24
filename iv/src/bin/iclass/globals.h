@@ -27,12 +27,8 @@
 #ifndef globals_h
 #define globals_h
 
-#ifndef MAXPATHLEN
-#define MAXPATHLEN 512
-#endif
-
-extern char* strdup(const char*);
-extern char* strndup(const char*, int);
+extern char* strnew(const char*);
+extern char* strnnew(const char*, int);
 
 extern void BufCheck(const void**& buf, int& bufsize, int count, int index);
 extern void BufInsert(

@@ -50,7 +50,11 @@ public:
 
 class ConfirmDialog : public BasicDialog {
 public:
-    ConfirmDialog(const char* msg, const char* confirmLbl = "   OK   ");
+    ConfirmDialog(const char* title);
+
+    virtual char Confirm();
+private:
+    Interactor* Interior(const char*);
 };
 
 class StringDialog : public BasicDialog {
@@ -83,10 +87,15 @@ public:
     );
 
     FileBrowser* GetBrowser();
+    const char* FullPath(const char* relpath);
+    virtual boolean Accept();
 private:
     Interactor* AddScroller(Interactor*);
+    const char* FullPath(FileBrowser*, const char* relpath = nil);
 private:
     FileBrowser* _browser;
+    FileBrowser* _dirs;
+    class MarginFrame* _cur_dir;
 };
 
 inline FileBrowser* FileDialog::GetBrowser () { return _browser; }

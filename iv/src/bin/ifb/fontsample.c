@@ -32,6 +32,7 @@
 #include <InterViews/sensor.h>
 #include <InterViews/shape.h>
 #include <InterViews/textbuffer.h>
+#include <InterViews/world.h>
 #include <ctype.h>
 #include <string.h>
 
@@ -41,13 +42,13 @@ static const int TabWidth = 8;
 
 FontSample::FontSample(
     const char* sample
-) : (SampleLines, strlen(sample), TabWidth, Reversed) {
+) : TextEditor(SampleLines, strlen(sample), TabWidth, Reversed) {
     Init(sample);
 }
 
 FontSample::FontSample(
     const char* name, const char* sample
-) : (SampleLines, strlen(sample), TabWidth, Reversed) {
+) : TextEditor(SampleLines, strlen(sample), TabWidth, Reversed) {
     SetInstance(name);
     Init(sample);
 }
@@ -85,19 +86,23 @@ void FontSample::Reconfig () {
 void FontSample::ShowFont (const char* name) {
     if (strcmp(name, fontname) != 0) {
         strcpy(fontname, name);
-        font = new Font(fontname);
-	font->Reference();
+	if (Font::exists(World::current()->display(), fontname)) {
+	    font = new Font(fontname);
+	    font->ref();
+	} else {
+	    font = nil;
+	}
         if (output != nil) {
-            if (font->Valid()) {
+            if (font != nil) {
                 output->FillBg(true);
-                output->SetPattern(solid);
+                output->SetPattern(new Pattern);
                 Reconfig();
                 Resize();
             } else {
                 Select(Dot());
                 output->ClearRect(canvas, 0, 0, xmax, ymax);
                 output->FillBg(false);
-                output->SetPattern(gray);
+                output->SetPattern(new Pattern(Pattern::gray));
             }
             Draw();
         }
@@ -105,7 +110,7 @@ void FontSample::ShowFont (const char* name) {
 }
 
 void FontSample::Handle (Event& e) {
-    if (!font->Valid()) {
+    if (font == nil) {
         return;
     }
     switch (e.eventType) {

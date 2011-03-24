@@ -1,22 +1,17 @@
-/**/#
-/**/# ifc - simple file chooser program
-/**/#
+XCOMM
+XCOMM ifc - simple file chooser program
+XCOMM
 
-#if CompileInMachineDepSubdir && !defined(InMachineDepSubdir)
-#define IHaveMachineDepSubdirs
+#ifdef InObjectCodeDir
 
-MakeMachineDepSubdir()
-DependMachineDepSubdir()
+Use_libInterViews()
+Use_2_6()
+ComplexProgramTarget(ifc)
+
+MakeObjectFromSrc(main)
 
 #else
 
-LOCAL_LIBRARIES	= $(LIBINTERVIEWS)
-SYS_LIBRARIES	= -l$X -lm
+MakeInObjectCodeDir()
 
-#if SystemV==YES
-EXTRA_LOAD_FLAGS = -lPW
 #endif
-
-SimpleProgramTarget(ifc)
-
-#endif /* if compiling in subdirectory */

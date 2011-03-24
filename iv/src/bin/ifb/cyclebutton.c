@@ -51,13 +51,13 @@ static const int Separator = 3;
 
 CycleButton::CycleButton (
     ButtonState* subject, CycleButtonChoice* choices
-)  : (subject, nil) {
+)  : Button(subject, nil) {
     Init(choices);
 }
 
 CycleButton::CycleButton (
     const char* name, ButtonState* subject, CycleButtonChoice* choices
-) : (subject, nil) {
+) : Button(subject, nil) {
     SetInstance(name);
     Init(choices);
 }
@@ -72,14 +72,14 @@ void CycleButton::Init (CycleButtonChoice* c) {
         CycleHit = new Bitmap(cycle_hit, cycle_width, cycle_height);
     }
     choices = c;
-    for (count = 0; choices[count].label != nil; ++count) { }
+    for (count_ = 0; choices[count_].label != nil; ++count_) { }
     current = 0;
 }
 
 void CycleButton::Reconfig () {
-    Font* font = output->GetFont();
+    const Font* font = output->GetFont();
     int width = 0;
-    for (int i = 0; i < count; ++i) {
+    for (int i = 0; i < count_; ++i) {
         width = max(width, font->Width(choices[i].label));
     }
     Button::Reconfig();
@@ -106,19 +106,19 @@ void CycleButton::Refresh () {
 }
 
 void CycleButton::Press () {
-    subject->SetValue(choices[(current + 1) % count].value);
+    subject->SetValue(choices[(current + 1) % count_].value);
 }
 
-void CycleButton::Update () {
+void CycleButton::Update() {
     void* v;
     subject->GetValue(v);
     if (v != choices[current].value) {
-        for (int i = 0; i < count; ++i) {
-            if (v == choices[i].value) {
-                current = i;
-                break;
-            }
-        }
-        Draw();
+	for (int i = 0; i < count_; ++i) {
+	    if (v == choices[i].value) {
+		current = i;
+		break;
+	    }
+	}
+	Draw();
     }
 }

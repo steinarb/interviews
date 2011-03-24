@@ -1,0 +1,37 @@
+.TH GraphicIntro 3I "31 July 1988" "InterViews" "InterViews Reference Manual"
+.SH NAME
+InterViews structured graphics library
+.SH SYNOPSIS
+.B #include <InterViews/Graphic/\fIclass\fP.h>
+.br
+.B "CC ... \-lgraphic ... \-lInterViews \-lX \-lm"
+.SH DESCRIPTION
+The \fIGraphic\fP library provides a set of classes for defining
+persistent structured graphics.  \fBGraphic\fP is the base class for
+structured graphics objects; prederived classes classes include simple
+graphical objects (\fBPoint, Ellipse, Spline, Label,\fP etc.), a composite
+object (\fBPicture\fP), and an object that is a variation on another object
+(\fBInstance\fP).  Each graphic can be manipulated and transformed
+independently of others.  Functions are provided for computing the graphic's
+bounding box and whether or not it intersects a given point or rectangle.  
+.PP
+Graphics are persistent in that each defines a representation of itself that
+can be automatically written to and read from disk.  The \fBGraphic\fP class
+is derived from \fBPersistent\fP, described in Persistent(3I), which
+provides this functionality in a general persistent object class.  Graphics
+use persistent paint objects that are analogous to the paint objects used by
+painters.  Persistent paint objects are defined in
+<InterViews/Graphic/ppaint.h>.
+.PP
+Graphic(3I) contains all you need to know to use \fBGraphic\fP and derived
+classes without the persistence feature.  If persistent graphics are
+required, then you should read Persistent(3I).
+.PP
+The Graphic library provides two additional classes for use with structured
+graphics objects.  \fBDamage\fP supports incremental redraw of graphical
+objects whose appearance has been modified.  \fBGraphicBlock\fP is an
+interactor that displays a structured graphics object.  A GraphicBlock
+interprets a perspective to allow scrolling and zooming of the graphic it
+contains.
+.SH SEE ALSO
+InterViews(3I)

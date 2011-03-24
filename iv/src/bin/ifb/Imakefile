@@ -1,30 +1,11 @@
-/**/#
-/**/# ifb - simple font browser
-/**/#
+XCOMM
+XCOMM ifb - simple font browser
+XCOMM
 
-#if CompileInMachineDepSubdir && !defined(InMachineDepSubdir)
-#define IHaveMachineDepSubdirs
+#ifdef InObjectCodeDir
 
-MakeMachineDepSubdir()
-DependMachineDepSubdir()
-
-#else
-
-LOCAL_LIBRARIES	= $(LIBINTERVIEWS)
-SYS_LIBRARIES	= -l$X -lm
-
-#if SystemV==YES
-EXTRA_LOAD_FLAGS = -lPW
-#endif
-
-SRCS = $(SRC)//**/*.c
-OBJS = \
-    cyclebutton.o\
-    fontbrowser.o\
-    fontsample.o\
-    stringbutton.o\
-    main.o
-
+Use_libInterViews()
+Use_2_6()
 ComplexProgramTarget(ifb)
 
 MakeObjectFromSrc(cyclebutton)
@@ -33,4 +14,8 @@ MakeObjectFromSrc(fontsample)
 MakeObjectFromSrc(stringbutton)
 MakeObjectFromSrc(main)
 
-#endif /* if compiling in subdirectory */
+#else
+
+MakeInObjectCodeDir()
+
+#endif

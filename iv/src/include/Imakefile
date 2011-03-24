@@ -1,0 +1,13 @@
+XCOMM
+XCOMM include files
+XCOMM
+
+SUBDIRS = \
+	Dispatch \
+	IV-X11 \
+	IV-look \
+	InterViews \
+	OS \
+	Unidraw
+
+MakeInSubdirs($(SUBDIRS))

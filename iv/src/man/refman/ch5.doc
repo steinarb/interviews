@@ -1,0 +1,290 @@
+%Doc-1.0
+\documentstyle{manual}
+
+%Doc-1.0
+%counter{chapter}[arabic] = 4
+%label{event}{5.1}
+%label{handler}{5.2}
+%label{listener}{5.3}
+%label{target}{5.5}
+%label{button-label}{5.4}
+%label{button-impl}{5.4}
+
+\begin{document}
+%
+%
+\chapter{Input Handling}%
+%
+\float{figure}{5-\pagenumber{00}}%377.52 -644.88 -2
+\float{figure}{5-\pagenumber{00}}%377.52 -644.88 0
+This chapter describes the InterViews mechanisms for processing user
+input.  An {\font{Times-Bold}event} is an object that represents a
+user input action, such as pressing a mouse button or a keystroke.  Events
+are low-level objects that application code should rarely need to
+access directly.  A {\font{Times-Bold}handler} is an object that processes
+events.  A {\font{Times-Bold}listener} is a glyph that defines a mapping
+from events to handlers.  Input events can also be {\font{Times-Italic}grabbed}
+by a handler, meaning the handler will get all events regardless of
+the input pointer position.%
+%
+\section{Events}%
+%
+The event class interface is shown in Figure \ref{event}%
+%
+\code{typedef unsigned int EventType;\
+typedef unsigned int EventButton;\smallskip
+class Event \{\
+public:\
+\quad enum \{ undefined, motion, down, up, key, other\_event \};\
+\quad enum \{ none, any, left, middle, right, other\_button \};\smallskip
+\quad virtual Display* display() const;\
+\quad virtual boolean pending();\
+\quad virtual void read();\
+\quad virtual boolean read(long sec, long usec);\
+\quad virtual void unread();\
+\quad virtual void poll();\
+\
+\quad virtual Handler* handler();\
+\quad virtual void grab(Handler*);\
+\quad virtual void ungrab(Handler*);\
+\quad virtual boolean is\_grabbing(Handler*);\
+\quad virtual void handler();\
+\
+\quad virtual EventType type(); const;\
+\quad virtual unsigned long time() const;\
+\quad virtual Coord pointer\_x() const;\
+\quad virtual Coord pointer\_y() const;\
+\quad virtual EventButton pointer\_button() const;\
+\quad virtual boolean control\_is\_down() const;\
+\quad virtual boolean meta\_is\_down() const;\
+\quad virtual boolean shift\_is\_down() const;\
+\quad virtual boolean capslock\_is\_down() const;\
+\quad virtual boolean left\_is\_down() const;\
+\quad virtual boolean middle\_is\_down() const;\
+\quad virtual boolean right\_is\_down() const;\
+\quad virtual unsigned char keycode() const;\
+\quad virtual unsigned int mapkey(char*, unsigned int len) const;\
+\};%
+%
+\figurecaption{\label{event}Event class interface}%
+%
+%1.68002 -2.3999 1
+}%
+%
+.  Input events arrive in a single stream (per display) to an application.  EventType
+is the kind of event (mouse motion, button down, etc.).  InterViews
+receives all window system events, but only defines specific event
+types for device input.  Other events have the type Event::other\_event{\font{Helvetica}\size{10}.}  EventButton
+is the number of a button on a pointing device, where Event::any refers
+to any one of the buttons.
+
+\quad Event::display returns the display that sent the event.  Event::pending
+tests if more events are waiting to be read from the display.  Event::read
+gets the next event from the display, blocking if none are pending.  Event::read
+can also be passed a timeout, specified in seconds and microseconds.  If
+no event arrives before the timeout, then Event::read returns false.  Event::unread
+puts the event at the front of  the input queue for the display.  Event::poll
+does not read an event, but fills the event with the current state
+of the pointer and modifier keys.  Applications do not need to use
+these event reading operations if they use a session.
+
+\quad Event::handler returns a handler for the event.  If the target
+window for the event is known, then Event::handler calls Window::target
+to determine the handler.  Otherwise, Event::handler returns nil.  A
+handler may also \252grab\272 input events by calling Event::grab.  More
+than one handler may grab at a time, making a list of grabbers ordered
+from most recent to oldest grab.  Event::ungrab removes a handler
+from the list.  Event::grabber returns the first grabber in the list.  Event::is\_grabbing
+tests whether the given handler is on the list.
+
+\quad Event::handle processes an event by first checking if any the
+grabbers in order to see if one will handle the event.  If there are
+no grabbers or none handle the event, then Event::handle calls Event::handler
+to find a handler and passes the even t to the handler if one is found.
+
+\quad Event::time returns a timestamp in milliseconds for the event.  Event::pointer\_x
+and Event::pointer\_y return the pointer location for the event in
+coordinates relative to the lower-left corner of the window.  Pointer
+locations are defined for motion, button, and keyboard events.  Event::pointer\_button
+returns the EventButton for a down or up event, Event::none for all
+other events.  Event::{\font{Times-Italic}modifier}\_is\_down returns
+whether the {\font{Times-Italic}modifier} key was down before the
+event occurred.
+
+\quad Event::keycode returns the code associated with a keystroke.  Key
+codes are potentially platform-specific and should be avoided.  Event::mapkey
+finds the string binding for a given key.  Event::mapkey is passed
+a buffer for the result and the size of the buffer; it returns the
+number of characters in the translated string.  If the event is not
+a key event, Event::mapkey returns -1.%
+%
+\section{Handlers}%
+%
+A handler is an object that is passed an event to process.  Handler::event
+is a pure virtual function--subclasses must define an implementation.  Handlers
+typically translate raw events into abstract events.  A {\font{Times-Bold}pointer-handler}
+is a handler subclass that translates pointer events into function
+calls.  Figure \ref{handler} shows the class interfaces to handler
+and pointer-handler.%
+%
+\code{class Handler : virtual public Resource \{\
+public:\
+\quad virtual void event(Event\&) = 0;\
+\};\
+\
+class PointerHandler: public Handler \{\
+protected:\
+\quad PointerHandler();\
+public:\
+\quad virtual void sense(Event\&)\
+\quad virtual void press(Event\&);\
+\quad virtual void drag(Event\&);\
+\quad virtual void release(Event\&);\
+\quad virtual void commit(Event\&);\
+\quad virtual void abort(Event\&);\
+\};%
+%
+\figurecaption{\label{handler}Handler classes}%
+%
+%0.71994 -2.3999 2
+}%
+%
+
+
+\quad PointerHandler::sense is called when the handler first receives
+a motion event.  PointerHandler::press is called when a button is
+pressed.  A pointer-handler grabs input events while a button is pressed.  PointerHandler::drag
+is called when the pointer moves while a button is pressed.  PointerHandler::release  is
+called when the button is released.  Normally, PointerHandler::commit
+is called after the button is released.  However, if a second button
+is pressed during dragging, PointerHandler::abort will be called instead
+of commit.%
+%
+\section{Listeners}%
+%
+A listener is a glyph that is sensitive to input.  A listener is a
+monoglyph with a handler that is hit when the listener's body is hit
+with an event of interest.  Figure \ref{listener}%
+%
+\code{class Listener : public MonoGlyph \{\
+public:\
+\quad Listener(Glyph*, Handler*);\
+\quad virtual void motion(boolean);\
+\quad virtual boolean motion() const;\
+\quad virtual void key(boolean);\
+\quad virtual boolean key() const;\
+\quad virtual void button(boolean, EventButton = Event::any);\
+\quad virtual boolean button(EventButton = Event::any) const;\
+\quad virtual boolean caught(Event\&) const;\
+\quad virtual boolean pick(Canvas*, const Allocation\&, int depth,
+Hit\&);\
+\};%
+%
+\figurecaption{Listener\label{listener} class interface}%
+%
+%1.68002 -6.24005 3
+}%
+%
+ shows the listener class interface.  Listener::motion, Listener::key,
+and Listener::button specify or return which types of events should
+be handled.  Listener::caught tests whether the given event is of
+interest.  Listener::pick associates the handler with the hit parameter
+if the listener's body is hit.
+
+\quad To see how handlers and listeners can work, we consider how
+buttons are implemented.  The button class is derived from MonoGlyph
+and PointerHandler because it is both a glyph and an event handler
+(though it is straightforward to achieve the same functionality with
+using single inheritance).  A button is defined by an action to perform
+when the button is released and a telltale, which is a glyph with
+several drawing states (highlighted, chosen, disbled, etc.).
+
+\quad Figure%
+%
+\code{Button::Button(Action* a, Telltale* t) :\
+\quad MonoGlyph(nil), PointerHandler()\
+\{\
+\quad action\_ = a;\
+\quad Resource::ref(action\_);\
+\quad telltale\_ = t;\
+\quad Resource::ref(telltale\_);\
+\quad listener\_ = new Listener(telltale\_, this);\
+\quad listener\_->button(true, Event::any);\
+\quad listener\_->motion(true);\
+\quad body(listener\_);\
+\}\smallskip
+void Button::drag(Event\& e) \{\
+\quad telltale\_->highlight(inside(e.pointer\_x(), e.pointer\_y()));\
+\}\smallskip
+void Button::release(Event\& e) \{\
+\quad telltale\_->highlight(false);\
+\quad PointerHandler::release(e);\
+\}\smallskip
+void Button::commit(Event\& e) \{\
+\quad if (action\_ != nil \&\& inside(e.pointer\_x(), e.pointer\_y()))
+\{\
+\quad \quad action\_->execute();\
+\quad \}\
+\}%
+%
+\figurecaption{Button implementation\label{button-impl}.}%
+%
+%0.240021 -3.6001 4
+}%
+%
+  \ref{button-impl} shows the implementation of the Button operations.  The
+constructor creates a listener around the telltale and makes the listener
+be the body of the button.  The listener will catch all pointer motion
+and button events.  The button passes itself to the listener as the
+handler for the events.
+
+\quad Button::drag overrides PointerHandler::drag and highlights the
+telltale if the pointer location is inside the button's extension
+(retained by the button when it is drawn).  Because PointerHandler::press
+calls drag to begin dragging, there is no need to define a Button::press.  Button::release
+extends PointerHandler::release by first turning off highlighting
+on the telltale.  Button::commit executes the action if the release
+event occurred within the button's extension.  Because PointerHandler::release
+will call commit (or abort), the effect of Button::release calling
+PointerHandler::release last is that the telltale will change appearance
+before the action is executed.
+
+\quad Using monoglyphs, listeners, and handlers allows one to separate
+input and output objects very cleanly, and thus simplifies the construction
+of new  components from existing parts.  For example, a button that
+displays a raster image does not require a new button subclass.  One
+can simply pass an image glyph to the existing button constructor.%
+%
+\section{Targets}%
+%
+A {\bf target} controls the behavior of picking on its body.  A target
+is useful for defining a pick area that is not identical to the underlying
+object.  For example, if one wanted to pick in a line of characters
+then one might wish to interpret the pick based on the line height
+instead of the heights of the individual characters.  So, a pick lower
+than the top of the ``h'' in ``the'' but above the ``e'' will not
+miss.
+
+\quad Figure \ref{target}%
+%
+\code{enum TargetSensitivity \{\
+\quad TargetPrimitiveHit,\
+\quad TargetCharacterHit\
+\};\smallskip
+class Target : public MonoGlyph \{\
+public:\
+\quad Target(Glyph* body, TargetSensitivity);\
+\};%
+%
+\figurecaption{Targe\label{target}t class interface}%
+%
+%-0.240021 -12 5
+}%
+%
+ shows the target class interface.  The target behavior is controlled
+by the sensitivity parameter to the constructor.  Target::primitive\_hit
+means the body is hit if the pick region intersects the target's allocation.  Target::character\_hit
+means the body is hit if the area intersects the target's allocation
+in the X dimension.\pagebreak
+%
+\end{document}

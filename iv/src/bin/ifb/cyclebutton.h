@@ -50,7 +50,7 @@ private:
     void Init(CycleButtonChoice*);
 
     CycleButtonChoice* choices;
-    int count;
+    int count_;
     int current;
 };
 

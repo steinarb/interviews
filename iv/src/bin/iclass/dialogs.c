@@ -34,22 +34,29 @@
 #include <InterViews/frame.h>
 #include <InterViews/glue.h>
 #include <InterViews/message.h>
-#include <InterViews/scroller.h>
+#include <InterViews/scrollbar.h>
 #include <InterViews/sensor.h>
 #include <InterViews/streditor.h>
 
+#include <stdlib.h>
 #include <string.h>
+#include <osfcn.h>
+
+/* sigh, not all systems have this prototype */
+extern "C" {
+    char* getcwd(char*, int);
+};
 
 /*****************************************************************************/
 
 static const float fspace = .375;                // space in cm
+static const int MAX_PATH_LENGTH = 256;
 
 /*****************************************************************************/
 
-BasicDialog::BasicDialog () : (new ButtonState, nil) {
+BasicDialog::BasicDialog () : Dialog(new ButtonState, nil) {
     input = new Sensor;
     input->Catch(KeyEvent);
-    input->Reference();
 }
 
 boolean BasicDialog::Accept () {
@@ -84,7 +91,7 @@ boolean BasicDialog::KeyEquiv (Event& e) {
     if (e.eventType == KeyEvent && e.len > 0) {
         char c = e.keystring[0];
 
-        if (c == '\r' || c == '\007' || c == '\033') {
+        if (c == '\r' || c == '\004' || c == '\007' || c == '\033') {
             state->SetValue(c);
             keyEquiv = true;
         }
@@ -101,7 +108,7 @@ AcknowledgeDialog::AcknowledgeDialog (const char* msg, const char* btnLbl) {
         new MarginFrame(
             new VBox(
                 new Message(msg),
-                new VGlue(space, space, 0),
+                new VGlue(space),
                 new HBox(
                     new HGlue,
                     new PushButton(btnLbl, state, '\r'),
@@ -129,23 +136,51 @@ void AcknowledgeDialog::Acknowledge () {
 
 /*****************************************************************************/
 
-ConfirmDialog::ConfirmDialog (const char* msg, const char* confirmLbl) {
-    int space = round(fspace*cm);
+ConfirmDialog::ConfirmDialog (const char* msg) {
+    Insert(Interior(msg));
+    input = new Sensor(noEvents);
+    input->Catch(KeyEvent);
+}    
 
-    Insert(
-        new MarginFrame(
-            new VBox(
-                new Message(msg),
-                new VGlue(space, space, 0),
-                new HBox(
-                    new HGlue,
-                    new PushButton(confirmLbl, state, '\r'),
-                    new HGlue(space, space, 0),
-                    new PushButton(" Cancel ", state, '\007'),
-                    new HGlue
-                )
-            ), space, space, 0
-        )
+inline boolean Confirmed (int v) {
+    return v == 'y' || v == 'n' || v == '\007';
+}
+
+char ConfirmDialog::Confirm () {
+    Event e;
+    int v = 0;
+
+    state->SetValue(v);
+    do {
+        Read(e);
+        if (e.eventType == KeyEvent) {
+            state->SetValue(e.keystring[0]);
+        } else {
+            Forward(e);
+        }
+        state->GetValue(v);
+    } while (!Confirmed(v));
+
+    return v;
+}
+
+Interactor* ConfirmDialog::Interior (const char* msg) {
+    const int space = round(.5*cm);
+
+    return new MarginFrame(
+        new VBox(
+            new HBox(new Message(msg), new HGlue),
+            new VGlue(space),
+            new HBox(
+                new HGlue,
+                new PushButton("  Yes  ", state, 'y'),
+                new HGlue(space, 0),
+                new PushButton("  No  ", state, 'n'),
+                new HGlue(space, 0), 
+                new PushButton("Cancel", state, '\007'),
+                new HGlue
+            )
+        ), space, space/2, 0
     );
 }
 
@@ -194,14 +229,14 @@ void StringDialog::Init (const char* msg, const char* confirmLbl, int width) {
         new MarginFrame(
             new VBox(
                 new Message(msg),
-                new VGlue(space, space, 0),
+                new VGlue(space),
                 framedSedit,
-                new VGlue(space, space, 0),
+                new VGlue(space),
                 new HBox(
                     new HGlue,
-                    new PushButton(confirmLbl, state, '\r'),
-                    new HGlue(space, space, 0),
-                    new PushButton(" Cancel ", state, '\007')
+                    new PushButton(" Cancel ", state, '\007'),
+                    new HGlue(space, 0),
+                    new PushButton(confirmLbl, state, '\r')
                 )
             ), space, space, 0
         )
@@ -238,20 +273,43 @@ FileDialog::FileDialog (
     const char* msg, const char* dir, const char* confirmLbl
 ) {
     int space = round(fspace*cm);
-    _browser = new FileBrowser(state, dir, 10, 24, false);
+    _browser = new FileBrowser(state, dir, 20, 35, false, Reversed,"\000\007");
+    _dirs = new FileBrowser(
+        "dirBrowser", state, dir, 20, 24, true, Reversed,"d\007"
+    );
+    _dirs->SetTextFilter("^$");                 // show directories only
+    _dirs->Update();
+
+    _cur_dir = new MarginFrame(new Message("path", FullPath(_dirs)));
+    HBox* dirBox = new HBox(
+        new Message("Directory: "),
+        _cur_dir,
+        new HGlue
+    );
+    dirBox->Propagate(false);
 
     Insert(
         new MarginFrame(
             new VBox(
-                new Message(msg),
-                new VGlue(space, space, 0),
-                new Frame(AddScroller(_browser)),
-                new VGlue(space, space, 0),
+                new HBox(
+                    new VBox(
+                        new Message("Change directory to:", Left, 0, hfil),
+                        new Frame(AddScroller(_dirs))
+                    ),
+                    new HGlue(space, 0),
+                    new VBox(
+                        new Message(msg, Left, 0, hfil),
+                        new Frame(AddScroller(_browser))
+                    )
+                ),
+                new VGlue(space, 0),
+                dirBox,
+                new VGlue(space, 0),
                 new HBox(
                     new HGlue,
-                    new PushButton(confirmLbl, state, '\r'),
-                    new HGlue(space, space, 0),
-                    new PushButton(" Cancel ", state, '\007')
+                    new PushButton(" Cancel ", state, '\007'),
+                    new HGlue(space, 0),
+                    new PushButton(confirmLbl, state, '\r')
                 )
             ), space, space, 0
         )
@@ -262,12 +320,53 @@ Interactor* FileDialog::AddScroller (Interactor* i) {
     return new HBox(
         new MarginFrame(i, 2),
         new VBorder,
-        new VBox(
-            new UpMover(i, 1),
-            new HBorder,
-            new VScroller(i),
-            new HBorder,
-            new DownMover(i, 1)
-        )                
+	new VScrollBar(i)
     );
+}
+
+boolean FileDialog::Accept () {
+    Event e;
+    int v = 0;
+
+    state->SetValue(0);
+
+    do {
+	Read(e);
+        if (!KeyEquiv(e)) {
+            Forward(e);
+        }
+	state->GetValue(v);
+
+	if (v == 'd') {
+            if (_dirs->Selections() > 0) {
+                int sel = _dirs->Selection();
+                char path[MAX_PATH_LENGTH];
+                strcpy(path, _dirs->Path(sel));
+
+                _browser->SetDirectory(path);
+                _dirs->SetDirectory(path);
+
+                Message* path_msg = new Message("path", FullPath(_dirs));
+                _cur_dir->Insert(path_msg);
+                _cur_dir->Change(path_msg);
+            }
+            state->SetValue(0);
+            v = 0;
+	}
+    } while (v == 0);
+
+    return v == '\r';
+}
+
+const char* FileDialog::FullPath (const char* relpath) {
+    return FullPath(_dirs, relpath);
+}
+
+const char* FileDialog::FullPath (FileBrowser* fb, const char* rp) {
+    const char* relpath = (rp == nil) ? fb->GetDirectory() : rp;
+    char path[MAX_PATH_LENGTH];
+    getcwd(path, sizeof(path) - strlen(relpath) - 1);
+    strcat(path, "/");
+    strcat(path, relpath);
+    return fb->Normalize(path);
 }

@@ -1,0 +1,466 @@
+%Doc-1.0
+\documentstyle{manual}
+
+%Doc-1.0
+%counter{chapter}[arabic]
+%label{resource}{1.1}
+%label{himom}{1.3}
+%label{alert}{1.4}
+%label{action}{1.2}
+
+\begin{document}
+%
+%
+\chapter{Introduction}%
+%
+\float{}{1-\pagenumber{0}}%379.2 -643.2 -2
+InterViews is a software system for window-based applications.  Like
+most user environments, InterViews is {\it object-oriented} in that
+components such as windows, buttons, menus, and documents are active
+elements with inherited behavior.  The name InterViews comes from
+the idea of a user interface object presenting an {\it inter}active
+{\it view} of some data.  For example, a text editor implements an
+interactive view of the contents of a text file.
+
+\quad This manual is organized into eight chapters.  Chapter 1 defines
+basic terms and provides an overview of the system.  Chapter 2 describes
+the use of objects called {\it glyphs} to define the presentation
+of a user interface.  Chapter 3 defines the graphics-related objects
+that a glyph can use to draw on a screen or printer.  Chapter 4 describes
+how glyphs are associated with a window on the screen and how InterViews
+objects communicate information to a window manager.  Chapter 5 explains
+the input handling primitives.  Chapter 6 shows how style attributes
+such as color and font can be controlled.  Chapter 7 describes {\font{Times-Italic}kits},
+objects that build common user interface components such as buttons,
+menus, and scrollbars.  Chapter 8 describes the classes that interface
+to the operating system.%
+%
+\section{Notation}%
+%
+We use C++ syntax to describe the different classes of InterViews
+objects and assume the reader is somewhat familiar with C++ semantics.  However,
+the specification of a class here is {\it not} identical to the C++
+class declaration in a header file.  In particular, we do not list
+the private sections of a class declaration because they are part
+of the implementation, not the interface.  We also do not list members
+that are implicitly part of the implementation.  For example, C++
+destructors are normally public but often simply free storage allocated
+by the object.  Thus, there is no need to list and document destructors
+as part of a class interface.
+
+\quad A more subtle example is a virtual function implemented by a
+subclass.  We only list the function in the subclass interface if
+the subclass changes the semantics of the function.  We do not include
+PSFont::width, for example, because PSFont just implements the Font::width
+virtual function using PostScript font metrics instead of screen font
+metrics. On the other hand, the Listener class actually extends the
+semantics of Glyph::pick to put the listener's event handler on a
+list associated with the hit object.  Thus, we do include Listener::pick
+in the documentation.%
+%
+\subsection{Names}%
+%
+We use identifiers that begin with an upper case letter for types;
+we use lower case for member functions and parameters. We assume  that
+some mechanism allows us to use any names we wish--there is no need
+to use a special prefix for all global names (types and classes).  Ideally,
+this capability would be provided by the C++ language, but this is
+not yet the case.  Currently, we use \#define macros to prepend the
+prefix ``iv'' to all class names and global type names.  This redefinition
+is hidden from the programmer, except inasmuch as it shows up during
+debugging.  To undefine these macros, a source file must include {\font{Helvetica}\size{10}<InterViews/leave-scope.h>}.  After
+leaving the InterViews scope, InterViews names are specified by \252\_lib\_iv({\font{Times-Italic}name})\272,
+where {\font{Times-Italic}name} is the class or type name defined
+in this manual.%
+%
+\subsection{Use of const}%
+%
+C++ allows the type modifier \252const\272 to be used in a variety
+of different ways.  For concrete objects (int, float, char*), it refers
+to read-only storage.  For abstract objects, however, storage access
+should not be visible in an interface.  For example, a function on
+a transformation matrix could be defined  that returns whether the
+matrix is the identity or not.  A simple implementation could compute
+the identity test and could be defined as const in the storage sense.  However,
+another implementation might cache the result of the test to avoid
+the overhead of the test when the matrix is not changing.  This second
+implementation is not const in the storage sense because it modifies
+the transformation matrix object.
+
+\quad We use const for functions that do not change the {\font{Times-Italic}behavior}
+of an object.  That is, a member function is const if a call to it
+could be omitted without changing the effect of subsequent  function
+calls on the object.  This definition is consistent with the notion
+that a compiler could eliminate redundant calls to the same const
+function.  The one notable counter-example is reference counting,
+where incrementing and decrementing the reference count of a shared
+object changes its lifetime (a call could not be eliminated by the
+compiler) but does not change its behavior (the operation is considered
+const).
+
+\quad Using our semantics of const, the transformation matrix identity
+function mentioned above should be defined as const.  This approach
+implies that an implementation may be forced to cast the {\font{Times-Bold}this}
+pointer from const to non-const to avoid a compiler error message
+because most C++ compilers assume that a function should not be const
+if the function does modifies storage.
+
+\quad It is also possible (indeed, likely) that a function does not
+follow our semantics of const even though it does not modify the object's
+storage.  If an object contains a pointer to another object and a
+member function performs some non-const operation on that object,
+then the member function may need to be defined as non-const.%
+%
+\subsection{Common Symbols}%
+%
+Several definitions are pervasive throughout the system.  These definitions
+are automatically defined as a side effect of using any other InterViews
+classes. The type {\bf boolean} is defined in the conventional sense
+of a language such as Pascal, as are the constants {\bf true} and
+{\bf false}.  The constant {\bf nil} is presumed to be type-equivalent
+to any pointer type and represents an invalid pointer value.  In C++,
+we \#define nil  to zero.  The class {\font{Times-Bold}String} is
+referenced by other InterViews classes, though no specific interface
+or implementation is presumed.  The operating system interface (described
+in Chapter 8) includes a string class for the current InterViews implementation.%
+%
+\subsection{Coordinates}%
+%
+Many classes and functions in a toolkit manipulate coordinates. We
+define a type {\bf Coord} to represent a position or a distance. The
+default units for a coordinate are printers points. By default, coordinate
+values are scaled according to screen fonts, not the dots-per-inch
+of the screen.  Thus, the coordinate scaling factor is 75/72 on systems  with
+75-dpi fonts.  The scaling factor for a screen can be customized on
+a per-screen  basis.
+
+\quad The reason for using font resolution instead of screen resolution
+is that most applications want to show geometry as it would appear
+relative to text, not at its actual size.  The problem is that font
+metric information is given in terms of the font resolution.  For
+example, consider the character \252x\272 drawn using a 75-dpi font
+next to a rectangle on a 90-dpi screen.  If the rectangle is scaled
+using 90-dpi, then it will look too small relative to the \252x\272
+on a printer.  
+
+\quad Ideally, Coord would be a C++ class with well-defined operations
+and conversions to concrete types.  However, current C++ compilers
+do not make it practical to define a Coord class that is represented
+as a single word.  We therefore typedef Coord to a float.
+
+\quad For applications with simple graphics needs, the use of floating
+point coordinates is typically not a problem.  Applications with more
+sophisticated text or graphics usually need to manipulate floating
+point coordinates anyway.
+
+\quad The use of non-pixel units allows objects to be resolution-independent,
+but also means that one cannot rely on precise output at low resolutions.  Coordinates
+are rounded-off to guarantee that objects that abut in coordinates
+will abut on the screen.  This choice means that a one point line might
+generate one or two pixels, depending on where it is on the screen.  Objects
+that need to generate consistent pixel sizes must explicitly scale
+to pixel units. %
+%
+\subsection{Dimensions}%
+%
+Many composition strategies manipulate coordinates in one dimension.
+To use a single strategy in any dimension, we define an enumerated
+type {\bf DimensionName} as {\em {\font{Helvetica}\size{10}Dimension\_X},}
+{\em {\font{Helvetica}\size{10}Dimension\_Y},} or {\em {\font{Helvetica}\size{10}Dimension\_Z}}.  It
+is possible that other dimensions may be defined in the future.  The
+enumeration constant {\em {\font{Helvetica}\size{10}Dimension\_Undefined}}
+is defined after any other dimensions.  Thus, one can iterate through
+all dimensions by stopping at {\font{Helvetica}\size{10}Dimension\_Undefined}.
+%
+%
+\subsection{Reference counting}%
+%
+Because C++ does not provide garbage collection, it is necessary to
+manage shared objects within a program.  We make objects easier to
+share by deriving from class Resource, which manages a reference count.  If
+we had garbage collection, we would not need the resource class.  We
+do not consider resource really part of the InterViews programming
+interface; it does not appear in any function type signatures. However,
+it is necessary to understand which objects can be shared and as a
+practical matter implementations must manage references correctly.
+
+\quad Figure \ref{resource} shows the Resource class interface.  Every
+resource has a reference count that is initially zero and must be
+explicitly incremented by calling Resource::ref.  The reason the count
+is initially zero is that an object is often created and immediately
+passed as a parameter to another object that stores the reference.  Since
+the receiver must reference the parameter anyway, it is confusing
+to force the creator to unreference the resource after passing it.
+
+%
+%
+\code{class Resource \{\
+public:\
+\quad Resource();\
+\quad void ref() const;\
+\quad void unref() const;\
+\quad static void ref(const Resource*);\
+\quad static void unref(const Resource*);
+
+\quad static boolean defer(boolean);
+
+\quad static void flush();\
+\}; %
+%
+\figurecaption{Resource class interface\label{resource}}%
+%
+%0.960014 3.84003 3
+}%
+%
+  A resource should not be deleted like other objects; instead, Resource::unref
+should be used to unreference an object.  When a resource is unreferenced,
+the count is decremented.  If the count is not positive, then the
+object is destroyed.  The static ref and unref functions check if
+their arguments are nil and if not call the non-static ref or unref
+member functions, respectively.
+
+\quad Resource::defer and Resource::flush can be used to control when
+objects are actually destroyed.  Often, an object may initiate a delete
+on one of its ancestors or some other object with an active member
+function.  In these cases, it is simplest to wait to destroy objects
+until the system is in a known state.  Resource::defer called with
+a value of true will cause subsequent Resource::unref operations to
+queue objects with zero counts instead of deleting them.  Resource::flush
+will delete all objects on the queue, in the order of the unref calls.  Resource::defer
+returns the previous deferral value.  Initially, deletions are not
+deferred.%
+%
+\subsection{Actions}%
+%
+C++ provides a pointer-to-function type, but often one wishes to encapsulate
+an object and a pointer to a member function to call on the object.  An
+{\font{Times-Bold}action callback} provides this functionality.  The
+base class action defines a single operation, Action::execute.  A
+{\font{Times-Bold}macro} is an action that contains a list of actions,
+each of which is executed in order.  Figure%
+%
+\code{class Action : virtual public Resource \{\
+protected:\
+\quad Action();\
+public:\
+\quad virtual void execute() = 0;\
+\};\smallskip
+class Macro : public Action \{\
+public:\
+\quad Macro(Action* = nil, Action* = nil, Action* = nil, Action* =
+nil);\
+\quad void append(Action*);\
+\};\smallskip
+class ActionCallback(T) : public Action \{\
+public:\
+\quad ActionCallback(T)(T*, void (T::*)());\
+\};%
+%
+\figurecaption{Action and related class interfaces\label{action}.}%
+%
+%1.20001 1.20007 4
+}%
+%
+ \ref{action} shows the action, macro, and action-callback class interfaces.%
+%
+\section{Overview}%
+%
+The goal of InterViews is to make it easy to compose user interfaces
+from reusable components.  The central class for composition is {\bf glyph}
+because it defines the geometry of a user interface object.  The {\bf canvas}
+class defines a 2-dimensional surface upon to which a group of glyphs
+are attached.  The glyphs negotiate for space on the canvas, draw
+on the canvas to refresh their appearance, and damage the canvas to
+cause an update traversal.
+
+\quad The {\bf window} class creates a canvas for a top-level glyph
+and allows the user to control the canvas on a screen through a window
+manager.  The window class does not define a window management policy,
+only the mechanism for communicating appropriate information between
+a window manager and the glyphs.
+
+\quad Every application can create a {\bf session} object to attach
+to a {\font{Times-Bold}display} object automatically and run an event
+dispatching loop.  Sessions can also have additional displays attached.  A
+session defines a root {\font{Times-Bold}style} object derived from
+user customization files and command-line arguments.  Styles define
+named attributes with string values, wildcarding for matching classes
+of objects, and quick access to common attributes such as fonts and
+colors.
+
+\quad The InterViews input model is ``top-down''.  That is, an input
+{\font{Times-Bold}event} object is first received by the appropriate
+window as determined by the window manager.  The receiving window
+looks for a {\font{Times-Bold}handler} object that has \252grabbed\272
+input.  Several handlers can be grabbing at once (a common implementation
+for walking menus).  If a handler is not interested in a particular
+event, the window will try the next more recent grabber.  If no grabbers
+are interested, the window does a {\font{Times-Italic}pick} on its
+root glyph.  Pick operations have two results: a list of glyphs that
+were picked, and a list of handlers interested in the event.  A {\font{Times-Bold}listener}
+is a predefined glyph subclass that adds an associated handler to
+the pick result when it detects an event of interest.
+
+\quad InterViews provides common behavior objects, such as buttons
+and menus, which are built using listeners and handlers.  Unlike many
+other toolkits, InterViews  objects are cheap enough that behavior
+objects are separate from appearance objects.  For example, the button
+class is given a separate glyph that denotes its appearance; the button
+only implements input behavior.  The appearance is actually a {\font{Times-Bold}telltale}
+glyph, which may look different depending on its state  (e.g., highlighted,
+pressed, chosen).  Depending on the input, the button requests a particular
+look from the telltale.
+
+\quad This approach of separating input and output objects makes the
+toolkit more flexible and the individual objects simpler, but it can
+make the task of constructing higher-level user interface objects
+more confusing.  In particular, it becomes less obvious whether it
+is appropriate to subclass or instance to create a particular component.
+
+\quad InterViews provides a {\font{Times-Bold}kit} object that encapsulates
+these decisions in a single programming interface while allowing various
+appearances and behaviors.  A kit is an object that creates common
+user interface objects such as buttons, scrollbars, and menus.  For
+example, a push button has button behavior, a beveled or highlighted
+appearance when pressed, and a style for customization.  The Kit class
+provides a function to create a push button object; the implementation
+is free to compose what objects are necessary to provide the appropriate
+functionality.  Each application normally creates a single Kit object,
+which is typically a subclass  defined for a particular look-and-feel
+such as OpenLook or Motif.  The application can call the static function
+Kit:::instance to return the object and therefore be unaware which
+specific look-and-feel is being used.%
+%
+\subsection{A simple example}%
+%
+Figure%
+%
+\code{\#include <InterViews/background.h>\
+\#include <InterViews/label.h>\
+\#include <InterViews/session.h>\
+\#include <InterViews/style.h>\
+\#include <InterViews/window.h>\smallskip
+int main(int argc, char** argv) \{\
+\quad Session* session = new Session("Himom", argc, argv);\
+\quad Style* style = session->style();\
+\quad session->run\_window(\
+\quad \quad new ApplicationWindow(\
+\quad \quad \quad new Background(\
+\quad \quad \quad \quad new Label("hi mom!", style->font(), style->foreground()),\
+\quad \quad \quad \quad style->background()\
+\quad \quad \quad )\
+\quad \quad )\
+\quad );\
+\}%
+%
+\figurecaption{InterViews "hi mom!" program\label{himom}.}%
+%
+
+
+%2.15999 1.20001 6
+}%
+%
+ \ref{himom} shows a simple InterViews application that display the
+text \252hi mom!\272 in a window.  The application creates a session
+and runs it starting with a window containing the text over a background.  The
+window is an \252application window\272, meaning it is recognized
+by other desktop services (window manager, session manager) as the
+main window for the application.
+
+\quad The window contains a background that contains a label.  A background
+glyph paints a given color behind its contents.  The label glyph is
+given the text, font, and color for drawing.  The text font and color,
+as well  as the background color, are obtained from the default style
+for the session.
+
+\quad This application does not handle user input.  It must therefore
+be terminated externally, either from a window manager menu or through
+the system.%
+%
+\subsection{A dialog box}%
+%
+Figure%
+%
+\code{Kit* kit = Kit::instance();\
+String button\_label;\
+style->find\_attribute("quitbutton", button\_label);\
+Glyph* vspace = new VGlue(18.0);\
+Glyph* hspace = new HGlue(36.0);\
+Glyph* dialog = new Background(\
+\quad new TBBox(\
+\quad \quad new VCenter(vspace, 1.0),\
+\quad \quad new LRBox(\
+\quad \quad \quad hspace,\
+\quad \quad \quad new TBBox(\
+\quad \quad \quad \quad new VCenter(make\_message(new TBBox, kit,
+style), 1.0),\
+\quad \quad \quad \quad vspace,\
+\quad \quad \quad \quad new LMargin(\
+\quad \quad \quad \quad \quad kit->simple\_push\_button(button\_label,
+style, kit->quit()),\
+\quad \quad \quad \quad \quad 0.0, fil, 0.0\
+\quad \quad \quad \quad )\
+\quad \quad \quad ),\
+\quad \quad \quad hspace\
+\quad \quad ),\
+\quad \quad vspace\
+\quad ),\
+\quad style->flat()\
+);%
+%
+\figurecaption{Part of alert dialog application\label{alert}.}%
+%
+
+
+%-0.720001 3.12 7
+}%
+%
+ \ref{alert} shows part of an alerter application that puts up a dialog
+box and waits for it to be dismissed.  The dialog contains two parts,
+a message created by the {\font{Times-Italic}make\_message }function
+and a push button for dismissal, as well as white space.  We use the
+default kit object to create the button and the default quit action
+(which just terminates the main session loop).
+
+\quad The button label is the value retrieved for the attribute named
+\252quitbutton\272 defined by the default style.  We assume the lookup
+will succeed because the program defines a default value for the attribute
+in the session constructor.
+
+\quad InterViews layout mechanisms are based on the TeX model of boxes
+and glue.  A TBBox tiles its components top-to-bottom, while an LRBox
+tiles left-to-right.  Boxes stretch or shrink their components to
+fit available space.  Typically, components such as labels and buttons
+are rigid, and glue objects are used to define variable space between
+components.  In the dialog, vertical glue is used above, below, and
+between the message and button.  Horizontal glue is used on both sides
+of the dialog area.
+
+\quad The button object has a margin object around it, which is like
+putting glue around it.  The LMargin  subclass leaves space to the
+left of the button.
+
+\quad The VCenter objects control the alignment of the boxes.  Glyphs
+define an origin for alignment purposes.  For example, an LRBox tiles
+in the X dimension and aligns the origins in the Y dimension.  Boxes
+themselves must define an origin, which by default is the origin of
+their first component.  This approach is desirable in the case of
+aligning the left edges of several lines of text or aligning the tops
+of lines in two columns, but is not usually appropriate for dialogs.  The
+VCenter object overrides the default alignment of its component.  Because
+the VCenter is the first component in the box, it also overrides the
+alignment for the box.  A vertical alignment of 1.0 means if the TBBox
+appears in an LRBox then the top of the TBBox will be aligned  the
+top of the LRBox.%
+%
+\section{Summary}%
+%
+This chapter has presented a broad overview of the InterViews architecture,
+introducing the basic terminology and giving some simple examples.  In
+the next chapter, we focus on the semantics of glyphs as the smallest
+unit of user interface construction.  We also present the glyph classes
+defined by InterViews and give some examples as to how they can be
+used.
+
+%
+\end{document}

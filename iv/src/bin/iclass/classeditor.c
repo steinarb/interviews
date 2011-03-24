@@ -51,14 +51,14 @@ static const char HalfPageUp = 'u';
 
 ClassEditor::ClassEditor (
     ButtonState* bs, int r, int c, int t, int h, const char* done
-) : (r, c, t, h) {
+) : TextEditor(r, c, t, h) {
     Init(bs, done);
 }
 
 ClassEditor::ClassEditor (
     ButtonState* bs, const char* name, int r, int c, int t, int h,
     const char* done
-) : (name, r, c, t, h) {
+) : TextEditor(name, r, c, t, h) {
     Init(bs, done);
 }
 
@@ -67,7 +67,6 @@ void ClassEditor::Init (ButtonState* bs, const char* done) {
     input = new Sensor;
     input->Catch(DownEvent);
     input->Catch(KeyEvent);
-    input->Reference();
 
     _state = bs;
     _done = done;

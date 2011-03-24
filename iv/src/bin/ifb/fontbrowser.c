@@ -111,13 +111,13 @@ static Interactor* ButtonBox (
     return box;
 }
 
-FontBrowser::FontBrowser (ButtonState* s, const char* samp) : (s, nil) {
+FontBrowser::FontBrowser (ButtonState* s, const char* samp) : Dialog(s, nil) {
     Init(samp);
 }
 
 FontBrowser::FontBrowser (
     const char* name, ButtonState* s, const char* samp
-) : (s, nil) {
+) : Dialog(s, nil) {
     SetInstance(name);
     Init(samp);
 }
