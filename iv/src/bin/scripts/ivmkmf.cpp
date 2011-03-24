@@ -26,11 +26,11 @@ fi
 
 case "$do_all" in
 	yes)	set -x
-		imake CONFIGDIRSPEC -DUseInstalled &&
+		imake CONFIGDIRSPEC -DIVUseInstalled &&
 		make Makefiles &&
 		make depend
 		;;
 	*)	set -x
-		imake CONFIGDIRSPEC -DUseInstalled
+		imake CONFIGDIRSPEC -DIVUseInstalled
 		;;
 esac

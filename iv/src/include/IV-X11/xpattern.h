@@ -33,6 +33,9 @@ class Display;
 
 class PatternRep {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     Display* display_;
     Pixmap pixmap_;
 };

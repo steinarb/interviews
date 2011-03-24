@@ -88,6 +88,8 @@ Window::Window(Glyph* g) {
     w->xwindow_ = WindowRep::unbound;
     w->xattrmask_ = 0;
     w->xclass_ = InputOutput;
+    w->placed_ = false;
+    w->aligned_ = false;
     w->clear_mapping_info();
     w->cursor_ = defaultCursor;
     w->cursor_stack_ = new WindowCursorStack;
@@ -131,10 +133,12 @@ Glyph* Window::glyph() const {
 
 void Window::style(Style* s) {
     WindowRep& w = *rep();
-    Resource::ref(s);
-    Resource::unref(w.style_);
-    w.style_ = s;
-    w.check_binding(this);
+    if (w.style_ != s) {
+	Resource::ref(s);
+	Resource::unref(w.style_);
+	w.style_ = s;
+	w.check_binding(this);
+    }
 }
 
 Style* Window::style() const {
@@ -144,9 +148,11 @@ Style* Window::style() const {
 
 void Window::display(Display* d) {
     WindowRep& w = *rep();
-    w.check_binding(this);
-    w.display_ = d;
-    w.canvas_->rep()->display_ = d;
+    if (w.display_ != d) {
+	w.check_binding(this);
+	w.display_ = d;
+	w.canvas_->rep()->display_ = d;
+    }
 }
 
 Display* Window::display() const {
@@ -161,17 +167,19 @@ Canvas* Window::canvas() const {
 
 void Window::cursor(Cursor* c) {
     WindowRep& w = *rep();
-    w.check_binding(this);
-    w.cursor_ = c;
-    XWindow xw = w.xwindow_;
-    if (xw != WindowRep::unbound) {
-	XDisplay* dpy = w.dpy();
-	if (c == nil) {
-	    XUndefineCursor(dpy, xw);
-	} else {
-	    XDefineCursor(dpy, xw, c->rep()->xid(w.display_, w.visual_));
+    if (w.cursor_ != c) {
+	w.check_binding(this);
+	w.cursor_ = c;
+	XWindow xw = w.xwindow_;
+	if (xw != WindowRep::unbound) {
+	    XDisplay* dpy = w.dpy();
+	    if (c == nil) {
+		XUndefineCursor(dpy, xw);
+	    } else {
+		XDefineCursor(dpy, xw, c->rep()->xid(w.display_, w.visual_));
+	    }
+	    XFlush(dpy);
 	}
-	XFlush(dpy);
     }
 }
 
@@ -252,10 +260,11 @@ void Window::map() {
     if (w.map_pending_ || is_mapped()) {
 	return;
     }
+    w.unmapped_ = false;
     if (bound()) {
-	w.unmapped_ = false;
 	w.display_->rep()->wtable_->insert(w.xwindow_, this);
     } else {
+	unbind();
 	if (w.display_ == nil) {
 	    display(Session::instance()->default_display());
 	}
@@ -335,13 +344,12 @@ void Window::unbind() {
 
 boolean Window::bound() const {
     WindowRep& w = *rep();
-    if (w.xwindow_ != WindowRep::unbound) {
-	DisplayRep& d = *w.display_->rep();
-	if (w.find(w.xtoplevel_, d.wtable_) == w.toplevel_) {
-	    return true;
-	}
-    }
-    return false;
+    return (
+	w.xwindow_ != WindowRep::unbound && (
+	    (w.toplevel_ == this) ||
+	    (w.find(w.xtoplevel_, w.display_->rep()->wtable_) == w.toplevel_)
+	)
+    );
 }
 
 void Window::set_attributes() {
@@ -606,7 +614,10 @@ ManagedWindow::ManagedWindow(Glyph* g) : Window(g) {
 }
 
 ManagedWindow::~ManagedWindow() {
-    delete rep_;
+    ManagedWindowRep* w = rep_;
+    Resource::unref(w->icon_bitmap_);
+    Resource::unref(w->icon_mask_);
+    delete w;
 }
 
 ManagedWindow* ManagedWindow::icon() const { return rep()->icon_; }
@@ -621,12 +632,16 @@ void ManagedWindow::icon(ManagedWindow* i) {
 
 void ManagedWindow::icon_bitmap(Bitmap* b) {
     ManagedWindowRep& w = *rep();
+    Resource::ref(b);
+    Resource::unref(w.icon_bitmap_);
     w.icon_bitmap_ = b;
     w.do_set(this, &ManagedWindowRep::set_icon_bitmap);
 }
 
 void ManagedWindow::icon_mask(Bitmap* b) {
     ManagedWindowRep& w = *rep();
+    Resource::ref(b);
+    Resource::unref(w.icon_mask_);
     w.icon_mask_ = b;
     w.do_set(this, &ManagedWindowRep::set_icon_mask);
 }
@@ -858,8 +873,6 @@ void WindowRep::clear_mapping_info() {
     xtoplevel_ = WindowRep::unbound;
     needs_resize_ = false;
     resized_ = false;
-    placed_ = false;
-    aligned_ = false;
     moved_ = false;
     unmapped_ = false;
     wm_mapped_ = false;
@@ -1731,12 +1744,12 @@ void Display::close() {
 Display::~Display() {
     DisplayRep* d = rep();
     Resource::unref_deferred(d->style_);
-    delete d->damaged_;
     for (ListItr(SelectionList) i(*d->selections_); i.more(); i.next()) {
 	SelectionManager* s = i.cur();
 	delete s;
     }
     delete d->selections_;
+    delete d->damaged_;
     delete d->grabbers_;
     delete d->wtable_;
     delete d;

@@ -110,6 +110,7 @@ void StringBrowser::InitTextDisplay () {
 StringBrowser::~StringBrowser () {
     Clear();
     delete strbuf;
+    delete selbuf;
     delete display;
     Resource::unref(subject);
     Resource::unref(perspective);

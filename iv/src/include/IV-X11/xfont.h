@@ -56,6 +56,9 @@ public:
 
 class FontFamilyRep {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     Display* display_;
     int count_;
     int min_weight_;

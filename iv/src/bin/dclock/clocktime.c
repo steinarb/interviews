@@ -32,7 +32,7 @@ extern "C" int gettimeofday(struct timeval*, struct timezone*);
 #endif
 
 Clock::Clock () {
-#if defined(sun) && OSMajorVersion >= 5
+#if (defined(sun) && OSMajorVersion >= 5) || defined(__FTX)
     gettimeofday(&gmt);
 #else
     gettimeofday(&gmt, 0);
@@ -41,7 +41,7 @@ Clock::Clock () {
 }
 
 int Clock::NextTick () {
-#if defined(sun) && OSMajorVersion >= 5
+#if defined(sun) && OSMajorVersion >= 5 || defined(__FTX)
     gettimeofday(&gmt);
 #else
     gettimeofday(&gmt, 0);

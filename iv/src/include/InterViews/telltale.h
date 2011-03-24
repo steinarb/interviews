@@ -64,6 +64,7 @@ public:
     };
 
     TelltaleFlags flags() const;
+    TelltaleGroup* group() const;
 
     virtual void set(const TelltaleFlags, boolean);
     virtual boolean test(const TelltaleFlags) const;
@@ -75,6 +76,7 @@ private:
 };
 
 inline TelltaleFlags TelltaleState::flags() const { return flags_; }
+inline TelltaleGroup* TelltaleState::group() const { return group_; }
 
 class Telltale : public MonoGlyph, public Observer {
 protected:

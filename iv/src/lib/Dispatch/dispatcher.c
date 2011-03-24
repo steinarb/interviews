@@ -24,10 +24,6 @@
 
 // Dispatcher provides an interface to the "select" system call.
 
-#if defined(sun) && OSMajorVersion >= 5
-#define Solaris_2 YES
-#endif
-
 #include <Dispatch/dispatcher.h>
 #include <Dispatch/iohandler.h>
 #include <OS/memory.h>
@@ -37,26 +33,32 @@
 #include <stdlib.h>
 #undef NULL
 #include <sys/param.h>
-#if defined(AIXV3) || defined(Solaris_2)
+#if defined(AIXV3) || defined(svr4)
 #include <sys/select.h>
 #endif
+#include <signal.h>
 #include <sys/time.h>
+#include <sys/wait.h>
 #include <time.h>
 
 /* no standard place for this */
 extern "C" {
 #if defined(hpux)
-    extern int select(size_t, int*, int*, int*, const struct timeval*);
+    extern int select(size_t, int*, int*, int*, struct timeval*);
 #else
-#if !defined(AIXV3) && !defined(Solaris_2) && !defined(__lucid)
-    extern int select(int, fd_set*, fd_set*, fd_set*, const struct timeval*);
+#if !defined(AIXV3) && !defined(svr4) && !defined(__lucid)
+    extern int select(int, fd_set*, fd_set*, fd_set*, struct timeval*);
 #endif
 #endif
 #ifdef __DECCXX
     extern int gettimeofday(struct timeval*, struct timezone*);
-    extern void perror(char*);
 #endif
 }
+
+#ifdef LINUX
+#define howmany(x,y) ((((u_int)(x))+(((u_int)(y))-1))/((u_int)(y)))
+#define fds_bits __bits
+#endif
 
 Dispatcher* Dispatcher::_instance;
 
@@ -222,7 +224,7 @@ inline timeval TimerQueue::earliestTime() const {
 
 timeval TimerQueue::currentTime() {
     timeval curTime;
-#if defined(Solaris_2)
+#if defined(svr4) && !defined(__GNUC__)
     gettimeofday(&curTime);
 #else
     struct timezone curZone;
@@ -271,6 +273,117 @@ void TimerQueue::expire(timeval curTime) {
     }
 }
 
+/*
+ * Interface to child process handling.
+ */
+
+struct Child {
+    Child(pid_t pid, IOHandler* h, Child* n);
+
+    pid_t pid;		// process's PID
+    int status;		// wait status
+    IOHandler* handler;	// associated handler
+    Child* next;
+};
+
+class ChildQueue {
+public:
+    ChildQueue();
+    virtual ~ChildQueue();
+
+    boolean isEmpty() const;
+    boolean isReady() const;
+
+    void insert(pid_t, IOHandler*);
+    void remove(IOHandler*);
+    void notify();
+    void setStatus(pid_t, int status);
+private:
+    Child* _first;            // queue head
+    boolean _ready;           // something is ready
+};
+
+Child::Child(pid_t p, IOHandler* h, Child* n) {
+    pid = p;
+    status = -1;
+    handler = h;
+    next = n;
+}
+
+ChildQueue::ChildQueue() {
+    _first = nil;
+    _ready = false;
+}
+
+ChildQueue::~ChildQueue() {
+    Child* doomed = _first;
+    while (doomed != nil) {
+	Child* next = doomed->next;
+	delete doomed;
+	doomed = next;
+    }
+}
+
+inline boolean ChildQueue::isEmpty() const { return _first == nil; }
+inline boolean ChildQueue::isReady() const { return _ready; }
+
+void ChildQueue::insert(pid_t p, IOHandler* handler) {
+    if (isEmpty()) {
+	_first = new Child(p, handler, _first);
+    } else {
+	Child* before = _first;
+	Child* after = _first->next;
+	while (after != nil && p > after->pid) {
+	    before = after;
+	    after = after->next;
+	}
+	before->next = new Child(p, handler, after);
+    }
+}
+
+void ChildQueue::remove(IOHandler* handler) {
+    Child* before = nil;
+    Child* doomed = _first;
+    while (doomed != nil && doomed->handler != handler) {
+	before = doomed;
+	doomed = doomed->next;
+    }
+    if (doomed != nil) {
+	if (before == nil) {
+	    _first = doomed->next;
+	} else {
+	    before->next = doomed->next;
+	}
+	delete doomed;
+    }
+}
+
+void ChildQueue::setStatus(pid_t p, int status) {
+    for (Child* c = _first; c != nil; c = c->next) {
+	if (c->pid == p) {
+	    c->status = status;
+	    _ready = true;
+	    break;
+	}
+    }
+}
+
+void ChildQueue::notify() {
+    Child** prev = &_first;
+    Child* c;
+
+    while ((c = *prev) != nil) {
+	if (c->status != -1) {
+	    c->handler->childStatus(c->pid, c->status);
+	    *prev = c->next;
+	    delete c;
+	} else {
+	    prev = &c->next;
+	}
+    }
+    _ready = false;
+}
+
 Dispatcher::Dispatcher() {
     _nfds = 0;
     _rmask = new FdMask;
@@ -283,6 +396,7 @@ Dispatcher::Dispatcher() {
     _wtable = new IOHandler*[NOFILE];
     _etable = new IOHandler*[NOFILE];
     _queue = new TimerQueue;
+    _cqueue = new ChildQueue;
     for (int i = 0; i < NOFILE; i++) {
 	_rtable[i] = nil;
 	_wtable[i] = nil;
@@ -297,10 +411,11 @@ Dispatcher::~Dispatcher() {
     delete _rmaskready;
     delete _wmaskready;
     delete _emaskready;
-    delete _rtable;
-    delete _wtable;
-    delete _etable;
+    delete [] _rtable;
+    delete [] _wtable;
+    delete [] _etable;
     delete _queue;
+    delete _cqueue;
 }
 
 Dispatcher& Dispatcher::instance() {
@@ -388,6 +503,14 @@ void Dispatcher::stopTimer(IOHandler* handler) {
     _queue->remove(handler);
 }
 
+void Dispatcher::startChild(int pid, IOHandler* handler) {
+    _cqueue->insert(pid, handler);
+}
+
+void Dispatcher::stopChild(IOHandler* handler) {
+    _cqueue->remove(handler);
+}
+
 boolean Dispatcher::setReady(int fd, DispatcherMask mask) {
     if (handler(fd, mask) == nil) {
 	return false;
@@ -465,10 +588,62 @@ int Dispatcher::fillInReady(
     return rmaskret.numSet() + wmaskret.numSet() + emaskret.numSet();
 }
 
+#if defined(sgi)
+void Dispatcher::sigCLD(...) {
+#else
+void Dispatcher::sigCLD() {
+#endif
+    pid_t pid;
+    int status;
+
+    while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+	Dispatcher::instance()._cqueue->setStatus(pid, status);
+    }
+}
+
+#ifndef fxSIGHANDLER
+#define fxSIGHANDLER
+#endif
+#ifndef fxSIGVECHANDLER
+#define fxSIGVECHANDLER
+#endif
+#ifndef fxSIGACTIONHANDLER
+#define fxSIGACTIONHANDLER
+#endif
+
+#ifndef SA_INTERRUPT
+#define SA_INTERRUPT 0
+#endif
+
 int Dispatcher::waitFor(
     FdMask& rmaskret, FdMask& wmaskret, FdMask& emaskret, timeval* howlong
 ) {
     int nfound;
+#ifdef SV_INTERRUPT                   /* BSD-style */
+    static struct sigvec sv, osv;
+#else
+#ifdef SA_NOCLDSTOP                   /* POSIX */
+    static struct sigaction sa, osa;
+#else                                 /* System V-style */
+    void (*osig)();
+#endif
+#endif
+
+    if (!_cqueue->isEmpty()) {
+#ifdef SV_INTERRUPT                   /* BSD-style */
+	sv.sv_handler = fxSIGVECHANDLER(&Dispatcher::sigCLD);
+	sv.sv_flags = SV_INTERRUPT;
+	sigvec(SIGCLD, &sv, &osv);
+#else
+#ifdef SA_NOCLDSTOP                   /* POSIX */
+	sa.sa_handler = fxSIGACTIONHANDLER(&Dispatcher::sigCLD);
+	sa.sa_flags = SA_INTERRUPT;
+	sigaction(SIGCLD, &sa, &osa);
+#else                                 /* System V-style */
+	osig = (void (*)())signal(SIGCLD, fxSIGHANDLER(&Dispatcher::sigCLD));
+#endif
+#endif
+    }
 
     do {
 	rmaskret = *_rmask;
@@ -483,11 +658,18 @@ int Dispatcher::waitFor(
 #else
  	nfound = select(_nfds, &rmaskret, &wmaskret, &emaskret, howlong);
 #endif
-
-	if (nfound < 0) {
-	    handleError();
-	}
-    } while (nfound < 0);
+    } while (nfound < 0 && !handleError());
+    if (!_cqueue->isEmpty()) {
+#ifdef SV_INTERRUPT                   /* BSD-style */
+	sigvec(SIGCLD, &osv, (struct sigvec*) 0);
+#else
+#ifdef SA_NOCLDSTOP                   /* POSIX */
+	sigaction(SIGCLD, &osa, (struct sigaction*) 0);
+#else                                 /* System V-style */
+	(void) signal(SIGCLD, fxSIGHANDLER(osig));
+#endif
+#endif
+    }
 
     return nfound;		/* Timed out or input available */
 }
@@ -528,6 +710,9 @@ void Dispatcher::notify(
     if (!_queue->isEmpty()) {
 	_queue->expire(TimerQueue::currentTime());
     }
+    if (_cqueue->isReady()) {
+	_cqueue->notify();
+    }
 }
 
 timeval* Dispatcher::calculateTimeout(timeval* howlong) const {
@@ -550,18 +735,22 @@ timeval* Dispatcher::calculateTimeout(timeval* howlong) const {
     return howlong;
 }
 
-void Dispatcher::handleError() {
-    if (errno == EINTR) {
-	return;
-    }
-
-    if (errno == EBADF) {
+boolean Dispatcher::handleError() {
+    switch (errno) {
+    case EBADF:
 	checkConnections();
-	return;
+	break;
+    case EINTR:
+	if (_cqueue->isReady()) {
+	    return true;
+	}
+	break;
+    default:
+	perror("Dispatcher: select");
+	exit(1);
+	/*NOTREACHED*/
     }
-
-    perror("Dispatcher: select");
-    exit(1);
+    return false;	// retry select;
 }
 
 void Dispatcher::checkConnections() {

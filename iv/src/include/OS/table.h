@@ -44,7 +44,7 @@
 #endif
 
 #define declareTable(Table,Key,Value) \
-class TableEntry(Table); \
+struct TableEntry(Table); \
 \
 class Table { \
 public: \
@@ -65,7 +65,7 @@ private: \
     TableEntry(Table)*& probe(Key); \
 }; \
 \
-class TableEntry(Table) { \
+struct TableEntry(Table) { \
 private: \
     friend class Table; \
     friend class TableIterator(Table); \

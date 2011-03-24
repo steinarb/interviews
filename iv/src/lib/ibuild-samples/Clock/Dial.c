@@ -5,8 +5,8 @@
 #include <IV-2_6/_enter.h>
 
 Dial::Dial(
-    const char* name, Graphic* gr
-) : Dial_core(name, gr) {
+    const char* name, Graphic* gr, Coord pad, Alignment a
+) : Dial_core(name, gr, pad, a) {
     _damage = new Damage;
 }
 

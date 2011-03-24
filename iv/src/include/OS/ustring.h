@@ -36,6 +36,9 @@ class UniqueStringTable;
 
 class UniqueString : public String {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     UniqueString();
     UniqueString(const char*);
     UniqueString(const char*, int length);

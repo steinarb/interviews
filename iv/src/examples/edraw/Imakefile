@@ -1,0 +1,26 @@
+XCOMM
+XCOMM generic InterViews demo
+XCOMM
+
+#ifdef InObjectCodeDir
+
+Use_libInterViews()
+ComplexProgramTarget(edraw)
+
+MakeObjectFromSrc(main)
+MakeObjectFromSrc(figure)
+MakeObjectFromSrc(figureview)
+MakeObjectFromSrc(globals)
+MakeObjectFromSrc(glypheditor)
+MakeObjectFromSrc(glyphviewer)
+MakeObjectFromSrc(idraw)
+MakeObjectFromSrc(pacer)
+MakeObjectFromSrc(pacemaker)
+MakeObjectFromSrc(pacekeeper)
+MakeObjectFromSrc(gcollector)
+
+#else
+
+MakeInObjectCodeDir()
+
+#endif

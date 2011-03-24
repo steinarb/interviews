@@ -137,7 +137,6 @@ void Aggregate::draw(Canvas* canvas, const Allocation&) const {
         AggregateInfo& info = info_->item_ref(index);
         if (info.glyph_ != nil) {
             Allocation& a = info.allocation_;
-            Extension& b = info.extension_;
             if (canvas->damaged(info.extension_)) {
                 info.glyph_->draw(canvas, a);
             }

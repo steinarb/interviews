@@ -1,9 +1,8 @@
 /*
- * For now, just assume cfront 2.0.
- * If you are using cfront 2.1 or cfront 3.0, then use -Dcplusplus_2_1.
+ * If you are using cfront 2.0, then use -Dcplusplus_2_0.
  */
 #undef LanguageCCDefines
-#define LanguageCCDefines -Dcplusplus_2_0
+#define LanguageCCDefines -Dcplusplus_2_1
 
 /*
  * If you are using gcc/g++, then uncomment the include below.
@@ -28,7 +27,8 @@
 /*
  * If you are using g++, define BuildRPCClasses to NO.
  */
-#if defined(SGIArchitecture) || defined(SunArchitecture)
+#if defined(SGIArchitecture) || defined(SunArchitecture) || \
+defined(StratusArchitecture)
 #undef BuildRPCClasses
 #define BuildRPCClasses YES
 #endif

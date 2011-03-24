@@ -66,6 +66,7 @@ public:
 	Display*, ColorIntensity& r, ColorIntensity& g, ColorIntensity& b
     ) const;
     virtual float alpha() const;
+    virtual ColorOp op() const;
 
     virtual const Color* brightness(float adjust) const;
 

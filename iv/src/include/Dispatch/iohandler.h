@@ -26,6 +26,7 @@
 #define dp_iohandler_h
 
 #include <Dispatch/enter-scope.h>
+#include <OS/types.h>
 
 // Derived classes read input on a file number, write output on a file
 // number, handle an exception raised on a file number, or handle a
@@ -41,6 +42,7 @@ public:
     virtual int outputReady(int fd);
     virtual int exceptionRaised(int fd);
     virtual void timerExpired(long sec, long usec);
+    virtual void childStatus(pid_t pid, int status);
 };
 
 #endif

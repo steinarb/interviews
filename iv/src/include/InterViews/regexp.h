@@ -64,12 +64,13 @@ public:
     Regexp(const char*, int length);
     ~Regexp();
 
+    const char* pattern() const;
     int Search(const char* text, int length, int index, int range);
     int Match(const char* text, int length, int index);
     int BeginningOfMatch(int subexp = 0);
     int EndOfMatch(int subexp = 0);
 private:
-    char* pattern;
+    char* pattern_;
     regexp* c_pattern;
 };
 

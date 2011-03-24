@@ -95,7 +95,7 @@ void BasicDialog::SetSubtitle (const char* name) { ChangeMsg(name, _subtitle); }
 void BasicDialog::Forward (Event& e) {
     if (IsAChild(e.target)) {
         e.target->Handle(e);
-    } else {
+    } else if (e.eventType ==KeyEvent) {
         Handle(e);
     }
 }    
@@ -420,7 +420,7 @@ Interactor* PrintDialog::Interior () {
                         "send to printer via a command, or ", _dest, true
                     ),
                     new VGlue(space/3, 0),
-#ifdef __DECCXX
+#if defined(__DECCXX) || defined(AIXV3)
 		    /* is passing an const unsigned 0 ambiguous here? */
                     new RadioButton("save in file:", _dest, int(false))
 #else

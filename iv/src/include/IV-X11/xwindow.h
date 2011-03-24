@@ -46,7 +46,6 @@ class String;
 class Style;
 class WindowCursorStack;
 class WindowTable;
-class XDisplay;
 
 struct WindowOverlayInfo {
     VisualID id_;
@@ -66,6 +65,9 @@ struct WindowVisualInfo {
 
 class WindowVisual {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     WindowVisual(const WindowVisualInfo&);
     ~WindowVisual();
 
@@ -127,6 +129,9 @@ declarePtrList(WindowVisualList,WindowVisual)
 
 class WindowRep {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     Glyph* glyph_;
     Style* style_;
     Display* display_;
@@ -190,6 +195,9 @@ public:
 
 class ManagedWindowHintInfo {
 private:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     friend class ManagedWindowRep;
 
     Style* style_;
@@ -205,6 +213,9 @@ typedef boolean (ManagedWindowRep::*HintFunction)(ManagedWindowHintInfo&);
 
 class ManagedWindowRep {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     ManagedWindow* icon_;
     Bitmap* icon_bitmap_;
     Bitmap* icon_mask_;

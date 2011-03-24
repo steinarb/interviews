@@ -77,7 +77,7 @@ void GrowingVertices::GetCurrent(
 }
 
 void GrowingVertices::CheckBufs() {
-    if (count + 1 > bufsize) {
+    if (count + 1 >= bufsize) {
         bufsize *= 2;
 
         IntCoord* nx = new IntCoord[bufsize];

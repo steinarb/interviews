@@ -1,0 +1,13 @@
+/* 
+ * This is the Linux configuration file for Interviews 3.1
+ * Set up to use gcc in local.def
+ */
+
+#define OptimizeCCFlags -O6
+#define TIFFOptimizeCFlags -O
+
+#define ExtraCCDefines -DLINUX
+
+#define ExtraCCLdFlags -x none -static
+
+#include <InterViews/xparams.cf>

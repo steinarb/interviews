@@ -33,12 +33,15 @@ implementPtrList(BrushRepList,BrushRep)
 
 class BrushImpl {
 private:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     friend class Brush;
 
     Coord width;
     char* dash_list;
     int dash_count;
-    BrushRepList replist;
+    BrushRepList* replist;
 };
 
 Brush::Brush(Coord w) { init(nil, 0, w); }
@@ -53,12 +56,13 @@ Brush::Brush(int pat, Coord w) {
 }
 
 Brush::~Brush() {
-    BrushRepList& list = impl_->replist;
+    BrushRepList& list = *impl_->replist;
     for (ListItr(BrushRepList) i(list); i.more(); i.next()) {
 	BrushRep* r = i.cur();
 	delete r;
     }
     delete impl_->dash_list;
+    delete impl_->replist;
     delete impl_;
 }
 
@@ -129,11 +133,12 @@ void Brush::init(const int* pattern, int count, Coord w) {
     } else {
         b->dash_list = nil;
     }
+    b->replist = new BrushRepList;
 }
 
 BrushRep* Brush::rep(Display* d) const {
     BrushRep* r;
-    BrushRepList& list = impl_->replist;
+    BrushRepList& list = *impl_->replist;
     for (ListItr(BrushRepList) i(list); i.more(); i.next()) {
 	r = i.cur();
 	if (r->display_ == d) {

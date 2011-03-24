@@ -22,8 +22,8 @@
  * OF THIS SOFTWARE.
  */
 
-#ifndef os__scope_h
-#define os__scope_h
+#ifndef iv_os__scope_h
+#define iv_os__scope_h
 
 #include <OS/os.h>
 
@@ -37,8 +37,8 @@
 #define nil 0
 #endif
 
-#ifndef os_boolean
-#define os_boolean
+#ifndef iv_os_boolean
+#define iv_os_boolean
 
 typedef unsigned boolean;
 
@@ -47,8 +47,8 @@ static const unsigned true = 1;
 
 #endif
 
-#ifndef os_u_char
-#define os_u_char
+#ifndef iv_os_u_char
+#define iv_os_u_char
 
 typedef unsigned char u_char;
 

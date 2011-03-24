@@ -29,6 +29,9 @@ class Display;
 
 class BrushRep {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     Display* display_;
     char* dash_list_;
     int dash_count_;

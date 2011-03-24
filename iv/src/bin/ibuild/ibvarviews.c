@@ -1567,10 +1567,7 @@ FBrowserVarView::FBrowserVarView (
     Insert(Interior(bs));
 }
 
-FBrowserVarView::~FBrowserVarView () {
-    delete _dir;
-    delete _textfilter;
-}
+FBrowserVarView::~FBrowserVarView () { }
 
 boolean FBrowserVarView::ChangedSubject (const char*&) {
     const char* dir = _dir->Text(); 

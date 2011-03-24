@@ -73,24 +73,25 @@ NextLine(char* s) {
 
 Regexp::Regexp (const char* pat) {
     int length = strlen(pat);
-    pattern = new char[length+1];
-    strncpy(pattern, pat, length);
-    pattern[length] = '\0';
+    pattern_ = new char[length+1];
+    strncpy(pattern_, pat, length);
+    pattern_[length] = '\0';
     c_pattern = nil;
 }
 
 Regexp::Regexp (const char* pat, int length) {
-    pattern = new char[length+1];
-    strncpy(pattern, pat, length);
-    pattern[length] = '\0';
+    pattern_ = new char[length+1];
+    strncpy(pattern_, pat, length);
+    pattern_[length] = '\0';
     c_pattern = nil;
 }
 
 Regexp::~Regexp () {
-    delete pattern;
-    if (c_pattern)
-	delete c_pattern;
+    delete pattern_;
+    delete c_pattern;
 }
+
+const char* Regexp::pattern() const { return pattern_; }
 
 int Regexp::Search (const char* text, int length, int index, int range) {
     boolean forwardSearch;
@@ -116,7 +117,7 @@ int Regexp::Search (const char* text, int length, int index, int range) {
     if (c_pattern)
 	delete c_pattern;
 
-    if ((c_pattern = regcomp(pattern)) == nil)
+    if ((c_pattern = regcomp(pattern_)) == nil)
 	return -1;
 
     c_pattern->startp[0] = nil;
@@ -135,8 +136,8 @@ int Regexp::Search (const char* text, int length, int index, int range) {
     char save = *searchLimit;
     *searchLimit = '\0';
 
-    frontAnchored = pattern[0] == '^';
-    endAnchored = pattern[strlen(pattern)-1] == '$';
+    frontAnchored = pattern_[0] == '^';
+    endAnchored = pattern_[strlen(pattern_)-1] == '$';
     if (frontAnchored && (searchStart != text || searchStart[-1] == '\n')) {
 	searchStart = NextLine(searchStart);
     }
@@ -194,7 +195,7 @@ int Regexp::Match (const char* text, int length, int index) {
     if (c_pattern)
 	delete c_pattern;
 
-    if ((c_pattern = regcomp(pattern)) == nil)
+    if ((c_pattern = regcomp(pattern_)) == nil)
 	return -1;
 
     c_pattern->startp[0] = nil;
@@ -418,8 +419,10 @@ regcomp(char* exp) {
 	regnpar = 1;
 	regcode = r->program;
 	regc(REGEXP_MAGIC);
-	if (reg(0, &flags) == nil)
+	if (reg(0, &flags) == nil) {
+		delete r;
 		return(nil);
+	}
 
 	/* Dig out information for optimizations. */
 	r->regstart = '\0';	/* Worst-case defaults. */
@@ -549,7 +552,11 @@ regbranch(int* flagp) {
 
 	ret = regnode(BRANCH);
 	chain = nil;
-	while (*regparse != '\0' && *regparse != '|' && *regparse != ')') {
+	while (*regparse != '\0' && *regparse != '|') {
+		if (*regparse == '\\' && regparse[1] == ')') {
+			regparse++;
+			break;
+		}
 		latest = regpiece(&flags);
 		if (latest == nil)
 			return(nil);
@@ -690,15 +697,8 @@ regatom(int* flagp) {
 			*flagp |= HASWIDTH|SIMPLE;
 		}
 		break;
-	case '(':
-		ret = reg(1, &flags);
-		if (ret == nil)
-			return(nil);
-		*flagp |= flags&(HASWIDTH|SPSTART);
-		break;
 	case '\0':
 	case '|':
-	case ')':
 		FAIL("internal urp");	/* Supposed to be caught earlier. */
 		break;
 	case '?':
@@ -709,10 +709,18 @@ regatom(int* flagp) {
 	case '\\':
 		if (*regparse == '\0')
 			FAIL("trailing \\");
-		ret = regnode(EXACTLY);
-		regc(*regparse++);
-		regc('\0');
-		*flagp |= HASWIDTH|SIMPLE;
+		if (*regparse == '(') {
+			regparse++;
+			ret = reg(1, &flags);
+			if (ret == nil)
+				return(nil);
+			*flagp |= flags&(HASWIDTH|SPSTART);
+		} else {
+			ret = regnode(EXACTLY);
+			regc(*regparse++);
+			regc('\0');
+			*flagp |= HASWIDTH|SIMPLE;
+		}
 		break;
 	default: {
 			register int len;
@@ -988,11 +996,15 @@ regmatch(char* prog) {
 			}
 			break;
 		case ANYOF:
+			if (*reginput == '\0')
+				return(0);
 			if (strchr(OPERAND(scan), *reginput) == nil)
 				return(0);
 			reginput++;
 			break;
 		case ANYBUT:
+			if (*reginput == '\0')
+				return(0);
 			if (strchr(OPERAND(scan), *reginput) != nil)
 				return(0);
 			reginput++;

@@ -59,7 +59,7 @@ static PropertyData kit_props[] = {
     { "*Panner*minimumThumbSize", "18.0" },
     { "*ScrollBar*minimumThumbSize", "20.0" },
     { "*double_buffered", "on" },
-    nil
+    { nil }
 };
 
 class MonoKitInfo : public Resource {
@@ -276,7 +276,6 @@ Glyph* MonoKit::menubar_item_look(Glyph* g, TelltaleState* t) const {
 
 Glyph* MonoKit::menu_item_look(Glyph* g, TelltaleState* t) const {
     MonoKitImpl& i = *impl_;
-    const LayoutKit& layout = *i.layout_;
     MonoKitInfo* info = i.info_;
     return new MonoKitFrame(g, t, info, info->thickness(), true, true);
 }
@@ -417,6 +416,7 @@ Glyph* MonoKit::slider_look(DimensionName d, Adjustable* a) const {
 	g = layout.h_fixed_span(
 	    i.make_slider(new YSlider(style(), a)), size
 	);
+	break;
     default:
 	g = nil;
 	break;
@@ -485,7 +485,6 @@ Glyph* MonoKit::scroll_bar_look(DimensionName d, Adjustable* a) const {
 
 Glyph* MonoKit::panner_look(Adjustable* x, Adjustable* y) const {
     MonoKitImpl& i = *impl_;
-    const LayoutKit& layout = *i.layout_;
     return i.make_slider(new XYSlider(style(), x, y));
 }
 

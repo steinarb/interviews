@@ -364,18 +364,7 @@ void Canvas::move_to(Coord x, Coord y) {
     p->cur_point_ = xp + 1;
 }
 
-void Canvas::line_to(Coord x, Coord y) {
-    CanvasRep* c = rep();
-    PathRenderInfo* p = &CanvasRep::path_;
-    p->curx_ = x;
-    p->cury_ = y;
-    Coord tx, ty;
-    if (c->transformed_) {
-	c->matrix().transform(x, y, tx, ty);
-    } else {
-	tx = x;
-	ty = y;
-    }
+static XPoint* next_point(PathRenderInfo* p) {
     if (p->cur_point_ == p->end_point_) {
 	int old_size = p->cur_point_ - p->point_;
 	int new_size = 2 * old_size;
@@ -388,11 +377,27 @@ void Canvas::line_to(Coord x, Coord y) {
 	p->cur_point_ = p->point_ + old_size;
 	p->end_point_ = p->point_ + new_size;
     }
-    Display* d = c->display_;
     XPoint* xp = p->cur_point_;
+    p->cur_point_ = xp + 1;
+    return xp;
+}
+
+void Canvas::line_to(Coord x, Coord y) {
+    CanvasRep* c = rep();
+    PathRenderInfo* p = &CanvasRep::path_;
+    p->curx_ = x;
+    p->cury_ = y;
+    Coord tx, ty;
+    if (c->transformed_) {
+	c->matrix().transform(x, y, tx, ty);
+    } else {
+	tx = x;
+	ty = y;
+    }
+    Display* d = c->display_;
+    XPoint* xp = next_point(p);
     xp->x = d->to_pixels(tx);
     xp->y = c->pheight_ - d->to_pixels(ty);
-    p->cur_point_ = xp + 1;
 }
 
 void Canvas::curve_to(
@@ -427,10 +432,9 @@ void Canvas::curve_to(
 void Canvas::close_path() {
     PathRenderInfo* p = &CanvasRep::path_;
     XPoint* startp = p->point_;
-    XPoint* xp = p->cur_point_;
+    XPoint* xp = next_point(p);
     xp->x = startp->x;
     xp->y = startp->y;
-    p->cur_point_ = xp + 1;
 }
 
 void Canvas::stroke(const Color* color, const Brush* b) {

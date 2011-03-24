@@ -31,6 +31,7 @@
 
 class Command;
 class GraphicComp;
+class GraphicView;
 
 class GraphicCompTool : public Tool {
 public:
@@ -52,7 +53,7 @@ private:
     void Init(GraphicComp*);
 private:
     GraphicComp* _prototype;
-    class GraphicView* _protoview;
+    GraphicView* _protoview;
 };
 
 inline GraphicComp* GraphicCompTool::GetPrototype () { return _prototype; }

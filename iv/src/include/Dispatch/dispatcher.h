@@ -34,6 +34,7 @@
 class FdMask;
 class IOHandler;
 class TimerQueue;
+class ChildQueue;
 struct timeval;
 
 class Dispatcher {
@@ -54,6 +55,9 @@ public:
     virtual void startTimer(long sec, long usec, IOHandler*);
     virtual void stopTimer(IOHandler*);
 
+    virtual void startChild(int pid, IOHandler*);
+    virtual void stopChild(IOHandler*);
+
     virtual boolean setReady(int fd, DispatcherMask);
     virtual void dispatch();
     virtual boolean dispatch(long& sec, long& usec);
@@ -69,7 +73,7 @@ protected:
     virtual int waitFor(FdMask&, FdMask&, FdMask&, timeval*);
     virtual void notify(int, FdMask&, FdMask&, FdMask&);
     virtual timeval* calculateTimeout(timeval*) const;
-    virtual void handleError();
+    virtual boolean handleError();
     virtual void checkConnections();
 protected:
     int	_nfds;
@@ -83,6 +87,13 @@ protected:
     IOHandler** _wtable;
     IOHandler** _etable;
     TimerQueue* _queue;
+    ChildQueue* _cqueue;
+
+#if defined(sgi)
+    static void sigCLD(...);
+#else
+    static void sigCLD();
+#endif
 private:
     static Dispatcher* _instance;
 private:

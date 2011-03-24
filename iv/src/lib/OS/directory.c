@@ -262,7 +262,7 @@ boolean Directory::match(const String& name, const String& pattern) {
 	    }
 	    for (; s < end_s && *s != *pp; s++);
 	    p = pp;
-	} else if (s == end_s || *p != *s) {
+	} else if (s >= end_s || *p != *s) {
 	    return false;
 	}
     }

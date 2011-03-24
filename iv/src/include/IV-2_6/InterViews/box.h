@@ -50,11 +50,11 @@ protected:
     Box();
 
     virtual void ComputeShape(Shape*);
-    virtual void GetActual(int& major, int& minor);
+    virtual void GetActual(int& major_size, int& minor_size);
     virtual void GetCanonical(Shape*, BoxCanonical&);
     BoxElement* Head();
     virtual void PlaceElement(
-	Interactor*, Coord major, int len, int thick, int minor
+	Interactor*, Coord major_size, int len, int thick, int minor_size
     );
     virtual void Reconfig();
 private:
@@ -86,7 +86,7 @@ public:
     virtual ~HBox();
 protected:
     void ComputeShape(Shape*);
-    void GetActual(int& major, int& minor);
+    void GetActual(int& major_size, int& minor_size);
     void GetCanonical(Shape*, BoxCanonical&);
     void PlaceElement(Interactor*, Coord, int, int, int);
 private:
@@ -112,7 +112,7 @@ public:
     virtual ~VBox();
 protected:
     void ComputeShape(Shape*);
-    void GetActual(int& major, int& minor);
+    void GetActual(int& major_size, int& minor_size);
     void GetCanonical(Shape*, BoxCanonical&);
     void PlaceElement(Interactor*, Coord, int, int, int);
 private:

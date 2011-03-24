@@ -53,18 +53,20 @@
 #include <IV-2_6/InterViews/world.h>
 
 #include <OS/memory.h>
+#include <OS/types.h>
 
 #include <IV-2_6/_enter.h>
 
 #include <ctype.h>
+#ifndef __DECCXX
 #include <osfcn.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stream.h>
 #include <strstream.h>
 #ifdef SYSV
-#include <OS/types.h>
 #include <unistd.h>
 #endif
 #include <sys/file.h>
@@ -1681,10 +1683,11 @@ void Catalog::ReadBitmapData (Bitmap* bitmap, istream& in) {
             in >> hexchar;
             unsigned int val = hexintmap[hexchar];
 
-            for (int i = k; i < w; ++i) {
-                bitmap->poke(val & 0x8, i, j);
-                val = val << 1;
-            }
+	    int i = k;
+	    if (i < w) bitmap->poke(val & 0x8, i++, j);
+	    if (i < w) bitmap->poke(val & 0x4, i++, j);
+	    if (i < w) bitmap->poke(val & 0x2, i++, j);
+	    if (i < w) bitmap->poke(val & 0x1, i,   j);
         }
     }
     bitmap->flush();
@@ -1703,11 +1706,11 @@ void Catalog::WriteBitmap (Bitmap* bitmap, ostream& out) {
 void Catalog::WriteBitmapData (Bitmap* bitmap, ostream& out) {
     Coord w = bitmap->Width();
     Coord h = bitmap->Height();
-    int nybbles = 0;
 
     for (int j = h-1; j >= 0; --j) {
         Mark(out);
 
+	int nybbles = 0;
         for (int k = 0; k < w; k += 4) {
             unsigned int bits = 0;
 
@@ -1719,9 +1722,9 @@ void Catalog::WriteBitmapData (Bitmap* bitmap, ostream& out) {
             out << hexcharmap[bits];
             ++nybbles;
         }
-    }
-    if (nybbles%2 != 0) {
-        out << '0';
+	if (nybbles%2 != 0) {
+	    out << '0';
+	}
     }
 }
 

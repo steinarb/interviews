@@ -5,7 +5,7 @@
 
 class Plotter : public Plotter_core {
 public:
-    Plotter(const char*, Graphic*);
+    Plotter(const char*, Graphic*, Coord, Alignment);
     void Reinit();
 };
 

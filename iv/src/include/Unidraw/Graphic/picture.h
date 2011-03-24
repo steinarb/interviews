@@ -31,6 +31,8 @@
 
 #include <IV-2_6/_enter.h>
 
+class UList;
+
 class Picture : public FullGraphic {
 public:
     Picture(Graphic* gr = nil);
@@ -65,7 +67,7 @@ public:
 
     virtual Graphic* Copy();
 protected:
-    Graphic* graphic(class UList*);
+    Graphic* graphic(UList*);
     UList* Elem(Iterator);
 
     virtual void draw(Canvas*, Graphic*);

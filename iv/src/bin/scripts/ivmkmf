@@ -26,11 +26,11 @@ fi
 
 case "$do_all" in
 	yes)	set -x
-		imake -T "InterViews/template" -I/interviews/config -I/usr/lib/X11/config -DUseInstalled &&
+		imake -T "InterViews/template" -I/interviews/config -I/usr/lib/X11/config -DIVUseInstalled &&
 		make Makefiles &&
 		make depend
 		;;
 	*)	set -x
-		imake -T "InterViews/template" -I/interviews/config -I/usr/lib/X11/config -DUseInstalled
+		imake -T "InterViews/template" -I/interviews/config -I/usr/lib/X11/config -DIVUseInstalled
 		;;
 esac

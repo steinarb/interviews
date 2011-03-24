@@ -98,7 +98,7 @@ AllocationInfo* AllocationTable::find(Canvas* c, const Allocation& a) const {
     for (ListUpdater(AllocationInfoList) i(list); i.more(); i.next()) {
 	AllocationInfo* info = i.cur();
 	if (info->canvas_ == c &&
-	    (c == nil || info->transformer_ == c->transformer()) &&
+	    (c == nil || *info->transformer_ == c->transformer()) &&
 	    AllocationTableImpl::equal(info->allocation_, a)
 	) {
 	    if (list.count() > 1) {
@@ -126,7 +126,7 @@ AllocationInfo* AllocationTable::find_same_size(
     for (ListUpdater(AllocationInfoList) i(list); i.more(); i.next()) {
 	AllocationInfo* info = i.cur();
 	if (info->canvas_ == c &&
-	    (c == nil || info->transformer_ == c->transformer())
+	    (c == nil || *info->transformer_ == c->transformer())
 	) {
 	    Allotment& oldx = info->allocation_.x_allotment();
 	    Allotment& oldy = info->allocation_.y_allotment();
@@ -158,6 +158,7 @@ AllocationInfo* AllocationTable::allocate(Canvas* c, const Allocation& a) {
     AllocationInfoList& list = impl_->allocations_;
     if (list.count() < impl_->maximum_allocations_) {
 	info = new AllocationInfo;
+	info->transformer_ = new Transformer;
 	if (impl_->count_ == 0) {
 	    info->component_allocation_ = nil;
 	} else {
@@ -174,9 +175,9 @@ AllocationInfo* AllocationTable::allocate(Canvas* c, const Allocation& a) {
 	 * occasionally passes nil for the canvas during allocation.
 	 */
 	Transformer t;
-	info->transformer_ = t;
+	*info->transformer_ = t;
     } else {
-	info->transformer_ = c->transformer();
+	*info->transformer_ = c->transformer();
     }
     info->allocation_ = a;
     list.append(info);
@@ -208,6 +209,7 @@ void AllocationTable::flush() {
 	if (info->component_allocation_ != nil) {
 	    delete [] info->component_allocation_;
 	}
+	delete info->transformer_;
 	delete info;
     }
     list.remove_all();

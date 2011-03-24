@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_dirread.c,v 1.20 92/03/25 09:58:09 sam Exp $";
+static char rcsid[] = "$Header: /usr/interviews/master/iv/src/lib/TIFF/RCS/tif_dirread.c,v 1.2 93/02/01 15:57:26 linton Exp $";
 #endif
 
 /*
@@ -112,7 +112,7 @@ TIFFReadDirectory(tif)
 	register TIFFDirectory *td;
 	TIFFDirEntry *dir;
 	long v;
-	TIFFFieldInfo *fip;
+	const TIFFFieldInfo *fip;
 	u_short dircount;
 	char *cp;
 	int diroutoforderwarning = 0;

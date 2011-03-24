@@ -66,6 +66,9 @@ private:
 
 class FontBoundingBox {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     Coord left_bearing() const;
     Coord right_bearing() const;
     Coord width() const;

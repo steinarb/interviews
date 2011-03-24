@@ -41,6 +41,7 @@
 #include <Unidraw/Graphic/pspaint.h>
 #include <InterViews/shape.h>
 #include <InterViews/transformer.h>
+#include <OS/types.h>
 #include <osfcn.h>
 #include <stdlib.h>
 #include <stream.h>

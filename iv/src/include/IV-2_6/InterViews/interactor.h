@@ -95,6 +95,7 @@ public:
     virtual void Highlight(boolean on);
     void Flush();
     void Sync();
+    static boolean ValidCanvas(Canvas*);
 
     /* input events */
     boolean Check();

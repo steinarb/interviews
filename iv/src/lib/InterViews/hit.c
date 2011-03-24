@@ -140,7 +140,7 @@ void HitImpl::free() {
     if (items_.lists_ != items_.fixed_lists_) {
 	delete items_.lists_;
     }
-    if (picks_.possible_targets_ != picks_.possible_targets_) {
+    if (picks_.possible_targets_ != picks_.fixed_possible_targets_) {
 	delete picks_.possible_targets_;
     }
     if (areas_.areas_ != areas_.fixed_areas_) {
@@ -399,7 +399,7 @@ HitTarget& HitImpl::item(int depth, GlyphIndex t) {
 	    delete list.targets_;
 	}
 	HitTarget* i;
-	for (i = &new_targets[depth]; i < &new_targets[new_avail]; i++) {
+	for (i = &new_targets[list.avail_]; i < &new_targets[new_avail]; i++) {
 	    i->glyph_ = nil;
 	}
 	list.avail_ = new_avail;

@@ -42,6 +42,7 @@ Group::~Group() {
         aggregate_->unref();
     }
     delete layout_;
+    delete [] map_;
 }
 
 void Group::map(GlyphIndex index) {

@@ -31,42 +31,18 @@
 Superpose::Superpose(
     Layout* l0, Layout* l1, Layout* l2, Layout* l3, Layout* l4
 ) : Layout() {
-    count_ = 0;
-    if (l0 != nil) {
-        ++count_;
-    }
-    if (l1 != nil) {
-        ++count_;
-    }
-    if (l2 != nil) {
-        ++count_;
-    }
-    if (l3 != nil) {
-        ++count_;
-    }
-    if (l4 != nil) {
-        ++count_;
-    }
+    Layout* arg[6];
+    arg[0] = l0; arg[1] = l1; arg[2] = l2; arg[3] = l3; arg[4] = l4;
+    arg[5] = nil;
+    for (count_ = 0; arg[count_] != nil; count_++) { }
     layout_ = new Layout* [count_];
-    if (l0 != nil) {
-        layout_[0] = l0;
-    }
-    if (l1 != nil) {
-        layout_[1] = l1;
-    }
-    if (l2 != nil) {
-        layout_[2] = l2;
-    }
-    if (l3 != nil) {
-        layout_[3] = l3;
-    }
-    if (l4 != nil) {
-        layout_[4] = l4;
+    for (long i = 0; i < count_; i++) {
+	layout_[i] = arg[i];
     }
 }
 
 Superpose::~Superpose() {
-    for (int i = 0; i < count_; ++i) {
+    for (long i = 0; i < count_; ++i) {
         delete layout_[i];
     }
     delete layout_;
@@ -76,10 +52,8 @@ Superpose::~Superpose() {
 void Superpose::request(
     GlyphIndex count, const Requisition* request, Requisition& result
 ) {
-    for (int i = 0; i < count_; ++i) {
-        if (layout_[i] != nil) {
-            layout_[i]->request(count, request, result);
-        }
+    for (long i = 0; i < count_; ++i) {
+	layout_[i]->request(count, request, result);
     }
 }
 
@@ -87,9 +61,7 @@ void Superpose::allocate(
     const Allocation& given,
     GlyphIndex count, const Requisition* requisition, Allocation* result
 ) {
-    for (int i = 0; i < count_; ++i) {
-        if (layout_[i] != nil) {
-            layout_[i]->allocate(given, count, requisition, result);
-        }
+    for (long i = 0; i < count_; ++i) {
+	layout_[i]->allocate(given, count, requisition, result);
     }
 }

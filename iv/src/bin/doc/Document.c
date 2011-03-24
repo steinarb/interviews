@@ -451,7 +451,7 @@ FontFamily* find_font_family (const char* name) {
     } else {
         long count = _families->count();
         for (long i = 0; i < count; ++i) {
-            FontFamilyInfo& info = _families->item_ref(0);
+            FontFamilyInfo& info = _families->item_ref(i);
             if (strcmp(info._name, name) == 0) {
                 break;
             }

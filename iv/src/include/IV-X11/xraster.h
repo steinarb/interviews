@@ -38,6 +38,9 @@ class Display;
 
 class RasterRep {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     Display* display_;
     boolean modified_;
     Coord left_;

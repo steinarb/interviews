@@ -13,11 +13,12 @@ PostScript printer.  You can can open an existing drawing when
 starting up idraw by typing a file name on the command line.
 
 Idraw displays a portrait or landscape view of an 8.5 by 11 inch page
-in its \fIdrawing area\fP.  In a column along the drawing area's left
-side is a set of \fIdrawing tool\fP icons, and above the drawing area
-is a set of pull-down menus containing \fIcommands\fP.  A panner in the
-lower left corner lets you pan and zoom the the drawing area.  Along
-the top is a set of indicators that display editing information.
+(by default) in its \fIdrawing area\fP.  In a column along the drawing
+area's left side is a set of \fIdrawing tool\fP icons, and above the
+drawing area is a set of pull-down menus containing \fIcommands\fP.  A
+panner in the lower left corner lets you pan and zoom the the drawing
+area.  Along the top is a set of indicators that display editing
+information.
 .SH "DRAWING TOOLS"
 You must engage a tool before you can use it.  You engage a tool by
 clicking on its icon or by typing the character below and to the right
@@ -34,7 +35,7 @@ The
 and
 .B Alter
 tools manipulate existing graphics.
-.B Magnify 
+.B Magnify
 makes a part of the view expand to fill the entire view.
 .BR Text ,
 .BR Line ,
@@ -143,7 +144,7 @@ right-click removes the last control point added.  The middle button
 finalizes the spline.  The Alter tool lets you move, add, and remove
 control points from an existing closed spline.
 .SH "PULL-DOWN MENUS"
-The pull-down menus 
+The pull-down menus
 .BR File ,
 .BR Edit ,
 .BR Structure ,
@@ -152,7 +153,7 @@ The pull-down menus
 .BR Pattern ,
 .BR FgColor ,
 .BR BgColor ,
-.BR Align , 
+.BR Align ,
 and
 .B View
 above the drawing area contain commands for editing the drawing and
@@ -219,7 +220,7 @@ Copy the selected graphics into the clipboard.
 Paste copies of the graphics in the clipboard into the drawing.
 Together,
 .BR Cut ,
-.BR Copy , 
+.BR Copy ,
 and
 .B Paste
 let you transfer graphics between drawings simply by cutting graphics
@@ -463,6 +464,13 @@ Define a custom color to use for the
 .IR i th
 entry in the BgColor menu.  The same rules apply to background colors
 as to foreground colors.
+.TP
+.BR "pagewidth" ", " "pageheight"
+Specify the width and height of the page boundary, respectively, in inches.
+.TP
+.BR "gridxincr" ", " "gridyincr"
+Specify the default grid spacing increment for the \fIx\fP and \fIy\fP
+axes, respectively, in pixels.
 .SH SEE ALSO
 Catalog(3U), FileChooser(3I), Panner(3I), World(3I), bitmap(1), pgmtops(1),
 ppmtops(1)

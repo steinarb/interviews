@@ -1,0 +1,8 @@
+ColorChooser*font: -adobe-new century schoolbook-bold-r-normal--14-*
+ColorChooser*FieldEditor*font: fixed
+ColorChooser*VScrollBar*flat: gray
+ColorChooser*redReadOut*foreground: red
+ColorChooser*greenReadOut*foreground: green3
+ColorChooser*blueReadOut*foreground: blue
+
+

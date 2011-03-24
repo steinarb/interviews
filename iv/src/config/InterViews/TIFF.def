@@ -116,6 +116,11 @@ TIFF_OPTIMIZE_CFLAGS = TIFFOptimizeCFlags
     -DCOLORIMETRY_SUPPORT -DYCBCR_SUPPORT \
     -DHAVE_IEEEFP=1 -DUSE_VARARGS=1 -DUSE_PROTOTYPES=0
 #endif
+#if defined(AlphaArchitecture)
+#define TIFFStdCDefines \
+    -DCOLORIMETRY_SUPPORT -DYCBCR_SUPPORT \
+    -DHAVE_IEEEFP=1 -DUSE_VARARGS=1 -DUSE_PROTOTYPES=0
+#endif
 #if defined(NeXTArchitecture)
 #define TIFFStdCDefines \
     -DCOLORIMETRY_SUPPORT -DJPEG_SUPPORT -DYCBCR_SUPPORT -DCMYK_SUPPORT \
@@ -172,7 +177,7 @@ TIFF_CPRESS_CDEFINES = TIFFCompressionCDefines
 #endif
 
 #ifndef TIFFStdCIncludes
-#ifdef UseInstalled
+#ifdef TIFFUseInstalled
 #define TIFFStdCIncludes -I$(INCDIR)/TIFF
 #else
 #define TIFFStdCIncludes -I$(INCSRC)/TIFF

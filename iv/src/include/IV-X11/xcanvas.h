@@ -37,6 +37,9 @@ class TransformerStack;
 
 class CanvasDamage {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     Coord left;
     Coord bottom;
     Coord right;
@@ -45,6 +48,9 @@ public:
 
 class TextRenderInfo {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     CanvasRep* canvas_;
     GC drawgc_;
     int x0_;
@@ -60,6 +66,9 @@ public:
 
 class PathRenderInfo {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     Coord curx_;
     Coord cury_;
     XPoint* point_;
@@ -69,6 +78,9 @@ public:
 
 class CanvasRep {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     Display* display_;
     Window* window_;
     XDrawable xdrawable_;

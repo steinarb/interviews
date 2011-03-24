@@ -45,6 +45,9 @@ class PropertyData {
 public:
     const char* path;		/* class/instance(s) property name */
     const char* value;		/* property value */
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
 };
 
 enum OptionStyle {
@@ -61,6 +64,9 @@ public:
     const char* path;
     OptionStyle style;
     const char* value;
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
 };
 
 class Session {

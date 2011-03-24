@@ -8,7 +8,7 @@ class Graphic;
 
 class Dial : public Dial_core {
 public:
-    Dial(const char*, Graphic*);
+    Dial(const char*, Graphic*, Coord, Alignment);
     virtual ~Dial();
 
     void Damaged(Graphic*);

@@ -44,6 +44,9 @@ enum {
 class CoordinateSpace {
 public:
     enum { x = 0, y, z, dimensions };
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
 };
 
 class Requirement {
@@ -75,6 +78,9 @@ private:
     Coord stretch_;
     Coord shrink_;
     float alignment_;
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
 };
 
 class Requisition {
@@ -100,6 +106,9 @@ private:
     int penalty_;
     Requirement x_;
     Requirement y_;
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
 };
 
 class Allotment {
@@ -124,6 +133,9 @@ private:
     Coord origin_;
     Coord span_;
     float alignment_;
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
 };
 
 class Allocation {
@@ -152,6 +164,9 @@ public:
 private:
     Allotment x_;
     Allotment y_;
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
 };
 
 class Canvas;
@@ -184,6 +199,9 @@ private:
     Coord x_end_;
     Coord y_begin_;
     Coord y_end_;
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
 };
 
 inline Requirement::Requirement() {

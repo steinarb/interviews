@@ -50,7 +50,7 @@ Concat(World,special)::							@@\
 #endif
 
 #ifndef MakeWorld
-#if HasSunOSSharedLibraries
+#if HasDynamicSharedLibraries
 #define MakeWorld(flags)						@@\
 MakeNormalWorld(flags)							@@\
 MakeSpecialWorld(.debug,flags)						@@\
@@ -199,7 +199,7 @@ clean.special:								@@\
  * Shorthand for making all targets in a list of subdirectories.
  */
 #ifndef MakeInSubdirs
-#if HasSunOSSharedLibraries
+#if HasDynamicSharedLibraries
 #define MakeInSubdirs(dirs)						@@\
 MakefilesSubdirs(dirs)							@@\
 DependSubdirs(dirs)							@@\
@@ -224,7 +224,7 @@ SpecialTargets(debug,-DUseDebug)
  * subdirectory.
  */
 #ifndef MakeInObjectCodeDir
-#if HasSunOSSharedLibraries
+#if HasDynamicSharedLibraries
 #define MakeInObjectCodeDir()						@@\
 MakefileObjectCodeDir($(ARCH))						@@\
 DependSubdirs($(ARCH))							@@\
@@ -399,9 +399,9 @@ BackwardCompatibilityCCDefines BackwardCompatibilityCCIncludes)
 /*
  * Make a shared library.
  */
-#ifndef NormalSunOSSharedLibraryTarget
-#if OSMajorVersion < 5
-#define NormalSunOSSharedLibraryTarget(libname,rev,depobjs,ldobjs)	@@\
+#ifndef NormalDynamicSharedLibraryTarget
+#if defined(sun) && OSMajorVersion < 5
+#define NormalDynamicSharedLibraryTarget(libname,rev,depobjs,ldobjs)	@@\
 AOUT = Concat(lib,libname.so.rev)					@@\
 SHARED_CCFLAGS = SharedCCFlags						@@\
 									@@\
@@ -417,7 +417,7 @@ Concat(lib,libname.so.rev): depobjs					@@\
 clean::									@@\
 	$(RM) Concat(lib,libname.so.rev)
 #else
-#define NormalSunOSSharedLibraryTarget(libname,rev,depobjs,ldobjs)	@@\
+#define NormalDynamicSharedLibraryTarget(libname,rev,depobjs,ldobjs)	@@\
 AOUT = Concat(lib,libname.so.rev)					@@\
 SHARED_CCFLAGS = SharedCCFlags						@@\
 									@@\
@@ -425,12 +425,10 @@ AllTarget(Concat(lib,libname.so.rev))					@@\
 									@@\
 Concat(lib,libname.so.rev): depobjs					@@\
 	@echo "building $@"						@@\
-	$(RM) $@~							@@\
-	$(LD) -o $@~ -ztext -G ldobjs					@@\
 	$(RM) $@							@@\
-	$(MV) $@~ $@							@@\
+	$(LD) -o $@ $(SHARED_CCLDFLAGS) ldobjs $(SHARED_CCLDLIBS)	@@\
 	$(RM) Concat(lib,libname.so)					@@\
-	$(LN) -s $@ Concat(lib,libname.so)				@@\
+	$(LN) $@ Concat(lib,libname.so)					@@\
 									@@\
 clean::									@@\
 	$(RM) Concat(lib,libname.so.rev)
@@ -457,9 +455,9 @@ Concat(lib,libname.a): depobjs						@@\
  * Make either a shared library or a non-shared library.
  */
 #ifndef NormalLibraryTarget
-#if HasSunOSSharedLibraries
+#if HasDynamicSharedLibraries
 #define NormalLibraryTarget(libname,rev,depobjs,ldobjs)			@@\
-NormalSunOSSharedLibraryTarget(libname,rev,depobjs,ldobjs)
+NormalDynamicSharedLibraryTarget(libname,rev,depobjs,ldobjs)
 #else
 #define NormalLibraryTarget(libname,rev,depobjs,ldobjs)			@@\
 NormalNonSharedLibraryTarget(libname,depobjs,ldobjs)
@@ -590,8 +588,8 @@ step::									@@\
 /*
  * Install a library.
  */
-#ifndef InstallSunOSSharedLibrary
-#define InstallSunOSSharedLibrary(libname,rev,dest)			@@\
+#ifndef InstallDynamicSharedLibrary
+#define InstallDynamicSharedLibrary(libname,rev,dest)			@@\
 install:: Concat(lib,libname.so.rev)					@@\
 	MakeDir(dest)							@@\
 	$(INSTALL) -c $(INSTLIBFLAGS) Concat(lib,libname.so.rev) dest
@@ -606,9 +604,9 @@ install:: Concat(lib,libname.a)						@@\
 #endif
 
 #ifndef InstallLibrary
-#if HasSunOSSharedLibraries
+#if HasDynamicSharedLibraries
 #define InstallLibrary(libname,rev,dest)				@@\
-InstallSunOSSharedLibrary(libname,rev,dest)
+InstallDynamicSharedLibrary(libname,rev,dest)
 #else
 #define InstallLibrary(libname,rev,dest)				@@\
 InstallNonSharedLibrary(libname,dest)

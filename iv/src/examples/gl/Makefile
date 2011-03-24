@@ -19,9 +19,9 @@ CRTN = /usr/lib/crtn.o
 		      -T "InterViews/template"\
 		      -I$(CONFIGSRC) -I$(XCONFIGDIR)\
 		      $(SPECIAL_IMAKEFLAGS)
- SPECIAL_IMAKEFLAGS =
+ SPECIAL_IMAKEFLAGS =    -DUseInstalled
              DEPEND = makedepend
-     DEPEND_CCFLAGS = $(CCDEFINES) $(CCINCLUDES) -I/usr/include/CC
+     DEPEND_CCFLAGS = -DMAKEDEPEND $(CCDEFINES) $(CCINCLUDES) -I/usr/include/CC
                MAKE = make
            PASSARCH = ARCH="$(ARCH)" SPECIAL_IMAKEFLAGS="$(SPECIAL_IMAKEFLAGS)"
           ARCHORCPU = $$CPU

@@ -33,29 +33,31 @@
 declarePtrList(ViewList,Interactor)
 implementPtrList(ViewList,Interactor)
 
-class SubjectRep {
+struct SubjectRep {
 private:
     friend class Subject;
 
-    ViewList views_;
+    ViewList* views_;
 };
 
 Subject::Subject() {
     rep_ = new SubjectRep;
+    rep_->views_ = new ViewList;
 }
 
 Subject::~Subject() {
+    delete rep_->views_;
     delete rep_;
     rep_ = nil;
 }
 
 void Subject::Attach(Interactor* v) {
-    rep_->views_.append(v);
+    rep_->views_->append(v);
     ref();
 }
 
 void Subject::Detach(Interactor* v) {
-    ViewList& vl = rep_->views_;
+    ViewList& vl = *rep_->views_;
     for (unsigned int i = 0; i < vl.count(); i++) {
 	if (vl.item(i) == v) {
 	    vl.remove(i);
@@ -66,7 +68,7 @@ void Subject::Detach(Interactor* v) {
 }
 
 void Subject::Notify() {
-    ViewList& vl = rep_->views_;
+    ViewList& vl = *rep_->views_;
     for (unsigned int i = 0; i < vl.count(); i++) {
 	vl.item(i)->Update();
     }
@@ -74,7 +76,7 @@ void Subject::Notify() {
 
 
 boolean Subject::IsView(Interactor* v) {
-    ViewList& vl = rep_->views_;
+    ViewList& vl = *rep_->views_;
     for (unsigned int i = 0; i < vl.count(); i++) {
 	if (vl.item(i) == v) {
 	    return true;

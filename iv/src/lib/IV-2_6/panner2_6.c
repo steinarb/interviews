@@ -166,7 +166,7 @@ void Slider::Draw () {
     if (canvas != nil) {
 	output->SetPattern(new Pattern(Pattern::lightgray));
 	output->FillRect(canvas, 0, 0, xmax, ymax);
-	output->SetPattern(new Pattern(Pattern::clear));
+	output->SetPattern(new Pattern(int(Pattern::clear)));
 	output->FillRect(canvas, left, bottom, right, top);
 	output->SetPattern(new Pattern(Pattern::solid));
 	output->Rect(canvas, left, bottom, right, top);

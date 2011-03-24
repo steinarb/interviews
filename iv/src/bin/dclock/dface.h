@@ -35,6 +35,8 @@ struct CharPoints {
 
 enum AMPMMODE { BLANK, AM, PM };
 
+class IOHandler;
+
 class DFace : public Interactor {
 public:
     DFace(
@@ -78,7 +80,7 @@ private:
 	char text[50];
     } date;
 
-    class IOHandler* tick;
+    IOHandler* tick;
 };
 
 #endif

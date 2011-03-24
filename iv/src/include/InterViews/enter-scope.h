@@ -36,7 +36,7 @@
 #include <IV-2_6/_enter.h>
 #endif
 
-#ifndef os__scope_h
+#ifndef iv_os__scope_h
 
 /*
  * Use OS boolean and String definitions.

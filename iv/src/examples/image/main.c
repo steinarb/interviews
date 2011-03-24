@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
     }
     session->run_window(
 	new ApplicationWindow(
-	    kit.inset_frame(
+	    /* kit.inset_frame( */
 		layout.variable_span(
 		    new TransformFitter(
 			new TransformSetter(
@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
 			)
 		    )
 		)
-	    )
+	    /* ) */
 	)
     );
 }

@@ -228,7 +228,6 @@ void IdrawEditor::InitStateVars () {
 IdrawEditor::~IdrawEditor () {
     delete _keymap;
     delete _selection;
-    delete _modifStatus;
 
     delete _name;
     delete _modifStatus;

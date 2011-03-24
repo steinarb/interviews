@@ -96,19 +96,19 @@ String& String::operator =(const char* s) {
 }
 
 boolean String::operator ==(const String& s) const {
-    return length_ == s.length_ && strncmp(data_, s.data_, length_) == 0;
+    return (length_ == s.length_) && (strncmp(data_, s.data_, length_) == 0);
 }
 
 boolean String::operator ==(const char* s) const {
-    return strncmp(data_, s, length_) == 0;
+    return (strncmp(data_, s, length_) == 0) && (s[length_] == '\0');
 }
 
 boolean String::operator !=(const String& s) const {
-    return length_ != s.length_ || strncmp(data_, s.data_, length_) != 0;
+    return (length_ != s.length_) || (strncmp(data_, s.data_, length_) != 0);
 }
 
 boolean String::operator !=(const char* s) const {
-    return strncmp(data_, s, length_) != 0;
+    return (strncmp(data_, s, length_) != 0) || (s[length_] != '\0');
 }
 
 boolean String::operator >(const String& s) const {

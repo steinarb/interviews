@@ -57,7 +57,7 @@ void Deck::request(Requisition& req) const {
 	x.request(n, r, d->requisition_);
 	Align y(Dimension_Y);
 	y.request(n, r, d->requisition_);
-	delete r;
+	delete [] r;
 	d->changed_ = false;
     }
     req = requisition_;

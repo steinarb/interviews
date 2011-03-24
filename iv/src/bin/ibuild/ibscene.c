@@ -593,7 +593,7 @@ void MonoSceneComp::Uninterpret (Command* cmd) {
                 if (kidData != nil) {
                     InteractorComp* oldKid = kidData->GetKid();
                     Append(oldKid);
-                    kidData->SetKid(newKid);
+                    kidData->SetKid(nil);
                 } else {
                     kidData = new KidData(newKid);
                     cmd->Store(newKid, kidData);

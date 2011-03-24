@@ -49,7 +49,7 @@ public:
     void operator=(ButtonState&);
     void SetValue(int);
     void SetValue(void*);
-    void GetValue (int& v) { v = (int)value; }
+    void GetValue (int& v) { v = int(long(value)); }
     void GetValue (void*& v) { v = value; }
 protected:
     void* value;

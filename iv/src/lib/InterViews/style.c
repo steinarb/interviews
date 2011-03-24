@@ -281,6 +281,7 @@ StyleRep::~StyleRep() {
 	}
 	delete children_;
     }
+    Resource::unref(observers_);
 }
 
 const String* Style::name() const { return rep_->name_; }
@@ -649,7 +650,7 @@ void StyleRep::delete_attribute(StyleAttribute* a) {
     }
     delete_path(a->path_);
     delete a->value_;
-    delete a->observers_;
+    Resource::unref(a->observers_);
     delete a;
 }
 
@@ -762,6 +763,7 @@ void Style::add_trigger(const String& name, Action* action) {
     if (a != nil) {
 	if (a->observers_ == nil) {
 	    a->observers_ = new Macro;
+	    Resource::ref(a->observers_);
 	}
 	a->observers_->append(action);
     }
@@ -778,7 +780,7 @@ void Style::remove_trigger(const String& name, Action* action) {
     if (a != nil) {
 	Macro* m = a->observers_;
 	if (action == nil) {
-	    delete m;
+	    Resource::unref(m);
 	    a->observers_ = nil;
 	} else {
 	    MacroIndex mcount = m->count();
@@ -796,6 +798,7 @@ void Style::add_trigger_any(Action* action) {
     StyleRep& s = *rep_;
     if (s.observers_ == nil) {
 	s.observers_ = new Macro;
+	Resource::ref(s.observers_);
     }
     s.observers_->append(action);
 }

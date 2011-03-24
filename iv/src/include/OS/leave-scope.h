@@ -22,8 +22,8 @@
  * OF THIS SOFTWARE.
  */
 
-#ifdef os__scope_h
-#undef os__scope_h
+#ifdef iv_os__scope_h
+#undef iv_os__scope_h
 
 #include <OS/_undefs.h>
 

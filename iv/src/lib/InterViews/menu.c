@@ -366,7 +366,7 @@ void Menu::release(const Event& e) {
 	    );
 	    m->pick(c, m->allocation(), 0, hit);
 	    if (hit.any()) {
-		m = item(hit.index(0))->menu();
+		m = m->item(hit.index(0))->menu();
 		if (m != nil) {
 		    m->select(0);
 		    impl_->grab(this, e);

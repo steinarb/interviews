@@ -58,7 +58,7 @@ static PropertyData kit_props[] = {
     { "*FieldEditor*flat", "#e0e0e0" },
     { "*Panner*minimumThumbSize", "18.0" },
     { "*ScrollBar*minimumThumbSize", "28.0" },
-    nil
+    { nil }
 };
 
 class MFKitInfo : public Resource {
@@ -271,7 +271,6 @@ Glyph* MFKit::menubar_item_look(Glyph* g, TelltaleState* t) const {
 
 Glyph* MFKit::menu_item_look(Glyph* g, TelltaleState* t) const {
     MFKitImpl& i = *impl_;
-    const LayoutKit& layout = *i.layout_;
     MFKitInfo* info = i.info_;
     return new MFKitFrame(g, t, info, info->thickness(), true, true);
 }
@@ -447,7 +446,6 @@ Glyph* MFKit::scroll_bar_look(DimensionName d, Adjustable* a) const {
 
 Glyph* MFKit::panner_look(Adjustable* x, Adjustable* y) const {
     MFKitImpl& i = *impl_;
-    const LayoutKit& layout = *i.layout_;
     return i.make_slider(new XYSlider(style(), x, y));
 }
 

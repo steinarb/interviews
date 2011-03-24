@@ -2,10 +2,17 @@
 #include <InterViews/xparams.cf>
 
 /*
- * In case sun.cf defines HasSharedLibraries but not HasSunOSSharedLibraries.
+ * In case sun.cf defines HasSharedLibraries but not HasDynamicSharedLibraries.
  */
 #if HasSharedLibraries
-#define HasSunOSSharedLibraries	YES
+#define HasDynamicSharedLibraries	YES
+#endif
+
+#undef SharedCCLdFlags
+#define SharedCCLdFlags -ztext -G
+
+#ifndef LnCmd
+#define LnCmd ln -s
 #endif
 
 /*
@@ -14,6 +21,6 @@
  * have both debuggable and shareable libraries.
  */
 #if defined(UseDebug) && defined(InObjectCodeDir)
-#undef HasSunOSSharedLibraries
-#define HasSunOSSharedLibraries	NO
+#undef HasDynamicSharedLibraries
+#define HasDynamicSharedLibraries	NO
 #endif

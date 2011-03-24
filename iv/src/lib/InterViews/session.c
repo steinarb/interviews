@@ -618,7 +618,7 @@ void SessionRep::load_props(
 }
 
 void SessionRep::load_app_defaults(Style* s, int priority) {
-    load_path(s, X_LIBDIR, "/app-defaults/", classname_, priority);
+    load_path(s, X_LIBDIR, "/X11/app-defaults/", classname_, priority);
     load_path(s, IV_LIBALL, "/app-defaults/", classname_, priority);
     const char* xres = getenv("XAPPLRESDIR");
     if (xres != nil) {

@@ -37,15 +37,16 @@
 #include <InterViews/scrollbar.h>
 #include <InterViews/sensor.h>
 #include <InterViews/streditor.h>
+#include <OS/types.h>
 
 #include <stdlib.h>
 #include <string.h>
 #include <osfcn.h>
 
-#if !defined(AIXV3) && !defined(hpux) && !(defined(sun) && OSMajorVersion >= 5)
+#if !defined(AIXV3) && !defined(hpux) && !defined(sun) && !defined(sgi)
 /* sigh, not all systems have this prototype */
 extern "C" {
-    char* getcwd(char*, int);
+    char* getcwd(char*, size_t);
 }
 #endif
 

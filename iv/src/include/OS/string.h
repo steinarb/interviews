@@ -33,6 +33,9 @@
 
 class String {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     String();
     String(const char*);
     String(const char*, int length);
@@ -90,6 +93,9 @@ private:
 
 class CopyString : public String {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     CopyString();
     CopyString(const char*);
     CopyString(const char*, int length);
@@ -110,6 +116,9 @@ private:
 
 class NullTerminatedString : public String {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     NullTerminatedString();
     NullTerminatedString(const String&);
     NullTerminatedString(const NullTerminatedString&);

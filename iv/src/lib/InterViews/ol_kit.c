@@ -288,7 +288,7 @@ static PropertyData kit_props[] = {
     { "*flat", "#aaaaaa" },
     { "*PaletteButton*minimumWidth", "72.0" },
     { "*PushButton*minimumWidth", "72.0" },
-    nil
+    { nil }
 };
 
 /* Table B-20 */
@@ -1559,7 +1559,6 @@ void OL_Button::draw(Canvas* c, const Allocation& a) const {
     }
 
     if (type_ == DefaultButton && !state_->test(TelltaleState::is_active)) {
-	const OL_Specs& s = *specs_;
 	const Color* color = kit_->bg3();
 	Coord l = a.left(), b = a.bottom(), r = a.right(), t = a.top();
 	
@@ -3586,7 +3585,6 @@ Glyph* OLKit::menubar_item_look(Glyph* g, TelltaleState* state) const {
 Glyph* OLKit::menu_item_look(Glyph* g, TelltaleState* t) const {
     OLKitImpl& i = *impl_;
     const OL_Specs* s = i.specs_;
-    const LayoutKit& l = *i.layout_;
     return new OL_Button(this, s, g, t, OL_Button::MenuButton);
 }
 
@@ -3775,7 +3773,15 @@ OLKitImpl::OLKitImpl(OLKit* kit) : kit_(kit), layout_(LayoutKit::instance()),
     white_ = color(d, "white", "White", 1.0, 1.0, 1.0, 1.0);
     black_ = color(d, "black", "Black", 0.0, 0.0, 0.0, 1.0);
 
-    bg1_ = color(d, "#aaaaaa", "#aaaaaa", 0.7, 0.7, 0.7, 1.0);
+    String v;
+    const Color* c = nil;
+    if (style_->find_attribute("flat", v)) {
+	c = Color::lookup(d, v);
+    }
+    if (c == nil) {
+	c = color(d, "#aaaaaa", "#aaaaaa", 0.7, 0.7, 0.7, 1.0);
+    }
+    bg1_ = c;
     bg2_ = bg1_->brightness(-0.125);
     bg3_ = bg1_->brightness(-0.5);
     inactive_ = new Color(*bg1_, 0.5);

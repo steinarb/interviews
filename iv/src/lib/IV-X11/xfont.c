@@ -51,16 +51,24 @@ implementPtrList(FontRepList,FontRep)
 
 inline unsigned long key_to_hash(UniqueString& s) { return s.hash(); }
 
-struct KnownFonts {
+class KnownFonts {
+public:
     FontList fonts;
     FontRepList fontreps;
+
+    void delta();
 };
+
+void KnownFonts::delta() { }
 
 declareTable(NameToKnownFonts,UniqueString,KnownFonts*)
 implementTable(NameToKnownFonts,UniqueString,KnownFonts*)
 
 class FontImpl {
 private:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     friend class Font;
     friend class FontRep;
 
@@ -84,7 +92,7 @@ private:
 
     UniqueString* name_;
     float scale_;
-    FontRepList replist_;
+    FontRepList* replist_;
     KnownFonts* entry_;
 
     static NameToKnownFonts* fonts_;
@@ -96,10 +104,11 @@ FontImpl::FontImpl(const String& s, float scale) {
     name_ = new UniqueString(s);
     scale_ = scale;
     entry_ = nil;
+    replist_ = new FontRepList;
 }
 
 FontImpl::~FontImpl() {
-    for (ListItr(FontRepList) i(replist_); i.more(); i.next()) {
+    for (ListItr(FontRepList) i(*replist_); i.more(); i.next()) {
 	Resource::unref(i.cur());
     }
     delete name_;
@@ -137,7 +146,7 @@ NameToKnownFonts* FontImpl::fonts() {
 
 FontRep* FontImpl::rep(Display* d) {
     FontRep* r;
-    for (ListItr(FontRepList) i(replist_); i.more(); i.next()) {
+    for (ListItr(FontRepList) i(*replist_); i.more(); i.next()) {
 	r = i.cur();
 	if (r->display_ == d) {
 	    return r;
@@ -161,9 +170,9 @@ FontRep* FontImpl::rep(Display* d) {
 }
 
 FontRep* FontImpl::default_rep() {
-    long n = replist_.count();
+    long n = replist_->count();
     if (n != 0) {
-	return replist_.item(n - 1);
+	return replist_->item(n - 1);
     }
     return rep(Session::instance()->default_display());
 }
@@ -175,7 +184,7 @@ void FontImpl::new_rep(KnownFonts* k, FontRep* r) {
 }
 
 void FontImpl::attach(FontRep* r) {
-    replist_.append(r);
+    replist_->append(r);
     Resource::ref(r);
 }
 
@@ -517,10 +526,13 @@ implementPtrList(FontFamilyRepList,FontFamilyRep)
 
 class FontFamilyImpl {
 private:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     friend class FontFamily;
 
     char* name;
-    FontFamilyRepList replist;
+    FontFamilyRepList* replist;
 };
 
 static boolean contains(const char* string, const char* substring) {
@@ -541,6 +553,9 @@ static boolean contains(const char* string, const char* substring) {
 
 class FontNameSet {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     int value;
     char* names[6];
 };
@@ -597,20 +612,22 @@ FontFamily::FontFamily(const char* familyname) {
     impl_ = new FontFamilyImpl;
     impl_->name = new char[strlen(familyname) + 1];
     strcpy(impl_->name, familyname);
+    impl_->replist = new FontFamilyRepList;
 }
 
 FontFamily::~FontFamily() {
-    FontFamilyRepList& list = impl_->replist;
+    FontFamilyRepList& list = *impl_->replist;
     for (long i = 0; i < list.count(); i++) {
 	destroy(list.item(i));
     }
     delete impl_->name;
+    delete impl_->replist;
     delete impl_;
 }
 
 FontFamilyRep* FontFamily::rep(Display* d) const {
     FontFamilyRep* f;
-    FontFamilyRepList& list = impl_->replist;
+    FontFamilyRepList& list = *impl_->replist;
     for (long i = 0; i < list.count(); i++) {
 	FontFamilyRep* f = list.item(i);
 	if (f->display_ == d) {

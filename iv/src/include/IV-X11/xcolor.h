@@ -39,6 +39,9 @@ class WindowVisual;
 
 class ColorRep {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     WindowVisual* visual_;
     ColorOp op_;
     boolean masking_;

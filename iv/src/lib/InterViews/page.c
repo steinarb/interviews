@@ -34,7 +34,7 @@
 
 static const int PageInfoAllocated = 0x01;
 static const int PageInfoExtended = 0x02;
-static const int PageInfoPositioned = 0x04;
+// static const int PageInfoPositioned = 0x04;
 static const int PageInfoHidden = 0x08;
 
 class PageInfo {

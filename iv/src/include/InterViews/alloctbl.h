@@ -37,6 +37,9 @@ class AllocationTableImpl;
 
 class AllocationInfo {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     Canvas* canvas() const;
     const Allocation& allocation() const;
     const Transformer& transformer() const;
@@ -48,7 +51,7 @@ private:
     friend class AllocationTable;
 
     Canvas* canvas_;
-    Transformer transformer_;
+    Transformer* transformer_;
     Allocation allocation_;
     Extension extension_;
     long num_components_;
@@ -62,7 +65,7 @@ inline const Allocation& AllocationInfo::allocation() const {
 }
 
 inline const Transformer& AllocationInfo::transformer() const {
-    return transformer_;
+    return *transformer_;
 }
 
 inline void AllocationInfo::extension(const Extension& e) { extension_ = e; }

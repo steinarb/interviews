@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_fax3.c,v 1.60 92/02/10 19:06:36 sam Exp $";
+static char rcsid[] = "$Header: /usr/interviews/master/iv/src/lib/TIFF/RCS/tif_fax3.c,v 1.2 93/02/01 16:22:33 linton Exp $";
 #endif
 
 /*
@@ -46,8 +46,8 @@ typedef struct {
 
 typedef struct {
 	Fax3BaseState b;
-	u_char	*wruns;
-	u_char	*bruns;
+	const u_char	*wruns;
+	const u_char	*bruns;
 	short	k;			/* #rows left that can be 2d encoded */
 	short	maxk;			/* max #rows that can be 2d encoded */
 } Fax3EncodeState;

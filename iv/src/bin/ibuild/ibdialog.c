@@ -270,7 +270,9 @@ boolean DialogClassCode::Definition (ostream& out) {
         ) {
             ok = ok && CheckToEmitHeader(out, bsname);
 
-        } else if (!_namelist->Search("button")) {
+        } else if (
+	    strcmp(subclass, _classname) == 0 && !_namelist->Search("button")
+	) {
             _namelist->Append("button");
             out << "#include <InterViews/button.h>\n";
         }

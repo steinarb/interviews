@@ -27,7 +27,12 @@
 #ifndef clocktime_h
 #define clocktime_h
 
+#include <OS/types.h>
 #include <time.h>
+#if defined(__FTX)
+/* sys/time.h includes sys/types.h, grab clean version first */
+#include <OS/types.h>
+#endif
 #include <sys/time.h>
 
 class Clock {

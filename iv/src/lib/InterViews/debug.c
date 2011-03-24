@@ -111,6 +111,7 @@ void DebugGlyph::undraw() {
     if ((flags_ & trace_undraw) != 0) {
 	heading("undraw\n");
     }
+    MonoGlyph::undraw();
 }
 
 void DebugGlyph::print_requirement(const Requirement& r) {

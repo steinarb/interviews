@@ -44,3 +44,5 @@ int IOHandler::exceptionRaised(int) {
 }
 
 void IOHandler::timerExpired(long, long) {}
+
+void IOHandler::childStatus(pid_t, int) {}

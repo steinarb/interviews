@@ -24,6 +24,7 @@
 
 #include <Dispatch/rpcregistry.h>
 #include <OS/host.h>
+#include <OS/types.h>
 #include <fstream.h>
 #include <errno.h>
 #ifndef __DECCXX

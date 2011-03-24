@@ -34,15 +34,19 @@ implementPtrList(MacroActionList,Action)
 Macro::Macro(Action* a0, Action* a1, Action* a2, Action* a3) : Action() {
     list_ = new MacroActionList;
     if (a0 != nil) {
+	Resource::ref(a0);
 	list_->append(a0);
     }
     if (a1 != nil) {
+	Resource::ref(a1);
 	list_->append(a1);
     }
     if (a2 != nil) {
+	Resource::ref(a2);
 	list_->append(a2);
     }
     if (a3 != nil) {
+	Resource::ref(a3);
 	list_->append(a3);
     }
 }

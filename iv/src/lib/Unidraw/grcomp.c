@@ -211,6 +211,12 @@ void GraphicComp::Interpret (Command* cmd) {
         if (refcomp != this) {
             alignCmd->GetAlignment(a1, a2);
             gr->GetCenter(cx0, cy0);
+	    if (gr->Parent() != nil) {
+		Transformer t;
+		gr->Parent()->TotalTransformation(t);
+		t.InvTransform(cx0, cy0, cx0, cy0);
+		t.InvTransform(cx1, cy1, cx1, cy1);
+	    }
             refcomp->GetGraphic()->Align(a1, gr, a2);
             gr->GetCenter(cx1, cy1);
             cmd->Store(this, new MoveData(cx1 - cx0, cy1 - cy0));

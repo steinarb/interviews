@@ -34,6 +34,12 @@
 #include <sys/mman.h>
 #endif
 
+#ifdef __alpha
+extern "C" {
+#include <sys/mman.h>
+}
+#endif
+
 /* no standard place for these */
 extern "C" {
     extern int close(int);
@@ -54,7 +60,7 @@ extern "C" {
 #endif
 }
 
-#ifdef __GNUC__
+#if defined(hpux) || defined(__GNUC__)
 #include <unistd.h>
 #endif
 
@@ -103,7 +109,7 @@ void File::close() {
     FileInfo* i = rep_;
     if (i->fd_ >= 0) {
 	if (i->map_ != nil) {
-#ifdef sgi
+#if defined(sgi) || defined(__alpha)
 	    munmap(i->map_, int(i->info_.st_size));
 #endif
 	}
@@ -152,7 +158,7 @@ int InputFile::read(const char*& start) {
     if (i->limit_ != 0 && len > i->limit_) {
 	len = (int)(i->limit_);
     }
-#ifdef sgi
+#if defined(sgi) || defined(__alpha)
     i->map_ = (char*)mmap(0, len, PROT_READ, MAP_PRIVATE, i->fd_, i->pos_);
     if ((int)(i->map_) == -1) {
 	return -1;

@@ -412,7 +412,9 @@ void App::red() { printf("red\n"); }
 void App::green() { printf("green\n"); }
 void App::blue() { printf("blue\n"); }
 
-void App::do_nothing() { printf("do nothing\n"); }
+void App::do_nothing() {
+    printf("do nothing\n");
+}
 
 void App::quit() {
     delete main_;

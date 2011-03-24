@@ -61,7 +61,7 @@ ButtonState::ButtonState() {
 }
 
 ButtonState::ButtonState(int v) {
-    value = (void*)v;
+    value = (void*)long(v);
     ref();
 }
 
@@ -73,7 +73,7 @@ ButtonState::ButtonState(void* v) {
 ButtonState::~ButtonState() { }
 
 void ButtonState::SetValue(int v) {
-    Modify((void*)v);
+    Modify((void*)long(v));
 }
 
 void ButtonState::SetValue(void* v) {
@@ -189,7 +189,7 @@ void Button::Detach(Button* b) {
 void Button::Enable() {
     if (!enabled) {
 	enabled = true;
-	if (canvas != nil) {
+	if (ValidCanvas(canvas)) {
 	    Draw();
 	}
     }
@@ -198,7 +198,7 @@ void Button::Enable() {
 void Button::Disable() {
     if (enabled) {
 	enabled = false;
-	if (canvas != nil) {
+	if (ValidCanvas(canvas)) {
 	    Draw();
 	}
     }
@@ -210,7 +210,7 @@ void Button::Choose() {
     if (!chosen) {
 	chosen = true;
 	if (enabled) {
-	    if (canvas != nil) {
+	    if (ValidCanvas(canvas)) {
 		Refresh();
 	    }
 	    for (bl = associates; bl != nil; bl = bl->next) {
@@ -226,7 +226,7 @@ void Button::UnChoose() {
     if (chosen) {
 	chosen = false;
 	if (enabled) {
-	    if (canvas != nil) {
+	    if (ValidCanvas(canvas)) {
 		Refresh();
 	    }
 	    for (bl = associates; bl != nil; bl = bl->next) {

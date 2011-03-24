@@ -3,9 +3,9 @@ XCOMM scripts - miscellaneous shell scripts
 XCOMM
 
 /*
- * We assume X11 already has bsdinst and/or mkdirhier in its BINDIR.
+ * We assume X11 already has mkdirhier in its BINDIR.
  */
-PROGRAMS = cpu ibmkmf ivmkmf remind
+PROGRAMS = bsdinst cpu ibmkmf ivmkmf remind
 CONFIGDIRSPEC = -T IMAKE_TEMPLATE -I$(ABSCONFIGDIR) -I$(XCONFIGDIR)
 REMIND_MACROS = /usr/local/lib/remind/macros
 

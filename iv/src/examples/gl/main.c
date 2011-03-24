@@ -1,3 +1,4 @@
+#include <gl/gl.h>
 #include <IV-look/kit.h>
 #include <InterViews/background.h>
 #include <InterViews/glcontext.h>
@@ -7,7 +8,6 @@
 #include <InterViews/window.h>
 #include <OS/enter-scope.h>
 #include <OS/leave-scope.h>
-#include <gl/gl.h>
 
 class GLPolygonTest : public Glyph {
 public:

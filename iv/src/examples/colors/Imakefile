@@ -1,0 +1,13 @@
+#ifdef InObjectCodeDir
+
+Use_libInterViews()
+ComplexProgramTarget(test)
+
+MakeObjectFromSrc(colorChooser)
+MakeObjectFromSrc(rgbNames)
+
+#else
+
+MakeInObjectCodeDir()
+
+#endif

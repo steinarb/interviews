@@ -31,10 +31,14 @@
 
 class Color;
 class Display;
+class Style;
 class WindowVisual;
 
 class CursorRep {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     const Color* fg_;
     const Color* bg_;
     Display* display_;
@@ -55,6 +59,9 @@ public:
 
 class CursorRepData : public CursorRep {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     short x_, y_;
     const int* pat_;
     const int* mask_;
@@ -71,6 +78,9 @@ public:
 
 class CursorRepBitmap : public CursorRep {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     const Bitmap* pat_;
     const Bitmap* mask_;
 
@@ -85,6 +95,9 @@ public:
 
 class CursorRepFont : public CursorRep {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     const Font* font_;
     int pat_;
     int mask_;
@@ -99,6 +112,9 @@ public:
 
 class CursorRepXFont : public CursorRep {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     int code_;
 
     CursorRepXFont(int code, const Color* fg, const Color* bg);

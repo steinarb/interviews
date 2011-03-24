@@ -221,7 +221,7 @@ void TBScrollBox::allotment(
 ) const {
     TBScrollBoxImpl& sb = impl();
     if (i >= sb.start_ && i < sb.end_) {
-	a = sb.visible_.item(i - sb.start_).allocation_.allotment(d);
+	a = sb.visible_.item_ref(i - sb.start_).allocation_.allotment(d);
     }
 }
 

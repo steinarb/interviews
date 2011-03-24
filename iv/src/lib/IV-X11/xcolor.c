@@ -45,6 +45,9 @@ implementTable2(NameToColor,Display*,UniqueString,const Color*)
 
 class ColorImpl {
 private:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     friend class Color;
 
     ColorIntensity red;
@@ -52,7 +55,7 @@ private:
     ColorIntensity blue;
     float alpha;
     ColorOp op;
-    ColorRepList replist;
+    ColorRepList* replist;
     UniqueString ctable_name;
     Display* ctable_display;
 
@@ -73,6 +76,7 @@ Color::Color(
     c->alpha = alpha;
     c->op = op;
     c->ctable_display = nil;
+    c->replist = new ColorRepList;
 }
 
 Color::Color(const Color& color, float alpha, ColorOp op) {
@@ -84,6 +88,7 @@ Color::Color(const Color& color, float alpha, ColorOp op) {
     c->alpha = alpha;
     c->op = op;
     c->ctable_display = nil;
+    c->replist = new ColorRepList;
 }
 
 Color::~Color() {
@@ -91,9 +96,10 @@ Color::~Color() {
     if (c->ctable_display != nil) {
 	c->ctable_->remove(c->ctable_display, c->ctable_name);
     }
-    for (ListItr(ColorRepList) i(c->replist); i.more(); i.next()) {
+    for (ListItr(ColorRepList) i(*c->replist); i.more(); i.next()) {
 	destroy(i.cur());
     }
+    delete c->replist;
     delete c;
 }
 
@@ -141,8 +147,12 @@ float Color::alpha() const {
     return impl_->alpha;
 }
 
+ColorOp Color::op() const {
+    return impl_->op;
+}
+
 ColorRep* Color::rep(WindowVisual* wv) const {
-    for (ListItr(ColorRepList) i(impl_->replist); i.more(); i.next()) {
+    for (ListItr(ColorRepList) i(*impl_->replist); i.more(); i.next()) {
 	ColorRep* c = i.cur();
 	if (c->visual_ == wv) {
 	    return c;
@@ -150,12 +160,12 @@ ColorRep* Color::rep(WindowVisual* wv) const {
     }
     ColorImpl* c = impl_;
     ColorRep* r = create(wv, c->red, c->green, c->blue, c->alpha, c->op);
-    impl_->replist.append(r);
+    impl_->replist->append(r);
     return r;
 }
 
 void Color::remove(WindowVisual* wv) const {
-    for (ListUpdater(ColorRepList) i(impl_->replist); i.more(); i.next()) {
+    for (ListUpdater(ColorRepList) i(*impl_->replist); i.more(); i.next()) {
 	ColorRep* c = i.cur();
 	if (c->visual_ == wv) {
 	    i.remove_cur();

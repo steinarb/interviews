@@ -106,7 +106,7 @@ enum {Gen_File, Gen_Files, Gen_Make};
 /*****************************************************************************/
 
 // 4.2 -> hpux standard conversion of getwd
-#if defined(hpux) || defined(sco) || (defined(sun) && OSMajorVersion >= 5)
+#if defined(hpux) || defined(sco) || (defined(sun) && OSMajorVersion >= 5) || defined(_FTX)
 #include <sys/param.h>
 #define  getwd(a) getcwd(a,MAXPATHLEN)
 #endif
@@ -173,9 +173,9 @@ static void Warning (Editor* ed, const char* warning) {
     ed->RemoveDialog(&dialog);
 }
 
-static boolean Abort (Editor* ed, int pid, const char* warning) {
+static boolean Abort (Editor* ed, pid_t pid, const char* warning) {
     boolean aborted;
-    AbortDialog dialog(pid, warning);
+    AbortDialog dialog(int(pid), warning);
     ed->InsertDialog(&dialog);
     aborted = dialog.Abort();
     ed->RemoveDialog(&dialog);
@@ -1364,7 +1364,7 @@ void IdrawCmd::Execute () {
         char* tmpname = tmpnam(NULL);
         _grblock->WriteGraphicComp(tmpname);
 
-        int pid = vfork();
+        pid_t pid = vfork();
         if (pid == -1) {
             sprintf(buf, "Can't fork to execute idraw");
             Warning(ed, buf);
@@ -1849,7 +1849,7 @@ boolean CodeCmd::GenMakeFile(const char* filename, CodeView*) {
         ok = (system(cmd) == 0) && ok;
 
         char buf[CHARBUFSIZE];
-        int pid = fork();
+        pid_t pid = fork();
         if (pid == -1) {
             sprintf(buf, "Cannot fork to make %s", orig);
             Warning(GetEditor(), buf);
@@ -2079,7 +2079,7 @@ void CodeCmd::Make(const char* file) {
     char* orig = GetOrigName(file);
     char* dir = GetDirName(file);
     char buf[CHARBUFSIZE];
-    int pid = fork();
+    pid_t pid = fork();
     if (pid == -1) {
 	sprintf(buf, "Cannot fork to make %s", orig);
 	Warning(GetEditor(), buf);
@@ -2131,7 +2131,7 @@ void ExeCmd::Execute () {
     if (accepted) {
 	char buf[CHARBUFSIZE];
         char* name = (char* )_dialog->Choice();
-	int pid = vfork();
+	pid_t pid = vfork();
 	if (pid == -1) {
 	    sprintf(buf, "Can't fork to execute \"%s\"\n", name);
 	    Warning(ed, buf);
@@ -2276,7 +2276,7 @@ boolean NewToolCmd::CreateCtrlInfo (
             }
         }
         if (ok) {
-            int pid = fork();
+            pid_t pid = fork();
             if (pid == -1) {
                 Warning(ed, "Can't fork to run bitmap!");
             } else if (pid == 0) {

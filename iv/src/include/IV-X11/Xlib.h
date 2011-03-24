@@ -31,6 +31,24 @@
 
 extern "C" {
 
+#ifdef AIXV3
+struct _XDisplay;
+struct _XFreeFuncs;
+struct _XSQEvent;
+struct _XExten;
+struct _XKeytrans;
+struct _XDisplayAtoms;
+struct _XContextDB;
+struct _XIMFilter;
+struct _XrmHashBucketRec;
+#endif
+
+#ifdef __DECCXX
+struct _XDisplay;
+struct _XPrivate;
+struct _XrmHashBucketRec;
+#endif
+
 #include <IV-X11/Xdefs.h>
 #include <X11/Xlib.h>
 #include <IV-X11/Xundefs.h>

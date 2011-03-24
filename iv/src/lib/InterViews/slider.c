@@ -34,6 +34,7 @@
 #include <InterViews/color.h>
 #include <InterViews/display.h>
 #include <InterViews/event.h>
+#include <InterViews/hit.h>
 #include <InterViews/patch.h>
 #include <InterViews/session.h>
 #include <InterViews/style.h>
@@ -59,7 +60,8 @@ private:
     Coord xoffset_;
     Coord yoffset_;
 
-    int hit_thumb(const Event&);
+    int hit_thumb(Slider*, const Event&);
+    void get_position(Slider*, const Event&, Coord& x, Coord& y);
 };
 
 Slider::Slider(Style* style) : ActiveHandler(nil, style) {
@@ -157,7 +159,8 @@ void Slider::undraw() {
 void Slider::move(const Event& e) {
     SliderImpl& s = *impl_;
     if (s.visible_thumb_ != nil) {
-	Glyph* g = (s.hit_thumb(e) == 0) ? s.visible_thumb_ : s.normal_thumb_;
+	Glyph* g =
+	    (s.hit_thumb(this, e) == 0) ? s.visible_thumb_ : s.normal_thumb_;
 	Patch& thumb = *s.thumb_patch_;
 	if (thumb.body() != g) {
 	    thumb.body(g);
@@ -174,12 +177,12 @@ void Slider::press(const Event& e) {
 	return;
     }
 
+    Coord x, y;
     SliderImpl& s = *impl_;
-    Coord x = e.pointer_x();
-    Coord y = e.pointer_y();
+    s.get_position(this, e, x, y);
     const Allocation& slider = allocation();
     const Allocation& a = s.thumb_patch_->allocation();
-    int rel = s.hit_thumb(e);
+    int rel = s.hit_thumb(this, e);
     if (rel == 0) {
 	apply_adjustment(&Adjustable::begin_adjustment);
 	s.xoffset_ = slider.left() + x - a.left();
@@ -206,13 +209,18 @@ void Slider::drag(const Event& e) {
     if (!s.aborted_ && s.dragging_) {
 	if (!s.showing_old_thumb_ && s.old_thumb_ != nil) {
 	    s.showing_old_thumb_ = true;
+	    Patch* p = s.thumb_patch_;
+	    Canvas* c = canvas();
+	    c->push_transform();
+	    c->transformer(transformer());
 	    Extension ext;
 	    ext.clear();
-	    s.old_thumb_->allocate(
-		canvas(), s.thumb_patch_->allocation(), ext
-	    );
+	    s.old_thumb_->allocate(c, p->allocation(), ext);
+	    c->pop_transform();
 	}
-	move_to(e.pointer_x() - s.xoffset_, e.pointer_y() - s.yoffset_);
+	Coord x, y;
+	s.get_position(this, e, x, y);
+	move_to(x - s.xoffset_, y - s.yoffset_);
     }
 }
 
@@ -228,7 +236,9 @@ void Slider::release(const Event& e) {
 	    s.aborted_ = false;
 	    return;
 	}
-	move_to(e.pointer_x() - s.xoffset_, e.pointer_y() - s.yoffset_);
+	Coord x, y;
+	s.get_position(this, e, x, y);
+	move_to(x - s.xoffset_, y - s.yoffset_);
 	redraw_thumb();
 	move(e);
 	apply_adjustment(&Adjustable::commit_adjustment);
@@ -322,25 +332,43 @@ void Slider::redraw_thumb() {
 
 void Slider::reallocate_thumb(const Allocation& a) {
     Patch& thumb = *impl_->thumb_patch_;
+    Canvas* c = canvas();
+    c->push_transform();
+    c->transformer(transformer());
     Extension ext;
     ext.clear();
-    thumb.allocate(canvas(), a, ext);
+    thumb.allocate(c, a, ext);
+    c->pop_transform();
     thumb.redraw();
 }
 
 /* class SliderImpl */
 
-int SliderImpl::hit_thumb(const Event& event) {
+int SliderImpl::hit_thumb(Slider* s, const Event& event) {
     Coord x = event.pointer_x();
     Coord y = event.pointer_y();
     const Extension& e = thumb_patch_->extension();
     if (x >= e.left() && x < e.right() && y >= e.bottom() && y < e.top()) {
-	return 0;
+	Canvas* c = s->canvas();
+	const Transformer& t = s->transformer();
+	Hit hit(&event);
+	hit.transform(t);
+	c->push_transform();
+	c->transformer(t);
+	thumb_patch_->pick(c, thumb_patch_->allocation(), 0, hit);
+	c->pop_transform();
+	return hit.any() ? 0 : 1;
     }
     if (x < e.left() || y < e.bottom()) {
 	return -1;
     }
     return 1;
+}
+
+void SliderImpl::get_position(Slider* s, const Event& e, Coord& x, Coord& y) {
+    x = e.pointer_x();
+    y = e.pointer_y();
+    s->transformer().inverse_transform(x, y);
 }
 
 /* class XSlider */

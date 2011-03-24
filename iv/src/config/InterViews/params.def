@@ -50,18 +50,18 @@
 #endif
 #endif
 
-#ifndef HasSunOSSharedLibraries
-#define HasSunOSSharedLibraries	NO	/* no shared libraries by default */
+#ifndef HasDynamicSharedLibraries
+#define HasDynamicSharedLibraries	NO	/* no shared libraries */
 #endif
 #if defined(UseNonShared) && defined(InObjectCodeDir)
-#undef  HasSunOSSharedLibraries
-#define HasSunOSSharedLibraries	NO	/* don't use them anyway */
+#undef  HasDynamicSharedLibraries
+#define HasDynamicSharedLibraries	NO	/* don't use them anyway */
 #endif
 
 #ifndef InstallRelative
 #define InstallRelative		YES	/* install in place */
 #endif
-#ifdef UseInstalled
+#ifdef IVUseInstalled
 #undef  InstallRelative
 #define InstallRelative		NO	/* need absolute pathnames */
 #endif
@@ -124,7 +124,7 @@
 #endif
 
 #ifndef ImakeIncludes
-#ifdef UseInstalled
+#ifdef IVUseInstalled
 #define ImakeIncludes -I$(CONFIGDIR) -I$(XCONFIGDIR)
 #else
 #define ImakeIncludes -I$(CONFIGSRC) -I$(XCONFIGDIR)
@@ -153,10 +153,10 @@
 #endif
 
 #ifndef SpecialUseInstalled
-#ifdef UseInstalled
-#define SpecialUseInstalled -DUseInstalled
+#ifdef IVUseInstalled
+#define SpecialUseInstalled -DUseInstalled -DIVUseInstalled
 #else
-#define SpecialUseInstalled /**/
+#define SpecialUseInstalled -DUseInstalled
 #endif
 #endif
 
@@ -308,7 +308,7 @@
 #endif
 
 #ifndef SharedCCFlags
-#if HasSunOSSharedLibraries
+#if HasDynamicSharedLibraries
 #define SharedCCFlags -PIC
 #else
 #define SharedCCFlags /**/
@@ -380,7 +380,7 @@
 #endif
 
 #ifndef BackwardCompatibilityCCIncludes
-#ifdef UseInstalled
+#ifdef IVUseInstalled
 #define BackwardCompatibilityCCIncludes -I$(INCDIR)/IV-2_6
 #else
 #define BackwardCompatibilityCCIncludes -I$(INCSRC)/IV-2_6
@@ -388,7 +388,7 @@
 #endif
 
 #ifndef TopCCIncludes
-#ifdef UseInstalled
+#ifdef IVUseInstalled
 #define TopCCIncludes -I$(INCDIR)
 #else
 #define TopCCIncludes -I$(INCSRC)
@@ -428,6 +428,14 @@ BACKWARD_CCINCLUDES = /* defined when Use_2_6() is used in Imakefile */
 		      $(NONSHARED_CCLDFLAGS)
 #endif
 
+/*
+ * Flags that are specific to the link line to build a shared library.
+ * These should be defined in the platform-specific config file.
+ */
+#ifndef SharedCCLdFlags
+#define SharedCCLdFlags /**/
+#endif
+
 #ifndef NonSharedCCLdFlags
 #if defined(UseNonShared) && defined(InObjectCodeDir)
 #define NonSharedCCLdFlags -Bstatic
@@ -443,6 +451,7 @@ BACKWARD_CCINCLUDES = /* defined when Use_2_6() is used in Imakefile */
           CCLDFLAGS = CCLdFlags
        IV_CCLDFLAGS = IvCCLdFlags
 NONSHARED_CCLDFLAGS = NonSharedCCLdFlags
+   SHARED_CCLDFLAGS = SharedCCLdFlags
     EXTRA_CCLDFLAGS = ExtraCCLdFlags
 
 /*
@@ -463,7 +472,7 @@ NONSHARED_CCLDFLAGS = NonSharedCCLdFlags
 #endif
 
 #ifndef DepPath
-#if HasSunOSSharedLibraries || UseInstalled
+#if HasDynamicSharedLibraries || IVUseInstalled
 #define DepPath(name) /* as nothing */
 #else
 #define DepPath(name) Concat($(LIBSRC)/name/$(ARCH)/lib,name.a)
@@ -518,7 +527,7 @@ NONSHARED_CCLDFLAGS = NonSharedCCLdFlags
 #endif
 
 #ifndef LibDirPath
-#ifdef UseInstalled
+#ifdef IVUseInstalled
 #define LibDirPath -L$(LIBDIR)
 #else
 #define LibDirPath /* as nothing */
@@ -534,7 +543,7 @@ NONSHARED_CCLDFLAGS = NonSharedCCLdFlags
 #endif
 
 #ifndef AbsLibDirPath
-#if HasSunOSSharedLibraries && !defined(UseInstalled)
+#if HasDynamicSharedLibraries && !defined(IVUseInstalled)
 #define AbsLibDirPath -L$(ABSLIBDIR)
 #else
 #define AbsLibDirPath /* as nothing */
@@ -542,7 +551,7 @@ NONSHARED_CCLDFLAGS = NonSharedCCLdFlags
 #endif
 
 #ifndef LdPath
-#ifdef UseInstalled
+#ifdef IVUseInstalled
 #define LdPath(libname) Concat(-l,libname)
 #else
 #define LdPath(libname) -L$(LIBSRC)/libname/$(ARCH) Concat(-l,libname)
@@ -572,8 +581,17 @@ NONSHARED_CCLDFLAGS = NonSharedCCLdFlags
 #define ExtraCCLdLibs /**/
 #endif
 
+/*
+ * Libraries that should be linked into another shared library.
+ * These should be defined in the platform-specific config file.
+ */
+#ifndef SharedCCLdLibs
+#define SharedCCLdLibs /**/
+#endif
+
            CCLDLIBS = CCLdLibs
         IV_CCLDLIBS = IvCCLdLibs
+    SHARED_CCLDLIBS = SharedCCLdLibs
      EXTRA_CCLDLIBS = ExtraCCLdLibs
 
 /*
@@ -581,7 +599,7 @@ NONSHARED_CCLDFLAGS = NonSharedCCLdFlags
  */
 #ifndef InstallCmd
 #if SystemV || SystemV4
-#ifdef UseInstalled
+#ifdef IVUseInstalled
 #define InstallCmd bsdinst
 #else
 #define InstallCmd $(SHELL) $(SCRIPTSRC)/bsdinst.sh
@@ -670,7 +688,7 @@ NONSHARED_CCLDFLAGS = NonSharedCCLdFlags
 #endif
 
 #ifndef MkdirhierCmd
-#ifdef UseInstalled
+#ifdef IVUseInstalled
 #define MkdirhierCmd mkdirhier
 #else
 #define MkdirhierCmd $(SHELL) $(SCRIPTSRC)/mkdirhier.sh
@@ -731,7 +749,7 @@ NONSHARED_CCLDFLAGS = NonSharedCCLdFlags
 
                 TOP = TOPDIR
         CURRENT_DIR = CURDIR
-#ifndef UseInstalled
+#ifndef IVUseInstalled
               IVSRC = $(TOP)/src
              BINSRC = $(IVSRC)/bin
           CONFIGSRC = $(IVSRC)/config

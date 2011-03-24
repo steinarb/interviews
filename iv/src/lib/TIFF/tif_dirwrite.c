@@ -1,5 +1,5 @@
 #ifndef lint
-static char rcsid[] = "$Header: /usr/people/sam/tiff/libtiff/RCS/tif_dirwrite.c,v 1.16 92/03/18 09:36:15 sam Exp $";
+static char rcsid[] = "$Header: /usr/interviews/master/iv/src/lib/TIFF/RCS/tif_dirwrite.c,v 1.3 93/02/01 16:22:27 linton Exp $";
 #endif
 
 /*
@@ -110,7 +110,7 @@ TIFFWriteDirectory(tif)
 	short dircount, tag;
 	int nfields, dirsize;
 	char *data;
-	TIFFFieldInfo *fip;
+	const TIFFFieldInfo *fip;
 	TIFFDirEntry *dir;
 	TIFFDirectory *td;
 	u_long b, fields[sizeof (td->td_fieldsset) / sizeof (u_long)];
@@ -304,7 +304,7 @@ TIFFWriteDirectory(tif)
 			break;
 #endif
 		default:
-			if (!TIFFWriteNormalTag(tif, dir, fip))
+			if (!TIFFWriteNormalTag(tif, dir, (TIFFFieldInfo*)fip))
 				goto bad;
 			break;
 		}

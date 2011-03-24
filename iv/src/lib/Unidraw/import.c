@@ -264,7 +264,10 @@ GraphicComp* ImportCmd::Import (const char* filename) {
         } else if (strcmp(creator, "TIFF") == 0) {
             comp = TIFF_Image(filename);
 
-        } else if (strcmp(creator, "pgmtops") == 0) {
+        } else if (
+	    strcmp(creator, "pgmtops") == 0 ||
+	    strcmp(creator, "pnmtops") == 0
+	) {
             comp = PGM_Image(filename);
 
         } else if (strcmp(creator, "ppmtops") == 0) {
@@ -306,17 +309,37 @@ GraphicComp* ImportCmd::PGM_Image (const char* filename) {
         fgets(line, 1000, file);                    // { ... }
         fgets(line, 1000, file);                    // image
 
-        Raster* raster = new Raster(w, h);
+	if (d == 1) {
+	    Bitmap* bm = new Bitmap((void*)nil, w, h);
 
-        for (int row = h - 1; row >= 0; --row) {
-            for (int column = 0; column < w; ++column) {
-                int byte = gethex(file);
-                float g = float(byte) / 0xff;
-                raster->poke(column, row, g, g, g, 1.0);
-            }
-        }
-        raster->flush();
-        comp = new RasterComp(new RasterRect(raster), filename);
+	    for (int row = h - 1; row >= 0; --row) {
+		for (int column = 0; column < w; column += 8) {
+		    int byte = gethex(file);
+		    int bit = 0x80;
+		    int limit = column + 8;
+
+		    for (int pos = column; pos < limit; ++pos, bit >>= 1) {
+			boolean value = !(byte & bit);
+			bm->poke(value, pos, row);
+		    }
+		}
+	    }
+	    bm->flush();
+	    comp = new StencilComp(new UStencil(bm, bm, stdgraphic));
+
+	} else {
+	    Raster* raster = new Raster(w, h);
+
+	    for (int row = h - 1; row >= 0; --row) {
+		for (int column = 0; column < w; ++column) {
+		    int byte = gethex(file);
+		    float g = float(byte) / 0xff;
+		    raster->poke(column, row, g, g, g, 1.0);
+		}
+	    }
+	    raster->flush();
+	    comp = new RasterComp(new RasterRect(raster), filename);
+	}
     }
     fclose(file);
     return comp;
@@ -345,21 +368,42 @@ GraphicComp* ImportCmd::PPM_Image (const char* filename) {
         fgets(line, 1000, file);                    // false 3
         fgets(line, 1000, file);                    // colorimage
 
-        Raster* raster = new Raster(w, h);
+	if (d == 1) {
+	    Bitmap* bm = new Bitmap((void*)nil, w, h);
 
-        for (int row = h - 1; row >= 0; --row) {
-            for (int column = 0; column < w; ++column) {
-                int red = gethex(file);
-                int green = gethex(file);
-                int blue = gethex(file);
-                raster->poke(
-                    column, row,
-                    float(red)/0xff, float(green)/0xff, float(blue)/0xff, 1.0
-                );
-            }
-        }
-        raster->flush();
-        comp = new RasterComp(new RasterRect(raster), filename);
+	    for (int row = h - 1; row >= 0; --row) {
+		for (int column = 0; column < w; column += 8) {
+		    int byte = gethex(file);
+		    int bit = 0x80;
+		    int limit = column + 8;
+
+		    for (int pos = column; pos < limit; ++pos, bit >>= 1) {
+			boolean value = !(byte & bit);
+			bm->poke(value, pos, row);
+		    }
+		}
+	    }
+	    bm->flush();
+	    comp = new StencilComp(new UStencil(bm, bm, stdgraphic));
+
+	} else {
+	    Raster* raster = new Raster(w, h);
+
+	    for (int row = h - 1; row >= 0; --row) {
+		for (int column = 0; column < w; ++column) {
+		    int red = gethex(file);
+		    int green = gethex(file);
+		    int blue = gethex(file);
+		    raster->poke(
+			column, row,
+			float(red)/0xff, float(green)/0xff, float(blue)/0xff,
+			1.0
+		    );
+		}
+	    }
+	    raster->flush();
+	    comp = new RasterComp(new RasterRect(raster), filename);
+	}
     }
     
     if (compressed) {

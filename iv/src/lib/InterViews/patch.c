@@ -76,7 +76,6 @@ void Patch::allocate(Canvas* c, const Allocation& a, Extension& ext) {
 }
 
 void Patch::draw(Canvas* c, const Allocation& a) const {
-    const Extension& ext = extension_;
     if (c->damaged(extension_)) {
 	MonoGlyph::draw(c, a);
     }

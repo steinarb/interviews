@@ -385,6 +385,25 @@
 #define MacroFile InterViews/iv-convex.cf
 #endif /* __convex__ */
 
+#ifdef stratus
+#undef stratus
+#define StratusArchitecture
+#define ArchitectureName stratus
+#define architectureName stratus
+#define MacroIncludeFile <InterViews/iv-stratus.cf>
+#define MacroFile InterViews/iv-stratus.cf
+#endif
+
+#ifdef __alpha
+#undef ALPHA
+#undef alpha
+#define AlphaArchitecture
+#define ArchitectureName ALPHA
+#define architectureName alpha
+#define MacroIncludeFile <InterViews/iv-alpha.cf>
+#define MacroFile InterViews/iv-alpha.cf
+#endif /* __alpha */
+
 #ifndef ArchitectureName
 XCOMM WARNING: Imakefile not configured; guessing at definitions!!!
 XCOMM This might mean that BOOTSTRAPCFLAGS was not set when building imake.

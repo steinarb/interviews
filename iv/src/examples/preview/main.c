@@ -160,36 +160,58 @@ void DocumentView::add(
     const Font* f = kit.font();
     const Color* fg = kit.foreground();
     Glyph* g[256];
-    for (int i = 0; i < 256; i++) {
-	g[i] = new Character(i, f, fg);
+    for (int i = 0; i < 256; i++)
+    {
+	Resource::ref( g[i] = new Character(i, f, fg) );
     }
 
     Resource::unref(g['\n']);
-    g['\n'] = layout.discretionary(
-	PenaltyGood,
-	end_par_,
-	end_par_,
-	layout.discretionary(0, interline_, vfil_glue_, nil, nil),
-	begin_par_
+
+    Resource::ref( g['\n'] =
+	layout.discretionary(
+	    PenaltyGood,
+	    end_par_,
+	    end_par_,
+	    layout.discretionary(0,
+		interline_,
+		vfil_glue_,
+		nil,
+		nil
+	    ),
+	    begin_par_
+	)
     );
 
     Resource::unref(g[' ']);
-    g[' '] = layout.discretionary(
-	0,
-	word_space_,
-	end_line_,
-	layout.discretionary(0, interline_, vfil_glue_, nil, nil),
-	begin_line_
+
+    Resource::ref(
+	g[' '] = layout.discretionary(
+	    0,
+	    word_space_,
+	    end_line_,
+	    layout.discretionary(0,
+		interline_,
+		vfil_glue_,
+		nil,
+		nil
+	    ),
+	    begin_line_
+	)
     );
 
     Resource::unref(g['\t']);
+
     // g['\t'] = layout.shape_of(g['M']);
-    g['\t'] = new Label("        ", f, fg);
+    Resource::ref( g['\t'] = new Label("        ", f, fg) );
 
     page_->append(begin_par_);
     for (; p < end; p++) {
 	page_->append(g[*((unsigned char*)p)]);
     }
+
+    for (int ii=0; i<256; i++) {
+	Resource::unref( g[ii] );
+    };
 }
 
 Adjustable* DocumentView::adjustable() const {

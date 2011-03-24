@@ -65,7 +65,7 @@ static PropertyData kit_props[] = {
     { "*ScrollBar*minimumThumbSize", "28.0" },
     { "*ScrollBar*thumbRidges", "3" },
     { "*Slider*thumbRidges", "1" },
-    nil
+    { nil }
 };
 
 #define button_border 4

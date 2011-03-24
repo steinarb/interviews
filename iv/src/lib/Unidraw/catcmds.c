@@ -41,6 +41,7 @@
 #include <InterViews/style.h>
 #include <InterViews/window.h>
 #include <OS/string.h>
+#include <OS/types.h>
 
 #include <osfcn.h>
 #include <stdio.h>

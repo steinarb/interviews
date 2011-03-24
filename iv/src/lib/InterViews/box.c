@@ -220,7 +220,7 @@ void BoxImpl::request() {
     }
     layout_->request(count, r, requisition_);
     requested_ = true;
-    delete r;
+    delete [] r;
 }
 
 AllocationInfo& BoxImpl::info(Canvas* c, const Allocation& a, Extension& ext) {
@@ -278,7 +278,7 @@ void BoxImpl::full_allocate(AllocationInfo& info) {
         }
     }
     layout_->allocate(info.allocation(), n, r, a);
-    delete r;
+    delete [] r;
 
     Extension& box = info.extension();
     Extension child;

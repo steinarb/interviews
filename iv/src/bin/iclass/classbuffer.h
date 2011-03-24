@@ -27,10 +27,11 @@
 #ifndef classbuffer_h
 #define classbuffer_h
 
-#include <InterViews/defs.h>
-
-#include <sys/types.h>
+#include <OS/types.h>
 #include <sys/stat.h>
+#include <OS/leave-scope.h>
+
+#include <InterViews/defs.h>
 
 class Classes;
 class ClassInfo;

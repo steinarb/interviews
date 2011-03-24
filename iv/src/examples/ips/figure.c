@@ -51,8 +51,8 @@ Figure::~Figure () {
     Resource::unref(_brush);
     Resource::unref(_stroke);
     Resource::unref(_fill);
-    delete _x;
-    delete _y;
+    delete [] _x;
+    delete [] _y;
 }
 
 void Figure::add_point(Coord x, Coord y) {

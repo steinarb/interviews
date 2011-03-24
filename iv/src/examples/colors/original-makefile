@@ -1,0 +1,21 @@
+LIB = /local/iv/installed/lib/SUN4/libIV.so.3.1 -lXext -lX11 
+INCDIR =  -I/local/iv/installed/include
+CC=/usr/lang/CC
+default: colorChooser  runProgram
+
+runProgram:
+	colorChooser /local/X11R5/lib/X11/rgb.txt -geometry +600+200 &
+#     colorChooser  /usr/lib/X11/rgb.txt
+#     colorChooser  /local/X11R5/lib/X11/rgb.txt
+#     colorChooser  $OPENWINHOME/lib/rgb.txt
+
+colorChooser: colorChooser.o  rgbNames.o
+	$(CC) colorChooser.o rgbNames.o $(LIB) -o colorChooser
+
+colorChooser.o: colorChooser.c
+	$(CC) -c $(INCDIR) colorChooser.c
+
+rgbNames.o: rgbNames.c
+	$(CC) -c $(INCDIR) rgbNames.c
+
+

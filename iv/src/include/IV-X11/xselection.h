@@ -32,6 +32,9 @@ class PopupWindow;
 
 class SelectionManagerRep {
 public:
+#ifdef _DELTA_EXTENSIONS
+#pragma __static_class
+#endif
     XDisplay* xdisplay_;
     String* name_;
     XSelectionRequestEvent x_req_;

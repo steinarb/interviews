@@ -24,7 +24,7 @@ if ($1 == "-m") then
     echo " " >> $imakefile
 
     echo "SPECIAL_IMAKEFLAGS = \" >> $imakefile
-    echo "    -f $imakefile -s $makefile -DUseInstalled -DTurnOptimizingOn=0" \
+    echo "    -f $imakefile -s $makefile -DIVUseInstalled -DTurnOptimizingOn=0" \
 	 >> $imakefile
     echo " " >> $imakefile
     echo "CCSUFFIX = $ccsuffix" >> $imakefile
@@ -57,5 +57,5 @@ else
     set imakefile = $1-imake
     set makefile = $1-make
     imake CONFIGDIRSPEC \
-	-f $imakefile -s $makefile -DUseInstalled -DTurnOptimizingOn=0
+	-f $imakefile -s $makefile -DIVUseInstalled -DTurnOptimizingOn=0
 endif

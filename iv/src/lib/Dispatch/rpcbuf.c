@@ -26,6 +26,7 @@
 #include <OS/memory.h>
 #include <OS/types.h>	/* must come before <netinet/in.h> on some systems */
 #include <arpa/inet.h>
+#include "netinet_in.h"
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -33,7 +34,6 @@
 #ifndef __DECCXX
 #include <osfcn.h>
 #endif
-#include "netinet_in.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/socket.h>
@@ -163,12 +163,7 @@ rpcbuf* rpcbuf::connect(const char* host, int port) {
     const unsigned long INVALIDADDR = (unsigned long) -1;
     unsigned long hostinetaddr = INVALIDADDR;
     if (isascii(host[0]) && isdigit(host[0])) {
-#ifdef AIXV3
-	/* cast work-around for AIX */
-	hostinetaddr = inet_addr((const int*)host);
-#else
 	hostinetaddr = inet_addr(host);
-#endif
 	name.sin_addr.s_addr = hostinetaddr;
     }
     if (hostinetaddr == INVALIDADDR) {

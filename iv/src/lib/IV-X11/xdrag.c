@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1992 Redwood Design Automation
+ * Copyright (c) 1992,1993 Redwood Design Automation
  *
  * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
@@ -127,12 +127,11 @@ static void setDragProperty(
 ) {
     Atom property = None;
     if (length != 0) {
-	ostrstream name;
+	char buffer[256];
+	ostrstream name(buffer, 256);
 	name << dragName << "_" << Host::name() << "_" << getpid() << "_"  <<
 	    dropUid++ << ends;
-	char* buffer = name.str();
-	property = XInternAtom(display, buffer, False);
-	delete buffer;
+	property = XInternAtom(display, name.str(), False);
 
 	XChangeProperty(
 	    display, destination, property, XA_STRING, 8,
@@ -240,7 +239,7 @@ static XWindow translate(
 	XGetWindowAttributes(display, children[i], &attributes);
 	if (attributes.map_state == IsViewable &&
 	    attributes.x <= x && attributes.x + attributes.width >= x &&
-	    attributes.y <= y && attributes.y + attributes.width >= y
+	    attributes.y <= y && attributes.y + attributes.height >= y
 	) {
 	    break;
 	}
@@ -664,8 +663,10 @@ boolean DragRep::event(Event& event) {
     dragEvent.display(disp);
     if (
 	XGrabPointer(
-	    display, window, False, (unsigned int) (ButtonMotionMask |
-	    ButtonPressMask | ButtonReleaseMask), GrabModeAsync, GrabModeAsync,
+	    display, window, False,
+	    (unsigned int) (
+		ButtonMotionMask | ButtonPressMask | ButtonReleaseMask
+	    ), GrabModeAsync, GrabModeAsync,
 	    None, cursor, CurrentTime
 	) != GrabSuccess
     ) {
@@ -797,6 +798,8 @@ public:
     boolean sensitive_ : 1;
     boolean grabbing_ : 1;
     Handler* target_;
+    Canvas* canvas_;
+    Allocation allocation_;
     Extension extension_;
 };
 
@@ -836,13 +839,15 @@ void DragZone::leave(Event&) { }
 
 void DragZone::allocate(Canvas* c, const Allocation& a, Extension& ext) {
     MonoGlyph::allocate(c, a, ext);
+    rep_->canvas_ = c;
+    rep_->allocation_ = a;
     rep_->extension_ = ext;
 }
 
 void DragZone::pick(Canvas* c, const Allocation& a, int depth, Hit& hit) {
     const Event* event = hit.event();
     if (event != nil && hit.left() <= a.right() &&
-	hit.right() >= a.left() && hit.bottom() <= hit.top() &&
+	hit.right() >= a.left() && hit.bottom() <= a.top() &&
 	hit.top() >= a.bottom() && rep_->caught(*event)
     ) {
 	hit.target(depth, this, 0, rep_->target_);
@@ -879,8 +884,20 @@ boolean DragZoneRep::caught(const Event& event) const {
 }
 
 boolean DragZoneRep::event(Event& event) {
-    XEvent& xevent = event.rep()->xevent_;
+    Glyph* glyph = dragZone_->body();
+    Hit hit(&event);
+    glyph->pick(canvas_, allocation_, 0, hit);
+    Handler* handler = hit.handler();
+    if (handler != nil && handler != target_) {
+	// event wasn't for us; ungrab and deliver event.
+	dragZone_->leave(event);
+	event.ungrab(target_);
+	grabbing_ = false;
+	event.handle();
+	return true;
+    }
 
+    XEvent& xevent = event.rep()->xevent_;
     if (dragAtoms.enter(event)) {
 	if (!grabbing_) {
 	    event.grab(target_);

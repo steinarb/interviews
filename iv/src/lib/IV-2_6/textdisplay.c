@@ -27,6 +27,7 @@
  */
 
 #include <InterViews/font.h>
+#include <IV-2_6/InterViews/interactor.h>
 #include <IV-2_6/InterViews/painter.h>
 #include <IV-2_6/InterViews/shape.h>
 #include <IV-2_6/InterViews/textdisplay.h>
@@ -103,41 +104,45 @@ void TextDisplay::Scroll (int line, IntCoord x, IntCoord y) {
         line += 1;
         y -= lineheight;
     }
+    int xshift = x - Left(line, 0);
+    x0 += xshift;
     int yshift = y - Top(line);
     y0 += yshift;
     topline = line;
     bottomline = line + (y - ymin + 1) / lineheight - 1;
-    if (canvas != nil && yshift > 0) {
-        painter->Copy(
-            canvas, xmin, ymin, xmax, ymax-yshift, canvas, xmin, ymin+yshift
-        );
-        IntCoord top = Top(topline);
-        if (top < ymax) {
-            Redraw(xmin, top+1, xmax, ymax);
-        }
-        Redraw(xmin, ymin, xmax, ymin+yshift-1);
-    } else if (canvas != nil && yshift < 0) {
-        painter->Copy(
-            canvas, xmin, ymin-yshift, xmax, ymax, canvas, xmin, ymin
-        );
-        IntCoord bottom = Base(bottomline);
-        if (bottom > ymin) {
-            Redraw(xmin, ymin, xmax, bottom-1);
-        }
-        Redraw(xmin, ymax+yshift+1, xmax, ymax);
-    }
-    int xshift = x - Left(line, 0);
-    x0 += xshift;
-    if (canvas != nil && xshift > 0) {
-        painter->Copy(
-            canvas, xmin, ymin, xmax-xshift, ymax, canvas, xmin+xshift, ymin
-        );
-        Redraw(xmin, ymin, xmin+xshift-1, ymax);
-    } else if (canvas != nil && xshift < 0) {
-        painter->Copy(
-            canvas, xmin-xshift, ymin, xmax, ymax, canvas, xmin, ymin
-        );
-        Redraw(xmax+xshift+1, ymin, xmax, ymax);
+    if (Interactor::ValidCanvas(canvas)) {
+	if (yshift > 0) {
+	    painter->Copy(
+		canvas, xmin, ymin, xmax, ymax - yshift,
+		canvas, xmin, ymin + yshift
+	    );
+	    IntCoord top = Top(topline);
+	    if (top < ymax) {
+		Redraw(xmin, top+1, xmax, ymax);
+	    }
+	    Redraw(xmin, ymin, xmax, ymin+yshift-1);
+	} else if (yshift < 0) {
+	    painter->Copy(
+		canvas, xmin, ymin - yshift, xmax, ymax, canvas, xmin, ymin
+	    );
+	    IntCoord bottom = Base(bottomline);
+	    if (bottom > ymin) {
+		Redraw(xmin, ymin, xmax, bottom-1);
+	    }
+	    Redraw(xmin, ymax + yshift + 1, xmax, ymax);
+	}
+	if (xshift > 0) {
+	    painter->Copy(
+		canvas, xmin, ymin, xmax - xshift, ymax,
+		canvas, xmin + xshift, ymin
+	    );
+	    Redraw(xmin, ymin, xmin+xshift-1, ymax);
+	} else if (xshift < 0) {
+	    painter->Copy(
+		canvas, xmin - xshift, ymin, xmax, ymax, canvas, xmin, ymin
+	    );
+	    Redraw(xmax + xshift + 1, ymin, xmax, ymax);
+	}
     }
 }
     
@@ -170,7 +175,7 @@ void TextDisplay::Bounds (IntCoord& xn, IntCoord& yn, IntCoord& xx, IntCoord& yx
 }
 
 void TextDisplay::Redraw (IntCoord l, IntCoord b, IntCoord r, IntCoord t) {
-    if (canvas != nil) {
+    if (Interactor::ValidCanvas(canvas)) {
         int first = LineNumber(t);
         int last = LineNumber(b);
         for (int i = first; i <= last; ++i) {
@@ -447,14 +452,18 @@ void TextDisplay::Caret (int line, int index) {
 }
 
 void TextDisplay::HideCaret () {
-    if (canvas != nil && caretline >= topline && caretline <= bottomline) {
+    if (Interactor::ValidCanvas(canvas) &&
+	caretline >= topline && caretline <= bottomline
+    ) {
         TextLine* l = Line(caretline, true);
         l->Draw(this, caretline, caretindex-1, caretindex);
     }
 }
 
 void TextDisplay::ShowCaret () {
-    if (canvas != nil && caretline >= topline && caretline <= bottomline) {
+    if (Interactor::ValidCanvas(canvas) &&
+	caretline >= topline && caretline <= bottomline
+    ) {
         IntCoord l = Left(caretline, caretindex);
         IntCoord r = Right(caretline, caretindex);
         IntCoord b = Base(caretline);

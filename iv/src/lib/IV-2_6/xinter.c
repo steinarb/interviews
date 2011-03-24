@@ -52,6 +52,17 @@
 #include <IV-X11/xwindow.h>
 #include <OS/math.h>
 
+boolean Interactor::ValidCanvas(Canvas* c) {
+    boolean b = false;
+    if (c != nil) {
+	Window* w = c->window();
+	if (w != nil) {
+	    b = w->bound();
+	}
+    }
+    return b;
+}
+
 void Interactor::request(Requisition& r) const {
     if (output == nil) {
 	Interactor* i = (Interactor*)this;
@@ -729,13 +740,13 @@ void Scene::Place(
     InteractorWindow* iw = i->window;
     XDisplay* dpy = d->rep()->display_;
     XWindow old_xwindow;
-    if (iw == nil) {
+    if (iw != nil && iw->bound()) {
+	old_xwindow = iw->Window::rep()->xwindow_;
+    } else {
 	old_xwindow = WindowRep::unbound;
 	iw = new InteractorWindow(i, canvas->window());
 	i->window = iw;
 	i->canvas = iw->canvas();
-    } else if (iw->bound()) {
-	old_xwindow = iw->Window::rep()->xwindow_;
     }
     iw->display(d);
     iw->style(i->style);
