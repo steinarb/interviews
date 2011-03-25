@@ -31,11 +31,17 @@
 
 #include <IV-2_6/_enter.h>
 
+class MultiLineObj;
+
+//: ellipse graphic
+// <a href=../man3.1/ellipses.html>man page</a>
 class Ellipse : public Graphic {
 public:
     void GetOriginal(Coord&, Coord&, int&, int&);
-protected:
+    void SetOriginal(Coord, Coord, int, int);
     Ellipse(Coord x0, Coord y0, int r1, int r2, Graphic* gr = nil);
+    MultiLineObj* ellipse_to_polygon(Transformer* t = nil);
+protected:
 
     void s_getExtent(float&, float&, float&, float&, float&, Graphic*);
     void f_getExtent(float&, float&, float&, float&, float&, Graphic*);
@@ -44,14 +50,17 @@ protected:
     boolean f_contains(PointObj&, Graphic*);
     boolean s_intersects(BoxObj&, Graphic*);
     boolean f_intersects(BoxObj&, Graphic*);
+
 protected:
     Coord _x0, _y0;
     int _r1, _r2;
     static Coord _x[8], _y[8];
-private:
+protected:
     void CalcControlPts(Transformer*);
 };
 
+//: stroked ellipse graphic
+// <a href=../man3.1/ellipses.html>man page</a>
 class S_Ellipse : public Ellipse {
 public:
     S_Ellipse(Coord x0, Coord y0, int r1, int r2, Graphic* gr = nil);
@@ -66,10 +75,12 @@ protected:
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
     virtual void draw(Canvas*, Graphic*);
-private:
+protected:
     PSBrush* _br;
 };
 
+//: filled ellipse graphic
+// <a href=../man3.1/ellipses.html>man page</a>
 class F_Ellipse : public Ellipse {
 public:
     F_Ellipse(Coord x0, Coord y0, int r1, int r2, Graphic* gr = nil);
@@ -84,10 +95,12 @@ protected:
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
     virtual void draw(Canvas*, Graphic*);
-private:
+protected:
     PSPattern* _pat;
 };
 
+//: stroke-filled ellipse graphic
+// <a href=../man3.1/ellipses.html>man page</a>
 class SF_Ellipse : public Ellipse {
 public:
     SF_Ellipse(Coord x0, Coord y0, int r1, int r2, Graphic* gr = nil);
@@ -99,16 +112,19 @@ public:
     virtual PSPattern* GetPattern();
 
     virtual Graphic* Copy();
+    virtual ClassId CompId();
 protected:
     virtual void getExtent(float&, float&, float&, float&, float&, Graphic*);
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
     virtual void draw(Canvas*, Graphic*);
-private:
+protected:
     PSBrush* _br;
     PSPattern* _pat;
 };
 
+//: stroked circle graphic
+// <a href=../man3.1/ellipses.html>man page</a>
 class S_Circle : public S_Ellipse {
 public:
     S_Circle(Coord x0, Coord y0, int radius, Graphic* gr = nil);
@@ -116,6 +132,8 @@ public:
     virtual Graphic* Copy();
 };
 
+//: filled circle graphic
+// <a href=../man3.1/ellipses.html>man page</a>
 class F_Circle : public F_Ellipse {
 public:
     F_Circle(Coord x0, Coord y0, int radius, Graphic* gr = nil);
@@ -123,6 +141,8 @@ public:
     virtual Graphic* Copy();
 };
 
+//: stroked-filled circle graphic
+// <a href=../man3.1/ellipses.html>man page</a>
 class SF_Circle : public SF_Ellipse {
 public:
     SF_Circle(Coord x0, Coord y0, int radius, Graphic* gr = nil);

@@ -40,6 +40,8 @@ class CSolverState;
 class istream;
 class ostream;
 
+//: connector constraint solver
+// <a href=../man3.1/CSolver.html>man page</a>
 class CSolver {
 public:
     CSolver();
@@ -56,7 +58,7 @@ public:
     
     void Read(istream&);
     void Write(ostream&);
-private:
+protected:
     friend class Connector;
     void Wrote(Connector*);
 
@@ -126,7 +128,7 @@ private:
     void ReplacePseudoFixedInfo(CNet*, Orientation);
 
     void DefaultPosition(CNet*);
-private:
+protected:
     UList* _hnets, *_vnets;
     CCnxn_HashTable* _hwritten, *_vwritten;
 };
@@ -134,14 +136,14 @@ private:
 class CSolverState {
 public:
     ~CSolverState();
-private:
+protected:
     friend class CSolver;
     CSolverState(CCnxn* = nil, Orientation = Horizontal);
 
     CSolverState* First();
     CSolverState* Next();
     void Append(CSolverState*);
-private:
+protected:
     CCnxn* _cnxn;
     Orientation _orient;
     CSolverState* _next;

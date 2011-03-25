@@ -34,6 +34,10 @@ class GraphicView;
 class GVU_HashTable;
 class Iterator;
 
+//: GraphicView updater
+// class for reconciling a GraphicView's state and structure 
+// with its subject's.
+// <p><a href=../man3.1/GVUpdater.html>man page</a>
 class GVUpdater {
 public:
     GVUpdater(GraphicView*);
@@ -55,7 +59,7 @@ protected:
     virtual ClassId ViewCategory();
 protected:
     GraphicView* _gv;
-private:
+protected:
     void RegisterSubjects(GVU_HashTable*);
     void InitViews(GVU_HashTable*);
     void RearrangeViews(GVU_HashTable*);

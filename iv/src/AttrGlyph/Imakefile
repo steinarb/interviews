@@ -1,0 +1,26 @@
+XCOMM
+XCOMM AttrGlyph - InterViews-3.1-derived glyphs for Attribute editing
+XCOMM
+
+PACKAGE = AttrGlyph
+
+#ifdef InObjectCodeDir
+
+LIB = AttrGlyph
+
+Use_libInterViews()
+
+MakeLibrary($(LIB),$(VERSION))
+
+#define Obj(file,flags) MakeObjectFromSrcFlags(file,flags)
+
+Obj(attredit,-DLibStdCPlusPlus=$(LIBSTDCPLUSPLUS))
+
+IncludeDependencies()
+
+#else
+
+MakeInObjectCodeDir()
+InstallIncludes($(PACKAGE))
+
+#endif

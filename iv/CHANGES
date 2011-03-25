@@ -1,0 +1,39 @@
+Jan 10th 2000 ivtools-0.9.1
+
+Correct 0.9 oversights:
+
+- restore GPL dual licensing documentation in COPYRIGHT, COPYING, and
+MANIFEST.
+
+- correctly set version number to 0.9.1
+
+December 19th 2000 ivtools-0.9
+
+- fix segfault in new comdraw addtool command when the supplied
+pathname is non-existent.
+
+- allow for using new symbols (those with a nil value) in the various
+assignment operators of comterp, i.e. x++ or x+=1 work if x was
+undefined.
+
+- make ivtools available under the GPL as well as the original X11
+style license.
+
+- changes type of third argument to accept() from an unportable
+(unsigned int*) to a more correct (socklent_t *) (in
+src/utils/sockets.cc).  First done by Guenter Geiger in his
+Debianization of ivtools-0.8.3
+
+- partial build (up to glyphterp and comterp) on SunOS 4.1.4 with
+gcc-2.4.5.  After that I ran into static initialization (even though
+using collect2) and multiple-inheritance problems that made it no
+longer worth it.
+
+- patches for building with libace5.0 under Debian 2.3 (woody).
+
+- fix up the construction of symbolic links for Unidraw-common done by
+the configure script.
+
+- revises and extends the comterp pause, trace, and step commands.
+
+

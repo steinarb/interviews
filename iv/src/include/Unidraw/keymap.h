@@ -31,6 +31,8 @@
 
 class UControl;
 
+//: maintains a keycode-to-UControl mapping
+// <a href=../man3.1/KeyMap.html>man page</a>
 class KeyMap {
 public:
     KeyMap();
@@ -41,11 +43,11 @@ public:
     void Unregister(UControl*);
     void Unregister(KeyMap*);
     void Execute(const char* keyCode);
-private:
+protected:
     KeyMap(UControl*);
     KeyMap(KeyMap*);
     void Init();
-private:
+protected:
     KeyMap* _next;
     KeyMap* _submap;
     UControl* _ctrl;

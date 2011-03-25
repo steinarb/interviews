@@ -35,6 +35,8 @@
 
 class SlotGraphic;
 
+//: slot component
+// <a href=../man3.1/SlotComp.html>man page</a>
 class SlotComp : public Connector {
 public:
     virtual void Interpret(Command*);
@@ -101,7 +103,7 @@ protected:
 protected:
     Coord _x, _y, _length;
     PSBrush* _br;
-private:
+protected:
     friend class SlotComp;
     void SetOrientation(Orientation);
 };

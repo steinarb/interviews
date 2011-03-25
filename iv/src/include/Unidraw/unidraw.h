@@ -42,6 +42,8 @@ class PropertyData;
 class UList;
 class World;
 
+//: singleton for coordinating and controlling a Unidraw application.
+// <a href=../man3.1/Unidraw.html>man page</a>
 class Unidraw {
 public:
     Unidraw(
@@ -75,7 +77,7 @@ public:
     void SetHistoryLength(int);
     int GetHistoryLength();
 
-    void Log(Command*);
+    virtual void Log(Command*);
     void Undo(Component*, int = 1);
     void Redo(Component*, int = 1);
     void ClearHistory(Component* = nil);
@@ -93,12 +95,13 @@ protected:
 
     UList* elem(Iterator);
     Command* command(UList*);
+public:
     boolean alive();
     boolean updated();
 
     void alive(boolean);
     void updated(boolean);
-private:
+protected:
     void Init(Catalog*, World*);
     void InitAttributes();
     void DeleteComponent(Component*);
@@ -106,7 +109,7 @@ private:
     Editor* editor(UList*);
     Editor* FindAny(Component*, UList*);
     Editor* FindAnyDead(Component*);
-private:
+protected:
     Catalog* _catalog;
     World* _world;
     UList* _editors;

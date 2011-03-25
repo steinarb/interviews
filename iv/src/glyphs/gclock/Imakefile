@@ -1,0 +1,29 @@
+XCOMM
+XCOMM gclock - TimeGlyph demo program
+XCOMM
+XCOMM
+
+PACKAGE = gclock
+
+CLIPPOLY_CCLDLIBS =
+
+#ifdef InObjectCodeDir
+
+APP_CCLDLIBS = $(LIBTIME) $(LIBIVGLYPH)
+#if HasDynamicSharedLibraries
+APP_CCDEPLIBS =  $(DEPTIME) $(DEPIVGLYPH)
+#endif
+
+Use_libInterViews()
+
+ComplexProgramTarget(gclock)
+
+MakeObjectFromSrcFlags(main,)
+
+IncludeDependencies()
+
+#else
+
+MakeInObjectCodeDir()
+
+#endif

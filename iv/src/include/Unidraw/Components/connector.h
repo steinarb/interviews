@@ -37,6 +37,8 @@ class CSolverInfo;
 class Path;
 class StateVar;
 
+//:  for defining and maintaining connectivity between components.
+// <a href=../man3.1/Connector.html>man page</a>
 class Connector : public GraphicComp {
 public:
     virtual ~Connector();
@@ -74,7 +76,7 @@ protected:
     UList* _cnxns;                             /* list of connections */
     StateVar* _stateVar;
     TransMethod _transMethod;
-private:
+protected:
     friend class CSolver;
     CSolverInfo* _csinfo;
 };

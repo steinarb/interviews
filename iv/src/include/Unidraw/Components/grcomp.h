@@ -46,6 +46,8 @@ class Picture;
 class Raster;
 class Transformer;
 
+//: base classes for graphical component subjects.
+// <a href=../man3.1/GraphicComp.html>man page</a>
 class GraphicComp : public Component {
 public:
     virtual ~GraphicComp();
@@ -72,11 +74,12 @@ public:
 
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
+
+    virtual void SetGraphic(Graphic*);
 protected:
     GraphicComp(Graphic* = nil);
 
     virtual GraphicComp* GetGraphicComp(Graphic*);
-    virtual void SetGraphic(Graphic*);
 
     void Skip(istream&);
     void Mark(ostream&);

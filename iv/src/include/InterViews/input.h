@@ -67,6 +67,7 @@ public:
     virtual void release(const Event&);
     virtual void keystroke(const Event&);
     virtual void double_click(const Event&);
+    virtual void selection_notify(const Event&);
 
     virtual InputHandler* focus_in();
     virtual void focus_out();

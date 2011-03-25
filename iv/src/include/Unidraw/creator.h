@@ -39,6 +39,8 @@
 class ObjectMap;
 class istream;
 
+//: component factory class
+// <a href=../man3.1/Creator.html>man page</a>
 class Creator {
 public:
     Creator();
@@ -47,6 +49,12 @@ public:
         ClassId, istream&, ObjectMap* = nil, int = 0
     );
     virtual void* Create(ClassId);              // for views
+
+    static Creator* instance();
+    static void instance(Creator*);
+
+protected:
+    static Creator* _instance;
 };
 
 #endif

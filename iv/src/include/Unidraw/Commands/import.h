@@ -34,6 +34,8 @@
 
 class FileChooser;
 
+//: command for importing graphical objects
+// <a href=../man3.1/ImportCmd.html>man page</a>
 class ImportCmd : public Command {
 public:
     ImportCmd(ControlInfo*, FileChooser* = nil);
@@ -53,7 +55,7 @@ public:
     static GraphicComp* PGM_Image(const char*);
     static GraphicComp* PPM_Image(const char*);
     static GraphicComp* XBitmap_Image(const char*);
-private:
+protected:
     FileChooser* chooser_;
 
     void Init(FileChooser*);

@@ -32,6 +32,7 @@
 #include <InterViews/enter-scope.h>
 
 typedef float _lib_iv(Coord);
+typedef float _lib_iv(FloatCoord);
 typedef int _lib_iv(IntCoord);
 typedef int _lib_iv(PixelCoord);
 
@@ -46,7 +47,19 @@ typedef int _lib_iv(PixelCoord);
  */
 typedef int _lib_iv2_6(Coord);
 
+#ifndef PDP_PLUS_PLUS
 extern double inch, inches, cm, mm, point, points;
 static const int pixels = 1;
+#define ivinch inch
+#define ivinches inches
+#define ivcm cm
+#define ivmm mm
+#define ivpoint point
+#define ivpoints points
+#define ivpixels pixels
+#else
+extern double ivinch, ivinches, ivcm, ivmm, ivpoint, ivpoints;
+static const int ivpixels = 1;
+#endif
 
 #endif

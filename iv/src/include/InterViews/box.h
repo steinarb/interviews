@@ -36,6 +36,8 @@
 class BoxImpl;
 class Layout;
 
+//: box glyph base class
+// <a href=../refman3.1/refman.html#PAGE61>in reference manual</a>
 class Box : public PolyGlyph {
 public:
     Box(Layout* layout, GlyphIndex size);

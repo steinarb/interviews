@@ -34,6 +34,7 @@
 #include <InterViews/_enter.h>
 
 class Display;
+class Event;
 class EventRep;
 class Interactor;
 class Handler;
@@ -42,6 +43,7 @@ class World;
 
 typedef unsigned int EventType;
 typedef unsigned int EventButton;
+typedef void (*event_tracker_ptr)(Event&);
 
 /* anachronism */
 enum {
@@ -60,9 +62,11 @@ static const int LEFTMOUSE = 0;
 static const int MIDDLEMOUSE = 1;
 static const int RIGHTMOUSE = 2;
 
+//: user input events.
+// <a href=../refman3.1/refman.html#PAGE23>in reference manual</a>.
 class Event {
 public:
-    enum { undefined, motion, down, up, key, other_event };
+    enum { undefined, motion, down, up, key, selection_notify, other_event };
     enum { none, any, left, middle, right, other_button };
 
     Event();
@@ -110,6 +114,11 @@ public:
     virtual unsigned int mapkey(char*, unsigned int len) const;
 
     EventRep* rep() const;
+
+    static event_tracker_ptr event_tracker() { return _event_tracker; }
+    static void event_tracker(event_tracker_ptr ptr) { _event_tracker = ptr; }
+protected:
+    static event_tracker_ptr _event_tracker;
 private:
     EventRep* rep_;
     char free_store_[200];

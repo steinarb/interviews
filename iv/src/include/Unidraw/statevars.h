@@ -35,6 +35,8 @@ class PSColor;
 class PSPattern;
 class PSFont;
 
+//: name state variable
+// <a href=../man3.1/statevars.html>man page</a>
 class NameVar : public StateVar {
 public:
     NameVar(const char* = nil);
@@ -53,6 +55,8 @@ private:
     char* _name;
 };
 
+//: component name state variable
+// <a href=../man3.1/statevars.html>man page</a>
 class CompNameVar : public NameVar {
 public:
     CompNameVar(Component* = nil);
@@ -69,12 +73,14 @@ public:
     virtual void Write(ostream&);
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-private:
+protected:
     const char* CatalogName(Component*);
-private:
+protected:
     Component* _comp;
 };
 
+//: modified-status state variable
+// <a href=../man3.1/statevars.html>man page</a>
 class ModifStatusVar : public StateVar {
 public:
     ModifStatusVar(Component* = nil, boolean = false);
@@ -94,12 +100,14 @@ public:
     virtual boolean IsA(ClassId);
 protected:
     void modified(int);
-private:
+protected:
     int _modified;
     Component* _component;
     static class UList* _vars;
 };
 
+//: magnify factor state variable
+// <a href=../man3.1/statevars.html>man page</a>
 class MagnifVar : public StateVar {
 public:
     MagnifVar(float = 1);
@@ -114,10 +122,12 @@ public:
     virtual void Write(ostream&);
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-private:
+protected:
     float _magnif;
 };
 
+//: gravity-enabled state variable
+// <a href=../man3.1/statevars.html>man page</a>
 class GravityVar : public StateVar {
 public:
     GravityVar(boolean = false);
@@ -132,10 +142,12 @@ public:
     virtual void Write(ostream&);
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-private:
+protected:
     int _active;
 };
 
+//: current font state variable
+// <a href=../man3.1/statevars.html>man page</a>
 class FontVar : public StateVar {
 public:
     FontVar(PSFont* = nil);
@@ -151,10 +163,12 @@ public:
     virtual void Write(ostream&);
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-private:
+protected:
     PSFont* _psfont;
 };
 
+//: current brush state variable
+// <a href=../man3.1/statevars.html>man page</a>
 class BrushVar : public StateVar {
 public:
     BrushVar(PSBrush* = nil);
@@ -170,10 +184,12 @@ public:
     virtual void Write(ostream&);
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-private:
+protected:
     PSBrush* _psbrush;
 };
 
+//: current pattern state variable
+// <a href=../man3.1/statevars.html>man page</a>
 class PatternVar : public StateVar {
 public:
     PatternVar(PSPattern* = nil);
@@ -189,10 +205,12 @@ public:
     virtual void Write(ostream&);
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-private:
+protected:
     PSPattern* _pspattern;
 };
 
+//: current color state variable
+// <a href=../man3.1/statevars.html>man page</a>
 class ColorVar : public StateVar {
 public:
     ColorVar(PSColor* fg = nil, PSColor* bg = nil);
@@ -209,7 +227,7 @@ public:
     virtual void Write(ostream&);
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-private:
+protected:
     PSColor* _psfgcolor, *_psbgcolor;
 };
 

@@ -138,6 +138,8 @@ private:
 #endif
 };
 
+//: actual size a glyph is given.
+// <a href=../refman3.1/refman.html#PAGE18>in reference manual</a>.
 class Allocation {
 public:
     Allocation();
@@ -171,6 +173,8 @@ private:
 
 class Canvas;
 
+//: area where a glyph actually draws after all.
+// <a href=../refman3.1/refman.html#PAGE18>in reference manual</a>.
 class Extension {
 public:
     Extension();

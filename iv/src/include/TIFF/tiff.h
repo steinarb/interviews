@@ -1,5 +1,3 @@
-/* $Header: /usr/people/sam/tiff/libtiff/RCS/tiff.h,v 1.36 92/02/19 09:52:30 sam Exp $ */
-
 /*
  * Copyright (c) 1988, 1989, 1990, 1991, 1992 Sam Leffler
  * Copyright (c) 1991, 1992 Silicon Graphics, Inc.

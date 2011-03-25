@@ -38,6 +38,8 @@ class BitmapRep;
 class Font;
 class Transformer;
 
+//: binary raster data object.
+// <a href=../refman3.1/refman.html#PAGE42>in reference manual</a>
 class Bitmap : public Resource {
 public:
     Bitmap(

@@ -33,6 +33,8 @@
 
 class RasterRect;
 
+//: raster component
+// <a href=../man3.1/RasterComp.html>man page</a>
 class RasterComp : public GraphicComp {
 public:
     RasterComp(RasterRect* = nil, const char* filename = nil);
@@ -46,7 +48,7 @@ public:
     virtual void Write(ostream&);
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-private:
+protected:
     char* _filename;
 };
 

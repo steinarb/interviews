@@ -38,16 +38,18 @@ class Painter;
 class UList;
 class Viewer;
 
+//:  manages a set of selected components.
+// <a href=../man3.1/Selection.html>man page</a>
 class Selection {
 public:
     Selection(Selection* = nil);
     virtual ~Selection();
 
-    void Show(Viewer* = nil);	/* inits and draws handles (in given viewer) */
-    void Update(Viewer* = nil); /* draws newly-added handles */
-    void Hide(Viewer* = nil);
-    void Init(Viewer* = nil);   /* explicitly init handles */
-    void Clear(Viewer* = nil);	/* removes & clears all views */
+    virtual void Show(Viewer* = nil);	/* inits and draws handles (in given viewer) */
+    virtual void Update(Viewer* = nil); /* draws newly-added handles */
+    virtual void Hide(Viewer* = nil);
+    virtual void Init(Viewer* = nil);   /* explicitly init handles */
+    virtual void Clear(Viewer* = nil);	/* removes & clears all views */
 
     void Append(GraphicView*);
     void Prepend(GraphicView*);
@@ -69,9 +71,9 @@ public:
     int Number();
 
     void Sort(GraphicView*); 
-    void Exclusive(Selection*);          /* union minus intersection */
-    void Merge(Selection*);              /* union of this's & Selection's */
-                                         /* GraphicViews */
+    virtual void Exclusive(Selection*);          /* union minus intersection */
+    virtual void Merge(Selection*);              /* union of this's & Selection's */
+                                                 /* GraphicViews */
     void GetBox(Coord&, Coord&, Coord&, Coord&); /* box bounding selection */
 protected:
     GraphicView* View(UList*);

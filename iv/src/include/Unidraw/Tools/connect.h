@@ -31,6 +31,8 @@
 
 class ConnectorView;
 
+//: connect tool
+// <a href=../man3.1/ConnectTool.html>man page</a>
 class ConnectTool : public Tool {
 public:
     ConnectTool(ControlInfo* = nil);
@@ -41,7 +43,7 @@ public:
     virtual Tool* Copy();
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-private:
+protected:
     ConnectorView* _source;
 };
 

@@ -27,13 +27,20 @@
 
 #include <Dispatch/rpcbuf.h>
 
+//: iostreamb specialized to RPC requests
 // Modify iostreamb to store a rpcbuf and provide operations on the
 // rpcbuf, therefore specializing iostreamb to RPC requests.
-
-class rpcstream : public virtual iostreamb {
+// <a href=../man3.1/rpcstream.html>man page</a>
+class rpcstream : public
+#if !defined(_IO_NEW_STREAMS)
+virtual
+#endif
+iostreamb {
 public:
     rpcstream();
+#if !defined(_IO_NEW_STREAMS)
     ~rpcstream();
+#endif
 
     void listen(int port);
     void connect(const char* host, int port);

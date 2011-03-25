@@ -31,6 +31,8 @@
 
 #include <IV-2_6/_enter.h>
 
+//: move command
+// <a href=../man3.1/transforms.html>man page</a>
 class MoveCmd : public Command {
 public:
     MoveCmd(ControlInfo*, float = 0, float = 0);
@@ -47,6 +49,8 @@ protected:
     float _dx, _dy;
 };
 
+//: scale command
+// <a href=../man3.1/transforms.html>man page</a>
 class ScaleCmd : public Command {
 public:
     ScaleCmd(ControlInfo*, float = 1, float = 1, Alignment = Center);
@@ -67,6 +71,8 @@ protected:
 
 inline Alignment ScaleCmd::GetAlignment () { return _align; }
 
+//: rotate command
+// <a href=../man3.1/transforms.html>man page</a>
 class RotateCmd : public Command {
 public:
     RotateCmd(ControlInfo*, float = 0);
@@ -84,6 +90,24 @@ protected:
 };
 
 inline float RotateCmd::GetRotation () { return _angle; }
+
+class Transformer;
+
+//: transform command
+// <a href=../man3.1/transforms.html>man page</a>
+class TransformCmd : public Command {
+public:
+    TransformCmd(ControlInfo*, Transformer* = nil);
+    TransformCmd(Editor* = nil, Transformer* = nil);
+
+    Transformer* GetTransformer();
+
+    virtual Command* Copy();
+    virtual ClassId GetClassId();
+    virtual boolean IsA(ClassId);
+protected:
+    Transformer* _t;
+};
 
 #include <IV-2_6/_leave.h>
 

@@ -43,6 +43,8 @@ class Selection;
 class istream;
 class ostream;
 
+//: base class for command objects.
+// <a href=../man3.1/Command.html>man page</a>
 class Command {
 public:
     virtual void Execute();
@@ -89,10 +91,10 @@ protected:
     ControlInfo* _ctrlInfo;
     Editor* _editor;
     Clipboard* _clipboard;
-private:
+protected:
     DataCache* CopyData();
     void SetData(DataCache*);
-private:
+protected:
     DataCache* _cache;
 };
 

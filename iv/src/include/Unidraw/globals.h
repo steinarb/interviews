@@ -31,6 +31,7 @@
 #include <Unidraw/enter-scope.h>
 
 #include <IV-2_6/_enter.h>
+#undef None
 
 class CSolver;
 class Graphic;
@@ -105,6 +106,9 @@ static const int HANDLE_SIZE = 4;   /* length of selection handle edge */
 static const char MARK[] = "%I";    /* marks beginning of input */
 static const int PIN_RAD = 5;	    /* radius of pin connector view */
 static const int SLOP = 2;	    /* hit detection tolerance */
+
+static const int SBUFSIZE = 10000;  /* size of large super buffer */
+extern char sbuf[SBUFSIZE];         /* super buffer */
 
 /*
  * global functions

@@ -37,6 +37,8 @@ class TimerQueue;
 class ChildQueue;
 struct timeval;
 
+//: wait on multiple file descriptors until a condition occurs
+// <a href=../man3.1/Dispatcher.html>man page</a>
 class Dispatcher {
 public:
     enum DispatcherMask {
@@ -89,11 +91,12 @@ protected:
     TimerQueue* _queue;
     ChildQueue* _cqueue;
 
-#if defined(sgi)
-    static void sigCLD(...);
-#else
+#if defined(__GNUC__) && !defined(__GNUC_MINOR__)
     static void sigCLD();
+#else
+    static void sigCLD(...);
 #endif
+
 private:
     static Dispatcher* _instance;
 private:

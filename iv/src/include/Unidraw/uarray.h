@@ -41,9 +41,9 @@ public:
 
     int Count();
     void Clear();
-private:
+protected:
     void Check(int index);
-private:
+protected:
     void** _buf;
     int _bufsize;
     int _count;

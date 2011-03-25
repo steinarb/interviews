@@ -36,13 +36,19 @@
 static const int patternWidth = 16;
 static const int patternHeight = 16;
 
+#undef None
+
+//: "PostScript" brush object
+// <a href=../man3.1/pspaint.html>man page</a>
 class PSBrush : public Brush {
 public:
     PSBrush();
     PSBrush(int, int);
+    PSBrush(int, float);
 
     int GetLinePattern();
     int Width();
+    float width();
 
     boolean None();
     const int* GetDashPattern();
@@ -50,7 +56,7 @@ public:
     int GetDashOffset();
 protected:
     void CalcDashPat(int);
-private:
+protected:
     boolean _none;
     int _linepat;
     int _dashpat[patternWidth];	// stores dash pattern
@@ -64,6 +70,8 @@ inline const int* PSBrush::GetDashPattern () { return _dashpat; }
 inline int PSBrush::GetDashPatternSize () { return _dashpatsize; }
 inline int PSBrush::GetDashOffset () { return _dashoffset; }
 
+//: "PostScript" color object
+// <a href=../man3.1/pspaint.html>man page</a>
 class PSColor : public Color {
 public:
     PSColor(ColorIntensity, ColorIntensity, ColorIntensity, const char*);
@@ -71,13 +79,15 @@ public:
 
     const char* GetName();
     void GetIntensities(ColorIntensity&, ColorIntensity&, ColorIntensity&);
-private:
+protected:
     char* _name;			// stores name passed into constructor
     ColorIntensity _r, _g, _b;		// stores intensities passed to ctor
 };
 
 inline const char* PSColor::GetName () { return _name; }
 
+//: "PostScript" font object
+// <a href=../man3.1/pspaint.html>man page</a>
 class PSFont : public Font {
 public:
     PSFont(const char*, const char*, const char*);
@@ -89,7 +99,7 @@ public:
     const char* GetPrintFontAndSize();
 
     int GetLineHt();
-private:
+protected:
     char* _name;                // name used by window system
     char* _printfont;		// name used by printer
     char* _printsize;		// scale used by printer
@@ -103,6 +113,8 @@ inline const char* PSFont::GetPrintSize () { return _printsize; }
 inline const char* PSFont::GetPrintFontAndSize () { return _printfontandsize; }
 inline int PSFont::GetLineHt () { return _lineHt; }
 
+//: "PostScript" pattern object
+// <a href=../man3.1/pspaint.html>man page</a>
 class PSPattern : public Pattern {
 public:
     PSPattern();
@@ -113,7 +125,7 @@ public:
     float GetGrayLevel();
     const int* GetData();
     int GetSize();
-private:
+protected:
     boolean _none;
     int _data[patternHeight];
     float _graylevel;		// stores gray level for grayscale patterns

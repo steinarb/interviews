@@ -34,6 +34,8 @@ class StateVarView;
 class istream;
 class ostream;
 
+//: state variable
+// <a href=../man3.1/StateVar.html>man page</a>
 class StateVar {
 public:
     Connector* GetBinding();
@@ -53,10 +55,10 @@ public:
     virtual boolean IsA(ClassId);
 protected:
     StateVar();
-private:
+protected:
     friend class Connector;
     void SetBinding(Connector*);
-private:
+protected:
     class UList* _views;
     Connector* _conn;
 };

@@ -45,6 +45,8 @@ class Tool;
 class Transformer;
 class Viewer;
 
+//: base classes for graphical component views.
+// <a href=../man3.1/GraphicView.html>man page</a>
 class GraphicView : public ComponentView {
 public:
     virtual ~GraphicView();
@@ -65,7 +67,7 @@ public:
     virtual Viewer* GetViewer();
     GraphicComp* GetGraphicComp();
     boolean Includes(GraphicView*);
-    GraphicView* GetGraphicView(Component*);
+    virtual GraphicView* GetGraphicView(Component*);
 
     virtual GraphicView* GetView(Iterator);
     virtual void SetView(GraphicView*, Iterator&);

@@ -73,7 +73,7 @@ class Session {
 public:
     Session(
 	const char*, int& argc, char** argv,
-	const OptionDesc* = nil, const PropertyData* = nil
+	const OptionDesc* = nil, const PropertyData* = nil, Display* = nil
     );
     virtual ~Session();
 
@@ -94,9 +94,10 @@ public:
     virtual int run_window(Window*);
     virtual void quit();
     virtual boolean done() const;
+    virtual void undone();	/* added by ro2m to permit use of other event loops */
 
     virtual boolean pending() const;
-    virtual void read(Event&);
+    virtual void read(Event&, boolean (*test)() = nil);
     virtual boolean read(long sec, long usec, Event&);
     virtual void unread(Event&);
     virtual void poll(Event&);

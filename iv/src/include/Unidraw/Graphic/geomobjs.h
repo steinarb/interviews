@@ -1,22 +1,23 @@
 /*
+ * Copyright (c) 1994 Vectaport Inc.
  * Copyright (c) 1990, 1991 Stanford University
  *
- * Permission to use, copy, modify, distribute, and sell this software and its
- * documentation for any purpose is hereby granted without fee, provided
+ * Permission to use, copy, modify, distribute, and sell this software and
+ * its documentation for any purpose is hereby granted without fee, provided
  * that the above copyright notice appear in all copies and that both that
  * copyright notice and this permission notice appear in supporting
- * documentation, and that the name of Stanford not be used in advertising or
- * publicity pertaining to distribution of the software without specific,
- * written prior permission.  Stanford makes no representations about
- * the suitability of this software for any purpose.  It is provided "as is"
- * without express or implied warranty.
+ * documentation, and that the names of the copyright holders not be used in
+ * advertising or publicity pertaining to distribution of the software
+ * without specific, written prior permission.  The copyright holders make
+ * no representations about the suitability of this software for any purpose.
+ * It is provided "as is" without express or implied warranty.
  *
- * STANFORD DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
- * INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS.
- * IN NO EVENT SHALL STANFORD BE LIABLE FOR ANY SPECIAL, INDIRECT OR
- * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
- * DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
- * OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+ * THE COPYRIGHT HOLDERS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS
+ * SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS.
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDERS BE LIABLE FOR ANY SPECIAL,
+ * INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING
+ * FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+ * NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
  * WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
@@ -29,9 +30,17 @@
 
 #include <IV-2_6/InterViews/defs.h>
 #include <Unidraw/enter-scope.h>
+#include <InterViews/resource.h>
 
 #include <IV-2_6/_enter.h>
 
+#define GEOMOBJS_DEFINED
+
+class UList;
+class ostream;
+
+//: point geometric object
+// <a href=../man3.1/geomobjs.html>man page</a>
 class PointObj {
 public:
     PointObj(Coord = 0, Coord = 0);
@@ -42,6 +51,8 @@ public:
     Coord _x, _y;
 };
 
+//: line geometric object
+// <a href=../man3.1/geomobjs.html>man page</a>
 class LineObj {
 public:
     LineObj(Coord = 0, Coord = 0, Coord = 0, Coord = 0);
@@ -54,6 +65,8 @@ public:
     PointObj _p1, _p2;
 };
 
+//: box geometric object
+// <a href=../man3.1/geomobjs.html>man page</a>
 class BoxObj {
 public:
     BoxObj(Coord = 0, Coord = 0, Coord = 0, Coord = 0);
@@ -70,9 +83,12 @@ public:
     Coord _bottom, _top;
 };
 
-class MultiLineObj {
+//: multi-line geometric object
+// <a href=../man3.1/geomobjs.html>man page</a>
+class MultiLineObj : public Resource {
 public:
     MultiLineObj(Coord* = nil, Coord* = nil, int = 0);
+    virtual ~MultiLineObj();
 
     void GetBox(BoxObj& b);
     boolean Contains(PointObj&);
@@ -98,8 +114,26 @@ protected:
 public:
     Coord* _x, *_y;
     int _count;
+    UList* _ulist;
+
+    Coord* x() {return _x;}
+    Coord* y() {return _y;}
+    const int count() {return _count;}
+
+    virtual boolean operator == (MultiLineObj&);
+    virtual boolean operator != (MultiLineObj&);
+
+    static MultiLineObj* make_pts(const Coord* x, const Coord*y, int npts);
+
+    static void CompactPoints(boolean flag) {_pts_by_n_enabled=flag;}
+protected:
+    static UList** _pts_by_n;
+    static int _pts_by_n_size;
+    static boolean _pts_by_n_enabled;
 };
 
+//: filled polygon geometric object
+// <a href=../man3.1/geomobjs.html>man page</a>
 class FillPolygonObj : public MultiLineObj {
 public:
     FillPolygonObj(Coord* = nil, Coord* = nil, int = 0);
@@ -115,6 +149,8 @@ protected:
     int _normCount;
 };
 
+//: geometric extent object
+// <a href=../man3.1/geomobjs.html>man page</a>
 class Extent {
 public:
     Extent(float = 0, float = 0, float = 0, float = 0, float = 0);

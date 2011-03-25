@@ -221,7 +221,6 @@
 #define SlotView _lib_iv(SlotView)
 #define SplineComp _lib_iv(SplineComp)
 #define SplineView _lib_iv(SplineView)
-#define State _lib_iv(State)
 #define StateVar _lib_iv(StateVar)
 #define StateVarView _lib_iv(StateVarView)
 #define StencilComp _lib_iv(StencilComp)

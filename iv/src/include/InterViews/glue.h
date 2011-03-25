@@ -33,6 +33,8 @@
 
 #include <InterViews/_enter.h>
 
+//: glue glyph base class
+// <a href=../refman3.1/refman.html#PAGE62>in reference manual</a>
 class Glue : public Glyph {
 public:
     Glue(
