@@ -115,7 +115,7 @@ public:
     virtual Command* Copy();
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-private:
+protected:
     void Init(GraphicComp*);
 };
 

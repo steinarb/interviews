@@ -69,9 +69,9 @@ public:
     virtual void Write(ostream&);
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-private:
+protected:
     const char* CatalogName(Component*);
-private:
+protected:
     Component* _comp;
 };
 
@@ -94,7 +94,7 @@ public:
     virtual boolean IsA(ClassId);
 protected:
     void modified(int);
-private:
+protected:
     int _modified;
     Component* _component;
     static class UList* _vars;
@@ -114,7 +114,7 @@ public:
     virtual void Write(ostream&);
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-private:
+protected:
     float _magnif;
 };
 
@@ -132,7 +132,7 @@ public:
     virtual void Write(ostream&);
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-private:
+protected:
     int _active;
 };
 
@@ -151,7 +151,7 @@ public:
     virtual void Write(ostream&);
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-private:
+protected:
     PSFont* _psfont;
 };
 
@@ -170,7 +170,7 @@ public:
     virtual void Write(ostream&);
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-private:
+protected:
     PSBrush* _psbrush;
 };
 
@@ -189,7 +189,7 @@ public:
     virtual void Write(ostream&);
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-private:
+protected:
     PSPattern* _pspattern;
 };
 
@@ -209,7 +209,7 @@ public:
     virtual void Write(ostream&);
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-private:
+protected:
     PSColor* _psfgcolor, *_psbgcolor;
 };
 

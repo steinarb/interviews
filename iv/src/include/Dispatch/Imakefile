@@ -2,10 +2,8 @@ XCOMM
 XCOMM include files for using the Dispatcher and Rpc classes
 XCOMM
 
-HEADERS = *.h
-DEST = $(INCDIR)/Dispatch
+PACKAGE = include_dispatch
 
-InstallMultipleFlags($(HEADERS),$(DEST),$(INSTINCFLAGS))
+IvmkcmTargets($(PACKAGE))
 
-gendefs:
-	./_gendefs
+InstallIncludes(Dispatch)

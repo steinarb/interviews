@@ -1,3 +1,7 @@
+#undef boolean
+#undef true
+#undef false
+
 #define boolean _lib_os(boolean)
 #define true _lib_os(true)
 #define false _lib_os(false)

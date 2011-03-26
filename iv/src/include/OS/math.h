@@ -31,6 +31,9 @@
  * Common math operations on built-in types.
  */
 
+#undef min
+#undef max
+
 #define declare_binary_minmax(Type) \
     static Type min(Type a, Type b); \
     static Type max(Type a, Type b)

@@ -53,10 +53,10 @@ public:
     virtual boolean IsA(ClassId);
 protected:
     StateVar();
-private:
+protected:
     friend class Connector;
     void SetBinding(Connector*);
-private:
+protected:
     class UList* _views;
     Connector* _conn;
 };

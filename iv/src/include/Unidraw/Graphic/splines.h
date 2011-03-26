@@ -57,7 +57,7 @@ protected:
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
     virtual void draw(Canvas*, Graphic*);
-private:
+protected:
     PSBrush* _br;
 };
 
@@ -75,7 +75,7 @@ protected:
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
     virtual void draw(Canvas*, Graphic*);
-private:
+protected:
     PSPattern* _pat;
 };
 
@@ -95,7 +95,7 @@ protected:
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
     virtual void draw(Canvas*, Graphic*);
-private:
+protected:
     PSBrush* _br;
     PSPattern* _pat;
 };
@@ -105,6 +105,7 @@ public:
     SFH_OpenBSpline(Coord* x, Coord* y, int count, Graphic* = nil);
 
     virtual Graphic* Copy();
+    virtual ClassId CompId();
 protected:
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
@@ -134,7 +135,7 @@ protected:
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
     virtual void draw(Canvas*, Graphic*);
-private:
+protected:
     PSBrush* _br;
 };
 
@@ -152,7 +153,7 @@ protected:
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
     virtual void draw(Canvas*, Graphic*);
-private:
+protected:
     PSPattern* _pat;
 };
 
@@ -172,7 +173,7 @@ protected:
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
     virtual void draw(Canvas*, Graphic*);
-private:
+protected:
     PSBrush* _br;
     PSPattern* _pat;
 };
@@ -182,6 +183,7 @@ public:
     SFH_ClosedBSpline(Coord* x, Coord* y, int count, Graphic* = nil);
 
     virtual Graphic* Copy();
+    virtual ClassId CompId();
 protected:
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);

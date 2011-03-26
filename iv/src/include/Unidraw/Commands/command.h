@@ -89,10 +89,10 @@ protected:
     ControlInfo* _ctrlInfo;
     Editor* _editor;
     Clipboard* _clipboard;
-private:
+protected:
     DataCache* CopyData();
     void SetData(DataCache*);
-private:
+protected:
     DataCache* _cache;
 };
 

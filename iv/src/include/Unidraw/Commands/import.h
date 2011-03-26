@@ -53,7 +53,7 @@ public:
     static GraphicComp* PGM_Image(const char*);
     static GraphicComp* PPM_Image(const char*);
     static GraphicComp* XBitmap_Image(const char*);
-private:
+protected:
     FileChooser* chooser_;
 
     void Init(FileChooser*);

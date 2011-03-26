@@ -55,7 +55,7 @@ protected:
     virtual ClassId ViewCategory();
 protected:
     GraphicView* _gv;
-private:
+protected:
     void RegisterSubjects(GVU_HashTable*);
     void InitViews(GVU_HashTable*);
     void RearrangeViews(GVU_HashTable*);

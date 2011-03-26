@@ -179,7 +179,7 @@ protected:
     void Register(Tool*, const char*);
 
     int GetToken(istream& in, char* buf, int buf_size);
-private:
+protected:
     friend class Unidraw;
     void Init(World*);
     const char* Name(const char*, int);
@@ -207,7 +207,7 @@ private:
     boolean RetrieveObject(istream&, void*&);
     boolean FileSave(void*, ClassId, const char*);
     boolean FileRetrieve(const char*, void*&);
-private:
+protected:
     char* _name;
     Creator* _creator;
     float _version;
@@ -256,15 +256,15 @@ public:
     ClassId GetClientId();
 
     void* GetObject(int id);
-    int GetId(void* obj);
+    unsigned long GetId(void* obj);
 
     ClassId GetOrigClassId(void* obj);
     const char* GetDelim(void* obj);
     UArray* GetExtraData(void* obj);
-private:
+protected:
     ObjectMapElem* Find(void*);
     ObjectMapElem* Find(int);
-private:
+protected:
     UHashTable _objKeys, _idKeys;
     void* _client;
     ClassId _id;

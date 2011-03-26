@@ -46,7 +46,7 @@ protected:
     UControl(const char*, ControlInfo*);
 protected:
     ControlInfo* _info;
-private:
+protected:
     void Init(ControlInfo*);
 };
 
@@ -70,7 +70,7 @@ protected:
     Graphic* _picture;
     Graphic* _label;
     boolean _highlighted;
-private:
+protected:
     void Init(ControlInfo*);
 };
 

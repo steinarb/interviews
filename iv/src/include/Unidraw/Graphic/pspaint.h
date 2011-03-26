@@ -36,6 +36,8 @@
 static const int patternWidth = 16;
 static const int patternHeight = 16;
 
+#undef None
+
 class PSBrush : public Brush {
 public:
     PSBrush();
@@ -50,7 +52,7 @@ public:
     int GetDashOffset();
 protected:
     void CalcDashPat(int);
-private:
+protected:
     boolean _none;
     int _linepat;
     int _dashpat[patternWidth];	// stores dash pattern
@@ -71,7 +73,7 @@ public:
 
     const char* GetName();
     void GetIntensities(ColorIntensity&, ColorIntensity&, ColorIntensity&);
-private:
+protected:
     char* _name;			// stores name passed into constructor
     ColorIntensity _r, _g, _b;		// stores intensities passed to ctor
 };
@@ -89,7 +91,7 @@ public:
     const char* GetPrintFontAndSize();
 
     int GetLineHt();
-private:
+protected:
     char* _name;                // name used by window system
     char* _printfont;		// name used by printer
     char* _printsize;		// scale used by printer
@@ -113,7 +115,7 @@ public:
     float GetGrayLevel();
     const int* GetData();
     int GetSize();
-private:
+protected:
     boolean _none;
     int _data[patternHeight];
     float _graylevel;		// stores gray level for grayscale patterns

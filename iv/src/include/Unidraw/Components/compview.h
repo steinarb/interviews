@@ -51,8 +51,9 @@ public:
     virtual ~ComponentView();
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-protected:
+
     ComponentView(Component* subject = nil);
+protected:
 
     friend class Component;
     virtual void SetSubject(Component*);

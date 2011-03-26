@@ -1,8 +1,0 @@
-XCOMM
-XCOMM sample TIFF image files
-XCOMM
-
-FILES = jello.tif linton.tif
-DEST = $(LIBALLDIR)/images
-
-InstallMultipleFlags($(FILES),$(DEST),$(INSTDATFLAGS))

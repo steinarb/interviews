@@ -30,6 +30,7 @@
 
 #include <Unidraw/globals.h>
 #include <Unidraw/Graphic/grblock.h>
+#include <Unidraw/Components/grview.h>
 
 #include <IV-2_6/_enter.h>
 
@@ -47,6 +48,7 @@ class TextDisplay;
 class Tool;
 class Transformer;
 class UPage;
+class ViewerGraphic;
 class ViewerView;
 
 class Viewer : public GraphicBlock {
@@ -112,7 +114,7 @@ protected:
 
     virtual void Redraw(Coord, Coord, Coord, Coord);
     virtual void Resize();
-private:
+protected:
     Editor* _editor;
     Damage* _damage;
     GraphicView* _gview;
@@ -120,6 +122,18 @@ private:
     Grid* _grid;
     Orientation _orientation;
     ViewerView* _viewerView;
+};
+
+class ViewerView : public GraphicView {
+public:
+    ViewerView(GraphicView*, UPage*, Grid*, Viewer*);
+    virtual ~ViewerView();
+
+    virtual void Update();
+    virtual Viewer* GetViewer();
+protected:
+    Viewer* _viewer;
+    ViewerGraphic* _vg;
 };
 
 #include <IV-2_6/_leave.h>

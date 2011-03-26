@@ -1,17 +1,13 @@
 XCOMM
-XCOMM include files for using the Unidraw library
+XCOMM Unidraw include files
 XCOMM
 
-HEADERS = *.h
-DEST = $(INCDIR)/Unidraw
-SUBDIRS	= \
-    Components \
-    Commands \
-    Graphic \
-    Tools
+PACKAGE = include_unidraw
 
-InstallMultipleFlags($(HEADERS),$(DEST),$(INSTINCFLAGS))
+SUBDIRS = \
+	Commands \
+	Components \
+	Graphic \
+	Tools
+
 MakeInSubdirs($(SUBDIRS))
-
-gendefs:
-	./_gendefs

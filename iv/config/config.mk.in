@@ -1,0 +1,40 @@
+/* This file generated from config.mk.in, */
+/* (unless this file *is* config.mk.in :) */
+
+#define Prefix @prefix@
+#define BinDir Prefix/bin
+#define LibDir Prefix/lib
+#define LibAllDir Prefix/lib/ivtools
+
+#define XConfigDir @x_libraries@/X11/config
+#define XIncDir @x_includes@
+#define XLibDir @x_libraries@
+
+#if @ACE_ENABLED@
+#define AceDir @ACE@
+#endif
+
+#if @CLIPPOLY_ENABLED@
+#define ClipPolyDir @CLIPPOLY@
+#endif
+
+#if @IUE_ENABLED@
+#define IueDir @IUE@
+#define IueLibDir @IUELIBS@
+#endif
+
+#undef CCDriver
+#define CCDriver @CXX@
+
+#undef CDriver
+#define CDriver @CC@
+
+#undef InstallRelative
+#define InstallRelative @INSTALLRELATIVE@
+
+#undef UseRpath
+#define UseRpath @USERPATH@
+
+#define IvToolsSrcRoot @PWD@
+
+

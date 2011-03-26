@@ -70,7 +70,7 @@ public:
 protected:
     virtual void Transfer();
     virtual boolean ChangedOutput(int index = 0);
-private:
+protected:
     StateVar* _input, *_output;
     boolean _changed;
 };

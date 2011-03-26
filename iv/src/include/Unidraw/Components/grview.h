@@ -65,7 +65,7 @@ public:
     virtual Viewer* GetViewer();
     GraphicComp* GetGraphicComp();
     boolean Includes(GraphicView*);
-    GraphicView* GetGraphicView(Component*);
+    virtual GraphicView* GetGraphicView(Component*);
 
     virtual GraphicView* GetView(Iterator);
     virtual void SetView(GraphicView*, Iterator&);

@@ -39,7 +39,7 @@ public:
 protected:
     virtual void Busy();
     virtual void Done();
-private:
+protected:
     void Init(ControlInfo*);
 };
 
@@ -54,7 +54,7 @@ protected:
     virtual void Enter();
     virtual void Leave();
     virtual void Select();
-private:
+protected:
     void Init(Interactor*, ControlState*);
 };
 
@@ -84,7 +84,7 @@ public:
 protected:
     virtual void Reconfig();
     virtual void Resize();
-private:
+protected:
     Orientation _orient;
 };
 

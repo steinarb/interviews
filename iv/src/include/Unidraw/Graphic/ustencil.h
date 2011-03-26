@@ -39,9 +39,11 @@ public:
     virtual ~UStencil();
 
     void GetOriginal(Bitmap*&, Bitmap*&);
+    void SetOriginal(Bitmap*, Bitmap*);
     virtual PSPattern* GetPattern();            // disallows patterned bitmaps
                                                 // to work around IV botch
     virtual Graphic* Copy();
+    virtual ClassId CompId();
 protected:
     virtual void getExtent(float&, float&, float&, float&, float&, Graphic*);
     virtual boolean contains(PointObj&, Graphic*);

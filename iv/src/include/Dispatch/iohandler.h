@@ -30,7 +30,7 @@
 
 // Derived classes read input on a file number, write output on a file
 // number, handle an exception raised on a file number, or handle a
-// timer's expiration.
+// timers expiration.
 
 class IOHandler {
 protected:

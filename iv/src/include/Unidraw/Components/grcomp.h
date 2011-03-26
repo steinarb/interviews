@@ -72,11 +72,12 @@ public:
 
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
+
+    virtual void SetGraphic(Graphic*);
 protected:
     GraphicComp(Graphic* = nil);
 
     virtual GraphicComp* GetGraphicComp(Graphic*);
-    virtual void SetGraphic(Graphic*);
 
     void Skip(istream&);
     void Mark(ostream&);

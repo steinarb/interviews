@@ -69,6 +69,9 @@ public:
     virtual ClassId GetClassId();
     virtual ClassId GetSubstId(const char*& delim);
     virtual boolean IsA(ClassId);
+
+    static boolean use_unidraw() { return _use_unidraw; }
+    static void use_unidraw(boolean flag) { _use_unidraw = flag; }
 protected:
     Component();
 
@@ -76,6 +79,8 @@ protected:
     virtual void SetParent(Component* child, Component* parent);
 protected:
     UList* _views;
+
+    static boolean _use_unidraw;
 };
 
 #endif

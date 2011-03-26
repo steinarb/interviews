@@ -29,8 +29,12 @@
 
 #include <IV-2_6/InterViews/defs.h>
 #include <Unidraw/enter-scope.h>
+#include <InterViews/resource.h>
 
 #include <IV-2_6/_enter.h>
+
+class UList;
+class ostream;
 
 class PointObj {
 public:
@@ -70,9 +74,10 @@ public:
     Coord _bottom, _top;
 };
 
-class MultiLineObj {
+class MultiLineObj : public Resource {
 public:
     MultiLineObj(Coord* = nil, Coord* = nil, int = 0);
+    virtual ~MultiLineObj();
 
     void GetBox(BoxObj& b);
     boolean Contains(PointObj&);
@@ -98,6 +103,22 @@ protected:
 public:
     Coord* _x, *_y;
     int _count;
+    UList* _ulist;
+
+    Coord* x() {return _x;}
+    Coord* y() {return _y;}
+    const int count() {return _count;}
+
+    virtual boolean operator == (MultiLineObj&);
+    virtual boolean operator != (MultiLineObj&);
+
+    static MultiLineObj* make_pts(const Coord* x, const Coord*y, int npts);
+
+    static void CompactPoints(boolean flag) {_pts_by_n_enabled=flag;}
+protected:
+    static UList** _pts_by_n;
+    static int _pts_by_n_size;
+    static boolean _pts_by_n_enabled;
 };
 
 class FillPolygonObj : public MultiLineObj {

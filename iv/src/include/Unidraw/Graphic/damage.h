@@ -83,7 +83,7 @@ protected:
 protected:
     UList* _additions;
     UList* _areas;
-private:
+protected:
     Canvas* _canvas;
     Painter* _output;
     Graphic* _graphic;

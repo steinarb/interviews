@@ -76,4 +76,15 @@ public:
     FullGraphic* _gs;
 };
 
+class GraphicComp;
+
+class UngroupData : public Data {
+public:
+    UngroupData(GraphicComp* parent, Graphic*);
+    virtual ~UngroupData();
+public:
+    GraphicComp* _parent;
+    FullGraphic* _gs;
+};
+
 #endif

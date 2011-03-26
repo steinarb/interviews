@@ -3,12 +3,10 @@ XCOMM "make format" formats the man pages.
 XCOMM "make print" formats and sends the man pages to the printer.
 XCOMM
 
+PACKAGE = man_ivtools
+
 SUBDIRS	= \
-	commands \
-	refman \
-	Dispatch \
-	InterViews \
-	Unidraw
+	man1
 
 MakeInSubdirs($(SUBDIRS))
 FormatSubdirs($(SUBDIRS))

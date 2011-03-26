@@ -34,6 +34,7 @@
 class Rect : public Graphic {
 public:
     void GetOriginal(Coord&, Coord&, Coord&, Coord&);
+    void SetOriginal(Coord, Coord, Coord, Coord);
 protected:
     Rect(Coord x0, Coord y0, Coord x1, Coord y1, Graphic* = nil);
 
@@ -62,7 +63,7 @@ protected:
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
     virtual void draw(Canvas*, Graphic*);
-private:
+protected:
     PSBrush* _br;
 };
 
@@ -80,7 +81,7 @@ protected:
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
     virtual void draw(Canvas*, Graphic*);
-private:
+protected:
     PSPattern* _pat;
 };
 
@@ -95,12 +96,13 @@ public:
     virtual PSPattern* GetPattern();
 
     virtual Graphic* Copy();
+    virtual ClassId CompId();
 protected:
     virtual void getExtent(float&, float&, float&, float&, float&, Graphic*);
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
     virtual void draw(Canvas*, Graphic*);
-private:
+protected:
     PSBrush* _br;
     PSPattern* _pat;
 };
@@ -129,7 +131,7 @@ protected:
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
     virtual void draw(Canvas*, Graphic*);
-private:
+protected:
     PSBrush* _br;
 };
 
@@ -147,7 +149,7 @@ protected:
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
     virtual void draw(Canvas*, Graphic*);
-private:
+protected:
     PSPattern* _pat;
 };
 
@@ -162,12 +164,13 @@ public:
     virtual PSPattern* GetPattern();
 
     virtual Graphic* Copy();
+    virtual ClassId CompId();
 protected:
     virtual void getExtent(float&, float&, float&, float&, float&, Graphic*);
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
     virtual void draw(Canvas*, Graphic*);
-private:
+protected:
     PSBrush* _br;
     PSPattern* _pat;
 };

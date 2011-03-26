@@ -42,7 +42,7 @@ public:
 
     void* GetKey();
     void SetKey(void*);
-private:
+protected:
     void* _key;
 };
 
@@ -65,15 +65,15 @@ public:
     UHashElem* Find(void* key);
 protected:
     virtual UHashElem* CreateElem();
-    virtual int Hash(void*);
+    virtual unsigned long Hash(void*);
     virtual boolean Equal(void* key1, void* key2);
 protected:
     int _nslots;
-private:
+protected:
     UList* UElem(Iterator);
     UHashElem* Elem(UList*);
     void DeleteSlot(UList*);
-private:
+protected:
     UList** _slot;
 };
 
