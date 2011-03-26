@@ -60,6 +60,10 @@ extern "C" {
 #endif
 }
 
+#if defined(__GLIBC__) && __GLIBC__>=2
+#define fds_bits __fds_bits
+#endif
+
 Dispatcher* Dispatcher::_instance;
 
 class FdMask : public fd_set {

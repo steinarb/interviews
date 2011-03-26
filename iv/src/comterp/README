@@ -90,13 +90,13 @@ OPERATOR TABLE
     ==            eq                   45          L-to-R      binary
     &&            and                  41          L-to-R      binary
     ||            or                   40          L-to-R      binary
+    ,             stream               35          L-to-R      binary
     %=            mod_assign           30          R-to-L      binary
     *=            mpy_assign           30          R-to-L      binary
     +=            add_assign           30          R-to-L      binary
     -=            sub_assign           30          R-to-L      binary
     /=            div_assign           30          R-to-L      binary
     =             assign               30          R-to-L      binary
-    ,             stream               20          L-to-R      binary
     ;             seq                  10          L-to-R      binary
 
 MATHEMATICAL COMMANDS:

@@ -102,13 +102,13 @@ struct _opr_tbl_default_entry {
   {"==",         "eq",                 45,         FALSE,      OPTYPE_BINARY },
   {"&&",         "and",                41,         FALSE,      OPTYPE_BINARY },
   {"||",         "or",                 40,         FALSE,      OPTYPE_BINARY },
+  {",",          "stream",             35,         FALSE,      OPTYPE_BINARY },
   {"%=",         "mod_assign",         30,         TRUE,       OPTYPE_BINARY },
   {"*=",         "mpy_assign",         30,         TRUE,       OPTYPE_BINARY },
   {"+=",         "add_assign",         30,         TRUE,       OPTYPE_BINARY },
   {"-=",         "sub_assign",         30,         TRUE,       OPTYPE_BINARY },
   {"/=",         "div_assign",         30,         TRUE,       OPTYPE_BINARY },
   {"=",          "assign",             30,         TRUE,       OPTYPE_BINARY },
-  {",",          "stream",             20,         FALSE,      OPTYPE_BINARY },
   {";",          "seq",                10,         FALSE,      OPTYPE_BINARY },
 };
 
@@ -917,13 +917,13 @@ Operator   Command            Priority   RtoL   Type
 ==         eq                 45         N      BINARY
 &&         and                41         N      BINARY
 ||         or                 40         N      BINARY
+,          stream             35         N      BINARY
 %=         mod_assign         30         Y      BINARY
 *=         mpy_assign         30         Y      BINARY
 +=         add_assign         30         Y      BINARY
 -=         sub_assign         30         Y      BINARY
 /=         div_assign         30         Y      BINARY
 =          assign             30         Y      BINARY
-,          stream             20         N      BINARY
 ;          seq                10         N      BINARY
 
 

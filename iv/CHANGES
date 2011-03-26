@@ -1,3 +1,63 @@
+June 10th 1999 ivtools-0.7.8
+
+Interpreter Changes
+
+	* migration of the stream operator "," upwards in the parsing
+ 	priority table, to have higher priority than the assignment
+ 	operators, so that something like:
+
+	v=1,2,3,4
+
+	ends up assigning a list to the variable v that can be passed to
+ 	commands like size, at, sum, etc..
+
+	* came up with a solution for iterating over multiple space
+ 	delimited expressions in a single line of input when using a
+ 	comterp in server mode.  Now something like:
+
+	1 2 3 4
+
+
+	returns:
+
+	1
+	2
+	3
+	4
+
+	* add an echo of returned results to the comterp client mode.
+
+Library Changes
+
+	-- Attribute --	
+
+	* add extra predicates to AttributeValue:
+
+	AttributeValue::is_numeric() (same as ::is_num)
+	AttributeValue::is_object()
+
+	* change timer mechanism in ComTerpHandler to disable old
+	timer before creating new one.
+
+	-- ComTerp --	
+
+	* catch one more place (ComTerpServ::runfile()), where the
+	bufsiz needed to be kicked up to 1M.
+
+	-- FrameUnidraw --
+
+	* fix bug in deserializing code for a FrameIdrawComp so that
+	if a background frame already exists another one is not created.
+
+Config and Miscellaneous Changes
+
+	* add IET Inc. to the overall copyright, to reflect their
+	new status as a contributor to and supporter of ivtools.
+
+	* added workarounds for glibc-2.* needed by Dispatch/dispatcher.c
+ 	and OverlayUnidraw/grayraster.c.  Makes ivtools compile on RedHat
+ 	6.0.
+
 May 3rd 1999 ivtools-0.7.7
 
 Drawing Editor and Drawing Editor Framework Changes

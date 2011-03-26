@@ -96,6 +96,7 @@ protected:
 };
 
 //: top-level component for flipbook document.
+// FrameIdrawComp is a clone of OverlayIdrawComp derived from FramesComp.
 class FrameIdrawComp : public FramesComp {
 public:
     FrameIdrawComp(boolean add_bg = true, const char* pathname = nil, OverlayComp* parent = nil);

@@ -136,6 +136,8 @@ public:
 
     void quit(boolean quitflag=true);
     // set flag that will cause a quit to happen as soon as possible.
+    void quitflag(boolean flag);
+    // set flag that will cause a quit to happen as soon as possible.
     boolean quitflag();
     // return value of flag that will cause a quit to happen as soon as possible.
     virtual void exit(int status=0);

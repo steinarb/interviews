@@ -594,6 +594,10 @@ boolean ComTerp::quitflag() {
     return _quitflag;
 }
 
+void ComTerp::quitflag(boolean flag) {
+    _quitflag = flag;
+}
+
 int ComTerp::run(boolean once) {
   int status = 0;
   _errbuf[0] = '\0';
@@ -605,8 +609,9 @@ int ComTerp::run(boolean once) {
   } else
     fbuf.attach(fileno(stdout));
   ostream out(&fbuf);
+  boolean eolflag = false;
 
-  while (!eof() && !quitflag()) {
+  while (!eof() && !quitflag() && !eolflag) {
     
     if (read_expr()) {
       eval_expr();
@@ -628,7 +633,8 @@ int ComTerp::run(boolean once) {
       if (strlen(_errbuf)>0) {
 	out << _errbuf << "\n"; out.flush();
 	_errbuf[0] = '\0';
-      }
+      } else
+	eolflag = true;
     }
     _stack_top = -1;
     if (once) break;
