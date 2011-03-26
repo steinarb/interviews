@@ -22,7 +22,6 @@ Obj(iuefunc)
 Obj(iuehandler)
 Obj(roifunc)
 
-
 #define Obj31(file) MakeObjectFromSrcFlags(file, -Uiv2_6_compatible -I$(TOP)/src/include $(TOP_CCINCLUDES))
 
 

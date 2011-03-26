@@ -188,44 +188,6 @@ void OverlayViewer::FinishBuffering(boolean refresh_needed)
     canvas->rep()->xdrawable_ = canvas->rep()->copybuffer_;
 }
 
-static Transformer* ComputeRel (OverlayViewer* v, Transformer* t) {
-    Transformer* rel = new Transformer;
-    OverlayComp* comp = v->GetOverlayView()->GetOverlayComp();
-    comp->GetGraphic()->TotalTransformation(*rel);
-    rel->Postmultiply(t);
-    return rel;
-}  
-
-Transformer* OverlayViewer::ComputeGravityRel() {
-  Transformer* rel = ComputeRel(this, _graphic->GetTransformer());
-  if (_grid != nil) {
-    GravityVar* grav = (GravityVar*) GetEditor()->GetState("GravityVar");
-    
-    if (grav != nil && grav->IsActive()) {
-
-      /* if gravity is on, make sure all x,y points are mapped to */
-      /* integers in the drawing coordinate space.  This makes sure */
-      /* resultant graphic is on grid, regardless of what resolution */
-      /* it was drawn at, after any possible pan/zoom combinations */
-      /* This removes the error in the gravity mechanism introduced */
-      /* by the rounding at the end of Grid::Constrain */
-
-      float affine[6];
-      rel->matrix(affine[0], affine[1], affine[2],
-		  affine[3], affine[4], affine[5]);
-      float xdelta = round(affine[4]) - affine[4];
-      float ydelta = round(affine[5]) - affine[5];
-      rel->Translate(xdelta, ydelta);
-
-    }
-  }
-  return rel;
-}
-
-Transformer* OverlayViewer::GetRel() {
-    return ComputeRel(this, _graphic->GetTransformer());
-}
-
 void OverlayViewer::UseTool (Tool* t, Event& e) {
     Transformer* relative = ComputeGravityRel();
     Manipulator* m = t->CreateManipulator(this, e, relative);

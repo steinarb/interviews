@@ -21,7 +21,7 @@
  * 
  */
 
-#if 0 || !defined(_iueroifunc_h)
+#if !defined(_iueroifunc_h)
 #define _iueroifunc_h
 
 #include <IueServ/iuefunc.h>

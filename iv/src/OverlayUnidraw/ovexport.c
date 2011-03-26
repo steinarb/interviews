@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 1995 Vectaport Inc.
+ * Copyright (c) 1994, 1995, 1998 Vectaport Inc.
  * Copyright (c) 1990, 1991 Stanford University 
  *
  * Permission to use, copy, modify, distribute, and sell this software and
@@ -110,14 +110,15 @@ void OvExportCmd::Execute () {
 	style->attribute("subcaption", "Export selected graphics to file:");
 	style->attribute("open", "Export");
 	const char *formats[] = {"idraw", "drawtool"};
+	const char *commands[] = {"idraw %s", "drawtool %s"};
 	chooser_ = new ExportChooser(".", WidgetKit::instance(), style,
-				     formats, sizeof(formats)/sizeof(char*), nil, nil, true);
+				     formats, sizeof(formats)/sizeof(char*), commands, nil, true);
 	Resource::ref(chooser_);
     } else {
 	style = chooser_->style();
     }
     boolean again; 
-   while (again = chooser_->post_for(ed->GetWindow())) {
+    while (again = chooser_->post_for(ed->GetWindow())) {
 	const String* str = chooser_->selected();
 	if (str != nil) {
 	    NullTerminatedString ns(*str);
@@ -210,7 +211,12 @@ boolean OvExportCmd::Export (const char* pathname) {
 
 		if (chooser_->to_printer()) {
 		    char cmd[CHARBUFSIZE];
-		    sprintf(cmd, "(%s %s;rm %s)&", pathname, tmpfilename, tmpfilename);
+		    if (strstr(pathname, "%s")) {
+		        char buf[CHARBUFSIZE];
+		        sprintf(buf, pathname, tmpfilename);    
+			sprintf(cmd, "(%s;rm %s)&", buf, tmpfilename);
+		    } else
+			sprintf(cmd, "(%s %s;rm %s)&", pathname, tmpfilename, tmpfilename);
 		    ok = system(cmd) == 0;
 		}
             } 

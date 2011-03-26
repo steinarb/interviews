@@ -521,6 +521,36 @@ static Transformer* ComputeRel (Viewer* v, Transformer* t) {
     return rel;
 }    
 
+Transformer* Viewer::ComputeGravityRel() {
+  Transformer* rel = ComputeRel(this, _graphic->GetTransformer());
+  if (_grid != nil) {
+    GravityVar* grav = (GravityVar*) GetEditor()->GetState("GravityVar");
+    
+    if (grav != nil && grav->IsActive()) {
+
+      /* if gravity is on, make sure all x,y points are mapped to */
+      /* integers in the drawing coordinate space.  This makes sure */
+      /* resultant graphic is on grid, regardless of what resolution */
+      /* it was drawn at, after any possible pan/zoom combinations */
+      /* This removes the error in the gravity mechanism introduced */
+      /* by the rounding at the end of Grid::Constrain */
+
+      float affine[6];
+      rel->matrix(affine[0], affine[1], affine[2],
+		  affine[3], affine[4], affine[5]);
+      float xdelta = round(affine[4]) - affine[4];
+      float ydelta = round(affine[5]) - affine[5];
+      rel->Translate(xdelta, ydelta);
+
+    }
+  }
+  return rel;
+}
+
+Transformer* Viewer::GetRel() {
+    return ComputeRel(this, _graphic->GetTransformer());
+}
+
 void Viewer::UseTool (Tool* t) {
     Event e;
     e.target = nil;
@@ -529,7 +559,7 @@ void Viewer::UseTool (Tool* t) {
 }
 
 void Viewer::UseTool (Tool* t, Event& e) {
-    Transformer* relative = ComputeRel(this, _graphic->GetTransformer());
+    Transformer* relative = ComputeGravityRel();
     Manipulator* m = t->CreateManipulator(this, e, relative);
 
     if (m != nil) {

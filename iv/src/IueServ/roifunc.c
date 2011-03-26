@@ -21,15 +21,14 @@
  * 
  */
 
-#if 0 /* doesn't link yet with gcc-2.7.2.1 on Linux */
 
 // from the IUE
 #include <IUE-IM/Base/generic-image.h>
 #include <IUE-IM/DataOrg/tjr-image-data-2d.h>
+#include <IUE-IM/DataOrg/tjr-image-data-2d-rep.h>
 #include <ImageClasses/Image.h>
 #include <ImageClasses/MemoryImage.h>
 #include <RegionsOfInterest/aai-connected-components.h>
-
 
 #include <IueServ/roifunc.h>
 #include <IueServ/iuecomps.h>
@@ -37,8 +36,6 @@
 #include <ComTerp/comterpserv.h>
 #include <Attribute/aliterator.h>
 #include <Attribute/attrlist.h>
-
-template class IUE_scalar_image_2d_of <IUE_UINT8>;
 
 /*-----------------------------------------------------------------------*/
 
@@ -51,24 +48,34 @@ void IueConnCompFunc::execute() {
 
   IueImageComp* comp = image_comp(img);
   if (comp) {
-    Image* image = comp->image();
-    if (image) {
+    Image* src = comp->image();
+    if (src) {
       IUE_scalar_image_2d* inimage =
 	new IUE_scalar_image_2d_of<IUE_UINT8>
-	(new IUE_tjr_image_data_2d<IUE_UINT8>(image));
-      MemoryImage* memimage = new MemoryImage(image); 
-      IUE_scalar_image_2d_of<int>* outimage =
-	new IUE_scalar_image_2d_of<int>
-	(new IUE_tjr_image_data_2d<int>(memimage));
+	(new IUE_tjr_image_data_2d<IUE_UINT8>(src));
+      IUE_scalar_image_2d_of<int>* outimage;
       AAI_connected_components(inimage, outimage);
-      IueImageComp* imagecomp = new IueImageComp(memimage);
+
+      int ncols = outimage->x_size();
+      int nrows = outimage->y_size();
+      ImageTemplate it;
+      it.SetSizeX(ncols);
+      it.SetSizeY(nrows);
+      it.SetFormat('U');
+      it.SetBitsPixel(4*8);
+      MemoryImage* dst = new MemoryImage(&it);
+      for (int row=0; row<nrows; row++) {
+	int rowvals[ncols];
+	outimage->getrow(rowvals, row, 0, ncols);
+	dst->PutSection((void*)rowvals,0,row,ncols,1);
+      }
+      IueImageComp* imagecomp = new IueImageComp(dst);
       ComValue retval(ComValue::ObjectType, new ComponentView(imagecomp));
       retval.obj_type_ref() = IueImageComp::symbolid();
       push_stack(retval);
       return;
+
     }
   } 
   push_stack(ComValue::nullval());
 }
-
-#endif

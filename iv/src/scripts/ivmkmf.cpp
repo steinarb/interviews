@@ -3,7 +3,7 @@ XCOMM
 XCOMM generate a Makefile from an Imakefile outside of the source tree
 XCOMM 
 
-usage="usage: [-a] $0"
+usage="usage: $0 [-a]"
 do_all=
 
 case "$#" in

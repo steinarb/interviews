@@ -207,7 +207,7 @@ void PrintChooserImpl::build() {
 
 void PrintChooserImpl::to_printer_callback() {
     _to_printer = !_to_printer;
-    editor_->field(_to_printer ? "ghostview" : "./" );
+    editor_->field(_to_printer ? "ghostview %s" : "./" );
 }
 
 void PrintChooserImpl::idraw_format_callback() {

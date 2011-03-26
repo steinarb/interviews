@@ -1,7 +1,7 @@
 
 			INSTALL for ivtools-0.7
 
-Instructions for building ivtools-0.7.0 from source:
+Instructions for building ivtools-0.7.1 from source:
 
 0. Compilation Environment
 
@@ -137,10 +137,24 @@ Special notes on the configure script:
 2.a. cd to the ivtools-0.7/ directory (you'd already be in this
 directory after running the configure script).
 
-2.b. Compile it with a "make World" command. 
+2.b. Compile it with a "make World" command.  It needs the following
+variable definitions:
 
-This command generates Makefiles hierarchically, sets up makefile
-dependencies, and builds everything.
+	XCONFIGDIR	The location of your X11 config files.
+	PWD		If you're using a shell without this pre-defined
+			(i.e. Solaris)
+
+Sample Linux command line: 
+	make World XCONFIGDIR=/usr/X11R6/lib/X11/config 
+Sample SunOS command line:
+	make World XCONFIGDIR=/usr/local/lib/X11/config 
+Sample Solaris command line:
+	make World XCONFIGDIR=/usr/X/lib/X11/config PWD=`pwd`
+Sample Irix command line:
+	make World XCONFIGDIR=/usr/lib/X11/config
+
+
+This command generates Makefiles hierarchically and builds everything.
 
 3. Testing:
 

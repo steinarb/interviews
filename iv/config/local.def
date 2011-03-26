@@ -93,11 +93,6 @@ XCOMM from <local.def>:
            LIBTIME = -L$(IVTOOLSSRC)/Time/$(CPU) -lTime
       LIBATTRIBUTE = -L$(IVTOOLSSRC)/Attribute/$(CPU) -lAttribute
         LIBCOMUTIL = -L$(IVTOOLSSRC)/ComUtil/$(CPU) -lComUtil
-#ifdef AceDir
-    LIBACEDISPATCH = -L$(IVTOOLSSRC)/AceDispatch/$(CPU) -lAceDispatch
-#else
-    LIBACEDISPATCH =
-#endif
         LIBCOMTERP = -L$(IVTOOLSSRC)/ComTerp/$(CPU) -lComTerp
         LIBIVGLYPH = -L$(IVTOOLSSRC)/IVGlyph/$(CPU) -lIVGlyph
       LIBATTRGLYPH = -L$(IVTOOLSSRC)/AttrGlyph/$(CPU) -lAttrGlyph
@@ -109,8 +104,13 @@ XCOMM from <local.def>:
 #ifdef IueDir
         LIBIUESERV = -L$(IVTOOLSSRC)/IueServ/$(CPU) -lIueServ
 #endif
-   LIBFRAMEUNIDRAW = -L$(IVTOOLSSRC)/FrameUnidraw/$(CPU) -lFrameUnidraw
+#ifdef AceDir
+    LIBACEDISPATCH = -L$(IVTOOLSSRC)/AceDispatch/$(CPU) -lAceDispatch
+#else
+    LIBACEDISPATCH =
+#endif
      LIBCOMUNIDRAW = -L$(IVTOOLSSRC)/ComUnidraw/$(CPU) -lComUnidraw
+   LIBFRAMEUNIDRAW = -L$(IVTOOLSSRC)/FrameUnidraw/$(CPU) -lFrameUnidraw
    LIBGRAPHUNIDRAW = -L$(IVTOOLSSRC)/GraphUnidraw/$(CPU) -lGraphUnidraw
        LIBDRAWSERV = -L$(IVTOOLSSRC)/DrawServ/$(CPU) -lDrawServ
 #else
@@ -119,11 +119,6 @@ XCOMM from <local.def>:
            LIBTIME = -Wl,-rpath,$(IVTOOLSSRC)/Time/$(CPU) -L$(IVTOOLSSRC)/Time/$(CPU) -lTime
       LIBATTRIBUTE = -Wl,-rpath,$(IVTOOLSSRC)/Attribute/$(CPU) -L$(IVTOOLSSRC)/Attribute/$(CPU) -lAttribute
         LIBCOMUTIL = -Wl,-rpath,$(IVTOOLSSRC)/ComUtil/$(CPU) -L$(IVTOOLSSRC)/ComUtil/$(CPU) -lComUtil
-#ifdef AceDir
-    LIBACEDISPATCH = -Wl,-rpath,$(IVTOOLSSRC)/AceDispatch/$(CPU) -L$(IVTOOLSSRC)/AceDispatch/$(CPU) -lAceDispatch
-#else
-    LIBACEDISPATCH =
-#endif
         LIBCOMTERP = -Wl,-rpath,$(IVTOOLSSRC)/ComTerp/$(CPU) -L$(IVTOOLSSRC)/ComTerp/$(CPU) -lComTerp
         LIBIVGLYPH = -Wl,-rpath,$(IVTOOLSSRC)/IVGlyph/$(CPU) -L$(IVTOOLSSRC)/IVGlyph/$(CPU) -lIVGlyph
       LIBATTRGLYPH = -Wl,-rpath,$(IVTOOLSSRC)/AttrGlyph/$(CPU) -L$(IVTOOLSSRC)/AttrGlyph/$(CPU) -lAttrGlyph
@@ -134,6 +129,11 @@ XCOMM from <local.def>:
  LIBOVERLAYUNIDRAW = -Wl,-rpath,$(IVTOOLSSRC)/OverlayUnidraw/$(CPU) -L$(IVTOOLSSRC)/OverlayUnidraw/$(CPU) -lOverlayUnidraw
 #ifdef IueDir
        LIBIUESERV = -Wl,-rpath,$(IVTOOLSSRC)/IueServ/$(CPU) -L$(IVTOOLSSRC)/IueServ/$(CPU) -lIueServ
+#endif
+#ifdef AceDir
+    LIBACEDISPATCH = -Wl,-rpath,$(IVTOOLSSRC)/AceDispatch/$(CPU) -L$(IVTOOLSSRC)/AceDispatch/$(CPU) -lAceDispatch
+#else
+    LIBACEDISPATCH =
 #endif
      LIBCOMUNIDRAW = -Wl,-rpath,$(IVTOOLSSRC)/ComUnidraw/$(CPU) -L$(IVTOOLSSRC)/ComUnidraw/$(CPU) -lComUnidraw
    LIBFRAMEUNIDRAW = -Wl,-rpath,$(IVTOOLSSRC)/FrameUnidraw/$(CPU) -L$(IVTOOLSSRC)/FrameUnidraw/$(CPU) -lFrameUnidraw
@@ -146,11 +146,6 @@ XCOMM from <local.def>:
            LIBTIME = $(IVTOOLSSRC)/Time/$(CPU)/libTime.a
       LIBATTRIBUTE = $(IVTOOLSSRC)/Attribute/$(CPU)/libAttribute.a
         LIBCOMUTIL = $(IVTOOLSSRC)/ComUtil/$(CPU)/libComUtil.a
-#ifdef AceDir
-    LIBACEDISPATCH = $(IVTOOLSSRC)/AceDispatch/$(CPU)/libAceDispatch.a
-#else
-    LIBACEDISPATCH =
-#endif
         LIBCOMTERP = $(IVTOOLSSRC)/ComTerp/$(CPU)/libComTerp.a
         LIBIVGLYPH = $(IVTOOLSSRC)/IVGlyph/$(CPU)/libIVGlyph.a
       LIBATTRGLYPH = $(IVTOOLSSRC)/AttrGlyph/$(CPU)/libAttrGlyph.a
@@ -161,6 +156,11 @@ XCOMM from <local.def>:
  LIBOVERLAYUNIDRAW = $(IVTOOLSSRC)/OverlayUnidraw/$(CPU)/libOverlayUnidraw.a
 #ifdef IueDir
         LIBIUESERV = $(IVTOOLSSRC)/IueServ/$(CPU)/libIueServ.a
+#endif
+#ifdef AceDir
+    LIBACEDISPATCH = $(IVTOOLSSRC)/AceDispatch/$(CPU)/libAceDispatch.a
+#else
+    LIBACEDISPATCH =
 #endif
      LIBCOMUNIDRAW = $(IVTOOLSSRC)/ComUnidraw/$(CPU)/libComUnidraw.a
    LIBFRAMEUNIDRAW = $(IVTOOLSSRC)/FrameUnidraw/$(CPU)/libFrameUnidraw.a
@@ -180,11 +180,6 @@ XCOMM from <local.def>:
            DEPTIME = $(IVTOOLSSRC)/Time/$(CPU)/libTime.SO.$(VERSION)
       DEPATTRIBUTE = $(IVTOOLSSRC)/Attribute/$(CPU)/libAttribute.SO.$(VERSION)
         DEPCOMUTIL = $(IVTOOLSSRC)/ComUtil/$(CPU)/libComUtil.SO.$(VERSION)
-#ifdef AceDir
-    DEPACEDISPATCH = $(IVTOOLSSRC)/AceDispatch/$(CPU)/libAceDispatch.SO.$(VERSION)
-#else
-    DEPACEDISPATCH =
-#endif
         DEPCOMTERP = $(IVTOOLSSRC)/ComTerp/$(CPU)/libComTerp.SO.$(VERSION)
         DEPIVGLYPH = $(IVTOOLSSRC)/IVGlyph/$(CPU)/libIVGlyph.SO.$(VERSION)
       DEPATTRGLYPH = $(IVTOOLSSRC)/AttrGlyph/$(CPU)/libAttrGlyph.SO.$(VERSION)
@@ -195,6 +190,11 @@ XCOMM from <local.def>:
  DEPOVERLAYUNIDRAW = $(IVTOOLSSRC)/OverlayUnidraw/$(CPU)/libOverlayUnidraw.SO.$(VERSION)
 #ifdef IueDir
        DEPIUESERV = $(IVTOOLSSRC)/IueServ/$(CPU)/libIueServ.SO.$(VERSION)
+#endif
+#ifdef AceDir
+    DEPACEDISPATCH = $(IVTOOLSSRC)/AceDispatch/$(CPU)/libAceDispatch.SO.$(VERSION)
+#else
+    DEPACEDISPATCH =
 #endif
      DEPCOMUNIDRAW = $(IVTOOLSSRC)/ComUnidraw/$(CPU)/libComUnidraw.SO.$(VERSION)
    DEPFRAMEUNIDRAW = $(IVTOOLSSRC)/FrameUnidraw/$(CPU)/libFrameUnidraw.SO.$(VERSION)

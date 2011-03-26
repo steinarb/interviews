@@ -121,7 +121,7 @@ install:: Concat(lib,libname.so.rev)                                    @@\
 /* --------------- autconf way of configuring --------------- */
 
 /* file output by configure script */
-#ifndef SVR4Architecture
+#ifdef SVR4Architecture
 #include "config-solaris-gcc.mk"
 #else
 #include "config-sunos4-gcc.mk"
