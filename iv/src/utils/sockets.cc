@@ -144,7 +144,11 @@ int CSocket::AConnect(){
   servaddr.sin_port = htons(port);
 
   // look up the address of the server given its name
+#ifdef LIBGPLUSPLUS
   hp = gethostbyname((const char*) hostname);
+#else
+  hp = gethostbyname((const char*) hostname.string());
+#endif
   if (!hp) {
     Thrower("Could not obtain address of specified host.  Bad hostname?");
   }
@@ -169,10 +173,16 @@ int CSocket::ReadWrite(fstream& in, String header, char* localfile) {
 
     // If header was passed in, server is 0.9, and all info 
     // from server is for file, including what we called the "header".
+#ifdef LIBGPLUSPLUS
     if(header) {
       int length = strlen(header);
       cout.write(header, length);
     }
+#else
+    if(header.length()) {
+      cout.write(header.string(), header.length());
+    }
+#endif
     
     if(!in.is_open()) {
       Thrower("Network connection was broken or connection timed out before retrieving file.");
@@ -215,10 +225,15 @@ int CSocket::ReadWrite(fstream& in, String header, char* localfile) {
 
     // If header was passed in, server is 0.9, and all info 
     // from server is for file, including what we called the "header".
+#ifdef LIBGPLUSPLUS
     if(header) {
       int length = strlen(header);
       fout.write(header, length);
     }
+#else
+    if(header.length()) 
+      fout.write(header.string(), header.length());
+#endif
     
     while(in.read(buffer, DownLoadAmount)) {
       if(!fout.write(buffer, DownLoadAmount)) {

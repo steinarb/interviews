@@ -145,4 +145,76 @@ public:
 
 };
 
+//: character conversion command for ComTerp.
+// c=char(num) -- convert any numeric to a char.
+class CharFunc : public ComFunc {
+public:
+    CharFunc(ComTerp*);
+
+    virtual void execute();
+    virtual const char* docstring() { 
+      return "c=%s(num) -- convert any numeric to a char"; }
+
+};
+
+//: short integer conversion command for ComTerp.
+// s=short(num) -- convert any numeric to a short.
+class ShortFunc : public ComFunc {
+public:
+    ShortFunc(ComTerp*);
+
+    virtual void execute();
+    virtual const char* docstring() { 
+      return "s=%s(num) -- convert any numeric to a short"; }
+
+};
+
+//: integer conversion command for ComTerp.
+// i=int(num) -- convert any numeric to an int.
+class IntFunc : public ComFunc {
+public:
+    IntFunc(ComTerp*);
+
+    virtual void execute();
+    virtual const char* docstring() { 
+      return "i=%s(num) -- convert any numeric to an int"; }
+
+};
+
+//: long integer conversion command for ComTerp.
+// l=long(num) -- convert any numeric to a long.
+class LongFunc : public ComFunc {
+public:
+    LongFunc(ComTerp*);
+
+    virtual void execute();
+    virtual const char* docstring() { 
+      return "l=%s(num) -- convert any numeric to a long"; }
+
+};
+
+//: floating-point conversion command for ComTerp.
+// f=float(num) -- convert any numeric to a float.
+class FloatFunc : public ComFunc {
+public:
+    FloatFunc(ComTerp*);
+
+    virtual void execute();
+    virtual const char* docstring() { 
+      return "f=%s(num) -- convert any numeric to a float"; }
+
+};
+
+//: double-length floating-point conversion command for ComTerp.
+// d=double(num) -- convert any numeric to a double.
+class DoubleFunc : public ComFunc {
+public:
+    DoubleFunc(ComTerp*);
+
+    virtual void execute();
+    virtual const char* docstring() { 
+      return "d=%s(num) -- convert any numeric to a double"; }
+
+};
+
 #endif /* !defined(_numfunc_h) */

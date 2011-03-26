@@ -121,4 +121,16 @@ public:
 
 };
 
+//: nil command for ComTerp.
+// nil([...]) -- accept any arguments and return nil.
+class NilFunc : public ComFunc {
+public:
+    NilFunc(ComTerp*);
+
+    virtual void execute();
+    virtual const char* docstring() { 
+      return "%s([...]) -- accept any arguments and return nil"; }
+
+};
+
 #endif /* !defined(_ctrlfunc_h) */

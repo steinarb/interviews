@@ -250,15 +250,23 @@ class OverlayRaster : public Raster {
 public:
     OverlayRaster(unsigned long width, unsigned long height);
     // construct an empty raster ready to accept width*height of pixel values.
+    OverlayRaster(
+      unsigned long width, unsigned long height, unsigned long bwidth
+    );
+    // initialize with a border of width bwidth using the default fg/bg colors
     OverlayRaster(const OverlayRaster& raster);
     // copy constructor
     OverlayRaster(const Raster& raster);
     // conversion constructor
+
     virtual ~OverlayRaster();
 
     virtual boolean initialized();
-    // creates pixmap_ with correct data
+    // get initialized flag.
+    virtual void initialized(boolean);
+    // set initialized flag.
     virtual void initialize();
+    // creates pixmap_ with correct data
 
     virtual void poke(
 	unsigned long x, unsigned long y,
@@ -405,6 +413,7 @@ protected:
     static XColor* _color_map;
     static int _unique_colors;
     boolean _grayflag;
+    boolean _init;
 
 friend OvImportCmd;
 friend RasterOvComp;

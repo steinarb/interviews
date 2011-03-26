@@ -125,6 +125,8 @@ Sample SunOS command line:
 	make World XCONFIGDIR=/usr/local/lib/X11/config 
 Sample Solaris command line:
 	make World XCONFIGDIR=/usr/X/lib/X11/config PWD=`pwd`
+Sample Alpha command line:
+	make World XCONFIGDIR=/usr/lib/X11/config PWD=`pwd`
 Sample Irix command line:
 	make World XCONFIGDIR=/usr/lib/X11/config
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994 Vectaport, Inc.
+ * Copyright (c) 1994-1999 Vectaport, Inc.
  * Copyright (c) 1990, 1991 Stanford University
  *
  * Permission to use, copy, modify, distribute, and sell this software and
@@ -26,11 +26,10 @@
  * drawserv main program.
  */
 
-#include <DrawServ/comcatalog.h>
-#include <DrawServ/comcreator.h>
-#include <DrawServ/comcomps.h>
-#include <DrawServ/comkit.h>
-#include <ComUnidraw/comeditor.h>
+#include <DrawServ/drawcatalog.h>
+#include <DrawServ/drawcreator.h>
+#include <DrawServ/drawcomps.h>
+#include <DrawServ/drawkit.h>
 
 #include <FrameUnidraw/frameeditor.h>
 #include <GraphUnidraw/grapheditor.h>
@@ -55,6 +54,8 @@
 #include <string.h>
 #include <math.h>
 
+#include <version.h>
+
 static int nmsg = 0;
 
 #if defined(__sun) && !defined(__svr4__)
@@ -68,7 +69,7 @@ extern "C" {
 #endif
 
 static OverlayEditor* launch_comdraw() {
-  ComEditor* ed = new ComEditor((const char*)nil, ComKit::Instance());
+  ComEditor* ed = new ComEditor((const char*)nil, OverlayKit::Instance());
   unidraw->Open(ed);
   return ed;
 }
@@ -214,8 +215,8 @@ int main (int argc, char** argv) {
 #ifdef HAVE_ACE
     Dispatcher::instance(new AceDispatcher(IMPORT_REACTOR::instance()));
 #endif
-    ComCreator creator;
-    ComCatalog* catalog = new ComCatalog("drawserv", &creator);
+    DrawCreator creator;
+    DrawCatalog* catalog = new DrawCatalog("drawserv", &creator);
     OverlayUnidraw* unidraw = new OverlayUnidraw(
         catalog, argc, argv, options, properties
     );
@@ -275,13 +276,30 @@ int main (int argc, char** argv) {
 
     } else {
 	const char* initial_file = (argc == 2) ? argv[1] : nil;
-	ComEditor* ed = nil;
+	FrameEditor* ed = nil;
 	if (initial_file) 
-	  ed = new ComEditor(initial_file, ComKit::Instance());
+	  ed = new FrameEditor(initial_file, DrawKit::Instance());
 	else 
-	  ed = new ComEditor(new ComIdrawComp, ComKit::Instance());
+	  ed = new FrameEditor(new DrawIdrawComp, DrawKit::Instance());
 
 	unidraw->Open(ed);
+
+#ifdef HAVE_ACE
+	/*  Start up one on stdin */
+	UnidrawComterpHandler* stdin_handler = new UnidrawComterpHandler();
+#if 0
+	if (ACE::register_stdin_handler(stdin_handler, COMTERP_REACTOR::instance(), nil) == -1)
+#else
+	if (COMTERP_REACTOR::instance()->register_handler(0, stdin_handler, 
+							  ACE_Event_Handler::READ_MASK)==-1)
+#endif
+	  cerr << "drawserv: unable to open stdin with ACE\n";
+	ed->SetComTerp(stdin_handler->comterp());
+	fprintf(stderr, "ivtools-%s drawserv: type help here for command info\n", VersionString);
+#else
+	fprintf(stderr, "ivtools-%s drawserv", VersionString);
+#endif
+
 	unidraw->Run();
     }
 

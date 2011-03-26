@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998 Vectaport Inc.
+ * Copyright (c) 1998-1999 Vectaport Inc.
  * Copyright (c) 1994-1995 Vectaport Inc., Cartoactive Systems
  * Copyright (c) 1994 Cartoactive Systems
  * Copyright (c) 1993 David B. Hollenbeck
@@ -580,7 +580,7 @@ Glyph* OverlayKit::MenuLine(PSBrush* br) {
 	return lk.hbox(lk.hglue(), wk.label("None"), lk.hglue());
     else
 	return lk.margin(new Fig31Line(br, wk.foreground(), nil,
-				       0, 0, MENU_WIDTH*ivcm, 0),
+				       0, 0, MENU_WIDTH*2*ivcm, 0),
 			 0.1*MENU_WIDTH*ivcm, 0.4*MENU_HEIGHT*ivcm);
 }
 
@@ -591,22 +591,22 @@ Glyph* OverlayKit::MenuArrowLine(boolean tail, boolean head) {
     Coord * x = new Coord[6];
     Coord * y = new Coord[6];
     
-    x[0] = 0.1*MENU_WIDTH*ivcm;
-    y[0] = 0.05*MENU_WIDTH*ivcm;
+    x[0] = 0.1*MENU_WIDTH*2*ivcm;
+    y[0] = 0.05*MENU_WIDTH*2*ivcm;
     x[1] = 0.0;
     y[1] = 0.0;
-    x[2] = 0.1*MENU_WIDTH*ivcm;
-    y[2] = -0.05*MENU_WIDTH*ivcm;
+    x[2] = 0.1*MENU_WIDTH*2*ivcm;
+    y[2] = -0.05*MENU_WIDTH*2*ivcm;
     
-    x[3] = 0.9*MENU_WIDTH*ivcm;
-    y[3] = 0.05*MENU_WIDTH*ivcm;
-    x[4] = MENU_WIDTH*ivcm;
+    x[3] = 0.9*MENU_WIDTH*2*ivcm;
+    y[3] = 0.05*MENU_WIDTH*2*ivcm;
+    x[4] = MENU_WIDTH*2*ivcm;
     y[4] = 0.0;
-    x[5] = 0.9*MENU_WIDTH*ivcm;
-    y[5] = -0.05*MENU_WIDTH*ivcm;
+    x[5] = 0.9*MENU_WIDTH*2*ivcm;
+    y[5] = -0.05*MENU_WIDTH*2*ivcm;
     
     Fig31Line* liner = new Fig31Line(br, wk.foreground(), nil,
-				     0, 0, MENU_WIDTH*ivcm, 0);
+				     0, 0, MENU_WIDTH*2*ivcm, 0);
     Fig31Polyline* tailer = new Fig31Polyline(br, wk.foreground(), nil,
 					      x, y, 3);
     Fig31Polyline* header = new Fig31Polyline(br, wk.foreground(), nil,
@@ -619,14 +619,14 @@ Glyph* OverlayKit::MenuArrowLine(boolean tail, boolean head) {
 					    lk.overlay(tailer, liner, header),
 					    lk.hglue()),
 				    lk.vglue()),
-			    1.2*MENU_WIDTH*ivcm, 0.9*MENU_HEIGHT*ivcm);
+			    1.2*MENU_WIDTH*2*ivcm, 0.9*MENU_HEIGHT*ivcm);
 	} else {
 	    return lk.fixed(lk.vbox(lk.vglue(),
 				    lk.hbox(lk.hglue(),
 					    lk.overlay(tailer, liner),
 					    lk.hglue()),
 				    lk.vglue()),
-			    1.2*MENU_WIDTH*ivcm, 0.9*MENU_HEIGHT*ivcm);
+			    1.2*MENU_WIDTH*2*ivcm, 0.9*MENU_HEIGHT*ivcm);
 	}
     } else {
 	if (head == true) {
@@ -635,14 +635,14 @@ Glyph* OverlayKit::MenuArrowLine(boolean tail, boolean head) {
 					    lk.overlay(liner, header),
 					    lk.hglue()),
 				    lk.vglue()),
-			    1.2*MENU_WIDTH*ivcm, 0.9*MENU_HEIGHT*ivcm);
+			    1.2*MENU_WIDTH*2*ivcm, 0.9*MENU_HEIGHT*ivcm);
 	} else {
 	    return lk.fixed(lk.vbox(lk.vglue(),
 				    lk.hbox(lk.hglue(),
 					    lk.overlay(liner),
 					    lk.hglue()),
 				    lk.vglue()),
-			    1.2*MENU_WIDTH*ivcm, 0.9*MENU_HEIGHT*ivcm);
+			    1.2*MENU_WIDTH*2*ivcm, 0.9*MENU_HEIGHT*ivcm);
 	}
     }
 }
@@ -745,9 +745,9 @@ MenuItem * OverlayKit::MakeFileMenu() {
     MakeMenu(mbi, new OvExportCmd(new ControlInfo("Export Graphic...",
 						  "^X", "\030")),
 	     "Export Graphic...   ");
-    MakeMenu(mbi, new OvWindowDumpAsCmd(new ControlInfo("Dump Window As..."
+    MakeMenu(mbi, new OvWindowDumpAsCmd(new ControlInfo("Dump Canvas As..."
 						  )),
-	     "Dump Window As...   ");
+	     "Dump Canvas As...   ");
     MakeMenu(mbi, new OvImageMapCmd(new ControlInfo("Save ImageMap As..."
 						  )),
 	     "Save ImageMap As... ");
@@ -934,6 +934,10 @@ MenuItem* OverlayKit::MakeBrushMenu() {
     ctrlInfo = new ControlInfo(new ArrowLineComp(line));
     MakeMenu(mbi, new ArrowCmd(ctrlInfo, true, true), MenuArrowLine(true, true));
 
+    mbi->menu()->append_item(kit.menu_item_separator());
+    MakeMenu(mbi, new OvPreciseBrushCmd(new ControlInfo("Precise Width",
+				       "", "")),
+	     "Precise Width");
     return mbi;
 }
 

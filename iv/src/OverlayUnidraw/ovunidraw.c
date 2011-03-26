@@ -29,6 +29,7 @@
 #include <OverlayUnidraw/ovcomps.h>
 #include <OverlayUnidraw/ovdoer.h>
 #include <OverlayUnidraw/ovunidraw.h>
+#include <OverlayUnidraw/ovpainter.h>
 
 #include <Unidraw/Commands/dirty.h>
 #include <Unidraw/Commands/macro.h>
@@ -66,6 +67,7 @@ OverlayUnidraw::OverlayUnidraw (Catalog* c, World* w)
 OverlayUnidraw::~OverlayUnidraw () 
 {
     delete _cmdq;
+    OverlayPainter::FreeCache();
 }
 
 void OverlayUnidraw::Append(Command* cmd) {

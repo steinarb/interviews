@@ -1,13 +1,17 @@
-/*                                                                                ftp.h
+/*                                                                              
+  ftp.h
 
+  Copyright (c) 1999 Vectaport Inc.
   Copyright (c) 1998 Eric F. Kahler
 
   Permission to use, copy, modify, distribute, and sell this software and
-  its documentation for any purpose is hereby granted without fee, provided       that the below copyright notice appear in all copies and that both that
+  its documentation for any purpose is hereby granted without fee, provided
+  that the below copyright notice appear in all copies and that both that
   copyright notice and this permission notice appear in supporting
   documentation, and that the names of the copyright holders not be used in
   advertising or publicity pertaining to distribution of the software
-  without specific, written prior permission.  The copyright holders make         no representations about the suitability of this software for any purpose.
+  without specific, written prior permission.  The copyright holders make
+  no representations about the suitability of this software for any purpose.
   It is provided "as is" without express or implied warranty.
 
   THE COPYRIGHT HOLDERS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS
@@ -19,13 +23,21 @@
   WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */              
 
+#ifdef LIBGPLUSPLUS
 #include <String.h>
+#else
+#include <OS/string.h>
+#endif
 
 class CFtp : CSocket {
 
  private:
 
+#ifdef LIBGPLUSPLUS
   String hostname, remotefile;
+#else
+  CopyString hostname, remotefile;
+#endif
   int port;
   char* localfile;
 

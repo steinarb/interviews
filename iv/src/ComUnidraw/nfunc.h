@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998 Vectaport Inc.
+ * Copyright (c) 1998,1999 Vectaport Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
@@ -26,6 +26,8 @@
 
 #include <ComUnidraw/unifunc.h>
 
+//: command to return number of onscreen columns in comdraw.
+// ncols() -- onscreen horizontal extent in pixels
 class NColsFunc : public UnidrawFunc {
 public:
     NColsFunc(ComTerp*,Editor*);
@@ -35,6 +37,8 @@ public:
 
 };
 
+//: command to return number of onscreen rows in comdraw.
+// nrows() -- onscreen vertical extent in pixels
 class NRowsFunc : public UnidrawFunc {
 public:
     NRowsFunc(ComTerp*,Editor*);
@@ -44,6 +48,8 @@ public:
 
 };
 
+//: command to return number of fonts in comdraw menu.
+// nfonts() -- return size of font menu
 class NFontsFunc : public UnidrawFunc {
 public:
     NFontsFunc(ComTerp*,Editor*);
@@ -53,6 +59,8 @@ public:
 
 };
 
+//: command to return number of brushes in comdraw menu.
+// nbrushes() -- return size of brush menu
 class NBrushesFunc : public UnidrawFunc {
 public:
     NBrushesFunc(ComTerp*,Editor*);
@@ -62,6 +70,8 @@ public:
 
 };
 
+//: command to return number of patterns in comdraw menu.
+// npatterns() -- return size of pattern menu
 class NPatternsFunc : public UnidrawFunc {
 public:
     NPatternsFunc(ComTerp*,Editor*);
@@ -71,12 +81,14 @@ public:
 
 };
 
+//: command to return number of colors in comdraw menus.
+// ncolors() -- return size of color menus.
 class NColorsFunc : public UnidrawFunc {
 public:
     NColorsFunc(ComTerp*,Editor*);
     virtual void execute();
     virtual const char* docstring() { 
-	return "%s() -- return size of colors menu"; }
+	return "%s() -- return size of color menus"; }
 
 };
 

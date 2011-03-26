@@ -68,7 +68,12 @@ int main(int argc, char *argv[]) {
   
   // Start up one on stdin
        IueHandler* stdin_handler = new IueHandler();
+#if 0
   if (ACE::register_stdin_handler(stdin_handler, COMTERP_REACTOR::instance(), nil) == -1)
+#else
+    if (COMTERP_REACTOR::instance()->register_handler(0, stdin_handler, 
+						      ACE_Event_Handler::READ_MASK)==-1)
+#endif
     cerr << "iueserv: unable to open stdin with ACE\n";
   
   // Perform logging service until COMTERP_QUIT_HANDLER receives SIGINT.

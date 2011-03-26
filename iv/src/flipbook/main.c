@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 1994, 1995 Vectaport Inc.
+ * Copyright (c) 1994-1999 Vectaport Inc.
  * Copyright (c) 1990, 1991 Stanford University                              
  *
  * Permission to use, copy, modify, distribute, and sell this software and
@@ -41,6 +40,7 @@
 #include <AceDispatch/ace_dispatcher.h>
 #endif
 
+#include <stdio.h>
 #include <stream.h>
 #include <string.h>
 #include <math.h>
@@ -54,6 +54,8 @@ extern "C" {
     }
 }
 #endif
+
+#include <version.h>
 
 /*****************************************************************************/
 
@@ -300,12 +302,18 @@ int main (int argc, char** argv) {
 #ifdef HAVE_ACE
 	/*  Start up one on stdin */
 	UnidrawComterpHandler* stdin_handler = new UnidrawComterpHandler();
+#if 0
 	if (ACE::register_stdin_handler(stdin_handler, COMTERP_REACTOR::instance(), nil) == -1)
+#else
+	if (COMTERP_REACTOR::instance()->register_handler(0, stdin_handler, 
+							  ACE_Event_Handler::READ_MASK)==-1)
+#endif
 	  cerr << "flipbook: unable to open stdin with ACE\n";
 	ed->SetComTerp(stdin_handler->comterp());
 #endif
 	
 
+	fprintf(stderr, "ivtools-%s flipbook: see \"man flipbook\" or type help here for command info\n", VersionString);
 	unidraw->Run();
     }
 

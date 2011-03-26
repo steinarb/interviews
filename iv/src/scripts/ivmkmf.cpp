@@ -24,17 +24,17 @@ if [ -f Makefile ]; then
 	mv Makefile Makefile.bak
 fi
 
-#ifdef UseInstalled
+#ifdef USE_INSTALLED
 case "$do_all" in
 	yes)	set -x
 		imake CONFIGDIRSPEC -DUseInstalled &&
-		make Makefile MAKEMAKESPEC &&
-		make Makefiles MAKEMAKESPEC &&
-		make depend
+		make Makefile MAKEMAKESPEC UseInstalled=1 &&
+		make Makefiles MAKEMAKESPEC UseInstalled=1 &&
+		make depend UseInstalled=1
 		;;
 	*)	set -x
 		imake CONFIGDIRSPEC -DUseInstalled
-		make Makefile MAKEMAKESPEC
+		make Makefile MAKEMAKESPEC UseInstalled=1
 		;;
 esac
 #else

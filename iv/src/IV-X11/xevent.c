@@ -225,6 +225,8 @@ EventType Event::type() const {
 	return up;
     case KeyPress:
 	return key;
+    case SelectionNotify:
+	return selection_notify;
     default:
 	return other_event;
     }

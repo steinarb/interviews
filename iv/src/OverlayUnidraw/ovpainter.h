@@ -47,11 +47,13 @@ public:
     virtual void RasterRect(Canvas*, Coord x, Coord y, OverlayRasterRect*);
 #endif /* RasterRect */
     void MapRoundUp(Canvas*c, IntCoord x, IntCoord y, IntCoord& mx, IntCoord& my);
+    static void Uncache(Raster*);
+    static void FreeCache();
+
 protected:
     virtual void DoRasterRect(
         Canvas*, Coord x, Coord y, OverlayRaster*, OverlayRasterRect*
     );
-
 };
 
 /*

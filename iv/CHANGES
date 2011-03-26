@@ -1,4 +1,282 @@
-January 26th 1998 ivtools-0.7.3
+February 27th 1999 ivtools-0.7.4
+
+Drawing Editor Changes
+
+	* make use of the X Shared Memory extensions for raster display.
+
+	* implement asynchronous download and incremental display of color
+ 	images from a URL.  To test, make a local copy of
+ 	http://www.vectaport.com/ivtools/anteaters.drs, and open it with
+ 	ivtools drawtool.  Watch while the rasters within this drawing are
+ 	downloaded from various web servers.  Before its finished you can
+ 	pan or zoom the drawing, and move or draw any graphic (including
+ 	the partially downloaded rasters).  Then you can Undo all your
+ 	changes to get back to a fully-loaded, unmodified drawing!
+
+	* add support for Ctrl-K (delete-until-end-of-line) to the string
+ 	editor used throughout ivtools.  
+
+	* add support for pasting the current X Window selection when the
+ 	middle mouse button is clicked within a string editor. Especially
+ 	useful for the string editor used within the Open and Import
+ 	dialog boxes.
+
+	* add a one-line welcome message to every drawing editor that
+ 	gives the ivtools version number, identifies the editor, and
+ 	states how to find more information.
+
+	* complete support for floating point brush width (line width) in
+ 	all ivtools drawing editors.  New idraw PostScript format version
+ 	number (12) introduced to facilitate this.  
+
+	Version 11 has been in use since ivtools-0.6.7, and differed from
+ 	the class Version 10 in only one detail, the addition of
+ 	"closepath" to the PostScript fragments for circle and ellipse
+ 	graphics.  Version 12 is forward-compatible, in that future
+ 	versions of idraw will be able to always read it, but for the
+ 	first time in a long while there is no guarantee of backward
+ 	compatibility.  This has been the design and intent of the idraw
+ 	version numbering system all along.
+
+	Ideally what this means is that users of older versions of idraw
+ 	would see a warning message that explained why a newer format
+ 	drawing didn't load.  Unfortunately pre-existing bugs in idraw
+ 	(ones that have been fixed since ivtools-0.6.7) cause the warning
+ 	message to have zero's where version numbers should go and/or
+ 	cause idraw to segfault when it can't load a newer format.  The
+ 	warning message should work ok for users of idraw from Debian 2.1.
+  	For more details see:
+	
+ 	    http://www.vectaport.com/ivtools/faq.html#idrawversions.
+
+	* The incrementing of the idraw format version number was
+ 	undertaken to add support for floating point line widths, at the
+ 	request of Robert S. Maier, the developer of GNU plotutils.  This
+ 	possiblity has not been enabled yet.  But to show off the new
+ 	capability a "Precise Width" was added to the Brush menu of
+ 	drawtool, etc..  For kicks try something like 10000.
+	
+	* add a check for using the curl download utility, after checking
+ 	for the w3c download utility, and before trying the native ivdl
+ 	utility.
+
+Interpreter Changes	
+
+	* add a one-line welcome message to every interpreter that
+ 	gives the ivtools version number, identifies the interpreter, and
+ 	states how to find more information.
+	
+Documentation Changes
+
+	* finalize the embedding of PERCEPS extractable comments in the
+ 	header files for most of the class libraries:
+
+	    http://friga.mer.utexas.edu/mark/perl/perceps/
+
+	* add a -t argument to iclass to generate a tree structured
+	web page of links to HTML class documentation.
+
+	* create a src/html directory with enough instructions and
+	PERCEPS template files to allow a third party to recreate
+	most of the HTML documentation for ivtools found under:
+
+	    http://www.vectaport.com/ivtools/doc/
+
+ComTerp Framework Changes
+
+	-- ComTerp -- 
+
+	* make NilFunc that ignores all its arguments, does (almost)
+ 	nothing except for returning nil on the stack.  Bind it to the nil
+ 	symbol in comterp.
+
+	* fix problem with undefined commands inside the body of a control
+ 	command by substituting a NilFunc to execute (while preserving the
+ 	symbol id associated with the undefined command).
+
+	* add a _command_symid member variable to ComFuncState, so that
+ 	this value can be used a NilFunc to report what undefined command
+ 	is being skipped by returning nil on the stack.
+
+	* add numeric conversion funcs: char (CharFunc), short
+ 	(ShortFunc), int (IntFunc), long (LongFunc), float (FloatFunc),
+ 	double (DoubleFunc). In the future unsigned'ness can be added with
+ 	keyword arguments, and maybe a boolean func could be defined as
+ 	well.
+
+Glyph Framework Changes
+
+	-- IV-X11 -- 
+
+	* add support for the SelectionNotify X11 event type.  This is
+ 	what a client receives after it makes a request for the current X
+ 	selection (i.e. what happens when the middle mouse button gets
+ 	pressed in something like an xterm).
+
+	* add a new InputHandler virtual method:
+
+	    InputHandler::selection_notify(const Event&); 
+
+	this gets called whenever a SelectionNotify event arrives at an
+ 	InputHandler.
+
+	-- InterViews -- 
+
+	* make a FieldEditor::selection_notify(const Event&) method that in
+ 	turn delegates the SelectionNotify event to a new
+ 	FieldStringEditor::do_xselection_paste.
+
+	* finally (actually this was first), change the
+ 	FieldStringEditor::press method to call a new
+ 	FieldStringEditor::do_xselection_request whenever the midddle
+ 	button is pressed.  When that happens the client asks the server
+ 	to get the current window manager selection from whomever owns it,
+ 	and assign it to a property on the local window.  When this is
+ 	done a SelectionNotify event gets generated and
+ 	FieldStringEditor::do_xselection_paste ends up getting called to
+ 	paste the result into the FieldEditor.  Voila!
+
+        -- glyphs/examples3.1 -- 	
+
+	* add most of the InterViews 3.1 glyph example programs in a
+ 	subdirectory alongside the rest of the glyph examples, except for
+ 	gl which requires gl.h and punidraw which requires Unidraw.
+  	morpher and plot/sendplot need to be debugged.
+
+	* to run the button2 example you have supply a tif file as the
+ 	first argument on the command line, or have a copy of jello.tif
+ 	(from the 3.1 distribution) in your current directory.
+
+	* create README's for src/glyphs and src/glyphs/examples3.1
+
+	* make the morpher example use its own classnames for things in
+ 	figure.(ch) This is the same process that created
+ 	IVGlyph/figure.(ch) a long time ago.  These could be made to use
+ 	the same classes, but not worth doing until the morpher example
+ 	looks more promising.  Maybe even the morpher example should be
+ 	thrown out (again).
+
+Unidraw Framework Changes
+
+	-- OverlayUnidraw --
+
+	* change Overlay(s)Comp's interpretation of a duplicate command
+ 	(DUP_CMD), to duplicate the AttributeList as well if one exists.
+
+	* change the ::Copy methods of all the comp's in OverlayUnidraw,
+ 	to replicate the associated AttributeList if there is one.
+
+	-- GraphUnidraw --
+
+	* debug the duplicate (DUP_CMD) command when used on NodeComp's in
+ 	graphdraw.  Turns out the istream constructed NodeComp's did not
+ 	have the same layout of graphic state as the others.  The
+ 	underlying TextGraphic did not have a Font pointer, for example.
+  	This was no problem in rendering, but was a problem for the
+ 	duplicate command, which invoked a get-extent operation which
+ 	failed for lack of knowing the font.  Fix was to push down gs of
+ 	the Picture graphic associated with the NodeComp to be in the
+ 	underlying ellipse and text graphics as well.
+
+	-- DrawServ --
+
+	* rename all the classes in DrawServ to have a "Draw" prefix
+ 	instead of a "Com" prefix, to alleviate confusion between the
+ 	ComUnidraw and DrawServ layers.
+
+	* derive everything in DrawServ from FrameUnidraw.  Already
+ 	DrawServ had been able to handle components from GraphUnidraw
+ 	without having its mechanisms inherited from GraphUnidraw.  This
+ 	"finishes" the job, making for a multi-frame graph editing
+ 	framework.
+
+Miscellaneous and Config Changes
+
+       	* remove all WishList files.  This is now handled outside of the
+ 	tarfile, some of it on:
+
+	    http://www.vectaport.com/ivtools/help-wanted.html
+
+
+	* changes required based on feedback from M. Rasit Eskicioglu at
+ 	the University of Alberta, as he tried (and succeeded) building
+ 	ivtools on Solaris 2.6, as well as a few changes based on feedback
+ 	from Bruno DelFosse at Thompson CSF (Dec Alpha guy).
+
+	* many improvements to the non-relative installation process (the
+ 	default), including fixing the generated ivmkmf script.
+
+	* creation of an uninstall makefile target, which reverses the
+ 	effect of "make install".  Useful for backing out the installation
+ 	of one version of ivtools before installing another, or before
+	switching modes of installation.
+
+	* src/include/std renamed to src/include/ivstd, so it makes a
+ 	little more sense when someone does a non-relative install in
+ 	/usr/local.
+
+	* upgrade to gcc-2.8.1 and libstdc++-2.8.1.1, which required some
+ 	changes: 
+
+	- new src/include/ivstd/signal.h file, to reset NULL to be 0
+	(instead of ((void*)0).  Same trick required in
+ 	src/include/ivstd/string.h (to avoid new warnings).  
+
+	- add the OS String class to the IV-common library, and extend it
+ 	so that utils/ivdl could be ported to use it, to avoid any use of
+ 	libg++ String (libg++ is no longer recommended, at least by the
+ 	gcc-2.8.1 distribution).  
+
+	- changes to Attribute/paramlist.c and a few others to get rid of
+ 	new warnings.
+	
+	* upgrade to ACE-4.6, which required some changes:
+
+	- the register_stdin_handler method on the Reactor is no longer
+
+	- need to add -UHAVE_ACE to makedepend 
+
+	- more changes required for ivmaps (like #undef CLOSED after
+	<VpfUtil/vpftable.h> -- that'll be in a patch someday.
+
+	* add a src/tests directory, with the first program useful for
+ 	demonstrating no Y2K problem in ivtools (y2k/y2ktest.cc).
+
+	* incorporate COPYRIGHT.proposed as another way of getting
+ 	comments.
+
+	* add comtop.tgz directly to the tar file, the tar file for a
+ 	sample stand alone custom comterp.
+
+	* fix up the use ivmkmf in conjunction with comtop.tgz, making it
+ 	work equally well with and without --enable-relative-install
+ 	supplied to ./configure.
+
+	* rewrite the definitions of the library makefile variables in
+ 	config/local.def, so that a conditionally determined macro gets
+ 	defined first, then each library requires only a single line after
+ 	that (and a single line for the dependency make variable).
+  	Because of the inflexiblity of the C preprocessor this is not so
+ 	elegant, in that the arguments to the macro have to include the
+ 	library name without and without the prefix, and one with a -l
+ 	prefix.  But is still only a single line, which is a big improvement.
+
+	* make use of the UseInstalled preprocessor define to indicate
+ 	when Makefiles should be generated to use the installed copy.
+  	This really only makes sense (or is only currently used) for
+ 	ivmkmf when --enable-relative-install was not given to
+ 	./configure.
+
+	* adds a historical list of changes to ivtools over the course of
+ 	version 0.4
+
+	* appends to CHANGES-0.5 changes which occurred for 0.5.1 and
+ 	0.5.2. This leaves only 0.5.3 and 0.5.4 (and any work prior to
+ 	0.4.0) undocumented.
+
+	* small change found in Debian ivtools-0.7.3-1 changes.
+	
+January 26th 1999 ivtools-0.7.3
 
 Drawing Editor Changes
 

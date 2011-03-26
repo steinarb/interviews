@@ -39,6 +39,8 @@ class OverlayRaster;
 class Raster;
 class Bitmap;
 class PortableImageHelper;
+class RasterOvComp;
+class FileHelper;
 
 //: command for importing arbitrary graphical files.
 // command for importing arbitrary graphical files: a wide variety of raster files, 
@@ -83,6 +85,14 @@ public:
     virtual GraphicComp* Import(istream&, boolean& empty);
     // import from istream, returning flag to indicate if anything happened.
 
+    static boolean changeComp(RasterOvComp* oldComp, RasterOvComp* newComp);
+    static void detach(RasterOvComp*);
+
+    static GraphicComp* DoImport(
+        istream& instrm, boolean& empty, FileHelper& helper, Editor* ed, 
+        boolean is_url, const char* pathname, int& pnmfd
+    );
+
     static GraphicComp* TIFF_Image(const char*);
     // generate RasterOvComp from TIFF file.
     static OverlayRaster* TIFF_Raster(const char*);
@@ -120,7 +130,8 @@ public:
 
     static GraphicComp* PNM_Image(istream&, const char* creator = nil);
     // generate RasterOvComp from a PNM istream (PBM, PGM, or PPM).
-    static GraphicComp* PNM_Image_Filter(istream&, const char* filter = nil);
+    static GraphicComp* PNM_Image_Filter(istream&, boolean url, int& fd,
+					 const char* filter = nil);
     // generate RasterOvComp from a PNM istream (PBM, PGM, or PPM), using a 
     // specified filter to convert from another format to one of the PNM formats.
 
@@ -170,6 +181,9 @@ public:
 	FILE* file, const char *pathname, boolean& compressed);
     // check the compression status of a file specified by 'pathname'.
 
+    static OverlayRaster* CreatePlaceImage();
+    // create placeholder image when doing asynchronous incremental downloads.
+	 
     void is_url(boolean flag) { _is_url = flag; }
     // set flag that indicates import is from a URL.
     boolean is_url() { return _is_url; }
@@ -222,6 +236,7 @@ protected:
    // utility method for tiled or untiled access of PGM and PPM disk files.
 
 protected:
+    FileHelper* helper_;
     ImportChooser* chooser_;
     istream* inptr_;
     char* path_;
@@ -279,5 +294,3 @@ public:
 
 
 #endif
-
-

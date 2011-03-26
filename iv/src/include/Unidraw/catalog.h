@@ -60,6 +60,8 @@ class World;
 class istream;
 class ostream;
 
+//: stores and retrieves named objects.
+// <a href=../man3.1/Catalog.html>man page</a>
 class Catalog {
 public:
     Catalog(const char*, Creator*, float version = UV_LATEST);

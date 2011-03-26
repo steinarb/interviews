@@ -37,5 +37,10 @@ LIB_FILES = comterp.err
 InstallMultiple($(LIB_FILES),$(LIBALLDIR))
 
 MakeInObjectCodeDir()
+InstallIncludes($(PACKAGE))
+InstallInclude($(PACKAGE),comterp.arg)
+InstallInclude($(PACKAGE),comterp.err)
+InstallInclude($(PACKAGE),comutil.arg)
+InstallInclude($(PACKAGE),comutil.ci)
 
 #endif

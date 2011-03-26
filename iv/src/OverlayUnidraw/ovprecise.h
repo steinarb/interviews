@@ -96,4 +96,18 @@ public:
     virtual boolean IsA(ClassId);
 };
 
+//: precise brush-width (line-width) command.
+class OvPreciseBrushCmd : public Command {
+public:
+    OvPreciseBrushCmd(ControlInfo*);
+    OvPreciseBrushCmd(Editor* = nil);
+    virtual ~OvPreciseBrushCmd();
+
+    virtual void Execute();
+
+    virtual Command* Copy();
+    virtual ClassId GetClassId();
+    virtual boolean IsA(ClassId);
+};
+
 #endif

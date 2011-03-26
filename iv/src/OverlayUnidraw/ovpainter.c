@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1994-1995 Vectaport Inc.
  * Copyright (c) 1990, 1991 Stanford University
- * Copyright (c) 1996 R.B. Kissh & Associates
+ * Copyright (c) 1996, 1999 R.B. Kissh & Associates
  *
  * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
@@ -37,6 +37,7 @@
 #include <InterViews/canvas.h>
 #include <InterViews/raster.h>
 #include <InterViews/transformer.h>
+#include <InterViews/session.h>
 
 #include <OS/table.h>
 #include <OS/math.h>
@@ -301,8 +302,36 @@ static void DrawSourceTransformedImage (
 
 // ---------------------------------------------------------------------------
 
-declareTable(ImageTable,Pixmap,XImage*)
-implementTable(ImageTable,Pixmap,XImage*)
+
+class ImageHolder {
+public:
+    ImageHolder();
+    ~ImageHolder();
+
+    XImage* _image;
+    boolean _shared_memory;
+#ifdef XSHM
+    XShmSegmentInfo _shminfo;
+#endif
+};
+
+ImageHolder::ImageHolder() : _image(nil), _shared_memory(false) {
+}
+
+ImageHolder::~ImageHolder() {
+    XDestroyImage(_image);
+
+#ifdef XSHM
+    if (_shared_memory) {
+        Display& d = *Session::instance()->default_display();
+        RasterRep::free_shared_memory(d, _shminfo);
+    }
+#endif
+}
+
+
+declareTable(ImageTable,Pixmap,ImageHolder*)
+implementTable(ImageTable,Pixmap,ImageHolder*)
 
 class ImageCache {
 public:
@@ -326,32 +355,42 @@ ImageCache::ImageCache() : _table(100) {
 }
 
 ImageCache::~ImageCache() {
-
     TableIterator(ImageTable) i(_table);
-
     for (; i.more(); i.next()) {
-        XDestroyImage(i.cur_value());
+        delete i.cur_value();
     }
 }
 
 XImage* ImageCache::get(
     Display& d, Pixmap pix, int width, int height, const Raster* ras
 ) {
-    XImage* ret;
+    XImage* ret = nil;
 
     if (ras && (pix == ras->rep()->pixmap_)) {
         ret = ras->rep()->image_;
     }
     else {
-        if (!_table.find(ret, pix)) {
+        ImageHolder* ih = nil;
+        if (!_table.find(ih, pix)) {
             XDisplay* dpy = d.rep()->display_;
+            ih = new ImageHolder;
 
-            ret = XGetImage(
-                dpy, pix, 0, 0, width, height, AllPlanes, ZPixmap
+#ifdef XSHM
+            RasterRep::init_shared_memory(
+                ih->_shared_memory, d, ih->_shminfo, width, height, ih->_image,
+                pix
             );
+#endif
 
-            _table.insert(pix, ret);
+            if (!ih->_shared_memory) {
+                ih->_image = XGetImage(
+                    dpy, pix, 0, 0, width, height, AllPlanes, ZPixmap
+                );
+            }
+
+            _table.insert(pix, ih);
         }
+        ret = ih->_image;
     }
 
     return ret;
@@ -365,10 +404,10 @@ XImage* ImageCache::get(const Raster* r) {
 }
 
 void ImageCache::remove(Pixmap p) {
-    XImage* doomed;
+    ImageHolder* doomed;
     if (_table.find(doomed, p)) {
         _table.remove(p);
-        XDestroyImage(doomed);
+        delete doomed;
     }
 }
 
@@ -509,9 +548,20 @@ static Pixmap DrawDestTransformedImage(
     );
     GC xgc = XCreateGC(dpy, map, 0, nil);
 
-    XImage* dest = XGetImage(
-        dpy, map, 0, 0, dwidth, dheight, AllPlanes, ZPixmap
+    XImage* dest = nil;
+    boolean shared_mem = false;
+#ifdef XSHM
+    XShmSegmentInfo shminfo;
+    RasterRep::init_shared_memory(
+        shared_mem, d, shminfo, dwidth, dheight, dest, map
     );
+#endif
+
+    if (!shared_mem) {
+        dest = XGetImage(
+            dpy, map, 0, 0, dwidth, dheight, AllPlanes, ZPixmap
+        );
+    }
 
     int sx0 = 0;
     int sy0 = 0;
@@ -542,7 +592,14 @@ static Pixmap DrawDestTransformedImage(
 
     XPutImage(dpy, map, xgc, dest, 0, 0, 0, 0, dwidth, dheight);
     XFreeGC(dpy, xgc);
+
     XDestroyImage(dest);
+
+#ifdef XSHM
+    if (shared_mem) {
+        RasterRep::free_shared_memory(d, shminfo);
+    }
+#endif
 
     return map;
 }
@@ -706,9 +763,55 @@ boolean RasterKey::operator ==(const RasterKey& r) const {
 
 // -------------------------------------------------------------------------
 
-declareTable2(OvPixmapTable,const Raster*,RasterKey,Pixmap)
-implementTable2(OvPixmapTable,const Raster*,RasterKey,Pixmap)
+declareTable2(OvPixmapTableBase,const Raster*,RasterKey,Pixmap)
+implementTable2(OvPixmapTableBase,const Raster*,RasterKey,Pixmap)
+
+class OvPixmapTable : public OvPixmapTableBase {
+public:
+    OvPixmapTable(int size);
+    void remove(const Raster*);
+};
+
+OvPixmapTable::OvPixmapTable(int size) : OvPixmapTableBase(size) {
+}
+
+// having only one key we are forced to delete by iterating through the entire
+// table
+void OvPixmapTable::remove(const Raster* r) {
+    Display& d = *Session::instance()->default_display();
+    XDisplay* dpy = d.rep()->display_;
+
+    OvPixmapTableBase_Entry** a;
+    register OvPixmapTableBase_Entry* e;
+
+    for (a = first_; a <= last_; a++) {
+        e = *a;
+        while (e != nil) {
+            if (e->key1_ == r) {
+                *a = e->chain_;
+                XFreePixmap(dpy, e->value_);
+                delete e;
+                e = *a;
+            } else {
+                register OvPixmapTableBase_Entry* prev;
+                do {
+                    prev = e;
+                    e = e->chain_;
+                } while (e != nil && (e->key1_ != r));
+                if (e != nil) {
+                    prev->chain_ = e->chain_;
+                    XFreePixmap(dpy, e->value_);
+                    delete e;
+                    e = prev->chain_;
+                }
+            }
+        }
+    }
+}
+
 static OvPixmapTable* tx_pixmaps_;
+
+// -------------------------------------------------------------------------
 
 class SourceRep {
 public:
@@ -1102,3 +1205,64 @@ void OverlayPainter::MapRoundUp(
     mx += xoff;
     my = c->pheight() - 1 - (my + yoff);
 }
+
+// ---------------------------------------------------------------------------
+
+/* static */ void OverlayPainter::Uncache(Raster* r) {
+
+    Display& d = *r->rep()->display_;
+    XDisplay* dpy = d.rep()->display_;
+
+    if (icache_) {
+        icache_->remove(r->rep()->pixmap_);  // deletes ximage
+    }
+
+    // tx_pixmaps_ is a superset of source_table_
+
+    if (tx_pixmaps_) {
+        tx_pixmaps_->remove(r);  // frees pixmap
+    }
+
+    if (source_table_) {
+        SourceRep* dum;
+        while(source_table_->find_and_remove(dum, r));
+    }
+}
+
+
+/* static */ void OverlayPainter::FreeCache() {
+
+    Display& d = *Session::instance()->default_display();
+    XDisplay* dpy = d.rep()->display_;
+
+    if (icache_) {
+        delete icache_;  // will free up ximages
+        icache_ = nil;
+    }
+
+    // tx_pixmaps_ is a superset of source_table_
+        
+    if (tx_pixmaps_) {
+        Table2Iterator(OvPixmapTableBase) i(*tx_pixmaps_);
+        
+        for (; i.more(); i.next()) {
+            XFreePixmap(dpy, i.cur_value());
+        }
+        delete tx_pixmaps_;
+        tx_pixmaps_ = nil;
+    }
+
+    delete source_table_;
+    source_table_ = nil;
+}
+
+
+
+
+
+
+
+
+
+
+

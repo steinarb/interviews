@@ -188,7 +188,9 @@ IntoSubdirs(all,dirs,"making all")
 
 #ifndef InstallSubdirs
 #define InstallSubdirs(dirs)						@@\
-IntoSubdirs(install,dirs,"installing")
+IntoSubdirs(install,dirs,"installing")					@@\
+									@@\
+IntoSubdirs(uninstall,dirs,"uninstalling")
 #endif
 
 #ifndef CleanSubdirs
@@ -454,6 +456,7 @@ cmcommit:: 									@@\
        LIBDIRPATH = LibDirPath						@@\
           LDLIBIV = Ld_libIV						@@\
       XLIBDIRPATH = XLibDirPath						@@\
+        LDLIBXEXT = Ld_libXext						@@\
          LDLIBX11 = Ld_libX11						@@\
            LDLIBM = Ld_libm						@@\
     ABSLIBDIRPATH = AbsLibDirPath
@@ -466,6 +469,7 @@ cmcommit:: 									@@\
 #define Use_libUnidraw() 						@@\
     DEPLIBUNIDRAW = Dep_libUnidraw					@@\
          DEPLIBIV = Dep_libIV						@@\
+       DEPLIBXEXT = Dep_libXext						@@\
         DEPLIBX11 = Dep_libX11						@@\
           DEPLIBM = Dep_libm						@@\
 									@@\
@@ -473,6 +477,7 @@ cmcommit:: 									@@\
      LDLIBUNIDRAW = Ld_libUnidraw					@@\
           LDLIBIV = Ld_libIV						@@\
       XLIBDIRPATH = XLibDirPath						@@\
+        LDLIBXEXT = Ld_libXext						@@\
          LDLIBX11 = Ld_libX11						@@\
            LDLIBM = Ld_libm						@@\
     ABSLIBDIRPATH = AbsLibDirPath
@@ -751,7 +756,8 @@ PROGRAM	= program							@@\
 									@@\
 AllTarget($(AOUT))							@@\
 BuildProgram($(AOUT),NullParameter,$(OBJS),$(CCDEPLIBS),$(CCLDLIBS))	@@\
-DependTarget()
+DependTarget()								@@\
+uninstall::
 #endif
 
 /*
@@ -840,7 +846,10 @@ step::									@@\
 #define InstallDynamicSharedLibrary(libname,rev,dest)			@@\
 install:: Concat(lib,libname.so.rev)					@@\
 	MakeDir(dest)							@@\
-	$(INSTALL) -c $(INSTLIBFLAGS) Concat(lib,libname.so.rev) dest
+	$(INSTALL) -c $(INSTLIBFLAGS) Concat(lib,libname.so.rev) dest   @@\
+									@@\
+uninstall:: 								@@\
+	$(RM) dest/Concat(lib,libname.so.rev)			
 #endif
 
 #ifndef InstallNonSharedLibrary
@@ -848,7 +857,10 @@ install:: Concat(lib,libname.so.rev)					@@\
 install:: Concat(lib,libname.a)						@@\
 	MakeDir(dest)							@@\
 	$(INSTALL) -c $(INSTLIBFLAGS) Concat(lib,libname.a) dest	@@\
-	RanLibrary($(RANLIBINSTFLAGS) Concat(dest/lib,libname.a))
+	RanLibrary($(RANLIBINSTFLAGS) Concat(dest/lib,libname.a))       @@\
+									@@\
+uninstall::								@@\
+	$(RM) dest/Concat(lib,libname.a)
 #endif
 
 #ifndef InstallLibrary
@@ -870,12 +882,18 @@ InstallNonSharedLibrary(libname,dest)
 install:: program							@@\
 	MakeDir(destdir)						@@\
 	$(INSTALL) -c $(INSTPGMFLAGS) flags program destdir/destname	@@\
-	$(RM) program
+	$(RM) program							@@\
+									@@\
+uninstall::								@@\
+	$(RM) destdir/destname
 #else
 #define InstallProgramWithFlags(program,destdir,destname,flags)		@@\
 install:: program							@@\
 	MakeDir(destdir)						@@\
-	$(INSTALL) -c $(INSTPGMFLAGS) flags program destdir/destname
+	$(INSTALL) -c $(INSTPGMFLAGS) flags program destdir/destname    @@\
+									@@\
+uninstall::								@@\
+	$(RM) destdir/destname
 #endif
 #endif
 
@@ -891,7 +909,10 @@ InstallProgramWithFlags(program,destdir,destname,$(INSTBINFLAGS))
 #define InstallScript(script,dest)					@@\
 install:: script							@@\
 	MakeDir(dest)							@@\
-	$(INSTALL) -c $(INSTBINFLAGS) script dest
+	$(INSTALL) -c $(INSTBINFLAGS) script dest			@@\
+									@@\
+uninstall::								@@\
+	dest/script
 #endif
 
 /*
@@ -901,7 +922,10 @@ install:: script							@@\
 #define InstallScriptAs(script,dest,destname)				@@\
 install:: script							@@\
 	MakeDir(dest)							@@\
-	$(INSTALL) -c $(INSTBINFLAGS) script dest/destname
+	$(INSTALL) -c $(INSTBINFLAGS) script dest/destname		@@\
+									@@\
+uninstall::								@@\
+	$(RM) dest/destname		
 #endif
 
 /*
@@ -913,6 +937,11 @@ install:: list								@@\
 	MakeDir(dest)							@@\
 	@for i in list; do \						@@\
 		(set -x; $(INSTALL) -c flags $$i dest); \		@@\
+	done								@@\
+									@@\
+uninstall::								@@\
+	@for i in list; do \						@@\
+		($(RM) dest/$$i); \					@@\
 	done
 #endif
 
@@ -931,7 +960,10 @@ install::  								@@\
 	if [ ! -f dest/libbase ]; then \				@@\
 		 $(LN) libdir/libbase dest/; \				@@\
 		 echo $(LN) libdir/libbase dest/ \			@@\
-	;fi ;fi
+	;fi ;fi								@@\
+									@@\
+uninstall::								@@\
+	$(RM) dest/libbase
 #endif
 
 /*
@@ -949,7 +981,40 @@ install::								@@\
 #define InstallIncludes(dir)						@@\
 install::								@@\
 	MakeDir($(INCDIR)/dir)						@@\
-	$(INSTALL) $(INSTINCFLAGS) *.h $(INCDIR)/dir		    
+	$(INSTALL) $(INSTINCFLAGS) *.h $(INCDIR)/dir			@@\
+									@@\
+uninstall::								@@\
+	(cd $(INCDIR)/dir;$(RM) *.h)
 #endif
 #endif
 
+#ifndef InstallInclude
+#if InstallRelative
+#define InstallInclude(dir, file)					@@\
+install::								@@\
+	-@if [ -L $(TOP)/include ]; then exit 0; else \                 @@\
+        (cd $(TOP) && $(LN) src/include include); fi
+#else
+#define InstallInclude(dir, file)					@@\
+install::								@@\
+	MakeDir($(INCDIR)/dir)						@@\
+	$(INSTALL) $(INSTINCFLAGS) file $(INCDIR)/dir		        @@\
+									@@\
+uninstall::								@@\
+	$(RM) $(INCDIR)/dir/file
+#endif
+#endif
+
+#ifndef InstallSymLink
+#if InstallRelative
+#define InstallSymLink(dir, file) /**/
+#else
+#define InstallSymLink(dir, file)					@@\
+install::								@@\
+	MakeDir(dir)							@@\
+	cp -d file dir							@@\
+									@@\
+uninstall::								@@\
+	$(RM) dir/file	
+#endif	
+#endif

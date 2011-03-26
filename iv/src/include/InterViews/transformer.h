@@ -36,6 +36,7 @@
 
 //: a 3x2 matrix for use in translating 2d coordinates.
 // <a href=../refman3.1/refman.html#PAGE40>in reference manual</a>
+// <p><a href=../man3.1/Transformer.html>man page</a>
 class Transformer : public Resource {
 public:
     Transformer();	/* identity */

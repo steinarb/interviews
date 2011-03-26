@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994-1998 Vectaport Inc.
+ * Copyright (c) 1994-1999 Vectaport Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
@@ -31,6 +31,7 @@ class Command;
 class ComTerp;
 class OverlayCatalog;
 
+//: base class for interpreter commands in comdraw.
 class UnidrawFunc : public ComFunc {
 public:
     UnidrawFunc(ComTerp*,Editor*);
@@ -47,6 +48,8 @@ static int _compview_id;
 
 };
 
+//: command to update Unidraw from comdraw.
+// update() -- update viewers
 class UpdateFunc : public UnidrawFunc {
 public:
     UpdateFunc(ComTerp*,Editor*);
@@ -55,6 +58,8 @@ public:
 	return "%s() -- update viewers"; }
 };
 
+//: command to turn on or off the selection tic marks in comdraw.
+// handles(flag) -- enable/disable current selection tic marks and/or highlighting
 class HandlesFunc : public UnidrawFunc {
 public:
     HandlesFunc(ComTerp*,Editor*);
@@ -63,23 +68,27 @@ public:
 	return "%s(flag) -- enable/disable current selection tic marks and/or highlighting"; }
 };
 
+//: command to paste a graphic in comdraw.
+// paste(compview [xscale yscale xoff yoff | a00,a01,a10,a11,a20,a21]) -- paste graphic into the viewer"
 class PasteFunc : public UnidrawFunc {
 public:
     PasteFunc(ComTerp*,Editor*,OverlayCatalog* = nil);
     virtual void execute();
     virtual const char* docstring() { 
-	return "%s(grcomp [xscale yscale xoff yoff | a00,a01,a10,a11,a20,a21]) -- paste graphic component into the viewer"; }
+	return "%s(compview [xscale yscale xoff yoff | a00,a01,a10,a11,a20,a21]) -- paste graphic into the viewer"; }
 
 protected:
     OverlayCatalog* _catalog;
 };
 
+//: command to make a graphic read-only in comdraw.
+// readonly(compview :clear) -- set or clear the readonly attribute of a graphic component
 class ReadOnlyFunc : public UnidrawFunc {
 public:
     ReadOnlyFunc(ComTerp*,Editor*);
     virtual void execute();
     virtual const char* docstring() { 
-	return "%s(grcomp :clear) -- set or clear the readonly attribute of a graphic component"; }
+	return "%s(compview :clear) -- set or clear the readonly attribute of a graphic component"; }
 
 protected:
     int _clear_symid;

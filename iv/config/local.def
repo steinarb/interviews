@@ -30,6 +30,12 @@ XCOMM from <local.def>:
 #define TurnOnDebugging YES
 
 /*
+ * What you need to turn on optimizing (a good idea)
+ */
+#undef TurnOnOptimizing
+#define TurnOnOptimizing YES
+
+/*
  * To disable removal of programs if a "make install" is done"
  */
 #undef RemoveAfterInstall
@@ -60,7 +66,7 @@ XCOMM from <local.def>:
  */
     NORM_CCINCLUDES = -I$(CURRENT_DIR)/.. -I$(CURRENT_DIR)/../.. -I$(TOP)/src \
 -I$(IVTOOLSSRC) $(BACKWARD_CCINCLUDES) -I$(IVTOOLSSRC)/include \
--I$(IVTOOLSSRC)/include/std $(X_CCINCLUDES)
+-I$(IVTOOLSSRC)/include/ivstd $(X_CCINCLUDES)
     APP_CCINCLUDES = $(NORM_CCINCLUDES)
 #if !HasDynamicSharedLibraries
      APP_CCDEPLIBS = $(APP_CCLDLIBS)
@@ -84,8 +90,115 @@ XCOMM from <local.def>:
 /*
  * Location of ivtools libraries
  */
+#ifndef UseInstalled
              IVTOOLSSRC = IvToolsSrcRoot/src
+#else
+             IVTOOLSSRC = Prefix
+#endif
 
+/* 
+ * Macros for defining makefile variable for library linking
+ */
+#if HasDynamicSharedLibraries
+#if !UseRpath
+#ifdef UseInstalled
+#define libvar(ULIBNAME, llibname, liblibname, lllibname) \
+  ULIBNAME = -L$(LIBDIR) lllibname
+#else
+#define libvar(ULIBNAME, llibname, liblibname, lllibname) \
+  ULIBNAME = -L$(IVTOOLSSRC)/llibname/$(CPU) lllibname
+#endif
+#else
+#ifdef UseInstalled
+#define libvar(ULIBNAME, llibname, liblibname, lllibname) \
+  ULIBNAME = -Wl,-rpath,$(LIBDIR) -L$(LIBDIR) lllibname	
+#else
+#define libvar(ULIBNAME, llibname, liblibname, lllibname) \
+  ULIBNAME = -Wl,-rpath,$(IVTOOLSSRC)/llibname/$(CPU) -L$(IVTOOLSSRC)/llibname/$(CPU) lllibname	
+#endif
+#endif
+#else
+#ifdef UseInstalled
+#define libvar(ULIBNAME, llibname, liblibname, lllibname) \
+  ULIBNAME = $(LIBDIR)/liblibname.a
+#else
+#define libvar(ULIBNAME, llibname, liblibname, lllibname) \
+  ULIBNAME = $(IVTOOLSSRC)/llibname/$(CPU)/liblibname.a
+#endif
+#endif
+
+libvar(LIBUNIDRAWCOMMON,Unidraw-common,libUnidraw-common,-lUnidraw-common)
+libvar(LIBIVCOMMON,IV-common,libIV-common,-lIV-common)
+libvar(LIBTIME,Time,libTime,-lTime)
+libvar(LIBATTRIBUTE,Attribute,libAttribute,-lAttribute)
+libvar(LIBCOMUTIL,ComUtil,libComUtil,-lComUtil)
+libvar(LIBCOMTERP,ComTerp,libComTerp,-lComTerp)
+libvar(LIBIVGLYPH,IVGlyph,libIVGlyph,-lIVGlyph)
+libvar(LIBATTRGLYPH,AttrGlyph,libAttrGlyph,-lAttrGlyph)
+libvar(LIBCOMGLYPH,ComGlyph,libComGlyph,-lComGlyph)
+libvar(LIBGLYPHTERP,GlyphTerp,libGlyphTerp,-lGlyphTerp)
+libvar(LIBUNIIDRAW,UniIdraw,libUniIdraw,-lUniIdraw)
+libvar(LIBTOPOFACE,TopoFace,libTopoFace,-lTopoFace)
+libvar(LIBOVERLAYUNIDRAW,OverlayUnidraw,libOverlayUnidraw,-lOverlayUnidraw)
+#ifdef IueDir
+libvar(LIBIUESERV,IueServ,libIueServ,-lIueServ)
+#endif
+#ifdef AceDir
+libvar(LIBACEDISPATCH,AceDispatch,libAceDispatch,-lAceDispatch)
+#else
+  LIBACEDISPATCH =
+#endif
+libvar(LIBCOMUNIDRAW,ComUnidraw,libComUnidraw,-lComUnidraw)
+libvar(LIBFRAMEUNIDRAW,FrameUnidraw,libFrameUnidraw,-lFrameUnidraw)
+libvar(LIBGRAPHUNIDRAW,GraphUnidraw,libGraphUnidraw,-lGraphUnidraw)
+libvar(LIBDRAWSERV,DrawServ,libDrawServ,-lDrawServ)
+
+/*
+ * Macros for defining library dependency make variables.
+ */
+#if defined(HPArchitecture)
+#define SO sl
+#else
+#define SO so
+#endif
+
+#if HasDynamicSharedLibraries
+#ifndef UseInstalled
+#define depvar(ULIBNAME, llibname, liblibname) \
+  ULIBNAME = $(IVTOOLSSRC)/llibname/$(CPU)/liblibname.SO.$(VERSION)
+#else
+#define depvar(ULIBNAME, llibname, liblibname) \
+  ULIBNAME = $(LIBDIR)/liblibname.SO.$(VERSION)
+#endif
+#endif
+
+depvar(DEPUNIDRAWCOMMON,Unidraw-common,libUnidraw-common)
+depvar(DEPIVCOMMON,IV-common,libIV-common)
+depvar(DEPTIME,Time,libTime)
+depvar(DEPATTRIBUTE,Attribute,libAttribute)
+depvar(DEPCOMUTIL,ComUtil,libComUtil)
+depvar(DEPCOMTERP,ComTerp,libComTerp)
+depvar(DEPIVGLYPH,IVGlyph,libIVGlyph)
+depvar(DEPATTRGLYPH,AttrGlyph,libAttrGlyph)
+depvar(DEPCOMGLYPH,ComGlyph,libComGlyph)
+depvar(DEPGLYPHTERP,GlyphTerp,libGlyphTerp)
+depvar(DEPUNIIDRAW,UniIdraw,libUniIdraw)
+depvar(DEPTOPOFACE,TopoFace,libTopoFace)
+depvar(DEPOVERLAYUNIDRAW,OverlayUnidraw,libOverlayUnidraw)
+#ifdef IueDir
+depvar(DEPIUESERV,IueServ,libIueServ)
+#endif
+#ifdef AceDir
+depvar(DEPACEDISPATCH,AceDispatch,libAceDispatch)
+#else
+    DEPACEDISPATCH =
+#endif
+depvar(DEPCOMUNIDRAW,ComUnidraw,libComUnidraw)
+depvar(DEPFRAMEUNIDRAW,FrameUnidraw,libFrameUnidraw)
+depvar(DEPGRAPHUNIDRAW,GraphUnidraw,libGraphUnidraw)
+depvar(DEPDRAWSERV,DrawServ,libDrawServ)
+
+#if 0
 #if HasDynamicSharedLibraries
 #if !UseRpath
   LIBUNIDRAWCOMMON = -L$(IVTOOLSSRC)/Unidraw-common/$(CPU) -lUnidraw-common
@@ -200,6 +313,7 @@ XCOMM from <local.def>:
    DEPFRAMEUNIDRAW = $(IVTOOLSSRC)/FrameUnidraw/$(CPU)/libFrameUnidraw.SO.$(VERSION)
    DEPGRAPHUNIDRAW = $(IVTOOLSSRC)/GraphUnidraw/$(CPU)/libGraphUnidraw.SO.$(VERSION)
        DEPDRAWSERV = $(IVTOOLSSRC)/DrawServ/$(CPU)/libDrawServ.SO.$(VERSION)
+#endif
 #endif
 
 /* local override of location of libUnidraw */

@@ -52,5 +52,6 @@ InstallLibLink($(ACELIBDIR),$(ACELIBBASE), $(LIBDIR))
 #else
 
 MakeInObjectCodeDir()
+InstallIncludes($(PACKAGE))
 
 #endif

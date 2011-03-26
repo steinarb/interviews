@@ -64,6 +64,8 @@
 #include <TopoFace/topoedge.h>
 #include <TopoFace/toponode.h>
 
+#include <Attribute/attrlist.h>
+
 #include <OS/math.h>
 #include <iostream.h>
 
@@ -127,6 +129,7 @@ void EdgeComp::GrowParamList(ParamList* pl) {
 
 Component* EdgeComp::Copy() {
     EdgeComp* comp = new EdgeComp((ArrowLine*) GetArrowLine()->Copy());
+    if (attrlist()) comp->SetAttributeList(new AttributeList(attrlist()));
     comp->_start_node = _start_node;
     comp->_end_node = _end_node;
     comp->_start_subedge = _start_subedge;

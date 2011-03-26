@@ -166,7 +166,7 @@ void ComTerp::eval_expr_internals(int pedepth) {
   if (sv.type() == ComValue::CommandType) {
     
     ComFunc* func = (ComFunc*)sv.obj_val();
-    func->push_funcstate(sv.narg(), sv.nkey(), pedepth);
+    func->push_funcstate(sv.narg(), sv.nkey(), pedepth, sv.command_symid());
     func->execute();
     func->pop_funcstate();
     if (_just_reset) {
@@ -451,11 +451,18 @@ void ComTerp::token_to_comvalue(postfix_token* token, ComValue* sv) {
     void* vptr = nil;
     unsigned int command_symid = sv->int_val();
     localtable()->find(vptr, command_symid);
+
+    /* handle case where symbol has arguments/keywords, but is not defined */
+    if (!vptr && (sv->narg() || sv->nkey())) {
+      static int nil_symid = symbol_add("nil");
+      localtable()->find(vptr, nil_symid);
+    }
+
     if (vptr && ((ComValue*)vptr)->type() == ComValue::CommandType) {
       sv->obj_ref() = ((ComValue*)vptr)->obj_ref();
       sv->type(ComValue::CommandType);
       sv->command_symid(command_symid);
-    }
+    } 
   } else if (sv->type() == ComValue::KeywordType) {
     sv->keynarg_ref() = token->narg;
   }
@@ -631,6 +638,14 @@ int ComTerp::run(boolean once) {
 void ComTerp::add_defaults() {
   if (!_defaults_added) {
     _defaults_added = true;
+
+    add_command("nil", new NilFunc(this));
+    add_command("char", new CharFunc(this));
+    add_command("short", new ShortFunc(this));
+    add_command("int", new IntFunc(this));
+    add_command("long", new LongFunc(this));
+    add_command("float", new FloatFunc(this));
+    add_command("double", new DoubleFunc(this));
 
     add_command("add", new AddFunc(this));
     add_command("sub", new SubFunc(this));

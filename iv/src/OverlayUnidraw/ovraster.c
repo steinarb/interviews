@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 1999 Vectaport Inc.
  * Copyright (c) 1997 R.B. Kissh & Associates, Vectaport Inc.
  * Copyright (c) 1994-1996 Vectaport Inc.
  * Copyright (c) 1990, 1991 Stanford University
@@ -22,8 +23,6 @@
  * WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  * 
  */
-
-#define NOREF
 
 /*
  * RasterOvComp definitions.
@@ -55,12 +54,16 @@
 #include <InterViews/tiff.h>
 #include <InterViews/transformer.h>
 #include <InterViews/window.h>
+#include <InterViews/style.h>
 
 #include <IV-2_6/_enter.h>
 
 #include <IV-X11/xdisplay.h>
 #include <IV-X11/xraster.h>
+#include <IV-X11/xcolor.h>
 #include <OS/memory.h>
+
+#include <Attribute/attrlist.h>
 
 #include <stdio.h>
 #include <stream.h>
@@ -104,6 +107,7 @@ Component* RasterOvComp::Copy () {
     RasterOvComp* nc = new RasterOvComp(
         (OverlayRasterRect*) GetGraphic()->Copy(), _pathname, (OverlayComp*)GetParent()
     );
+    if (attrlist()) nc->SetAttributeList(new AttributeList(attrlist()));
 
     for (ListItr(CopyStringList) i(_commands); i.more(); i.next()) {
         nc->_commands.append(i.cur_ref());
@@ -137,7 +141,6 @@ RasterOvComp::RasterOvComp(istream& in, OverlayComp* parent)
                 );
     }
 }
-
 
 ParamList* RasterOvComp::GetParamList() {
     if (!_ovraster_params) 
@@ -184,8 +187,12 @@ void RasterOvComp::GrowParamList(ParamList* pl) {
 }
 
 RasterOvComp::~RasterOvComp () { 
-    if (_pathname)
-	delete _pathname; 
+    if (_pathname) {
+	delete _pathname;
+        _pathname = 0;
+    }
+
+    OvImportCmd::detach(this);  // maybe in the process of downloading 
 }
 
 OverlayRasterRect* RasterOvComp::GetOverlayRasterRect () { return (OverlayRasterRect*) GetGraphic(); }
@@ -231,7 +238,6 @@ void RasterOvComp::Interpret (Command* cmd) {
     }
 }
 
-
 void RasterOvComp::Uninterpret (Command* cmd) {
     Graphic* gr = GetGraphic();
 
@@ -249,7 +255,6 @@ void RasterOvComp::Uninterpret (Command* cmd) {
         OverlayComp::Uninterpret(cmd);
     }
 }
-
 
 void RasterOvComp::Configure(Editor* ed) {
 
@@ -272,7 +277,6 @@ cerr << "Configure: " << _com_exp.string() << endl;
       GAcknowledgeDialog::post(ed->GetWindow(), "unable to allocate enough colormap entries on the X server", "quit other programs and restart", "colormap problem");
     }
 }
-
 
 
 ParamList* RasterOvComp::get_param_list() {
@@ -575,17 +579,16 @@ int RasterScript::ReadRaster (istream& in, void* addr1, void* addr2, void* addr3
 	already_ref = true;		      
 	delete tempcomp;
       }
-    } else if (urlflag) 
-      ovraster = new OverlayRaster(0,0);
-    
-    if ( ovraster) {
-	
-#ifndef NOREF
-      if (!already_ref)
-	ovraster->ref();
-#endif
+    } else if (urlflag) {
+      ovraster = OvImportCmd::CreatePlaceImage();
+      ovraster->initialized(false);
+    } 
 
+    if (ovraster) {
       comp->_gr = new OverlayRasterRect(ovraster);
+      if (already_ref) {
+          ovraster->unref();
+      }
       comp->_pathname = strdup(pathname);
       comp->SetByPathnameFlag(true);
       return 0;
@@ -593,7 +596,6 @@ int RasterScript::ReadRaster (istream& in, void* addr1, void* addr2, void* addr3
       cerr << "Unable to access image path:  " << pathname << "\n";
       return -1;
     }
-
 }
 
 int RasterScript::ReadRGB (istream& in, void* addr1, void* addr2, void* addr3, void* addr4) {
@@ -610,9 +612,6 @@ int RasterScript::ReadRGB (istream& in, void* addr1, void* addr2, void* addr3, v
     raster->read(in);
 
     if (in.good()) {
-#ifndef NOREF
-        raster->ref();
-#endif
 	comp->_gr = new OverlayRasterRect(raster);
 	return 0;
     } else {
@@ -634,9 +633,6 @@ int RasterScript::ReadGrayChar (istream& in, void* addr1, void* addr2, void* add
   raster->top2bottom(false);
   
   if (in.good()) {
-#ifndef NOREF
-    raster->ref();
-#endif
     comp->_gr = new OverlayRasterRect(raster);
     return 0;
   } else {
@@ -658,9 +654,6 @@ int RasterScript::ReadGrayUChar (istream& in, void* addr1, void* addr2, void* ad
   raster->top2bottom(false);
   
   if (in.good()) {
-#ifndef NOREF
-    raster->ref();
-#endif
     comp->_gr = new OverlayRasterRect(raster);
     return 0;
   } else {
@@ -682,9 +675,6 @@ int RasterScript::ReadGrayShort (istream& in, void* addr1, void* addr2, void* ad
   raster->top2bottom(false);
   
   if (in.good()) {
-#ifndef NOREF
-    raster->ref();
-#endif
     comp->_gr = new OverlayRasterRect(raster);
     return 0;
   } else {
@@ -706,9 +696,6 @@ int RasterScript::ReadGrayUShort (istream& in, void* addr1, void* addr2, void* a
   raster->top2bottom(false);
   
   if (in.good()) {
-#ifndef NOREF
-    raster->ref();
-#endif
     comp->_gr = new OverlayRasterRect(raster);
     return 0;
   } else {
@@ -730,9 +717,6 @@ int RasterScript::ReadGrayInt (istream& in, void* addr1, void* addr2, void* addr
   raster->top2bottom(false);
   
   if (in.good()) {
-#ifndef NOREF
-    raster->ref();
-#endif
     comp->_gr = new OverlayRasterRect(raster);
     return 0;
   } else {
@@ -754,9 +738,6 @@ int RasterScript::ReadGrayUInt (istream& in, void* addr1, void* addr2, void* add
   raster->top2bottom(false);
   
   if (in.good()) {
-#ifndef NOREF
-    raster->ref();
-#endif
     comp->_gr = new OverlayRasterRect(raster);
     return 0;
   } else {
@@ -778,9 +759,6 @@ int RasterScript::ReadGrayLong (istream& in, void* addr1, void* addr2, void* add
   raster->top2bottom(false);
   
   if (in.good()) {
-#ifndef NOREF
-    raster->ref();
-#endif
     comp->_gr = new OverlayRasterRect(raster);
     return 0;
   } else {
@@ -802,9 +780,6 @@ int RasterScript::ReadGrayULong (istream& in, void* addr1, void* addr2, void* ad
   raster->top2bottom(false);
   
   if (in.good()) {
-#ifndef NOREF
-    raster->ref();
-#endif
     comp->_gr = new OverlayRasterRect(raster);
     return 0;
   } else {
@@ -826,9 +801,6 @@ int RasterScript::ReadGrayFloat (istream& in, void* addr1, void* addr2, void* ad
   raster->top2bottom(false);
   
   if (in.good()) {
-#ifndef NOREF
-    raster->ref();
-#endif
     comp->_gr = new OverlayRasterRect(raster);
     return 0;
   } else {
@@ -850,9 +822,6 @@ int RasterScript::ReadGrayDouble (istream& in, void* addr1, void* addr2, void* a
   raster->top2bottom(false);
   
   if (in.good()) {
-#ifndef NOREF
-    raster->ref();
-#endif
     comp->_gr = new OverlayRasterRect(raster);
     return 0;
   } else {
@@ -975,6 +944,13 @@ void OverlayRasterRect::load_image(const char* pathname) {
 	OvImportCmd importcmd((Editor*)nil);
 	OverlayComp* tempcomp = (OverlayComp*)importcmd.Import(pathname);
 	if (tempcomp && tempcomp->IsA(OVRASTER_COMP)) {
+
+          OvImportCmd::changeComp(
+            (RasterOvComp*)tempcomp,
+            ((RasterOvView*)GetTag())->GetRasterOvComp()
+          );
+
+#if 0
 	  OverlayRasterRect* ovrrect = 
 	    ((RasterOvComp*)tempcomp)->GetOverlayRasterRect();
 	  OverlayRaster* ovraster = ovrrect 
@@ -985,6 +961,10 @@ void OverlayRasterRect::load_image(const char* pathname) {
 	  _raster = ovraster;
 	  uncacheParents();
 	  ((OverlayRaster*)_raster)->initialize();
+#else
+	  uncacheParents(); // necessary?
+	  ((OverlayRaster*)_raster)->initialize();
+#endif
 	}
       }
     }
@@ -1021,10 +1001,8 @@ OverlayRasterRect& OverlayRasterRect::operator = (OverlayRasterRect& rect) {
 // #define LEAKCHECK
 
 #ifdef LEAKCHECK
-
 #include <OverlayUnidraw/leakchecker.h>
 static LeakChecker checker("OverlayRaster");
-
 #endif
 
 
@@ -1040,20 +1018,122 @@ OverlayRaster::OverlayRaster(unsigned long width, unsigned long height) : Raster
     checker.create();
 #endif
     _grayflag = false;
+    _init = true;
 }
 
 OverlayRaster::OverlayRaster(const OverlayRaster& raster) 
 : Raster(new RasterRep) {
     construct(raster);
     _grayflag = false;
+    _init = true;
 }
-
 
 OverlayRaster::OverlayRaster(const Raster& raster)
 : Raster(new RasterRep) {
     construct(raster);
     _grayflag = false;
+    _init = true;
 }
+
+
+OverlayRaster::OverlayRaster(
+  unsigned long width, unsigned long height, unsigned long  bwidth
+) 
+  : Raster (new RasterRep) 
+{
+    init_rep(width, height);
+#ifdef LEAKCHECK
+    checker.create();
+#endif
+    _grayflag = false;
+    _init = true;
+
+    RasterRep* r = rep();
+    DisplayRep* dr = r->display_->rep();
+    XDisplay* dpy = dr->display_;
+
+    r->pixmap_ = XCreatePixmap(
+	dpy, dr->root_, r->pwidth_, r->pheight_, dr->default_visual_->depth()
+    );
+    r->gc_ = XCreateGC(dpy, r->pixmap_, 0, nil);
+
+    const Style* s = Session::instance()->style();
+
+    // this bg/fg code is in World, but want to avoid that class
+
+    String v("#ffffff");
+    if (!s->find_attribute("background", v)) {
+        s->find_attribute("Background", v);
+    }
+    const Color* bc = Color::lookup(
+        Session::instance()->default_display(), v
+    );
+    if (bc == nil) {
+        bc = new Color(1.0, 1.0, 1.0, 1.0);
+    }
+    Resource::ref(bc);
+
+    v = "#000000";
+    if (!s->find_attribute("foreground", v)) {
+        s->find_attribute("Foreground", v);
+    }
+    const Color* fc = Color::lookup(
+        Session::instance()->default_display(), v
+    );
+    if (fc == nil) {
+        fc = new Color(0.0, 0.0, 0.0, 1.0);
+    }
+    Resource::ref(fc);
+
+    // oh brother
+    String rv;
+    if (s->find_attribute("reverseVideo", rv)) {
+        if (rv.case_insensitive_equal("on")) {
+            const Color* swap = bc;
+            bc = fc;
+            fc = swap;
+	}
+    }
+
+    // set up GC
+
+    GC gc = XCreateGC(dpy, r->pixmap_, 0, nil); 
+
+    ColorRep* cr = fc->rep(dr->default_visual_);
+    unsigned long fpixel = cr->xcolor_.pixel;
+
+    cr = bc->rep(dr->default_visual_);
+    unsigned long bpixel = cr->xcolor_.pixel;
+
+    XSetForeground(dpy, gc, bpixel);
+    XFillRectangle(dpy, r->pixmap_, gc, 0, 0, r->pwidth_, r->pheight_);
+
+    // draw the border outline here
+
+    bwidth = (bwidth % 2) ? bwidth + 1 : bwidth;
+
+    XSetForeground(dpy, gc, fpixel);
+    XSetLineAttributes(dpy, gc, bwidth, LineSolid, CapButt, JoinMiter); 
+    XDrawRectangle(
+        dpy, r->pixmap_, gc, bwidth/2, bwidth/2, r->pwidth_ - bwidth,
+        r->pheight_ - bwidth
+    );
+
+    Resource::unref(fc);
+    Resource::unref(bc);
+    XFreeGC(dpy, gc);
+
+#ifdef XSHM
+    init_shared_memory();
+#endif
+
+    if (!r->shared_memory_) {
+        r->image_ = XGetImage(
+            dpy, r->pixmap_, 0, 0, r->pwidth_, r->pheight_, AllPlanes, ZPixmap
+        );
+    }
+}
+
 
 void OverlayRaster::construct(const Raster& raster) {
     _grayflag = false;
@@ -1070,20 +1150,29 @@ void OverlayRaster::construct(const Raster& raster) {
     r->top_ = rr.top_;
     r->pwidth_ = rr.pwidth_;
     r->pheight_ = rr.pheight_;
+    r->shared_memory_ = false;
+
     if (rr.pixmap_) {
-	DisplayRep* dr = r->display_->rep();
-	XDisplay* dpy = dr->display_;
-	r->pixmap_ = XCreatePixmap(
-	    dpy, dr->root_, r->pwidth_, r->pheight_, dr->default_visual_->depth()
-	);
-	r->gc_ = XCreateGC(dpy, r->pixmap_, 0, nil);
-	XCopyArea(
+        DisplayRep* dr = r->display_->rep();
+        XDisplay* dpy = dr->display_;
+        r->pixmap_ = XCreatePixmap(
+	  dpy, dr->root_, r->pwidth_, r->pheight_, dr->default_visual_->depth()
+        );
+        r->gc_ = XCreateGC(dpy, r->pixmap_, 0, nil);
+
+        XCopyArea(
 	    dpy, rr.pixmap_, r->pixmap_, r->gc_,
 	    0, 0, r->pwidth_, r->pheight_, 0, 0
 	);
-	r->image_ = XGetImage(
-	    dpy, r->pixmap_, 0, 0, r->pwidth_, r->pheight_, AllPlanes, ZPixmap
-	);
+
+#ifdef XSHM
+        init_shared_memory();
+#endif
+        if (!r->shared_memory_) {
+            r->image_ = XGetImage(
+                dpy, r->pixmap_, 0, 0, r->pwidth_, r->pheight_, AllPlanes, ZPixmap
+            );
+        }
     } else {
 	r->pixmap_ = nil;
 	r->gc_ = nil;
@@ -1094,13 +1183,12 @@ void OverlayRaster::construct(const Raster& raster) {
 #endif
 }
 
-
 OverlayRaster::~OverlayRaster() {
 #ifdef LEAKCHECK
     checker.destroy();
 #endif
+    OverlayPainter::Uncache(this);
 }
-
 
 void OverlayRaster::init_rep(unsigned long w, unsigned long h) {
     RasterRep* r = rep();
@@ -1118,21 +1206,29 @@ void OverlayRaster::init_rep(unsigned long w, unsigned long h) {
     r->pixmap_ = nil;
     r->gc_ = nil;
     r->image_ = nil;
+    r->shared_memory_ = false;
 }
-
 
 void OverlayRaster::init_space() {
     RasterRep* r = rep();
     if (r->pixmap_) return;
     DisplayRep* dr = r->display_->rep();
     XDisplay* dpy = dr->display_;
+
     r->pixmap_ = XCreatePixmap(
 	dpy, dr->root_, r->pwidth_, r->pheight_, dr->default_visual_->depth()
     );
     r->gc_ = XCreateGC(dpy, r->pixmap_, 0, nil);
-    r->image_ = XGetImage(
-	dpy, r->pixmap_, 0, 0, r->pwidth_, r->pheight_, AllPlanes, ZPixmap
-    );
+
+#ifdef XSHM
+    init_shared_memory();
+#endif
+
+    if (!r->shared_memory_) {
+        r->image_ = XGetImage(
+            dpy, r->pixmap_, 0, 0, r->pwidth_, r->pheight_, AllPlanes, ZPixmap
+        );
+    }
 }
 
 
@@ -1238,13 +1334,17 @@ long OverlayRaster::gray_lookup(int byte)
 	return -1;
 }
 
-boolean OverlayRaster::initialized() {
-    RasterRep* r = rep();
-    return (r->pixmap_ != 0) ? true : false;
+void OverlayRaster::initialized(boolean init) {
+    _init = init;
 }
 
+boolean OverlayRaster::initialized() {
+    RasterRep* r = rep();
+    return ((r->pixmap_ != 0) & _init) ? true : false;
+}
 
 void OverlayRaster::initialize() {
+    _init = true;
     flush();
     // ensure that pixmap_ is created
     init_space();

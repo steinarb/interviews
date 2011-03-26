@@ -38,6 +38,7 @@ MakefileTarget()
 Makefiles::
 depend::
 install::
+uninstall::
 CleanTarget()
 
 /*

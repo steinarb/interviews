@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998 Vectaport Inc.
+ * Copyright (c) 1998,1999 Vectaport Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
@@ -26,6 +26,8 @@
 
 #include <ComUnidraw/unifunc.h>
 
+//: command to plot a barchart in comdraw using plotmtv/pstoedit
+// barplot([var_str value_float] [...] :title title_str :xtitle xtitle_str :ytitle ytitle_str :valtitle valtitle_str :newview) -- display a barplot
 class BarPlotFunc : public UnidrawFunc {
 public:
     BarPlotFunc(ComTerp*,Editor*);

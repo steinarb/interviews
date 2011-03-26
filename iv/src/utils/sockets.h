@@ -1,6 +1,7 @@
 /*
   sockets.h
 
+  Copyright (c) 1999 Vectaport Inc.
   Copyright (c) 1998 Eric F. Kahler
 
   Permission to use, copy, modify, distribute, and sell this software and
@@ -28,13 +29,16 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#ifdef LIBGPLUSPLUS
 #include <String.h>
+#else
+#include <OS/string.h>
+#endif
 #include <fstream.h>
 #include <iostream.h>
 #include <string.h>    // memset()
 #include <stdio.h>     // BUFSIZ
 #include "thrower.h"
-
 const int DownLoadAmount = 1024; // Amount per socket read.
 
 // Perhaps.. a value of 0 allows the system to choose a port.
@@ -51,7 +55,11 @@ class CSocket {
   struct sockaddr_in Pclient_addr; // client's address
   struct sockaddr_in my_addr;      // address of this service 
 
+#ifdef LIBGPLUSPLUS
   String hostname;
+#else
+  CopyString hostname;
+#endif
   int port;
 
   CSocket(String, int); // initializes above "hostname" an "port" members.

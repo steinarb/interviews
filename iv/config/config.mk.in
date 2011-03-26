@@ -5,6 +5,9 @@
 #define BinDir Prefix/bin
 #define LibDir Prefix/lib
 #define LibAllDir Prefix/lib/ivtools
+#define IncDir Prefix/include
+#define ConfigDir LibAllDir/config
+#define ManDir Prefix/man
 
 #define XConfigDir @x_libraries@/X11/config
 #define XIncDir @x_includes@

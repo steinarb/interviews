@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994 Vectaport Inc.
+ * Copyright (c) 1994,1999 Vectaport Inc.
  * Copyright (c) 1990, 1991 Stanford University
  *
  * Permission to use, copy, modify, distribute, and sell this software and
@@ -55,6 +55,8 @@
 
 #include <IV-2_6/_enter.h>
 
+#include <Attribute/attrlist.h>
+
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
@@ -74,7 +76,10 @@ boolean TextOvComp::IsA (ClassId id) {
 }
 
 Component* TextOvComp::Copy () {
-    return new TextOvComp((TextGraphic*) GetGraphic()->Copy());
+    TextOvComp* comp =
+      new TextOvComp((TextGraphic*) GetGraphic()->Copy());
+    if (attrlist()) comp->SetAttributeList(new AttributeList(attrlist()));
+    return comp;
 }
 
 TextOvComp::TextOvComp (TextGraphic* graphic, OverlayComp* parent) : OverlayComp(graphic, parent) { }
@@ -469,7 +474,7 @@ int TextScript::ReadText (istream& in, void* addr1, void* addr2, void* addr3, vo
     char buf[BUFSIZ];
 
     in >> line_height >> delim;
-    if (in.good)
+    if (in.good())
 	ParamList::parse_text(in, buf, BUFSIZ);    
 
     if (!in.good()) {

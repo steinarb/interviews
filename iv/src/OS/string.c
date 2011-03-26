@@ -1,30 +1,31 @@
 /*
+ * Copyright (c) 1999 Vectaport Inc.
  * Copyright (c) 1987, 1988, 1989, 1990, 1991 Stanford University
  * Copyright (c) 1991 Silicon Graphics, Inc.
  *
- * Permission to use, copy, modify, distribute, and sell this software and 
+ * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
- * that (i) the above copyright notices and this permission notice appear in
- * all copies of the software and related documentation, and (ii) the names of
- * Stanford and Silicon Graphics may not be used in any advertising or
- * publicity relating to the software without the specific, prior written
- * permission of Stanford and Silicon Graphics.
- * 
- * THE SOFTWARE IS PROVIDED "AS-IS" AND WITHOUT WARRANTY OF ANY KIND, 
- * EXPRESS, IMPLIED OR OTHERWISE, INCLUDING WITHOUT LIMITATION, ANY 
- * WARRANTY OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  
+ * that the above copyright notice appear in all copies and that both that
+ * copyright notice and this permission notice appear in supporting
+ * documentation, and that the names of the copyright holders not be used in
+ * advertising or publicity pertaining to distribution of the software
+ * without specific, written prior permission.  The copyright holders make
+ * no representations about the suitability of this software for any purpose.
+ * It is provided "as is" without express or implied warranty.
  *
- * IN NO EVENT SHALL STANFORD OR SILICON GRAPHICS BE LIABLE FOR
- * ANY SPECIAL, INCIDENTAL, INDIRECT OR CONSEQUENTIAL DAMAGES OF ANY KIND,
- * OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
- * WHETHER OR NOT ADVISED OF THE POSSIBILITY OF DAMAGE, AND ON ANY THEORY OF 
- * LIABILITY, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE 
- * OF THIS SOFTWARE.
+ * THE COPYRIGHT HOLDERS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS
+ * SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS.
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDERS BE LIABLE FOR ANY SPECIAL,
+ * INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING
+ * FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
+ * NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION
+ * WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 #include <OS/string.h>
 #include <ctype.h>
 #include <string.h>
+#include <iostream.h>
 
 /*
  * Just to be sure ...
@@ -48,7 +49,7 @@ String::String() {
 
 String::String(const char* s) {
     data_ = s;
-    length_ = strlen(s);
+    length_ = s ? strlen(s) : 0;
 }
 
 String::String(const char* s, int n) {
@@ -91,7 +92,7 @@ String& String::operator =(const String& s) {
 
 String& String::operator =(const char* s) {
     data_ = s;
-    length_ = strlen(s);
+    length_ = s ? strlen(s) : 0;
     return *this;
 }
 
@@ -203,7 +204,7 @@ boolean String::null_terminated() const { return false; }
 
 void String::set_value(const char* s) {
     data_ = s;
-    length_ = strlen(s);
+    length_ = s ? strlen(s) : 0;
 }
 
 void String::set_value(const char* s, int len) {
@@ -274,6 +275,61 @@ boolean String::convert(double& value) const {
     return ptr != str;
 }
 
+/*
+ * return true if sub-string exists
+ */
+
+boolean String::contains(const char* str, int start) const {
+  return strstr(string(), str+start)!= nil;
+}
+
+/*
+ * return substring before match
+ */
+
+String String::before(const char* str) const {
+  char* ptr = strstr(string(), str);
+  if (ptr) 
+    return substr(0, ptr-string());
+  else
+    return substr(0,0);
+}
+
+/*
+ * return substring from match
+ */
+
+String String::from(const char* str) const {
+  char* ptr = strstr(string(), str);
+  if (ptr) {
+    int offset = (int)(ptr-string());
+    return substr(offset,length()-offset);
+  }  else
+    return substr(0,0);
+}
+
+/*
+ * return number of occurences 
+ */
+int String::freq(const char* t) const {
+  int count=0;
+  char* oldptr = (char *)string();
+  char* newptr;
+  while(newptr = strstr(oldptr, t)) {
+    oldptr = newptr;
+    count++;
+  }
+  return count;
+}
+
+String::operator const char*() const {
+  return string();
+};
+
+ostream& operator<< (ostream& out, const String& str) {
+  out.write(str.string(), (streamsize)str.length());
+}
+
 /* class CopyString */
 
 CopyString::CopyString() : String() { }
@@ -313,7 +369,7 @@ String& CopyString::operator =(const char* s) {
 boolean CopyString::null_terminated() const { return true; }
 
 void CopyString::set_value(const char* s) {
-    set_value(s, strlen(s));
+    set_value(s, s ? strlen(s) : 0);
 }
 
 /*
@@ -363,7 +419,7 @@ String& NullTerminatedString::operator =(const String& s) {
 String& NullTerminatedString::operator =(const char* s) {
     free();
     allocated_ = false;
-    String::set_value(s, strlen(s));
+    String::set_value(s, s ? strlen(s) : 0);
     return *this;
 }
 

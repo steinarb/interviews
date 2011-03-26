@@ -191,6 +191,20 @@ locally evaluate result string
 
 val=shell(cmdstr) -- evaluate command in shell
 
+nil([...]) -- accept any arguments and return nil
+
+c=char(num) -- convert any numeric to a char
+
+s=short(num) -- convert any numeric to a short
+
+i=int(num) -- convert any numeric to an int
+
+l=long(num) -- convert any numeric to a long
+
+f=float(num) -- convert any numeric to a float
+
+d=double(num) -- convert any numeric to a double
+
 ONLY IN SERVER MODE
 
 str=timeexpr(comstr :sec n) -- command string to execute at intervals

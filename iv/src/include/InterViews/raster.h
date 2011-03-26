@@ -73,6 +73,8 @@ public:
     RasterRep* rep() const;
 protected:
     Raster(RasterRep*);
+
+    boolean init_shared_memory();
 private:
     RasterRep* rep_;
 
