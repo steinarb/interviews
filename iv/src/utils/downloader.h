@@ -1,6 +1,7 @@
 /*
   downloader.h
 
+  Copyright (c) 1999 Vectaport Inc.
   Copyright (c) 1998 Eric F. Kahler
         
   Permission to use, copy, modify, distribute, and sell this software and
@@ -22,7 +23,11 @@
   WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.             
 */
 
+#ifdef LIBGPLUSPLUS
 #include <String.h>
+#else
+#include <OS/string.h>
+#endif
 
 class CDownLoader {
 
@@ -39,7 +44,12 @@ private:
  
   int port;                  // Port for remote socket connection.
   String s_port;             // Temporary string for port to convert to int.
+#ifdef LIBGPLUSPLUS
   String hostname, remotefile; // Actual server name and file to retrieve.
+#else
+  CopyString hostname;
+  CopyString remotefile; // Actual server name and file to retrieve.
+#endif
   
   void Parse(); // Parses URL contained in this String url.
 

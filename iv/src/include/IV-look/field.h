@@ -104,6 +104,7 @@ public:
     virtual void undraw();
 
     virtual void press(const Event&);
+    virtual void selection_notify(const Event&);
     virtual void drag(const Event&);
     virtual void release(const Event&);
     virtual void keystroke(const Event&);

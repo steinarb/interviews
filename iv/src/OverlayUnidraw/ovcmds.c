@@ -1056,7 +1056,7 @@ void OvWindowDumpAsCmd::Execute () {
     Editor* ed = GetEditor();
 
     char buf[CHARBUFSIZE];
-    sprintf(buf, "Dump this window as:");
+    sprintf(buf, "Dump canvas in .xwd format to:");
 
     boolean reset_caption = false;
     Style* style = new Style(Session::instance()->style());

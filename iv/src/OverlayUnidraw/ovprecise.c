@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998 Vectaport Inc.
+ * Copyright (c) 1998-1999 Vectaport Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided
@@ -27,7 +27,10 @@
 #include <OverlayUnidraw/ovprecise.h>
 #include <OverlayUnidraw/ovclasses.h>
 #include <OverlayUnidraw/ovpage.h>
+#include <Unidraw/Commands/brushcmd.h>
 #include <Unidraw/Commands/transforms.h>
+#include <Unidraw/catalog.h>
+#include <Unidraw/unidraw.h>
 #include <IVGlyph/enumform.h>
 #include <IVGlyph/stredit.h>
 #include <Unidraw/editor.h>
@@ -224,6 +227,46 @@ void OvPrecisePageCmd::Execute () {
       }
       delete default_pagestr;
       default_pagestr = pagestr;
+    }
+}
+
+/*****************************************************************************/
+
+ClassId OvPreciseBrushCmd::GetClassId () { return OVPRECISEBRUSH_CMD; }
+
+boolean OvPreciseBrushCmd::IsA (ClassId id) {
+    return OVPRECISEBRUSH_CMD == id || Command::IsA(id);
+}
+
+OvPreciseBrushCmd::OvPreciseBrushCmd (ControlInfo* c) : Command(c) {}
+OvPreciseBrushCmd::OvPreciseBrushCmd (Editor* ed) : Command(ed) {}
+OvPreciseBrushCmd::~OvPreciseBrushCmd () {}
+
+Command* OvPreciseBrushCmd::Copy () {
+    Command* copy = new OvPreciseBrushCmd(CopyControlInfo());
+    InitCopy(copy);
+    return copy;
+}
+
+void OvPreciseBrushCmd::Execute () {
+    static char* default_widthstr = strdup("0.0");
+    char* widthstr = 
+      StrEditDialog::post(GetEditor()->GetWindow(),
+			  "Enter brush width in pixels:",
+			  default_widthstr);
+    if (widthstr) {
+      istrstream in(widthstr);
+      float width;
+      in >> width;
+      if (in.good() && width>=0.0) {
+	Catalog* catalog = unidraw->GetCatalog();
+	PSBrush* br = catalog->FindBrush(0xffff, width);
+	BrushCmd* brushCmd = new BrushCmd(GetEditor(), br);
+	brushCmd->Execute();
+	brushCmd->Log();
+      }
+      delete default_widthstr;
+      default_widthstr = widthstr;
     }
 }
 

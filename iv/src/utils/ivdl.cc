@@ -1,6 +1,7 @@
 /*
   main.cc
 
+  Copyright (c) 1999 Vectaport Inc.
   Copyright (c) 1998 Eric F. Kahler
         
   Permission to use, copy, modify, distribute, and sell this software and
@@ -24,6 +25,7 @@
 
 
 #include "downloader.h"
+#include <iostream.h>
 
 int main(int argc, char** argv)
 {

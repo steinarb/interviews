@@ -58,8 +58,12 @@ install:: Concat(lib,libname.sl.rev)					@@\
 	MakeDir(dest)							@@\
 	if [ -f dest/Concat(lib,libname.sl.rev) ]; then \		@@\
 	$(RM) dest/Concat(lib,libname.sl.rev); else exit 0; fi		@@\
-	$(INSTALL) -c -m555 Concat(lib,libname.sl.rev) dest   @@\
-	$(LN) dest/Concat(lib,libname.sl.rev) dest/Concat(lib,libname.sl)
+	$(INSTALL) -c -m555 Concat(lib,libname.sl.rev) dest   		@@\
+	$(LN) dest/Concat(lib,libname.sl.rev) dest/Concat(lib,libname.sl)@@\
+									@@\
+uninstall::								@@\
+	$(RM) dest/Concat(lib,libname.sl.rev)				@@\
+	$(RM) dest/Concat(lib,libname.sl)
 #endif
 
 /* 

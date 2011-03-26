@@ -28,5 +28,6 @@ IncludeDependencies()
 #else
 
 MakeInObjectCodeDir()
+InstallIncludes($(PACKAGE))
 
 #endif

@@ -28,7 +28,11 @@ class CHttp : CSocket {
 
  private:
 
+#ifdef LIBGPLUSPLUS
   String hostname, remotefile;
+#else
+  CopyString hostname, remotefile;
+#endif
   int port;
   char* localfile;
 

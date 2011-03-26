@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 1997-1999 Vectaport Inc.
  * Copyright (c) 1996 Vectaport Inc., R.B. Kissh & Associates 
  * Copyright (c) 1994-1995 Vectaport Inc.
  * Copyright (c) 1990, 1991 Stanford University
@@ -27,6 +28,7 @@
  * Overlay editor main program.
  */
 
+
 #include <OverlayUnidraw/ovcatalog.h>
 #include <OverlayUnidraw/ovcreator.h>
 #include <OverlayUnidraw/oved.h>
@@ -54,6 +56,8 @@ extern "C" {
     }
 }
 #endif
+
+#include <version.h>
 
 /*****************************************************************************/
 
@@ -262,6 +266,8 @@ int main (int argc, char** argv) {
 	OverlayEditor* ed = new OverlayEditor(initial_file);
 
 	unidraw->Open(ed);
+	cerr << "ivtools-" << VersionString 
+	     << " drawtool: see \"man drawtool\" for more info\n"; 
 	unidraw->Run();
     }
 

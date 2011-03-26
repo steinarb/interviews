@@ -77,8 +77,10 @@ SUBDIRS = \
 	include \
 	scripts \
 	utils \
+	tests \
 	\
 	ivxt_name \
-	man
+	man \
+	html
 
 MakeInSubdirs($(SUBDIRS))

@@ -194,6 +194,12 @@ NodeComp::NodeComp(istream& in, OverlayComp* parent) : OverlayComp(nil, parent) 
     _valid = GetParamList()->read_args(in, this);
     if (GetGraph())
 	GraphGraphic();
+    if(GetEllipse())
+      GetGraphic()->concatGS(GetEllipse(), GetGraphic(), GetEllipse()); 
+    if(GetText())
+      GetGraphic()->concatGS(GetText(), GetGraphic(), GetText()); 
+    if(GetEllipse2())
+      GetGraphic()->concatGS(GetEllipse2(), GetGraphic(), GetEllipse2()); 
 }
     
 NodeComp::~NodeComp() {
@@ -213,6 +219,7 @@ Component* NodeComp::Copy() {
         comp = new NodeComp((SF_Ellipse*)GetEllipse()->Copy(),
 	    (TextGraphic*)GetText()->Copy(), (SF_Ellipse*)GetEllipse2()->Copy(), 
 	    (GraphComp*)GetGraph()->Copy());
+	if (attrlist()) comp->SetAttributeList(new AttributeList(attrlist()));
 
 	Picture* pic = (Picture*)GetGraphic();
         Iterator i;

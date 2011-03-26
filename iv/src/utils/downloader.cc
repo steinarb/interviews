@@ -1,6 +1,7 @@
 /*
   downloader.cc
 
+  Copyright (c) 1999 Vectaport Inc.
   Copyright (c) 1998 Eric F. Kahler
         
   Permission to use, copy, modify, distribute, and sell this software and
@@ -55,14 +56,22 @@ void CDownLoader::Parse() {
 
   if( url.contains("http://", 0) ){ 
 
+#ifdef LIBGPLUSPLUS
     url.at("http://") = "";     // Trim protocol from URL
+#else
+    url.set_to_right(7);        // Trim protocol from URL
+#endif
     http = true;
 
   } else { 
 
     if( url.contains("ftp://", 0) ){ 
-      
+
+#ifdef LIBGPLUSPLUS      
       url.at("ftp://") = "";     // Trim protocol from URL 
+#else
+      url.set_to_right(6);       // Trim protocol from URL 
+#endif
       ftp = true;
 
     } else { // Specified protocol is bad
@@ -71,12 +80,19 @@ void CDownLoader::Parse() {
   }
 
   if( url.contains(":") ) { // Port number has been specified
-    
+
+#ifdef LIBGPLUSPLUS    
     hostname = url.before(":"); // Determine Host name
     url.before(":") = "";
     url.at(":") = "";
     s_port = url.before("/"); // Determine Port number
     port = atoi((const char*)s_port);
+#else
+    hostname = url.before(":"); // Determine Host name
+    url.set_to_right(hostname.length()+1);
+    s_port = url.before("/"); // Determine Port number
+    s_port.convert(port);
+#endif
 
   } else {
     

@@ -182,6 +182,19 @@ void ShellFunc::execute() {
     return;
 }
 
+NilFunc::NilFunc(ComTerp* comterp) : ComFunc(comterp) {
+}
+
+void NilFunc::execute() {
+    reset_stack();
+    static int nil_symid = symbol_add("nil");
+    int comm_symid = funcstate()->command_symid();
+    if (comm_symid && comm_symid!= nil_symid)
+      cerr << "unknown command \"" << symbol_pntr(comm_symid)
+	<< "\" returned nil\n";
+    push_stack(ComValue::nullval());
+}
+
 
 
 

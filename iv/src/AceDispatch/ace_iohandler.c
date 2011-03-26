@@ -30,19 +30,21 @@ ACE_IO_Handler::ACE_IO_Handler(IOHandler* handler) : ACE_Event_Handler() {
 }
 
 int ACE_IO_Handler::handle_input (ACE_HANDLE fd) {
-    _iohandler->inputReady(fd);
+    return _iohandler->inputReady(fd);
 }
 
 int ACE_IO_Handler::handle_output (ACE_HANDLE fd) {
-    _iohandler->outputReady(fd);
+    return _iohandler->outputReady(fd);
 }
 
 int ACE_IO_Handler::handle_exception (ACE_HANDLE fd) {
-    _iohandler->exceptionRaised(fd);
+    return _iohandler->exceptionRaised(fd);
 }
 
 int ACE_IO_Handler::handle_timeout (const ACE_Time_Value &tv, const void *arg) {
     _iohandler->timerExpired(tv.sec(), tv.usec());
+    return 0;
 }
 
 #endif
+

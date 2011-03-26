@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 1995 Vectaport Inc.
+ * Copyright (c) 1994,1995,1999 Vectaport Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
@@ -636,4 +636,58 @@ void AbsFunc::execute() {
     push_stack(result);
 }
 
+
+CharFunc::CharFunc(ComTerp* comterp) : ComFunc(comterp) {}
+
+void CharFunc::execute() {
+    ComValue& operand = stack_arg(0);
+    ComValue result(operand.char_val(), ComValue::CharType);
+    reset_stack();
+    push_stack(result);
+}
+
+ShortFunc::ShortFunc(ComTerp* comterp) : ComFunc(comterp) {}
+
+void ShortFunc::execute() {
+    ComValue& operand = stack_arg(0);
+    ComValue result(operand.short_val(), ComValue::ShortType);
+    reset_stack();
+    push_stack(result);
+}
+
+IntFunc::IntFunc(ComTerp* comterp) : ComFunc(comterp) {}
+
+void IntFunc::execute() {
+    ComValue& operand = stack_arg(0);
+    ComValue result(operand.int_val(), ComValue::IntType);
+    reset_stack();
+    push_stack(result);
+}
+
+LongFunc::LongFunc(ComTerp* comterp) : ComFunc(comterp) {}
+
+void LongFunc::execute() {
+    ComValue& operand = stack_arg(0);
+    ComValue result(operand.long_val());
+    reset_stack();
+    push_stack(result);
+}
+
+FloatFunc::FloatFunc(ComTerp* comterp) : ComFunc(comterp) {}
+
+void FloatFunc::execute() {
+    ComValue& operand = stack_arg(0);
+    ComValue result(operand.float_val());
+    reset_stack();
+    push_stack(result);
+}
+
+DoubleFunc::DoubleFunc(ComTerp* comterp) : ComFunc(comterp) {}
+
+void DoubleFunc::execute() {
+    ComValue& operand = stack_arg(0);
+    ComValue result(operand.double_val());
+    reset_stack();
+    push_stack(result);
+}
 

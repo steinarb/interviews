@@ -90,7 +90,7 @@ void * ParamStruct::addr1(void* base) {
     if (_indirection<0)
 	return (char *) base + _offset1;
     else 
-	return *(char **)(base+_indirection) + _offset1;
+	return *(char **)((char*)base+_indirection) + _offset1;
 }
 
 void * ParamStruct::addr2(void* base) {
@@ -98,7 +98,7 @@ void * ParamStruct::addr2(void* base) {
     if (_indirection<0)
 	return (char *) base + _offset2;
     else 
-	return *(char **)(base+_indirection) + _offset2;
+	return *(char **)((char*)base+_indirection) + _offset2;
 }
 
 void * ParamStruct::addr3(void* base) {
@@ -106,7 +106,7 @@ void * ParamStruct::addr3(void* base) {
     if (_indirection<0)
 	return (char *) base + _offset3;
     else 
-	return *(char **)(base+_indirection) + _offset3;
+	return *(char **)((char*)base+_indirection) + _offset3;
 }
 
 void * ParamStruct::addr4(void* base) {
@@ -114,7 +114,7 @@ void * ParamStruct::addr4(void* base) {
     if (_indirection<0)
 	return (char *) base + _offset4;
     else 
-	return *(char **)(base+_indirection) + _offset4;
+	return *(char **)((char*)base+_indirection) + _offset4;
 }
 
 /*****************************************************************************/

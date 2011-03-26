@@ -295,8 +295,9 @@ ComFuncState* ComFunc::funcstate() {
   return _comterp->top_funcstate();
 }
 
-void ComFunc::push_funcstate(int nargs, int nkeys, int pedepth) {
-  ComFuncState cfs(nargs, nkeys, pedepth);
+void ComFunc::push_funcstate(int nargs, int nkeys, int pedepth,
+			     int command_symid) {
+  ComFuncState cfs(nargs, nkeys, pedepth, command_symid);
   _comterp->push_funcstate(cfs);
 }
 
@@ -379,13 +380,15 @@ int& ComFunc::pedepth() {
 
 /*****************************************************************************/
 
-ComFuncState::ComFuncState(int narg, int nkey, int pedepth) {
+ComFuncState::ComFuncState(int narg, int nkey, int pedepth, 
+			   int command_symid) {
   _nargs = narg;
   _nkeys = nkey;
   _npops = 0;
   _nargskey = -1;
   _nargspost = -1;
   _pedepth = pedepth;
+  _command_symid = command_symid;
 }
 
 ComFuncState::ComFuncState(ComFuncState& cfs) {

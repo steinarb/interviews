@@ -94,7 +94,7 @@ void OverlayScript::Brush (ostream& out) {
 	    int p = brush->GetLinePattern();
 	    out << p << ",";
 
-	    int w = brush->Width();
+	    float w = brush->width();
 	    out << w;
 	}
     }
@@ -309,7 +309,8 @@ int OverlayScript::ReadNoneBr (istream& in, void* addr1, void* addr2, void* addr
 }
 
 int OverlayScript::ReadBrush (istream& in, void* addr1, void* addr2, void* addr3, void* addr4) { 
-    int p, w;
+    int p;
+    float w;
     char delim;
     Graphic* gs = *(Graphic**)addr1;
 
@@ -609,7 +610,7 @@ boolean OverlayScript::DefaultGS() {
 
 int OverlayScript::MatchedGS(Clipboard* cb) {
     int count;
-    Iterator i = MatchedGS(cb, count);
+    MatchedGS(cb, count);
     return count;
 }
 
@@ -656,7 +657,7 @@ boolean OverlayScript::EmitGS(ostream& out, Clipboard* cb, boolean prevout) {
 
 int OverlayScript::MatchedPts(Clipboard* cb) {
     int count;
-    Iterator i = MatchedPts(cb, count);
+    MatchedPts(cb, count);
     return count;
 }
 
@@ -680,7 +681,7 @@ Iterator OverlayScript::MatchedPts(Clipboard* cb, int& count) {
 
 int OverlayScript::MatchedPic(Clipboard* cb) {
     int count;
-    Iterator i = MatchedPic(cb, count);
+    MatchedPic(cb, count);
     return count;
 }
 

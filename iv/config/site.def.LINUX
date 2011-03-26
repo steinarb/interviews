@@ -28,7 +28,7 @@
 #define DefaultCCOptions /**/
 
 /* libg++ include directory -- usually does not change with new version of libg++ */
-#define GPlusPlusIncludeDir /usr/include/g++
+#define GPlusPlusIncludeDir /usr/local/include/g++
 
 /* machine-specific gcc include directory -- does not change with each new version of gcc */
 #define ToolIncludeDir /usr/local/include
@@ -53,7 +53,11 @@ install:: Concat(lib,libname.so.rev)					@@\
 	$(INSTALL) -c $(INSTLIBFLAGS) Concat(lib,libname.so.rev) dest   @@\
 	-@if [ -f dest/Concat(lib,libname.so) ]; then exit 0; else \    @@\
 	pushd dest; \                                                   @@\
-        $(LN) Concat(lib,libname.so.rev) Concat(lib,libname.so); popd; fi
+        $(LN) Concat(lib,libname.so.rev) Concat(lib,libname.so); popd; fi@@\
+									@@\
+uninstall::								@@\
+	$(RM) dest/Concat(lib,libname.so.rev)				@@\
+	$(RM) dest/Concat(lib,libname.so)	
 #endif
 
 /* 

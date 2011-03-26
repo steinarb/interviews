@@ -1,6 +1,7 @@
 /*
   http.cc
 
+  Copyright (c) 1999 Vectaport Inc.
   Copyright (c) 1998 Eric F. Kahler
         
   Permission to use, copy, modify, distribute, and sell this software and
@@ -38,17 +39,28 @@ CHttp::CHttp(String hst, int prt, String rmtfile, char* lclfile)
 void CHttp::DoGet() {
 
   String request;  // Request to send to HTTP server.
+  char reqbuf[BUFSIZ];
 
   int fd = AConnect(); // hostname, port);     // Connect to host hostname at port.
 
   // HTTP 0.9 Request format.  For debugging only.
 #ifdef OLD  
+#ifdef LIBGPLUSPLUS
   request = "GET " + remotefile + " \r\n";
+#else
+  sprintf(reqbuf, "GET %s \r\n", remotefile.string());
+  request = reqbuf;
+#endif
 #endif
 
   // HTTP 1.0 Request format.
 #ifndef OLD
+#ifdef LIBGPLUSPLUS
   request = "GET " + remotefile + " HTTP/1.0\r\n\n";
+#else
+  sprintf(reqbuf, "GET %s HTTP/1.0\r\n\n", remotefile.string());
+  request = reqbuf;
+#endif
 #endif
   
 #ifdef DEBUG

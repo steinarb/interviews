@@ -80,7 +80,8 @@ public:
 
     ComFuncState* funcstate();
     // current ComFuncState for use of current ComFunc.
-    void push_funcstate(int nargs, int nkeys, int pedepth=0);
+    void push_funcstate(int nargs, int nkeys, int pedepth=0, 
+                        int command_symid=0);
     // push new ComFuncState on a stack of them.
     void pop_funcstate();
     // pop the top one off the ComFuncState stack.
@@ -191,10 +192,11 @@ protected:
 // which allows for nested and recursive use of a singular ComFunc.
 class ComFuncState {
 public:
-  ComFuncState(int nargs, int nkeys, int pedepth=0);
+  ComFuncState(int nargs, int nkeys, int pedepth=0, int command_symid=0);
   // initialize with number of arguments (including arguments following
-  // keywords), number of keywords, and an option post-eval depth (nesting
-  // within blocks of post-evaluation commands).
+  // keywords), number of keywords, an option post-eval depth (nesting
+  // within blocks of post-evaluation commands), and an optional 
+  // symbol id associated with the ComFunc.
   ComFuncState(ComFuncState&);
   // copy constructor.
 
@@ -211,6 +213,8 @@ public:
   int& pedepth() { return _pedepth; }
   // post-evaluation depth: the nesting within blocks of post-evaluation commands,
   // within blocks of conditionally executing control commands.
+  int& command_symid() { return _command_symid; }
+  // symbol id associated with the ComFunc.
 
 protected:
 
@@ -220,5 +224,6 @@ protected:
   int _nargskey;
   int _nargspost;
   int _pedepth;
+  int _command_symid;
 };
 #endif /* !defined(_comfunc_h) */

@@ -389,6 +389,7 @@ void OverlaysComp::GrowParamList(ParamList* pl) {
 
 Component* OverlaysComp::Copy () {
     OverlaysComp* comps = new OverlaysComp(new Picture(GetGraphic()));
+    if (attrlist()) comps->SetAttributeList(new AttributeList(attrlist()));
     Iterator i;
     First(i);
     while (!Done(i)) {
@@ -521,7 +522,12 @@ void OverlaysComp::Interpret (Command* cmd) {
             s->Sort(views);
 
             for (s->First(i); !s->Done(i); s->Next(i)) {
-                dup1 = (OverlayComp*) s->GetView(i)->GetOverlayComp()->Copy();
+	        OverlayComp* orig = s->GetView(i)->GetOverlayComp();
+                dup1 = (OverlayComp*) orig->Copy();
+		if (!dup1->attrlist() && orig->attrlist()) {
+		  AttributeList* al = new AttributeList(orig->attrlist());
+		  dup1->SetAttributeList(al);
+		}
                 dup1->Interpret(&move);
                 cb->Append(dup1);
             }
@@ -1132,6 +1138,7 @@ ClassId OverlayIdrawComp::GetClassId () { return OVERLAY_IDRAW_COMP; }
 
 Component* OverlayIdrawComp::Copy () {
     OverlayIdrawComp* comps = new OverlayIdrawComp(GetPathName());
+    if (attrlist()) comps->SetAttributeList(new AttributeList(attrlist()));
     Iterator i;
     First(i);
     while (!Done(i)) {

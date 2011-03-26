@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994 Vectaport, Inc.
+ * Copyright (c) 1994-1999 Vectaport, Inc.
  * Copyright (c) 1990, 1991 Stanford University
  *
  * Permission to use, copy, modify, distribute, and sell this software and
@@ -61,6 +61,8 @@ extern "C" {
     }
 }
 #endif
+
+#include <version.h>
 
 /*****************************************************************************/
 
@@ -304,6 +306,7 @@ int main (int argc, char** argv) {
 	ComEditor* ed = new ComEditor(initial_file);
 
 	unidraw->Open(ed);
+	fprintf(stderr, "ivtools-%s comdraw: see \"man comdraw\" or type help here for command info\n", VersionString);
 	unidraw->Run();
     }
 

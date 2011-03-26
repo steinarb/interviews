@@ -51,6 +51,8 @@ class UPage;
 class ViewerGraphic;
 class ViewerView;
 
+//: displays a graphical component view hierarchy.
+// <a href=../man3.1/Viewer.html>man page</a>
 class Viewer : public GraphicBlock {
 public:
     Viewer(

@@ -20,7 +20,7 @@ AllTarget($(PROGRAMS))
 #if InstallRelative
 CppScriptTarget(ivmkmf,ivmkmf.cpp,-DCONFIGDIRSPEC='$(CONFIGDIRSPEC)' -DMAKEMAKESPEC='$(MAKEMAKESPEC)',)
 #else
-CppScriptTarget(ivmkmf,ivmkmf.cpp,-DCONFIGDIRSPEC='$(CONFIGDIRSPEC)' -DMAKEMAKESPEC='$(MAKEMAKESPEC)' -DUseInstalled,)
+CppScriptTarget(ivmkmf,ivmkmf.cpp,-DCONFIGDIRSPEC='$(CONFIGDIRSPEC)' -DMAKEMAKESPEC='$(MAKEMAKESPEC)' -DUSE_INSTALLED,)
 #endif
 
 InstallMultipleFlags($(PROGRAMS),$(BINDIR),$(INSTBINFLAGS))

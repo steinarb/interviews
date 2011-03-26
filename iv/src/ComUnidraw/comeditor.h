@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994-1996 Vectaport Inc.
+ * Copyright (c) 1994-1996,1999 Vectaport Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
@@ -30,17 +30,27 @@ class ComTerpIOHandler;
 class ComTerp;
 class ComTerpServ;
 
+//: editor that integrates ComTerp into the drawing editor framework.
 class ComEditor : public OverlayEditor {
 public:
     ComEditor(OverlayComp*, OverlayKit* = OverlayKit::Instance());
+    // constructor for using existing component.
     ComEditor(const char* file, OverlayKit* = OverlayKit::Instance());
+    // constructor for building top-level component from a file.
     ComEditor(boolean initflag, OverlayKit* = OverlayKit::Instance());
+    // constructor for use of derived classes.
     void Init(OverlayComp* = nil, const char* name = "ComEditor");
     virtual void InitCommands();
+    // method for running Unidraw Command objects after OverlayEditor
+    // is constructed.
     virtual void AddCommands(ComTerp*);
+    // method for adding ComFunc objects to the ComTerp associated with
+    // this ComEditor.
 
     ComTerpServ* GetComTerp() { return _terp;}
+    // return pointer to associated ComTerp (always a ComTerpServ).
     void SetComTerp(ComTerpServ* terp) { _terp = terp;}
+    // set pointer to associated ComTerp (always a ComTerpServ).
 
 protected:
 

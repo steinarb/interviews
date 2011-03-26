@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994-1995 Vectaport, Inc.
+ * Copyright (c) 1994-1999 Vectaport, Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided
@@ -37,6 +37,8 @@ static const char *const SERVER_HOST = ACE_DEFAULT_SERVER_HOST;
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <version.h>
+
 int main(int argc, char *argv[]) {
 
     boolean server_flag = argc>1 && strcmp(argv[1], "server") == 0;
@@ -70,7 +72,12 @@ int main(int argc, char *argv[]) {
     
 	// Start up one on stdin
 	ComterpHandler* stdin_handler = new ComterpHandler();
+#if 0
 	if (ACE::register_stdin_handler(stdin_handler, COMTERP_REACTOR::instance(), nil) == -1)
+#else
+	if (COMTERP_REACTOR::instance()->register_handler(0, stdin_handler, 
+							  ACE_Event_Handler::READ_MASK)==-1)
+#endif
 	    cerr << "comterp: unable to open stdin with ACE\n";
 
         // Perform logging service until COMTERP_QUIT_HANDLER receives SIGINT.
@@ -196,6 +203,12 @@ int main(int argc, char *argv[]) {
     if (server_flag || remote_flag) {
       ComTerpServ* terp = new ComTerpServ();
       terp->add_defaults();
+      struct stat buf;
+      int status = fstat(fileno(stdin), &buf);
+      if (S_ISREG(buf.st_mode) || S_ISFIFO(buf.st_mode))
+	terp->disable_prompt();
+      else
+	fprintf(stderr, "ivtools-%s comterp: type help for more info\n", VersionString);
       return terp->run();
     } else {
       ComTerp* terp = new ComTerp();
@@ -219,6 +232,8 @@ int main(int argc, char *argv[]) {
 #endif
         if (S_ISREG(buf.st_mode) || S_ISFIFO(buf.st_mode))
 	  terp->disable_prompt();
+	else
+	  fprintf(stderr, "ivtools-%s comterp:  type help for more info\n", VersionString);
 	return terp->run();
       }
     }

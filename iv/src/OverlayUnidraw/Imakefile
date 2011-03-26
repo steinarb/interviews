@@ -103,5 +103,6 @@ InstallLibLink($(CLIPPOLYLIBDIR),$(CLIPPOLYLIBBASE), $(LIBDIR))
 #else
 
 MakeInObjectCodeDir()
+InstallIncludes($(PACKAGE))
 
 #endif

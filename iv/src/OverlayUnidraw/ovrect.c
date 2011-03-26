@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994 Vectaport Inc.
+ * Copyright (c) 1994,1999 Vectaport Inc.
  * Copyright (c) 1990, 1991 Stanford University
  *
  * Permission to use, copy, modify, distribute, and sell this software and
@@ -57,6 +57,8 @@
 
 #include <IV-2_6/_enter.h>
 
+#include <Attribute/attrlist.h>
+
 #include <stream.h>
 
 /*****************************************************************************/
@@ -70,7 +72,10 @@ boolean RectOvComp::IsA (ClassId id) {
 }
 
 Component* RectOvComp::Copy () {
-    return new RectOvComp((SF_Rect*) GetGraphic()->Copy());
+    RectOvComp* comp =
+      new RectOvComp((SF_Rect*) GetGraphic()->Copy());
+    if (attrlist()) comp->SetAttributeList(new AttributeList(attrlist()));
+    return comp;
 }
 
 RectOvComp::RectOvComp (SF_Rect* graphic, OverlayComp* parent) 
