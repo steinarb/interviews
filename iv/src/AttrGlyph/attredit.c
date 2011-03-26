@@ -43,7 +43,10 @@
 
 #include <strstream.h>
 #include <string.h>
+#if LibStdCPlusPlus
+#define STL_VECTOR
 #include <vector.h>
+#endif
 
 declareActionCallback(AttributeListEditor)
 implementActionCallback(AttributeListEditor)
@@ -102,7 +105,6 @@ void AttributeListEditor::remove() {
     }
 }
 
-#define STL_VECTOR
 void AttributeListEditor::update_text(boolean update) {
     ALIterator i;
 #ifndef STL_VECTOR
@@ -196,6 +198,16 @@ void AttributeListEditor::build() {
 	)
     );
     _mainglyph->append(lk.vspace(10));
+    _mainglyph->append(
+	lk.hcenter(
+	    lk.hbox(
+		    lk.vcenter(lk.hfixed(wk.label("name"), wid)),
+		lk.hspace(10),
+		    lk.vcenter(lk.hfixed(wk.label("value"), wid))
+	    )
+	)
+    );
+    _mainglyph->append(lk.vspace(2));
     _mainglyph->append(
 	lk.hcenter(
 	    lk.hbox(
