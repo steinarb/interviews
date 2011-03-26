@@ -113,6 +113,6 @@ uninstall::								@@\
 /* --------------- autconf way of configuring --------------- */
 
 /* file output by configure script */
-#include "config-irix5-gcc.mk"
+#include "config-irix5-gcc.defs"
 
 #endif

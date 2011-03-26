@@ -147,7 +147,7 @@ uninstall::								@@\
 /* --------------- autconf way of configuring --------------- */
 
 /* file output by configure script */
-#include "config-alpha4-gcc.mk"
+#include "config-alpha4-gcc.defs"
 
 #endif
 

@@ -11,6 +11,7 @@ ivtools-0.7/MANIFEST
 ivtools-0.7/MANIFEST.perceps
 ivtools-0.7/Makefile
 ivtools-0.7/README
+ivtools-0.7/README.ivmkcm
 ivtools-0.7/VERSION
 ivtools-0.7/comtop.tgz
 ivtools-0.7/config/Imakefile
@@ -49,12 +50,11 @@ ivtools-0.7/config/InterViews/params.def
 ivtools-0.7/config/InterViews/rules.def
 ivtools-0.7/config/InterViews/xparams.cf
 ivtools-0.7/config/Makefile
-ivtools-0.7/config/README.ivmkcm
 ivtools-0.7/config/alpha3.0-gcc.mk
 ivtools-0.7/config/alpha3.2-gcc.mk
 ivtools-0.7/config/alpha4-gcc.mk
 ivtools-0.7/config/arch.def
-ivtools-0.7/config/config.mk.in
+ivtools-0.7/config/config.defs.in
 ivtools-0.7/config/config.null.mk
 ivtools-0.7/config/default-gcc.mk
 ivtools-0.7/config/freebsd2.1-gcc.mk
@@ -67,6 +67,7 @@ ivtools-0.7/config/linux-gcc.mk
 ivtools-0.7/config/local.def
 ivtools-0.7/config/m88k-sysv3-gcc.mk
 ivtools-0.7/config/m88k-sysv4-gcc.mk
+ivtools-0.7/config/makevars.def
 ivtools-0.7/config/params.def
 ivtools-0.7/config/rules.def
 ivtools-0.7/config/sco3.2.4-gcc.mk
@@ -80,6 +81,7 @@ ivtools-0.7/config/sunos4-gcc.mk
 ivtools-0.7/config/template
 ivtools-0.7/configure
 ivtools-0.7/configure.in
+ivtools-0.7/configure.notes
 ivtools-0.7/src/AceDispatch/Imakefile
 ivtools-0.7/src/AceDispatch/Makefile
 ivtools-0.7/src/AceDispatch/ace_dispatcher.c
@@ -594,6 +596,8 @@ ivtools-0.7/src/OverlayUnidraw/ovkit.c
 ivtools-0.7/src/OverlayUnidraw/ovkit.h
 ivtools-0.7/src/OverlayUnidraw/ovline.c
 ivtools-0.7/src/OverlayUnidraw/ovline.h
+ivtools-0.7/src/OverlayUnidraw/ovmanips.c
+ivtools-0.7/src/OverlayUnidraw/ovmanips.h
 ivtools-0.7/src/OverlayUnidraw/ovpage.c
 ivtools-0.7/src/OverlayUnidraw/ovpage.h
 ivtools-0.7/src/OverlayUnidraw/ovpainter.c

@@ -26,6 +26,11 @@
 #include <params.def>
 
 /*
+ * Override with things from the configure script
+ */
+include $(RELTOP)/config/config.mk
+
+/*
  * Define common rules.
  */
 #include <rules.def>

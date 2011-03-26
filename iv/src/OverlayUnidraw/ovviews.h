@@ -123,6 +123,8 @@ public:
     boolean FixedLocation();
     // return flag to indicate if graphic is of fixed location.
 
+    Manipulator* CreateStretchManip(Viewer*, Event&, Transformer*, Tool*);
+    // specialized method to construct OpaqueDragManip instead of DragManip.
 protected:
     OverlayView(OverlayComp* = nil);
 

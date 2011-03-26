@@ -156,6 +156,7 @@ protected:
 /*
  * Bounding box caching operations.
  */
+public:
     void cachingOn();
     void cachingOff();
     virtual boolean extentCached();

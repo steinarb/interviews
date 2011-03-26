@@ -105,6 +105,7 @@ void PrintFunc::execute() {
 	    
     case ComValue::ArrayType: 
       {
+
 	ALIterator i;
 	AttributeValueList* avl = printval.array_val();
 	avl->First(i);

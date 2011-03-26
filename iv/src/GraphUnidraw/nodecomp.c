@@ -1201,7 +1201,7 @@ int NodeScript::ReadText (istream& in, void* addr1, void* addr2, void* addr3, vo
     char buf[BUFSIZ];
 
     in >> line_height >> delim;
-    if (in.good)
+    if (in.good())
 	ParamList::parse_text(in, buf, BUFSIZ);    
 
     if (!in.good()) {

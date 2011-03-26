@@ -147,9 +147,31 @@ void OpenFileChooser::updatecaption() {
 }
 
 boolean OpenFileChooser::urltest(const char* buf) {
+  if (!buf) return false;
+  static boolean file_url_ok = bincheck("w3c") || bincheck("curl");
   return 
     strncasecmp("http://", buf, 7)==0 || 
-    strncasecmp("ftp://", buf, 6)==0;
+    strncasecmp("ftp://", buf, 6)==0 ||
+    file_url_ok && strncasecmp("file:/", buf, 6)==0;
+}
+
+int OpenFileChooser::bintest(const char* command) {
+  char combuf[BUFSIZ];
+  sprintf( combuf, "which %s", command );
+  FILE* fptr = popen(combuf, "r");
+  char testbuf[BUFSIZ];	
+  fgets(testbuf, BUFSIZ, fptr);  
+  pclose(fptr);
+  if (strncmp(testbuf+strlen(testbuf)-strlen(command)-1, 
+	      command, strlen(command)) != 0) {
+    return -1;
+  }
+  return 0;
+}
+
+boolean OpenFileChooser::bincheck(const char* command) {
+  int status = bintest(command);
+  return !status;
 }
 
 /** class OpenFileChooserImpl **/

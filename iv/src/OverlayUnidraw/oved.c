@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994-1998 Vectaport Inc.
+ * Copyright (c) 1994-1999 Vectaport Inc.
  * Copyright (c) 1990, 1991 Stanford University
  *
  * Permission to use, copy, modify, distribute, and sell this software and
@@ -359,3 +359,9 @@ void OverlayEditor::ResetStateVars() {
   return;
 }
 
+/* static */ boolean OverlayEditor::opaque_flag() {
+  static boolean opflag = unidraw->GetCatalog()->GetAttribute("opaque_off") ?
+    strcmp(unidraw->GetCatalog()->GetAttribute("opaque_off"), "true") != 0 :
+    false;
+  return opflag;
+}

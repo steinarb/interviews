@@ -134,9 +134,9 @@ uninstall::								@@\
 
 /* file output by configure script */
 #ifdef SVR4Architecture
-#include "config-solaris-gcc.mk"
+#include "config-solaris-gcc.defs"
 #else
-#include "config-sunos4-gcc.mk"
+#include "config-sunos4-gcc.defs"
 #endif
 
 #endif

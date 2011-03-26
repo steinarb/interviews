@@ -29,7 +29,7 @@
 #ifndef iv_xraster_h
 #define iv_xraster_h
 
-// ###
+// should be defined externally
 #define XSHM
 
 #include <InterViews/coord.h>

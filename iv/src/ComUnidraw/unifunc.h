@@ -29,6 +29,7 @@
 
 class Command;
 class ComTerp;
+class OvImportCmd;
 class OverlayCatalog;
 
 //: base class for interpreter commands in comdraw.
@@ -90,8 +91,19 @@ public:
     virtual const char* docstring() { 
 	return "%s(compview :clear) -- set or clear the readonly attribute of a graphic component"; }
 
-protected:
-    int _clear_symid;
+};
+
+//: command to import a graphic file
+// import(pathname) -- import graphic file from pathname or URL.
+class ImportFunc : public UnidrawFunc {
+public:
+    ImportFunc(ComTerp*,Editor*);
+    OvImportCmd* import(const char* path);
+    // helper method to import from path
+    virtual void execute();
+    virtual const char* docstring() { 
+	return "%s(pathname) -- import graphic file from pathname or URL"; }
+
 };
 
 #endif /* !defined(_unifunc_h) */

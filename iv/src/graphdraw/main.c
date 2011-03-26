@@ -152,6 +152,7 @@ static PropertyData properties[] = {
     { "*scribble_pointer", "false" },
     { "*slider_off",    "false"  },
     { "*zoomer_off",    "false"  },
+    { "*opaque_off",    "false"  },
     { "*help",          "false"  },
     { "*font",          "-adobe-helvetica-medium-r-normal--14-140-75-75-p-77-iso8859-1"  },
     { nil }
@@ -177,6 +178,8 @@ static OptionDesc options[] = {
     { "-soff", "*slider_off", OptionValueImplicit, "true" },
     { "-zoomer_off", "*zoomer_off", OptionValueImplicit, "true" },
     { "-zoff", "*zoomer_off", OptionValueImplicit, "true" },
+    { "-opaque_off", "*opaque_off", OptionValueImplicit, "true" },
+    { "-opoff", "*opaque_off", OptionValueImplicit, "true" },
     { "-help", "*help", OptionValueImplicit, "true" },
     { "-font", "*font", OptionValueNext },
     { nil }
@@ -184,24 +187,11 @@ static OptionDesc options[] = {
 
 
 static char* usage =
-"Usage: graphdraw \
-[any idraw parameter] \
-[-color5] \
-[-color6] \
-[-gray5] \
-\n\
-[-gray6] \
-[-gray7] \
-[-pagecols|-ncols] \
-[-pagerows|-nrows] \
-[-panner_off|-poff] \
-\n\
-[-panner_align|-pal tl|tc|tr|cl|c|cr|cl|bl|br|l|r|t|b|hc|vc ] \
-\n\
-[-scribble_pointer|-scrpt ] \
-[-slider_off|-soff] \
-[-zoomer_off|-zoff] \
-[file]";
+"Usage: graphdraw [any idraw parameter] [-color5] [-color6] \n\
+[-gray5] [-gray6] [-gray7] [-opaque_off|-opoff] [-pagecols|-ncols] \n\
+[-pagerows|-nrows] [-panner_off|-poff] \n\
+[-panner_align|-pal tl|tc|tr|cl|c|cr|cl|bl|br|l|r|t|b|hc|vc ] \n\
+[-scribble_pointer|-scrpt ] [-slider_off|-soff] [-zoomer_off|-zoff] [file]";
 
 /*****************************************************************************/
 

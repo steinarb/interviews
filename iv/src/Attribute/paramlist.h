@@ -219,8 +219,14 @@ public:
     static int parse_pathname(istream& in, char* buffer, int buflen, const char* dir);
     // parse pathname, expanding relative pathnames from 'dir', for use of a
     // param_callback.
+
     static boolean urltest(const char*);
     // test if pathname looks like a URL.
+
+    static int bintest(const char* name);
+    // return 0 if executable can be found, otherwise -1.
+    static boolean bincheck(const char* name);
+    // return true if executable can be found.
 
     static const char* filter(const char* string, int len);
     // filter text buffer for octal constants.

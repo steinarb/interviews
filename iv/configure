@@ -12,19 +12,19 @@ ac_help=
 ac_default_prefix=/usr/local
 # Any additions from configure.in:
 ac_help="$ac_help
-  --with-ace=<path>    Path to ACE"
+  --with-ace=<path>    Path to ACE include files"
 ac_help="$ac_help
   --with-ace-libs=<path>    Path to ACE libraries"
 ac_help="$ac_help
-  --with-clippoly=<path>    Path to clippoly"
+  --with-clippoly=<path>    Path to clippoly include file"
 ac_help="$ac_help
   --with-clippoly-libs=<path>    Path to clippoly libraries"
 ac_help="$ac_help
-  --with-fresco=<path>    path to Fresco (not-used)"
+  --with-fresco=<path>    path to Fresco include files (not-used)"
 ac_help="$ac_help
   --with-fresco-libs=<path> path to compiled Fresco libs (not-used)"
 ac_help="$ac_help
-  --with-iue=<path>    path to IUE"
+  --with-iue=<path>    path to IUE directory"
 ac_help="$ac_help
   --with-iue-libs=<path> path to compiled IUE libs"
 ac_help="$ac_help
@@ -154,7 +154,7 @@ do
     # Omit some internal or obsolete options to make the list less imposing.
     # This message is too long to be a string in the A/UX 3.1 sh.
     cat << EOF
-Usage: configure [options] 
+Usage: configure [options] [host]
 Options: [defaults in brackets after descriptions]
 Configuration:
   --cache-file=FILE       cache test results in FILE
@@ -163,7 +163,7 @@ Configuration:
   --quiet, --silent       do not print \`checking...' messages
   --version               print the version of autoconf that created configure
 Directory and file names:
-  --prefix=PREFIX         install files in PREFIX when !install-relative
+  --prefix=PREFIX         install architecture-independent files in PREFIX
                           [$ac_default_prefix]
 Features and packages:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
@@ -603,7 +603,7 @@ fi
 ACE_ENABLED=0
 if test x"$ACE" = x; then
 	echo ""
-	echo "Warning NO ACE path specified!"
+	echo "No ACE path specified!"
 	echo "Use --with-ace=<path> to point to ACE installed directory."
 	echo ""
 else
@@ -644,7 +644,7 @@ fi
 CLIPPOLY_ENABLED=0
 if test x"$CLIPPOLY" = x; then
 	echo ""
-	echo "Warning NO clippoly path specified!"
+	echo "No clippoly path specified!"
 	echo "Use --with-clippoly=<path> to point to clippoly installed directory."
 	echo ""
 else
@@ -693,7 +693,7 @@ fi
 if test x"$FRESCO" = x
 then
 	echo ""
-	echo "Warning NO Fresco path specified!"
+	echo "No Fresco path specified!"
 	echo "Use --with-fresco=<path> to point to Fresco installed directory."
 else
    if test ! -f "$FRESCO"/Fresco/X11/X11Display.h
@@ -754,7 +754,7 @@ fi
 if test x"$IUE" = x
 then
 	echo ""
-	echo "Warning NO IUE path specified!"
+	echo "No IUE path specified!"
 	echo "Use --with-iue=<path> to point to IUE installed directory."
 else
    if test ! -f "$IUE"/Image/ImageClasses/Image.h
@@ -1459,7 +1459,66 @@ fi
 # check for bool support in c++
 #AC_CXX_BOOL
 # check for c++ standard headers
-#AC_CXX_HEADERS
+
+echo $ac_n "checking how to run the C++ preprocessor""... $ac_c" 1>&6
+echo "configure:1796: checking how to run the C++ preprocessor" >&5
+if test -z "$CXXCPP"; then
+if eval "test \"`echo '$''{'ac_cv_prog_CXXCPP'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  ac_ext=C
+# CXXFLAGS is not in ac_cpp because -g, -O, etc. are not valid cpp options.
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='${CXX-g++} -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext 1>&5'
+ac_link='${CXX-g++} -o conftest $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS 1>&5'
+cross_compiling=$ac_cv_prog_cxx_cross
+  CXXCPP="${CXX-g++} -E"
+  cat > conftest.$ac_ext <<EOF
+#line 1809 "configure"
+#include "confdefs.h"
+#include <stdlib.h>
+EOF
+ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+{ (eval echo configure:1814: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ac_err=`grep -v '^ *+' conftest.out`
+if test -z "$ac_err"; then
+  :
+else
+  echo "$ac_err" >&5
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  CXXCPP=/lib/cpp
+fi
+rm -f conftest*
+  ac_cv_prog_CXXCPP="$CXXCPP"
+ac_ext=c
+# CFLAGS is not in ac_cpp because -g, -O, etc. are not valid cpp options.
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='${CC-cc} -c $CFLAGS $CPPFLAGS conftest.$ac_ext 1>&5'
+ac_link='${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS 1>&5'
+cross_compiling=$ac_cv_prog_cc_cross
+fi
+fi
+CXXCPP="$ac_cv_prog_CXXCPP"
+echo "$ac_t""$CXXCPP" 1>&6
+
+echo $ac_n "checking standard C++ headers ""... $ac_c" 1>&6
+echo "configure:1839: checking standard C++ headers " >&5
+CXX_HDRDIR=""; export CXX_HDRDIR
+cat > conftest.cc <<!
+#include <iostream.h>
+!
+CXX_HDRDIR=`$CXXCPP conftest.cc | egrep '^#[ \t]*[0-9]+[ \t].*iostream' | \
+            sed -e 's/\/iostream.*$//g' | sed -e 's/^.*\"//g'`
+for i in $CXX_HDRDIR
+do
+    CXX_HDRDIR=$i
+    break;
+done
+rm -f conftest.cc
+echo "$ac_t""$CXX_HDRDIR " 1>&6
+
 # check for EGCS or gcc 2.8.x
 #AC_CXX_EGCS
 # check for gettimeofday
@@ -1496,9 +1555,11 @@ fi
 if test "$cc_part" != ""
 then
     host_frag=$platform_part-$cc_part.mk
+    host_fragd=$platform_part-$cc_part.defs
 else
 # strip spaces from compiler name
     host_frag=$platform_part-`echo $CXX | sed "s/ //g"`.mk
+    host_fragd=$platform_part-`echo $CXX | sed "s/ //g"`.defs
 fi
 
 if test -f config/$host_frag; then
@@ -1531,6 +1592,17 @@ fi
 
 
 
+#output other stuff to config.mk
+echo
+echo writing constants to be pulled in by each Makefile from config/config.mk:
+echo writing \"XCONFIGDIR = $x_libraries/X11/config\"
+echo XCONFIGDIR = $x_libraries/X11/config >config/config.mk
+echo writing \"ABSTOP = `pwd`\"
+echo ABSTOP = `pwd` >>config/config.mk
+echo writing \"CPU = `make CPU`\"
+echo CPU = `make CPU` >>config/config.mk
+echo
+
 
 #AC_SUBST(OPENGL)
 #AC_SUBST(XGL)
@@ -1558,7 +1630,9 @@ fi
 
 
 
-#output to config-$host_frag 
+
+#output to config-$host_fragd 
+export PWD=`pwd`
 trap '' 1 2 15
 cat > confcache <<\EOF
 # This file is a shell script that caches the results of configure
@@ -1671,7 +1745,7 @@ done
 
 ac_given_srcdir=$srcdir
 
-trap 'rm -fr `echo "config/config-$host_frag:config/config.mk.in" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
+trap 'rm -fr `echo "config/config-$host_fragd:config/config.defs.in" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
 EOF
 cat >> $CONFIG_STATUS <<EOF
 
@@ -1772,7 +1846,7 @@ EOF
 
 cat >> $CONFIG_STATUS <<EOF
 
-CONFIG_FILES=\${CONFIG_FILES-"config/config-$host_frag:config/config.mk.in"}
+CONFIG_FILES=\${CONFIG_FILES-"config/config-$host_fragd:config/config.defs.in"}
 EOF
 cat >> $CONFIG_STATUS <<\EOF
 for ac_file in .. $CONFIG_FILES; do if test "x$ac_file" != x..; then
@@ -1837,4 +1911,7 @@ EOF
 chmod +x $CONFIG_STATUS
 rm -fr confdefs* $ac_clean_files
 test "$no_create" = yes || ${CONFIG_SHELL-/bin/sh} $CONFIG_STATUS || exit 1
+
+
+
 

@@ -150,6 +150,8 @@ void ComEditor::AddCommands(ComTerp* comterp) {
 
     if (OverlayKit::bincheck("plotmtv"))
       comterp->add_command("barplot", new BarPlotFunc(comterp, this));
+
+    comterp->add_command("import", new ImportFunc(comterp, this));
 }
 
 

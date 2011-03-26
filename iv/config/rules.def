@@ -81,12 +81,6 @@ MakeSpecialWorld(.debug,flags)
 /*
  * Make the Makefile in the current directory.
  */
-#ifdef LinuxArchitecture
-#define PWD_VAL shell pwd
-#else
-#define PWD_VAL PWD
-#endif
-
 #ifndef MakefileTarget
 #define MakefileTarget()						@@\
 Makefile::								@@\
@@ -99,11 +93,17 @@ Makefile::								@@\
 	echo >.toplevel-make-makefile; else \				@@\
 	echo >.not-toplevel-make-makefile; fi				@@\
 	-@if [ -f .toplevel-make-makefile ]; then \                     @@\
-	$(IMAKE) $(IMAKEFLAGS) -I$(PWD_VAL)/config \			@@\
-	-DTOPDIR=$(PWD_VAL) -DRELTOPDIR=$(RELTOP) -DCURDIR=$(PWD_VAL);fi@@\
+	echo;\							@@\
+	echo "remaking top-level Makefile using:";\			@@\
+	echo "    top-level directory -- $(ABSTOP)";\			@@\
+	echo "    ivtools config directory -- $(CONFIGSRC)";\		@@\
+	echo "    X11 config directory -- $(XCONFIGDIR)";\		@@\
+	echo;\							@@\
+	$(IMAKE) $(IMAKEFLAGS) -I$(ABSTOP)/config \			@@\
+	-DTOPDIR=$(ABSTOP) -DRELTOPDIR=$(RELTOP) -DCURDIR=$(ABSTOP); fi @@\
 	-@if [ -f .not-toplevel-make-makefile ]; then \			@@\
 	$(IMAKE) $(IMAKEFLAGS) -DTOPDIR=$(TOP) \                        @@\
-		-DRELTOPDIR=$(RELTOP) -DCURDIR=$(PWD_VAL); fi		@@\
+		-DRELTOPDIR=$(RELTOP) -DCURDIR=$(CURRENT_DIR); fi	@@\
 	-@if [ $(TOP) = $(CURRENT_DIR) ]; then \                        @@\
 	$(RM) .toplevel-make-makefile; else \				@@\
 	$(RM) .not-toplevel-make-makefile; fi				

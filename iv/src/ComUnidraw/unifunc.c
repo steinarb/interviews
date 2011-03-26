@@ -166,12 +166,12 @@ void PasteFunc::execute() {
 /*****************************************************************************/
 
 ReadOnlyFunc::ReadOnlyFunc(ComTerp* comterp, Editor* ed) : UnidrawFunc(comterp, ed) {
-    _clear_symid = symbol_add("clear");
 }
 
 void ReadOnlyFunc::execute() {
     ComValue viewval(stack_arg(0));
-    ComValue clear(stack_key(_clear_symid));
+    static int clear_symid = symbol_add("clear");
+    ComValue clear(stack_key(clear_symid));
     reset_stack();
 
     ComponentView* view = (ComponentView*)viewval.obj_val();
@@ -183,3 +183,51 @@ void ReadOnlyFunc::execute() {
 
     push_stack(viewval);
 }
+
+/*****************************************************************************/
+
+ImportFunc::ImportFunc(ComTerp* comterp, Editor* ed) : UnidrawFunc(comterp, ed) {
+}
+
+OvImportCmd* ImportFunc::import(const char* path) {
+  OvImportCmd* cmd = new OvImportCmd(editor());
+  cmd->pathname(path);
+  execute_log(cmd);
+  return cmd;
+}
+void ImportFunc::execute() {
+    ComValue pathnamev(stack_arg(0));
+    reset_stack();
+    
+    OvImportCmd* cmd;
+    if (!pathnamev.is_array()) {
+      if (nargs()==1) {
+	if (cmd = import(pathnamev.string_ptr())) {
+	  ComValue compval(_compview_id,
+			   new ComponentView(cmd->component()));
+	  push_stack(compval);
+	} else
+	  push_stack(ComValue::nullval());
+      } else {
+	for (int i=0; i<nargs(); i++) 
+	  if (cmd = import(stack_arg(i).string_ptr())) {
+	    ComValue compval(_compview_id,
+			     new ComponentView(cmd->component()));
+	    push_stack(compval);
+	  } else
+	    push_stack(ComValue::nullval());
+      }
+    } else   {
+      AttributeValueList* outlist = new AttributeValueList();
+      AttributeValueList* inlist = pathnamev.array_val();
+      Iterator it;
+      inlist->First(it);
+      while(!inlist->Done(it)) {
+	cmd = import(inlist->GetAttrVal(it)->string_ptr());
+	outlist->Append(new ComValue(_compview_id, 
+				     new ComponentView(cmd->component())));
+	inlist->Next(it);
+      }
+    }
+}
+

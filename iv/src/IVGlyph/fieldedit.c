@@ -280,7 +280,8 @@ void GFieldEditor::insert_char(char ch) {
     const Allocation& a = allocation();
     WidgetKit& wk = *WidgetKit::instance();
     float swidth = wk.font()->width(field_->Text(), field_->Length());
-    float cwidth = wk.font()->width(&ch, 1);
+    char cbuf[] = { ch, '\0' };
+    float cwidth = wk.font()->width((char*) cbuf, 1);
     float fwidth = a.right() - a.left() - _frame_thickness*2;
     if (swidth + cwidth > fwidth ) {
 	cerr << "\007";

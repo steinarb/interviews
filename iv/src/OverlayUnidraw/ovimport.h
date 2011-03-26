@@ -34,13 +34,16 @@
 #include <stdio.h>
 #include <sys/types.h>
 
+class Bitmap;
+class Component;
+class Editor;
+class FileHelper;
+class GraphicComp;
 class ImportChooser;
 class OverlayRaster;
-class Raster;
-class Bitmap;
 class PortableImageHelper;
+class Raster;
 class RasterOvComp;
-class FileHelper;
 
 //: command for importing arbitrary graphical files.
 // command for importing arbitrary graphical files: a wide variety of raster files, 
@@ -90,7 +93,7 @@ public:
 
     static GraphicComp* DoImport(
         istream& instrm, boolean& empty, FileHelper& helper, Editor* ed, 
-        boolean is_url, const char* pathname, int& pnmfd
+        boolean is_strm, const char* pathname, int& pnmfd
     );
 
     static GraphicComp* TIFF_Image(const char*);
@@ -130,10 +133,12 @@ public:
 
     static GraphicComp* PNM_Image(istream&, const char* creator = nil);
     // generate RasterOvComp from a PNM istream (PBM, PGM, or PPM).
-    static GraphicComp* PNM_Image_Filter(istream&, boolean url, int& fd,
+    static GraphicComp* PNM_Image_Filter(istream&, boolean return_fd, int& fd,
 					 const char* filter = nil);
     // generate RasterOvComp from a PNM istream (PBM, PGM, or PPM), using a 
     // specified filter to convert from another format to one of the PNM formats.
+    // if 'return_fd' is true this method sets up and returns a file handle
+    // to import a raw PPM image.
 
     static int Pipe_Filter(istream& in, const char* filter);
     // low-level mechanism to filter an istream using an arbitrary command line
@@ -184,9 +189,7 @@ public:
     static OverlayRaster* CreatePlaceImage();
     // create placeholder image when doing asynchronous incremental downloads.
 	 
-    void is_url(boolean flag) { _is_url = flag; }
-    // set flag that indicates import is from a URL.
-    boolean is_url() { return _is_url; }
+    boolean is_url();
     // return flag that indicates import is from a URL.
 
     static const char* Create_Tiled_File(
@@ -200,6 +203,15 @@ public:
         int& theight
     );
    // utility method for tiled or untiled access of PGM and PPM disk files.
+
+    static void center_import(Editor* ed, GraphicComp* comp);
+    // center imported component in the viewer.
+
+    Component* component() { return comp_; }
+    // return pointer to imported component.   
+
+     boolean is_popen() {return popen_;}
+    // return true if 
 
 protected:
     static OverlayRaster* PI_Raster_Read(
@@ -242,7 +254,7 @@ protected:
     char* path_;
     boolean popen_;
     boolean preserve_selection_;
-    boolean _is_url;
+    Component* comp_;
 };
 
 

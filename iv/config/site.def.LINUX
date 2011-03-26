@@ -101,7 +101,7 @@ uninstall::								@@\
 /* --------------- autconf way of configuring --------------- */
 
 /* file output by configure script */
-#include "config-linux-gcc.mk"
+#include "config-linux-gcc.defs"
 
 #endif
 
