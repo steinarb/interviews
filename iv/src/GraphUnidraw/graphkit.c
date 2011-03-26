@@ -48,6 +48,7 @@
 #include <OverlayUnidraw/ovexport.h>
 #include <OverlayUnidraw/ovimport.h>
 #include <OverlayUnidraw/ovpolygon.h>
+#include <OverlayUnidraw/ovprecise.h>
 #include <OverlayUnidraw/ovprint.h>
 #include <OverlayUnidraw/ovrect.h>
 #include <OverlayUnidraw/ovtext.h>
@@ -222,13 +223,13 @@ MenuItem* GraphKit::MakeEditMenu() {
 			90.0),
 	     "90 CounterCW   ");
     mbi->menu()->append_item(kit.menu_item_separator());
-    MakeMenu(mbi, new PreciseMoveCmd(new ControlInfo("Precise Move",
+    MakeMenu(mbi, new OvPreciseMoveCmd(new ControlInfo("Precise Move",
 					     KLBL_PMOVE, CODE_PMOVE)),
 	     "Precise Move   ");
-    MakeMenu(mbi, new PreciseScaleCmd(new ControlInfo("Precise Scale",
+    MakeMenu(mbi, new OvPreciseScaleCmd(new ControlInfo("Precise Scale",
 					      KLBL_PSCALE, CODE_PSCALE)),
 	     "Precise Scale   ");
-    MakeMenu(mbi, new PreciseRotateCmd(new ControlInfo("Precise Rotate",
+    MakeMenu(mbi, new OvPreciseRotateCmd(new ControlInfo("Precise Rotate",
 					       KLBL_PROTATE, CODE_PROTATE)),
 	     "Precise Rotate   ");
 
@@ -576,15 +577,13 @@ Glyph* GraphKit::MakeToolbar() {
 
     return layout.hbox(
 	layout.vflexible(
-	    layout.vnatural(
 		new Background(
 		    layout.vcenter(
 			_toolbar
 		    ),
 		    unidraw->GetCatalog()->FindColor("#aaaaaa")
 		),
-		550
-	    )
+		fil, 0.0
 	)
     );
 }

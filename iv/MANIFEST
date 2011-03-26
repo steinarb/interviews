@@ -150,6 +150,8 @@ ivtools-0.7/src/ComTerp/parser.c
 ivtools-0.7/src/ComTerp/parser.h
 ivtools-0.7/src/ComTerp/postfunc.c
 ivtools-0.7/src/ComTerp/postfunc.h
+ivtools-0.7/src/ComTerp/randfunc.c
+ivtools-0.7/src/ComTerp/randfunc.h
 ivtools-0.7/src/ComTerp/scanner.c
 ivtools-0.7/src/ComTerp/scanner.h
 ivtools-0.7/src/ComTerp/statfunc.c
@@ -168,6 +170,8 @@ ivtools-0.7/src/ComUnidraw/comterp-iohandler.c
 ivtools-0.7/src/ComUnidraw/comterp-iohandler.h
 ivtools-0.7/src/ComUnidraw/grfunc.c
 ivtools-0.7/src/ComUnidraw/grfunc.h
+ivtools-0.7/src/ComUnidraw/nfunc.c
+ivtools-0.7/src/ComUnidraw/nfunc.h
 ivtools-0.7/src/ComUnidraw/unifunc.c
 ivtools-0.7/src/ComUnidraw/unifunc.h
 ivtools-0.7/src/ComUtil/Imakefile
@@ -598,6 +602,8 @@ ivtools-0.7/src/OverlayUnidraw/ovpanner.c
 ivtools-0.7/src/OverlayUnidraw/ovpanner.h
 ivtools-0.7/src/OverlayUnidraw/ovpolygon.c
 ivtools-0.7/src/OverlayUnidraw/ovpolygon.h
+ivtools-0.7/src/OverlayUnidraw/ovprecise.c
+ivtools-0.7/src/OverlayUnidraw/ovprecise.h
 ivtools-0.7/src/OverlayUnidraw/ovprint.c
 ivtools-0.7/src/OverlayUnidraw/ovprint.h
 ivtools-0.7/src/OverlayUnidraw/ovpspict.c
@@ -1356,6 +1362,8 @@ ivtools-0.7/src/man/Imakefile
 ivtools-0.7/src/man/Makefile
 ivtools-0.7/src/man/man1/Imakefile
 ivtools-0.7/src/man/man1/Makefile
+ivtools-0.7/src/man/man1/comdraw.1
+ivtools-0.7/src/man/man1/comterp.1
 ivtools-0.7/src/man/man1/dclock.1
 ivtools-0.7/src/man/man1/drawtool.1
 ivtools-0.7/src/man/man1/flipbook.1

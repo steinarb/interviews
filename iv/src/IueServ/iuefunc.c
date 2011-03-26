@@ -53,10 +53,13 @@ void IueImageFunc::execute() {
   ComValue path_or_obj(stack_arg(0));
   static int mem_symid = symbol_add("mem");
   ComValue memflag(stack_key(mem_symid));
+  static int adrg_symid = symbol_add("adrg");
+  ComValue adrgflag(stack_key(adrg_symid));
   reset_stack();
 
   if (path_or_obj.is_type(ComValue::StringType)) {
-    IueImageComp* imagecomp = new IueImageComp(path_or_obj.string_ptr());
+    IueImageComp* imagecomp = new IueImageComp(path_or_obj.string_ptr(),
+					       adrgflag.boolean_val());
     if (!imagecomp->image()) {
       delete imagecomp;
       push_stack(ComValue::nullval());

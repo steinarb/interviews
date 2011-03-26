@@ -86,6 +86,9 @@
 #define GRAYRAMP_CMD	      2054
 #define SETATTRBYEXPR_CMD     2054
 #define GRLOC_TOOL            2055
+#define OVPRECISEMOVE_CMD     2056
+#define OVPRECISESCALE_CMD    2057
+#define OVPRECISEROTATE_CMD   2058
 
 #define OVERLAY_COMP          2150
 #define OVERLAYS_COMP         2151

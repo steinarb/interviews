@@ -162,6 +162,7 @@ static PropertyData properties[] = {
     { "*toolbarloc",    "l"  },
     { "*twidth",        "512" },
     { "*zoomer_off",    "false"  },
+    { "*slideshow",     "0"  },
 #ifdef HAVE_ACE
     { "*comdraw",       "20002" },
     { "*import",        "20003" },
@@ -199,9 +200,10 @@ static OptionDesc options[] = {
     { "-tw", "*twidth", OptionValueNext },
     { "-zoomer_off", "*zoomer_off", OptionValueImplicit, "true" },
     { "-zoff", "*zoomer_off", OptionValueImplicit, "true" },
+    { "-slideshow", "*slideshow", OptionValueNext },
 #ifdef HAVE_ACE
     { "-import", "*import", OptionValueNext },
-    { "-comdraw", "*port", OptionValueNext },
+    { "-comdraw", "*comdraw", OptionValueNext },
 #endif
     { "-help", "*help", OptionValueImplicit, "true" },
     { "-font", "*font", OptionValueNext },
@@ -214,16 +216,18 @@ static char* usage =
 [-color5] [-color6] [-import port] [-gray5] [-gray6] [-gray7] \n\
 [-pagecols|-ncols] [-pagerows|-nrows] [-panner_off|-poff] \n\
 [-panner_align|-pal tl|tc|tr|cl|c|cr|cl|bl|br|l|r|t|b|hc|vc ] \n\
-[-scribble_pointer|-scrpt ] [-slider_off|-soff] [-toolbarloc|-tbl r|l ] \n\
-[-theight|-th n] [-tile] [-twidth|-tw n] [-zoomer_off|-zoff] [file]";
+[-scribble_pointer|-scrpt ] [-slideshow sec] [-slider_off|-soff] \n\
+[-toolbarloc|-tbl r|l ] [-theight|-th n] [-tile] [-twidth|-tw n] \n\
+[-zoomer_off|-zoff] [file]";
 #else
 static char* usage =
 "Usage: flipbook [any idraw parameter] [-bookgeom] \n\
 [-color5] [-color6] [-gray5] [-gray6] [-gray7] \n\
 [-pagecols|-ncols] [-pagerows|-nrows] [-panner_off|-poff] \n\
 [-panner_align|-pal tl|tc|tr|cl|c|cr|cl|bl|br|l|r|t|b|hc|vc ] \n\
-[-scribble_pointer|-scrpt ] [-slider_off|-soff] [-toolbarloc|-tbl r|l ] \n\
-[-theight|-th n] [-tile] [-twidth|-tw n] [-zoomer_off|-zoff] [file]";
+[-scribble_pointer|-scrpt ] [-slideshow sec] [-slider_off|-soff] \n\
+[-toolbarloc|-tbl r|l ] [-theight|-th n] [-tile] [-twidth|-tw n] \n\
+[-zoomer_off|-zoff] [file]";
 #endif
 /*****************************************************************************/
 
@@ -292,6 +296,16 @@ int main (int argc, char** argv) {
 	FrameEditor* ed = new FrameEditor(initial_file);
 
 	unidraw->Open(ed);
+
+#ifdef HAVE_ACE
+	/*  Start up one on stdin */
+	UnidrawComterpHandler* stdin_handler = new UnidrawComterpHandler();
+	if (ACE::register_stdin_handler(stdin_handler, COMTERP_REACTOR::instance(), nil) == -1)
+	  cerr << "flipbook: unable to open stdin with ACE\n";
+	ed->SetComTerp(stdin_handler->comterp());
+#endif
+	
+
 	unidraw->Run();
     }
 

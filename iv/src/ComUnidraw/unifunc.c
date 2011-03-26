@@ -69,6 +69,16 @@ void UnidrawFunc::execute_log(Command* cmd) {
     }
 }
 
+void UnidrawFunc::menulength_execute(const char* kind) {
+  reset_stack();
+  int itemcount=0;
+  Catalog* catalog = unidraw->GetCatalog();
+  while(catalog->GetAttribute(catalog->Name(kind, itemcount+1)))
+    itemcount++;
+  ComValue retval(itemcount);
+  push_stack(retval);
+}
+
 /*****************************************************************************/
 
 UpdateFunc::UpdateFunc(ComTerp* comterp, Editor* ed) : UnidrawFunc(comterp, ed) {

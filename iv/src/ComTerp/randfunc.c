@@ -21,25 +21,55 @@
  * 
  */
 
-/*
- * collection of io functions
- */
+#include <ComTerp/randfunc.h>
+#include <Attribute/attrlist.h>
+#include <Attribute/attrvalue.h>
+#include <Unidraw/iterator.h>
 
-#if !defined(_iofunc_h)
-#define _iofunc_h
+#define TITLE "RandFunc"
 
-#include <ComTerp/comfunc.h>
+/*****************************************************************************/
 
-class ComTerp;
-class ComValue;
+RandFunc::RandFunc(ComTerp* comterp) : ComFunc(comterp) {
+}
 
-class PrintFunc : public ComFunc {
-public:
-    PrintFunc(ComTerp*);
+void RandFunc::execute() {
+  ComValue minmaxlist(stack_arg(0));
+  reset_stack();
+  
+  /* set min and max bounds for random number */
+  double minval = 0.0;
+  double maxval = 1.0;
+  if (minmaxlist.is_type(ComValue::ArrayType)) {
+    AttributeValueList* avl = minmaxlist.array_val();
+    if (avl->Number()==2) {
+      Iterator it;
+      avl->First(it);
+      minval = avl->GetAttrVal(it)->double_val();
+      avl->Next(it);
+      maxval = avl->GetAttrVal(it)->double_val();
+    }
+  } 
 
-    virtual void execute();
-    virtual const char* docstring() { 
-      return "[str]=%s(fmtstr val :string) -- print value with format string"; }
-};
+  double gain = (maxval-minval)/RAND_MAX;
+  double bias = minval;
 
-#endif /* !defined(_iofunc_h) */
+  int rnum = rand();
+  double rval = rnum*gain+bias;
+  ComValue retval(rval);
+  push_stack(retval);
+
+}
+
+/*****************************************************************************/
+
+SRandFunc::SRandFunc(ComTerp* comterp) : ComFunc(comterp) {
+}
+
+void SRandFunc::execute() {
+  ComValue seedval(stack_arg(0));
+  reset_stack();
+  srand(seedval.uint_val());
+}
+
+

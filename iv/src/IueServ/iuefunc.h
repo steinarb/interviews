@@ -43,7 +43,7 @@ public:
 
     virtual void execute();
     virtual const char* docstring() { 
-      return "img=%s(path|img :mem) -- load or convert image"; }
+      return "img=%s(path|img :mem :adrg) -- load or convert image"; }
 
 };
 

@@ -28,6 +28,7 @@
 #include <Attribute/aliterator.h>
 #include <Attribute/attrlist.h>
 #include <iostream.h>
+#include <strstream.h>
 
 #define TITLE "IoFunc"
 
@@ -39,17 +40,25 @@ PrintFunc::PrintFunc(ComTerp* comterp) : ComFunc(comterp) {
 void PrintFunc::execute() {
   ComValue formatstr(stack_arg(0));
   ComValue printval(stack_arg(1));
+  static int string_symid = symbol_add("string");
+  ComValue stringflag(stack_key(string_symid));
   reset_stack();
 
   const char* fstr = formatstr.is_string() ? formatstr.string_ptr() : "nil";
-  
-  filebuf fbuf;
-  if (comterp()->handler()) {
-    int fd = max(1, comterp()->handler()->get_handle());
-    fbuf.attach(fd);
-  } else
-    fbuf.attach(fileno(stdout));
-  ostream out(&fbuf);
+
+  streambuf* strmbuf = nil;
+  if (stringflag.is_false()) {
+    filebuf * fbuf = new filebuf();
+    strmbuf = fbuf;
+    if (comterp()->handler()) {
+      int fd = max(1, comterp()->handler()->get_handle());
+      fbuf->attach(fd);
+    } else
+      fbuf->attach(fileno(stdout));
+  } else {
+    strmbuf = new strstreambuf();
+  }
+  ostream out(strmbuf);
 
   switch( printval.type() )
     {
@@ -124,5 +133,14 @@ void PrintFunc::execute() {
     default:
       break;
     }
+
+
+  if (stringflag.is_true()) {
+    out << '\0';
+    ComValue retval(((strstreambuf*)strmbuf)->str());
+    push_stack(retval);
+  }
+  delete strmbuf;
+    
 }
 

@@ -26,6 +26,7 @@
  * Implementation of OverlayUnidraw class.
  */
 
+#include <OverlayUnidraw/ovcomps.h>
 #include <OverlayUnidraw/ovdoer.h>
 #include <OverlayUnidraw/ovunidraw.h>
 
@@ -38,6 +39,7 @@
 #include <Unidraw/globals.h>
 #include <Unidraw/iterator.h>
 #include <Unidraw/ulist.h>
+#include <Unidraw/Graphic/graphic.h>
 
 #include <InterViews/display.h>
 #include <InterViews/event.h>
@@ -51,6 +53,9 @@ OverlayUnidraw::OverlayUnidraw (Catalog* c, int& argc, char** argv,
 				OptionDesc* od, PropertyData* pd) 
 : Unidraw(c, argc, argv, od, pd) {
     _cmdq = new MacroCmd();
+
+    /* replace default Painter with an OverlayPainter */
+    OverlayGraphic::new_painter();
 }
 
 OverlayUnidraw::OverlayUnidraw (Catalog* c, World* w) 

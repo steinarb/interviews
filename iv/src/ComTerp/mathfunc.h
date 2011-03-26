@@ -36,7 +36,7 @@ public:
 
     virtual void execute();
     virtual const char* docstring() { 
-      return "dbl=exp(x) -- returns the value of raised to the power of x"; }
+      return "dbl=exp(x) -- returns the value e raised to the power of x"; }
 
 };
 

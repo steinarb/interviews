@@ -22,6 +22,7 @@
  */
 
 // from IUE
+#include <ImageClasses/ADRGImage.h>
 #include <ImageClasses/Image.h>
 #include <EasyImage/FileImage.h>
 
@@ -57,9 +58,14 @@ boolean IueServComp::IsA (ClassId id) {
 
 int IueImageComp::_symid = -1;
 
-IueImageComp::IueImageComp(const char* name) : IueServComp() {
-  _fileimage = new FileImage(name);
-  _image = *_fileimage;
+IueImageComp::IueImageComp(const char* name, boolean adrg) : IueServComp() {
+  _image = nil;
+  _fileimage = nil;
+  if (!adrg) {
+    _fileimage = new FileImage(name);
+    if (_fileimage) _image = *_fileimage;
+  } else 
+    _image = MakeADRGImage((char *)name);
   if (_image) _image->ref();
 }
 

@@ -182,7 +182,9 @@ protected:
 protected:
     friend class Unidraw;
     void Init(World*);
+public:
     const char* Name(const char*, int);
+protected:
 
     ClassId ReadClassId(istream&, int& inst_id, ClassId&, const char*&);
     void* ReadObject(istream&);

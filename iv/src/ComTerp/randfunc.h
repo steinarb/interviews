@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994-1996 Vectaport Inc.
+ * Copyright (c) 1998 Vectaport Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
@@ -21,31 +21,35 @@
  * 
  */
 
-#ifndef comeditor_h
-#define comeditor_h
+/*
+ * collection of random number generating functions
+ */
 
-#include <OverlayUnidraw/oved.h>
+#if !defined(_randfunc_h)
+#define _randfunc_h
 
-class ComTerpIOHandler;
+#include <ComTerp/comfunc.h>
+
 class ComTerp;
-class ComTerpServ;
 
-class ComEditor : public OverlayEditor {
+class RandFunc : public ComFunc {
 public:
-    ComEditor(OverlayComp*, OverlayKit* = OverlayKit::Instance());
-    ComEditor(const char* file, OverlayKit* = OverlayKit::Instance());
-    ComEditor(boolean initflag, OverlayKit* = OverlayKit::Instance());
-    void Init(OverlayComp* = nil, const char* name = "ComEditor");
-    virtual void InitCommands();
-    virtual void AddCommands(ComTerp*);
+    RandFunc(ComTerp*);
 
-    ComTerpServ* GetComTerp() { return _terp;}
-    void SetComTerp(ComTerpServ* terp) { _terp = terp;}
+    virtual void execute();
+    virtual const char* docstring() { 
+      return "%s([minval,maxval]) -- return random number between 0 and 1 or minval,maxval"; }
 
-protected:
-
-    ComTerpServ* _terp;
-    ComTerpIOHandler* _terp_iohandler;
 };
 
-#endif
+class SRandFunc : public ComFunc {
+public:
+    SRandFunc(ComTerp*);
+
+    virtual void execute();
+    virtual const char* docstring() { 
+      return "%s(seedval) -- seed random number generator"; }
+
+};
+
+#endif /* !defined(_randfunc_h) */

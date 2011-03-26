@@ -1,8 +1,126 @@
+December 23rd 1998 ivtools-0.7.2
+
+Drawing Editor Changes
+
+	* enable deferred loading of rasters-by-URL, similar to the
+ 	deferred loading of PGM/PPM rasters.  Tested with the following
+ 	flipbook document, which brings up the first frame, and loads the
+ 	subsequent frames only when moved to:
+	
+flipbook(
+    frame(),
+    frame(
+        raster("http://www.nps.gov/apis/photo1.jpg" :transform 1,0,0,1,120.5,271)
+    ),
+    frame(
+        raster("http://www.nps.gov/apis/photo2.jpg" :transform 1,0,0,1,120.5,271)
+    ),
+    frame(
+        raster("http://www.nps.gov/apis/photo3.jpg" :transform 1,0,0,1,120.5,271)
+    ),
+    frame(
+        raster("http://www.nps.gov/apis/photo4.jpg" :transform 1,0,0,1,120.5,271)
+    )
+)
+
+	* set up a continuously-looping slideshow mechanism for flipbook,
+ 	invoked by a "-slideshow secs" command line argument or a
+ 	":slideshow secs" attribute in the flipbook document.  At present
+ 	requires building with ACE (or downloading Linux binaries).
+  	Typing "exit" into stdin or Ctrl-Q through the GUI will terminate
+ 	the show. See this URL for sample on-line slideshows:
+
+	http://www.vectaport.com/ivtools/slideshows.html
+
+	* glyphify the precise move/scale/rotate dialog boxes in
+ 	drawtool/comdraw/flipbook/graphdraw (under the Edit menu).  This
+ 	leaves only the precise page dialog box (under the View menu) left
+ 	to be glyphified.
+
+	* test the new comdraw funcs described below with a script like
+ 	this entered into stdin:
+
+	for(x=0 x<100 x++ :body ellipse(rand(0,ncols-1),rand(0,nrows-1),rand(20,30),rand(10,20));rotate(rand(1,180));update;colors(rand(1,ncolors) rand(1,ncolors));pattern(rand(1,npatterns)))
+
+	** happy random jelly beans **
+
+Interpreter Changes
+
+	* add rand([minval,maxval]) and srand(seedval) funcs to comterp.
+
+	* add :string argument to print(fmtstr val) func, to cause the
+ 	output to be pushed on the stack in the form of a string.
+
+	* update documentation (both README and man pages) for comterp and
+ 	comdraw.
+
+	* add comdraw funcs to return menu sizes: nfonts(), nbrushes(),
+ 	npatterns(), and ncolors().
+
+	* add comdraw funcs to return onscreen extent of canvas in pixels:
+ 	ncols() and nrows().
+
+	* generalize the timeexpr func to take a :sec argument, and
+ 	include this func in a comterp built with ACE (server mode).
+
+Library Changes
+
+	-- ComTerp --
+
+	* generalize the timeoutscript mechanism on the ComterpHandler to
+ 	take a seconds argument as well (ComTerpHandler::timeoutseconds()).
+
+	-- IVGlyph --
+
+	* add a GFieldEditor::select_all method, to facilitate its use
+ 	from new precise move/scale/rotate dialog boxes.
+
+	* extend StrEditDialog to accept an arbitrary extra glyph.
+
+	* generalize RadioEnumEditor to allow for horizontal layout and no
+ 	frame.
+
+	-- OverlayUnidraw --
+
+	* set up OvPreciseMoveCmd, OvPreciseScaleCmd, and
+ 	OvPreciseRotateCmd, to allow for the glyphification of the
+ 	"Precise" command dialog boxes.
+
+	* create an OverlayGraphic::new_painter() for use by
+ 	OverlayUnidraw to slip in an OverlayPainter for the default
+ 	Graphic Painter (Graphic::_p).  It was discovered that every
+ 	OverlayRasterRect was creating a new OverlayPainter and stuffing
+ 	it in Graphic::_p, which wasn't a problem, until I tried to defer
+ 	the loading of rasters-by-URL.  This meant that the Painter was
+ 	engaged in rendering the raster before the final OverlayRasterRect
+ 	was constructed, which caused the Painter currently being used to
+ 	be deleted (oops).
+
+	-- FrameUnidraw --
+
+	* create a FrameEditor::InitCommands (invoked by the ::Resize
+ 	method on the viewer) to initialize the slideshow mechanism.
+
+Configuration and Miscellaneous Changes
+
+	* change the construction of the toolbar glyphs, to use a
+ 	layout.vflexible with infinite stretchability and 0
+ 	shrinkability. This works to make the whole toolbar automatically
+ 	appear no matter how long, and obviates the need to have a funky
+ 	constant that guesses how many pixels long the toolbar really is.
+
+	* switch flipbook from using a Dispatcher based ComTerpIOHandler
+ 	on stdin to using a Reactor based UnidrawComterpHandler (when
+ 	built with ACE).  This facilitates the use of the timeexpr func in
+ 	the flipbook slideshow mechanism.  In the future the older
+ 	Dispatcher mechanism could handle the slideshow mechanism as well
+ 	(since timer objects are supported by the Dispatcher).
+
 December 4th 1998 ivtools-0.7.1
 
 Drawing Editor Changes
 
-	* add support for %s embedding in print and import dialog box
+	* add support for %s embedding in print and export dialog box
  	command strings.  This facilitates the cat'ing of a file to a
  	device (i.e. cat %s >/dev/lp1), and use of utilities like pstoedit
  	(i.e. "pstoedit -f tgif %s /tmp/temp.obj;tgif /tmp/temp.obj") from

@@ -24,9 +24,9 @@
 #include <ComUnidraw/grfunc.h>
 #include <ComUnidraw/comeditor.h>
 #include <ComUnidraw/comterp-iohandler.h>
+#include <ComUnidraw/nfunc.h>
 
 #include <ComTerp/ctrlfunc.h>
-#include <ComTerp/numfunc.h>
 #include <ComTerp/comterpserv.h>
 #include <ComTerp/strmfunc.h>
 
@@ -112,6 +112,11 @@ void ComEditor::AddCommands(ComTerp* comterp) {
     comterp->add_command("pattern", new PatternFunc(comterp, this));
     comterp->add_command("colors", new ColorFunc(comterp, this));
 
+    comterp->add_command("nfonts", new NFontsFunc(comterp, this));
+    comterp->add_command("nbrushes", new NBrushesFunc(comterp, this));
+    comterp->add_command("npatterns", new NPatternsFunc(comterp, this));
+    comterp->add_command("ncolors", new NColorsFunc(comterp, this));
+
     comterp->add_command("select", new SelectFunc(comterp, this));
     comterp->add_command("move", new MoveFunc(comterp, this));
     comterp->add_command("scale", new ScaleFunc(comterp, this));
@@ -134,6 +139,8 @@ void ComEditor::AddCommands(ComTerp* comterp) {
     comterp->add_command("tilefile", new TileFileFunc(comterp, this));
 
     comterp->add_command("update", new UpdateFunc(comterp, this));
+    comterp->add_command("ncols", new NColsFunc(comterp, this));
+    comterp->add_command("nrows", new NRowsFunc(comterp, this));
     comterp->add_command("handles", new HandlesFunc(comterp, this));
 
     comterp->add_command("barplot", new BarPlotFunc(comterp, this));

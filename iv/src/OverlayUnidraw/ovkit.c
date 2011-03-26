@@ -51,6 +51,7 @@
 #include <OverlayUnidraw/ovkit.h>
 #include <OverlayUnidraw/ovline.h>
 #include <OverlayUnidraw/ovpage.h>
+#include <OverlayUnidraw/ovprecise.h>
 #include <OverlayUnidraw/ovprint.h>
 #include <OverlayUnidraw/ovpolygon.h>
 #include <OverlayUnidraw/ovrect.h>
@@ -520,15 +521,13 @@ Glyph* OverlayKit::MakeToolbar() {
 
     return layout.hbox(
 	layout.vflexible(
-	    layout.vnatural(
 		new Background(
 		    layout.vcenter(
 			_toolbar
 		    ),
 		    unidraw->GetCatalog()->FindColor("#aaaaaa")
 		),
-		580
-	    )
+		fil, 0.0
 	)
     );
 }
@@ -801,13 +800,13 @@ MenuItem* OverlayKit::MakeEditMenu() {
 			90.0),
 	     "90 CounterCW   ");
     mbi->menu()->append_item(kit.menu_item_separator());
-    MakeMenu(mbi, new PreciseMoveCmd(new ControlInfo("Precise Move",
+    MakeMenu(mbi, new OvPreciseMoveCmd(new ControlInfo("Precise Move",
 					     KLBL_PMOVE, CODE_PMOVE)),
 	     "Precise Move   ");
-    MakeMenu(mbi, new PreciseScaleCmd(new ControlInfo("Precise Scale",
+    MakeMenu(mbi, new OvPreciseScaleCmd(new ControlInfo("Precise Scale",
 					      KLBL_PSCALE, CODE_PSCALE)),
 	     "Precise Scale   ");
-    MakeMenu(mbi, new PreciseRotateCmd(new ControlInfo("Precise Rotate",
+    MakeMenu(mbi, new OvPreciseRotateCmd(new ControlInfo("Precise Rotate",
 					       KLBL_PROTATE, CODE_PROTATE)),
 	     "Precise Rotate   ");
     mbi->menu()->append_item(kit.menu_item_separator());

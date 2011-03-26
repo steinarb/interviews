@@ -563,19 +563,20 @@ int RasterScript::ReadRaster (istream& in, void* addr1, void* addr2, void* addr3
 	
     } else if (!urlflag && strcmp(creator, "PPM") == 0) {
 	ovraster = OvImportCmd::PPM_Raster(pathname, delayed);
-    } else if (urlflag || strcmp(creator, "JPEG") == 0 || strcmp(creator, "GIF")==0) {
+    } else if (!urlflag && 
+	       (strcmp(creator, "JPEG") == 0 || strcmp(creator, "GIF")==0)) {
       OvImportCmd importcmd((Editor*)nil);
       OverlayComp* tempcomp = (OverlayComp*)importcmd.Import(pathname);
       if (tempcomp && tempcomp->IsA(OVRASTER_COMP)) {
 	OverlayRasterRect* ovrrect = 
 	  ((RasterOvComp*)tempcomp)->GetOverlayRasterRect();
 	ovraster = ovrrect ? ovrrect->GetOverlayRaster() : nil;
-	ovraster->ref(); // to protect from deletion
+	if (ovraster) ovraster->ref(); // to protect from deletion
 	already_ref = true;		      
 	delete tempcomp;
       }
-
-    }
+    } else if (urlflag) 
+      ovraster = new OverlayRaster(0,0);
     
     if ( ovraster) {
 	
@@ -908,9 +909,11 @@ boolean RasterScript::GetByPathnameFlag() {
 /*****************************************************************************/
 
 OverlayRasterRect::OverlayRasterRect(OverlayRaster* r, Graphic* gr) : RasterRect(r, gr) {
+#if 0 /* now done in OverlayGraphic::new_painter() */
     Unref(_p);
     _p = new OverlayPainter();
     Resource::ref(_p);
+#endif
     _xbeg = _xend = _ybeg = _yend = -1;
 }
 
@@ -949,6 +952,9 @@ void OverlayRasterRect::load_image(const char* pathname) {
 	pathname = ((RasterOvView*)GetTag())->GetRasterOvComp()->GetPathName();
 
     if (pathname) {
+      if (!ParamList::urltest(pathname)) {
+
+	/* local file */
         const char* creator = OvImportCmd::ReadCreator(pathname);
         if (strcmp(creator, "PGM") == 0)
 	    OvImportCmd::PGM_Raster(
@@ -961,9 +967,29 @@ void OverlayRasterRect::load_image(const char* pathname) {
                 _yend);
         else 
 	    cerr << "unexpected image file format (" << creator << ") in " << 
-            pathname << "\n";
+            pathname << "\n"; 
+
+      } else {
+
+	/* file by URL */
+	OvImportCmd importcmd((Editor*)nil);
+	OverlayComp* tempcomp = (OverlayComp*)importcmd.Import(pathname);
+	if (tempcomp && tempcomp->IsA(OVRASTER_COMP)) {
+	  OverlayRasterRect* ovrrect = 
+	    ((RasterOvComp*)tempcomp)->GetOverlayRasterRect();
+	  OverlayRaster* ovraster = ovrrect 
+	    ? ovrrect->GetOverlayRaster() : nil;
+	  if (ovraster) ovraster->ref();  // to protect from deletion
+	  delete tempcomp;
+	  Unref(_raster);
+	  _raster = ovraster;
+	  uncacheParents();
+	  ((OverlayRaster*)_raster)->initialize();
+	}
+      }
     }
-    ((OverlayRaster*)_raster)->initialize();
+    if (_raster->pwidth()) 
+      ((OverlayRaster*)_raster)->initialize();
 }
 
 void OverlayRasterRect::xbeg(IntCoord xbeg) { _xbeg = xbeg; }
