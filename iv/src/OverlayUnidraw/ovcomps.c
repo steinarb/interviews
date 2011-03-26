@@ -30,6 +30,7 @@
 #include <OverlayUnidraw/ovcmds.h>
 #include <OverlayUnidraw/ovcomps.h>
 #include <OverlayUnidraw/oved.h>
+#include <OverlayUnidraw/ovpainter.h>
 #include <OverlayUnidraw/ovselection.h>
 #include <OverlayUnidraw/ovviewer.h>
 #include <OverlayUnidraw/ovviews.h>
@@ -1041,6 +1042,15 @@ void OverlaysComp::AdjustBaseDir(const char* olddir, const char* newdir) {
 }
 
 AttributeValue* OverlaysComp::FindValue
+(const char* name, boolean last, boolean breadth, boolean down, boolean up) {
+  int symid = symbol_find((char*)name);
+  if (symid >= 0)
+    return FindValue(symid, last, breadth, down, up);
+  else
+    return nil;
+}
+
+AttributeValue* OverlaysComp::FindValue
 (int symid, boolean last, boolean breadth, boolean down, boolean up) {
   if (breadth) {
     cerr << "breadth search not yet unsupported\n";
@@ -1142,3 +1152,12 @@ const char* OverlayIdrawComp::GetPathName() { return _pathname; }
 
 const char* OverlayIdrawComp::GetBaseDir() { return _basedir; }
 
+/*****************************************************************************/
+
+/* for sliding in a new static default Painter */
+
+void OverlayGraphic::new_painter() {
+  Unref(_p);
+  _p = new OverlayPainter();
+  Resource::ref(_p);
+}

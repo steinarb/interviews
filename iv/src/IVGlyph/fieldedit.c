@@ -177,7 +177,9 @@ void GFieldEditor::make_body() {
     label_->append(lk.hspace(2));
     int bar1 = Math::min(point_pos_, mark_pos_);
     int bar2 = Math::max(point_pos_, mark_pos_);
+#if 0
     if (!cursor_is_on_) bar1 = bar2;
+#endif
     int i = 0;
     Display* d = Session::instance()->default_display();
     for (; i < bar1; i++) {
@@ -296,6 +298,12 @@ void GFieldEditor::insert_char(char ch) {
 void GFieldEditor::clear_buffer() {
     field_->Delete(0,field_->characters());
     mark_pos_ = point_pos_ = 0;
+    update();
+}
+
+void GFieldEditor::select_all() { 
+    mark_pos_ = 0;
+    point_pos_ = field_->characters();
     update();
 }
 

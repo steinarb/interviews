@@ -52,6 +52,7 @@ void MoveFrameFunc::execute() {
     else
       deltaframes = deltav.int_val();
     MoveFrameCmd* cmd = new MoveFrameCmd(GetEditor(), deltaframes);
+    cmd->wraparound(MoveFrameCmd::default_instance()->wraparound());
     execute_log(cmd);
     ComValue retval(cmd->actualmotion(), ComValue::IntType);
     push_stack(retval);

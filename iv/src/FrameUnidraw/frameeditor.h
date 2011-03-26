@@ -45,6 +45,7 @@ public:
     virtual void InitFrame();
     virtual void Update();
     virtual void AddCommands(ComTerp*);
+    virtual void InitCommands();
 
     EivTextEditor* TextEditor() { return _texteditor; }
     void SetText();

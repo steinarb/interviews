@@ -76,12 +76,15 @@ TimeExprFunc::TimeExprFunc(ComTerp* comterp) : ComFunc(comterp) {
 void TimeExprFunc::execute() {
 #ifdef HAVE_ACE
     ComValue timeoutstr(stack_arg(0));
+    static int sec_symval = symbol_add("sec");
+    ComValue sec_val(stack_key(sec_symval, false, ComValue::oneval(), true));
     reset_stack();
 
     ComterpHandler* handler = ((ComTerpServ*)_comterp)->handler();
     if (handler) {
         if (nargs()) {
 	  if (timeoutstr.type() == ComValue::StringType) {
+	      handler->timeoutseconds(sec_val.int_val());
 	      handler->timeoutscriptid(timeoutstr.string_val());
 	      push_stack(timeoutstr);
 	  } else 

@@ -977,7 +977,10 @@ void OverlayPainter::DoRasterRect(
 	return;
     }
 
+    rr->load_image();
+
     const OverlayRaster* r = or ? or : rr->GetOriginal();
+    r->flush();
 
     if (!icache_) {
         icache_ = new ImageCache();
@@ -1012,8 +1015,6 @@ void OverlayPainter::DoRasterRect(
     static const Transformer tt;
     const Transformer* tmatrix = GetTransformer() ? GetTransformer() : &tt;
 
-    rr->load_image();
-    r->flush();
     XRectangle bb;
 
     if (Rep()->clipped) {

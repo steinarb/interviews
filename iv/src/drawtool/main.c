@@ -147,7 +147,7 @@ static PropertyData properties[] = {
     { "*history",	"20" },
 
     { "*color5",        "false" },
-    { "*nocolor6",      "false" },
+    { "*color6",        "true" },
     { "*gray5",         "false" },
     { "*gray6",         "false" },
     { "*gray7",         "false" },
@@ -172,7 +172,7 @@ static PropertyData properties[] = {
 
 static OptionDesc options[] = {
     { "-color5", "*color5", OptionValueImplicit, "true" },
-    { "-nocolor6", "*color6", OptionValueImplicit, "true" },
+    { "-nocolor6", "*color6", OptionValueImplicit, "false" },
     { "-gray5", "*gray5", OptionValueImplicit, "true" },
     { "-gray6", "*gray6", OptionValueImplicit, "true" },
     { "-gray7", "*gray7", OptionValueImplicit, "true" },

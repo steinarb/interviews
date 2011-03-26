@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994-1998 Vectaport Inc.
+ * Copyright (c) 1998 Vectaport Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
@@ -21,81 +21,63 @@
  * 
  */
 
-#if !defined(_unifunc_h)
-#define _unifunc_h
+#if !defined(_comunidraw_nfunc_h)
+#define _comunidraw_nfunc_h
 
-#include <Unidraw/editor.h>
-#include <ComTerp/comfunc.h>
+#include <ComUnidraw/unifunc.h>
 
-class Command;
-class ComTerp;
-class OverlayCatalog;
-
-class UnidrawFunc : public ComFunc {
+class NColsFunc : public UnidrawFunc {
 public:
-    UnidrawFunc(ComTerp*,Editor*);
-
-    void execute_log(Command*);
-
-    Editor* GetEditor() { return editor(); }
-    Editor* editor() { return _ed; }
-protected:
-    void menulength_execute(const char* kind);
-    Editor* _ed;
-
-static int _compview_id;
-
-};
-
-class UpdateFunc : public UnidrawFunc {
-public:
-    UpdateFunc(ComTerp*,Editor*);
+    NColsFunc(ComTerp*,Editor*);
     virtual void execute();
     virtual const char* docstring() { 
-	return "%s() -- update viewers"; }
+	return "%s() -- onscreen horizontal extent in pixels"; }
+
 };
 
-class HandlesFunc : public UnidrawFunc {
+class NRowsFunc : public UnidrawFunc {
 public:
-    HandlesFunc(ComTerp*,Editor*);
+    NRowsFunc(ComTerp*,Editor*);
     virtual void execute();
     virtual const char* docstring() { 
-	return "%s(flag) -- enable/disable current selection tic marks and/or highlighting"; }
+	return "%s() -- onscreen vertical extent in pixels"; }
+
 };
 
-class PasteFunc : public UnidrawFunc {
+class NFontsFunc : public UnidrawFunc {
 public:
-    PasteFunc(ComTerp*,Editor*,OverlayCatalog* = nil);
+    NFontsFunc(ComTerp*,Editor*);
     virtual void execute();
     virtual const char* docstring() { 
-	return "%s(grcomp [xscale yscale xoff yoff | a00,a01,a10,a11,a20,a21]) -- paste graphic component into the viewer"; }
+	return "%s() -- return size of font menu"; }
 
-protected:
-    OverlayCatalog* _catalog;
 };
 
-class ReadOnlyFunc : public UnidrawFunc {
+class NBrushesFunc : public UnidrawFunc {
 public:
-    ReadOnlyFunc(ComTerp*,Editor*);
+    NBrushesFunc(ComTerp*,Editor*);
     virtual void execute();
     virtual const char* docstring() { 
-	return "%s(grcomp :clear) -- set or clear the readonly attribute of a graphic component"; }
+	return "%s() -- return size of brush menu"; }
 
-protected:
-    int _clear_symid;
 };
 
-class BarPlotFunc : public UnidrawFunc {
+class NPatternsFunc : public UnidrawFunc {
 public:
-    BarPlotFunc(ComTerp*,Editor*);
+    NPatternsFunc(ComTerp*,Editor*);
     virtual void execute();
     virtual const char* docstring() { 
-	return "%s([var_str value_float] [...] :title title_str :xtitle xtitle_str :ytitle ytitle_str :valtitle valtitle_str) -- display a barplot"; }
-protected:
-  int _title_symid;
-  int _xtitle_symid;
-  int _ytitle_symid;
-  int _valtitle_symid;
+	return "%s() -- return size of pattern menu"; }
+
 };
 
-#endif /* !defined(_unifunc_h) */
+class NColorsFunc : public UnidrawFunc {
+public:
+    NColorsFunc(ComTerp*,Editor*);
+    virtual void execute();
+    virtual const char* docstring() { 
+	return "%s() -- return size of colors menu"; }
+
+};
+
+#endif /* !defined(_comunidraw_nfunc_h) */

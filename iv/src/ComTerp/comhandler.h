@@ -58,6 +58,9 @@ public:
   int timeoutscriptid();
   void timeoutscriptid(int);
 
+  void timeoutseconds(int seconds) { _seconds = seconds; }
+  int timeoutseconds() { return _seconds; }
+
   ComTerpServ* comterp() { return comterp_; }
 
 protected:
@@ -74,6 +77,9 @@ protected:
 
   int  _timeoutscriptid;
   // command for timeoutscript execution
+
+  int _seconds;
+  // timeout in seconds
 };
 
 // A Reactor Singleton.

@@ -64,9 +64,11 @@ multilines if drawtool has been built with the clippoly library
 .SH OPTIONS
 .TP
 "-import n" 
-specifies the port number run the import service on.  The
+specifies the port number to run the import service on.  The
 import service accepts connections over the net and reads drawtool
-or idraw documents and pbmplus image formats (PBM/PGM/PPM). 
+or idraw documents and pbmplus image formats (PBM/PGM/PPM), plus JPEG, GIF,
+TIFF, and the non-raster portions of arbitrary PostScript if appropriate
+filters are available (djpeg, giftopnm, tifftopnm, pstoedit).
 .PP
 Also see "-help" for more options.
 

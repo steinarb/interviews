@@ -106,6 +106,25 @@ void FrameEditor::Init (OverlayComp* comp, const char* name) {
   _autonewframe = false;
 }
 
+void FrameEditor::InitCommands() {
+  int secs = 0;
+  Catalog* catalog = unidraw->GetCatalog();
+  const char* slideshow_str = catalog->GetAttribute("slideshow");
+  if (slideshow_str) secs = atoi(slideshow_str);
+  if (!secs) {
+    FrameIdrawComp* comp = (FrameIdrawComp*)GetGraphicComp();
+    const char* attrname = "slideshow";
+    AttributeValue* av = comp->FindValue(attrname);
+    if (av) secs = av->int_val();
+  }
+  if (secs && _terp) {
+    MoveFrameCmd::default_instance()->set_wraparound();
+    char buffer[BUFSIZ];
+    sprintf(buffer, "timeexpr(\"moveframe(1)\" :sec %d)", secs);
+    _terp->run(buffer);
+  }
+}
+
 void FrameEditor::InitFrame() {
     _currframe = nil;
     _prevframe = nil;

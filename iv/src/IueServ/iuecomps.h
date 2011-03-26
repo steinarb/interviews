@@ -28,6 +28,7 @@
 
 // classes from IUE
 #undef Image
+class ADRGFile;
 class Image; 
 class FileImage; 
 
@@ -47,7 +48,7 @@ protected:
 
 class IueImageComp : public IueServComp {
 public:
-    IueImageComp(const char* file);
+    IueImageComp(const char* file, boolean adrg=false);
     IueImageComp(Image*);
     virtual ~IueImageComp();
 
@@ -60,6 +61,7 @@ public:
 
 protected:
     FileImage* _fileimage;
+    ADRGFile* _adrgfile;
     Image* _image;
 
     classid("IueImageComp");

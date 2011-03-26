@@ -227,7 +227,7 @@ void MoveFrameCmd::Execute() {
 	}
     }
     ed->SetFrame((FrameView*)fv->GetView(frameptr));
-    if (prev != ed->GetFrame()) {
+    if (ed->GetFrame() && prev != ed->GetFrame()) {
 	Damage* damage = ed->GetViewer()->GetDamage();
 	damage->Incur(prev->GetGraphic());
 	damage->Incur(ed->GetFrame()->GetGraphic());

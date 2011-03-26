@@ -72,7 +72,7 @@ public:
 
     virtual void execute();
     virtual const char* docstring() { 
-      return "%s(comstr) -- command string to execute at intervals"; }
+      return "%s(comstr :sec n) -- command string to execute at intervals"; }
 
 };
 

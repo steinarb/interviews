@@ -169,6 +169,9 @@ public:
     virtual void AdjustBaseDir(const char* oldpath, const char* newpath);
 
     virtual AttributeValue* FindValue
+      (const char* name, boolean last = false, boolean breadth = false, 
+       boolean down = true, boolean up = false);
+    virtual AttributeValue* FindValue
       (int symid, boolean last = false, boolean breadth = false, 
        boolean down = true, boolean up = false);
 
@@ -245,6 +248,15 @@ friend OverlayCatalog;
 };
 
 inline boolean OverlayComp::valid() { return _valid; }
+
+/* for the purpose of sliding in a derived Painter */
+
+#include <Unidraw/Graphic/graphic.h>
+
+class OverlayGraphic : public Graphic {
+public:
+  static void new_painter();
+};
 
 #endif
 

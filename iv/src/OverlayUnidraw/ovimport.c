@@ -617,7 +617,7 @@ GraphicComp* OvImportCmd::PostDialog () {
 		catalog->SetParent(idraw_comp);
 		ed->GetWindow()->cursor(hourglass);
 		chooser_->twindow()->cursor(hourglass);
-		style->attribute("caption", "                                   ");
+		style->attribute("caption", "                                          ");
 		chooser_->twindow()->repair();
 		chooser_->twindow()->display()->sync();
 		comp = Import(ns.string());

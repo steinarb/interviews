@@ -36,6 +36,7 @@
 #include <ComTerp/mathfunc.h>
 #include <ComTerp/numfunc.h>
 #include <ComTerp/postfunc.h>
+#include <ComTerp/randfunc.h>
 #include <ComTerp/statfunc.h>
 #include <ComTerp/strmfunc.h>
 #include <ComTerp/xformfunc.h>
@@ -671,6 +672,9 @@ void ComTerp::add_defaults() {
     add_command("var", new VarFunc(this));
     add_command("stddev", new StdDevFunc(this));
 
+    add_command("rand", new RandFunc(this));
+    add_command("srand", new SRandFunc(this));
+
     add_command("exp", new ExpFunc(this));
     add_command("log", new LogFunc(this));
     add_command("log10", new Log10Func(this));
@@ -703,6 +707,10 @@ void ComTerp::add_defaults() {
     add_command("while", new WhileFunc(this));
 
     add_command("print", new PrintFunc(this));
+
+#ifdef HAVE_ACE
+    add_command("timeexpr", new TimeExprFunc(this));
+#endif
 
     add_command("shell", new ShellFunc(this));
     add_command("quit", new QuitFunc(this));

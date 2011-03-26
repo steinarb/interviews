@@ -41,6 +41,11 @@ brush(brushnum) -- set current brush from menu
 pattern(patternnum) -- set current pattern from menu
 colors(fgcolornum bgcolornum) -- set current colors from menu
 
+nfonts() -- return size of font menu
+nbrushes() -- return size of brush menu
+npatterns() -- return size of pattern menu
+ncolors() -- return size of color menus
+
 DIRECT MANIPULATION COMMANDS
 
 select(compview [compview ...]) -- make these graphics the current selection
@@ -49,6 +54,11 @@ scale(dxflt dyflt) -- scale current selection
 rotate(degflt) -- rotate current selection
 
 VIEWER COMMANDS
+
+update() -- update viewer
+
+ncols() -- onscreen horizontal extent in pixels
+nrows() -- onscreen vertical extent in pixels
 
 handles(flag) -- enable/disable current selection tic marks and/or highlighting
 
