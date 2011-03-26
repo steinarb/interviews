@@ -69,7 +69,7 @@ DEPDRAWSERV = $(IVTOOLSSRC)/DrawServ/$(CPU)/libDrawServ.so.$(VERSION)
 
    RELEASE = ivtools-0.7
 
-   VERSION = 0.7.6
+   VERSION = 0.7.7
 
    REPOSITORY_FILES = *.c *.cc *.cxx *.C *.h Imakefile *.def template README INSTALL VERSION MANIFEST COPYRIGHT ANNOUNCE README.ivmkcm *.patch *.bugfix.? *.script *.sed comutil.arg comterp.err comutil.ci comterp.arg comterp.ci site.def.SUN4 site.def.LINUX site.def.SGI site.def.HP800 site.def.ALPHA WishList *.defaults *.cf HOWTO Copyright *.sh CHANGES CHANGES-0.? *.cpp ivmkmf *.bash *.1  *.3 config.guess config.sub configure configure.in MANIFEST.perceps *.mk config.mk.in *.tmpl *.flt *.m4
 
@@ -283,7 +283,7 @@ IUEDIRS =
 
 ACEDISPATCH = AceDispatch
 
-SUBDIRS = 	IV-common 	Unidraw-common 		ComUtil 	Attribute 	ComTerp 	comtest 	comterp 		IV 	InterViews 	IV-2_6 	IV-X11 	OS 	TIFF 	Dispatch 	dclock 	iclass 	idemo 		Time 	IVGlyph 	glyphs 		AttrGlyph 	ComGlyph 	glyphterp 		Unidraw 	UniIdraw 	idraw 		TopoFace 	$(ACEDISPATCH) 	OverlayUnidraw 	drawtool 		$(IUEDIRS) 		ComUnidraw 	comdraw 		FrameUnidraw 	flipbook 		GraphUnidraw 	graphdraw 		DrawServ 	drawserv 		include 	scripts 	utils 	tests 		 	man 	html
+SUBDIRS = 	IV-common 	Unidraw-common 		ComUtil 	Attribute 	TopoFace 	ComTerp 	comtest 	comterp 		IV 	InterViews 	IV-2_6 	IV-X11 	OS 	TIFF 	Dispatch 	dclock 	iclass 	idemo 		Time 	IVGlyph 	glyphs 		AttrGlyph 	ComGlyph 	glyphterp 		Unidraw 	UniIdraw 	idraw 		$(ACEDISPATCH) 	OverlayUnidraw 	drawtool 		$(IUEDIRS) 		ComUnidraw 	comdraw 		FrameUnidraw 	flipbook 		GraphUnidraw 	graphdraw 		DrawServ 	drawserv 		include 	scripts 	utils 	tests 		 	man 	html
 
 Makefiles::
 	-@for i in $(SUBDIRS); \

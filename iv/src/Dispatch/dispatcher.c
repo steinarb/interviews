@@ -384,7 +384,7 @@ void ChildQueue::notify() {
     _ready = false;
 }
 
-#if defined(svr4) && defined(sun) && NOFILE==20
+#if defined(__svr4__) && defined(sun) && NOFILE==20
 #undef NOFILE
 #define NOFILE 256
 #endif

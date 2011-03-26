@@ -52,8 +52,8 @@ install:: Concat(lib,libname.so.rev)					@@\
 	MakeDir(dest)                                                   @@\
 	$(INSTALL) -c $(INSTLIBFLAGS) Concat(lib,libname.so.rev) dest   @@\
 	-@$(RM) dest/Concat(lib,libname.so)		                @@\
-	-@$(LN) dest/Concat(lib,libname.so.rev) \			@@\
-	dest/Concat(lib,libname.so)				        @@\
+	-@(cd dest;$(LN) Concat(lib,libname.so.rev) \			@@\
+	Concat(lib,libname.so))					        @@\
 									@@\
 uninstall::								@@\
 	$(RM) dest/Concat(lib,libname.so.rev)				@@\

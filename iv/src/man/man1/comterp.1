@@ -161,6 +161,12 @@ Run contents of file then exit.
 
  srand(seedval) -- seed random number generator
 
+.SH LIST COMMANDS:
+
+ val=at(list n) -- return nth item in a list
+
+ num=size(list) -- return size of a list
+
 .SH CONTROL COMMANDS (using post evaluation):
 
  val=cond(testexpr trueexpr falseexpr) -- evaluate testexpr, and if true, evaluate and return trueexpr, otherwise evaluate and return falseexpr
@@ -192,7 +198,7 @@ Run contents of file then exit.
 
  val=run(filename) -- run commands from file
 
- val=remote(hoststr portnum cmdstr) -- remotely evaluate command string then locally evaluate result string
+ val=remote(hoststr portnum cmdstr :nowait) -- remotely evaluate command string then locally evaluate result string
 
  val=shell(cmdstr) -- evaluate command in shell
 

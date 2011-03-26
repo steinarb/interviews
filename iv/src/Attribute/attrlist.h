@@ -68,6 +68,7 @@ public:
     void add_attr(int symid, AttributeValue* value); 
     // add attribute by using pointer to AttributeValue, assuming responsibility
     // for the memory.
+
     void add_attribute(Attribute* attr);
     // add complete Attribute object to the list, accepting responsibility
     // for the memory of the Attribute object. 
@@ -104,6 +105,10 @@ public:
     // return AList (UList) pointed to by ALIterator (Iterator).
     Attribute* Attr(AList*);
     // return attribute pointed to by AList (UList).
+
+    AttributeList* merge(AttributeList*);
+    // merge the contents of another AttributeList into this one,
+    // replicating the AttributeValue as needed.
 
 protected:
     void Append(Attribute*);

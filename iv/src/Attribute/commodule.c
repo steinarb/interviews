@@ -27,6 +27,10 @@
 #include <ctype.h>
 
 #define TITLE "ComTerpModule"
+#if BUFSIZ>1024
+#undef BUFSIZ
+#define BUFSIZ 1024
+#endif
 
 /*****************************************************************************/
 
@@ -79,19 +83,19 @@ void ComTerpModule::init() {
     _errfunc = (errfuncptr)&fferror;
     _outptr = stdout;
     _outfunc = (outfuncptr)&fputs;
-    _buffer = new char[BUFSIZ];
-    _bufsiz = BUFSIZ;
-    _token = new char[BUFSIZ];
-    _toksiz = BUFSIZ;
+    _buffer = new char[BUFSIZ*BUFSIZ];
+    _bufsiz = BUFSIZ*BUFSIZ;
+    _token = new char[BUFSIZ*BUFSIZ];
+    _toksiz = BUFSIZ*BUFSIZ;
     _linenum = 0;
 }
 
 void ComTerpModule::reset() {
     delete _buffer;
     delete _token;
-    _buffer = new char[BUFSIZ];
-    _bufsiz = BUFSIZ;
-    _token = new char[BUFSIZ];
-    _toksiz = BUFSIZ;
+    _buffer = new char[BUFSIZ*BUFSIZ];
+    _bufsiz = BUFSIZ*BUFSIZ;
+    _token = new char[BUFSIZ*BUFSIZ];
+    _toksiz = BUFSIZ*BUFSIZ;
     _linenum = 0;
 }

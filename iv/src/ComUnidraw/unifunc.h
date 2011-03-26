@@ -83,13 +83,13 @@ protected:
 };
 
 //: command to make a graphic read-only in comdraw.
-// readonly(compview :clear) -- set or clear the readonly attribute of a graphic component
+// compview=readonly(compview :clear) -- set or clear the readonly attribute of a graphic component
 class ReadOnlyFunc : public UnidrawFunc {
 public:
     ReadOnlyFunc(ComTerp*,Editor*);
     virtual void execute();
     virtual const char* docstring() { 
-	return "%s(compview :clear) -- set or clear the readonly attribute of a graphic component"; }
+	return "compview=%s(compview :clear) -- set or clear the readonly attribute of a graphic component"; }
 
 };
 
@@ -103,6 +103,17 @@ public:
     virtual void execute();
     virtual const char* docstring() { 
 	return "%s(pathname) -- import graphic file from pathname or URL"; }
+
+};
+
+//: command to set attributes on a graphic
+// compview=setattr(compview [:keyword value [:keyword value [...]]]) -- set attributes of a graphic component.
+class SetAttrFunc : public UnidrawFunc {
+public:
+    SetAttrFunc(ComTerp*,Editor*);
+    virtual void execute();
+    virtual const char* docstring() { 
+	return "compview=%s(compview [:keyword value [:keyword value [...]]]) -- set attributes of a graphic component"; }
 
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996-1997 Vectaport Inc.
+ * Copyright (c) 1996-1999 Vectaport Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
@@ -262,6 +262,15 @@ AttributeValue* AttributeList::find(int id) {
 	}
     }
     return nil;
+}
+
+AttributeList* AttributeList::merge(AttributeList* al) {
+  if (al) {
+    Iterator it;
+    for( al->First(it); !al->Done(it); al->Next(it)) 
+      add_attribute(new Attribute(*al->GetAttr(it)));
+  }
+  return this;
 }
 
 /*****************************************************************************/

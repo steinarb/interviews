@@ -177,7 +177,6 @@ void ReadOnlyFunc::execute() {
     ComponentView* view = (ComponentView*)viewval.obj_val();
     OverlayComp* comp = (OverlayComp*)view->GetSubject();
 
-    /* should be done with an attribute setting command */
     AttributeList* al = comp->GetAttributeList();
     al->add_attr("readonly", ComValue::trueval());
 
@@ -234,5 +233,28 @@ void ImportFunc::execute() {
 	inlist->Next(it);
       }
     }
+}
+
+/*****************************************************************************/
+
+SetAttrFunc::SetAttrFunc(ComTerp* comterp, Editor* ed) : UnidrawFunc(comterp, ed) {
+}
+
+void SetAttrFunc::execute() {
+    ComValue viewval(stack_arg(0));
+    AttributeList* al = stack_keys();
+    reset_stack();
+
+    ComponentView* view = (ComponentView*)viewval.obj_val();
+    OverlayComp* comp = (OverlayComp*)view->GetSubject();
+
+    AttributeList* comp_al = comp->attrlist();
+    if (!comp_al)
+      comp->SetAttributeList(al);
+    else {
+      comp_al->merge(al);
+      delete al;
+    }
+    push_stack(viewval);
 }
 

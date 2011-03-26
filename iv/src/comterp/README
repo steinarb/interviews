@@ -151,6 +151,12 @@ val=rand([minval,maxval]) -- return random number between 0 and 1 or minval,maxv
 
 srand(seedval) -- seed random number generator
 
+LIST COMMANDS:
+
+val=at(list n) -- return nth item in a list
+
+num=size(list) -- return size of a list
+
 CONTROL COMMANDS (using post evaluation):
 
 val=cond(testexpr trueexpr falseexpr) -- evaluate testexpr, and if true,
@@ -186,7 +192,7 @@ exit() -- exit entire application
 
 val=run(filename) -- run commands from file
 
-val=remote(hoststr portnum cmdstr) -- remotely evaluate command string then 
+val=remote(hoststr portnum cmdstr :nowait) -- remotely evaluate command string then 
 locally evaluate result string
 
 val=shell(cmdstr) -- evaluate command in shell

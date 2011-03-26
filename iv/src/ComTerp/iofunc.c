@@ -96,7 +96,7 @@ void PrintFunc::execute() {
       break;
 	    
     case ComValue::FloatType:
-      out.form(fstr, printval.double_ref());
+      out.form(fstr, printval.float_ref());
       break;
 	    
     case ComValue::DoubleType:
