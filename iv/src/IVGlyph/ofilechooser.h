@@ -117,6 +117,11 @@ public:
     virtual void updatecaption();
 
     static boolean urltest(const char*);
+
+    static int bintest(const char* name);
+    // return 0 if executable can be found, otherwise -1.
+    static boolean bincheck(const char* name);
+    // return true if executable can be found.
 protected:
     OpenFileChooserImpl* impl_;
     TransientWindow* _t;

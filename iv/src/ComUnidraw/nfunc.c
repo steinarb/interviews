@@ -35,8 +35,11 @@ NColsFunc::NColsFunc(ComTerp* comterp, Editor* ed) : UnidrawFunc(comterp, ed) {
 
 void NColsFunc::execute() {
   reset_stack();
-  ComValue retval(GetEditor()->GetViewer()->GetCanvas()->pwidth());
-  push_stack(retval);
+  Canvas* canvas = GetEditor()->GetViewer()->GetCanvas();
+  if (canvas) {
+    ComValue retval(canvas->pwidth());
+    push_stack(retval);
+  }
 }
 
 /*****************************************************************************/
@@ -46,8 +49,11 @@ NRowsFunc::NRowsFunc(ComTerp* comterp, Editor* ed) : UnidrawFunc(comterp, ed) {
 
 void NRowsFunc::execute() {
   reset_stack();
-  ComValue retval(GetEditor()->GetViewer()->GetCanvas()->pheight());
-  push_stack(retval);
+  Canvas* canvas = GetEditor()->GetViewer()->GetCanvas();
+  if (canvas) {
+    ComValue retval(canvas->pheight());
+    push_stack(retval);
+  }
 }
 
 /*****************************************************************************/

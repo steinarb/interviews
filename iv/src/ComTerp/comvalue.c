@@ -202,6 +202,20 @@ ostream& operator<< (ostream& out, const ComValue& sv) {
 	    out << "uchar( " << svp->uchar_ref() << ":" << (int)svp->uchar_ref() << " )";
 	  break;
 	    
+	case ComValue::ShortType:
+	  if (brief)
+	    out << svp->short_ref();
+	  else
+	    out << "short( " << svp->short_ref() << ":" << (int)svp->short_ref() << " )";
+	  break;	    
+
+	case ComValue::UShortType:
+	  if (brief)
+	    out << svp->ushort_ref();
+	  else
+	    out << "ushort( " << svp->ushort_ref() << ":" << (int)svp->ushort_ref() << " )";
+	  break;
+	    
 	case ComValue::IntType:
 	  if (brief)
 	    out << svp->int_ref();

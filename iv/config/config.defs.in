@@ -1,5 +1,5 @@
-/* This file generated from config.mk.in, */
-/* (unless this file *is* config.mk.in :) */
+/* This file generated from config.defs.in, */
+/* (unless this file *is* config.defs.in :) */
 
 #define Prefix @prefix@
 #define BinDir Prefix/bin
@@ -31,6 +31,9 @@
 
 #undef CDriver
 #define CDriver @CC@
+
+#undef GPlusPlusIncludeDir
+#define GPlusPlusIncludeDir @CXX_HDRDIR@
 
 #undef InstallRelative
 #define InstallRelative @INSTALLRELATIVE@

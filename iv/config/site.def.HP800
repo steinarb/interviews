@@ -109,6 +109,6 @@ program: depobjs deplibs						@@\
 /* --------------- autconf way of configuring --------------- */
 
 /* file output by configure script */
-#include "config-hpux-gcc.mk"
+#include "config-hpux-gcc.defs"
 
 #endif

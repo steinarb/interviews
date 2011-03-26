@@ -31,6 +31,7 @@
 #include <OverlayUnidraw/oved.h>
 #include <OverlayUnidraw/ovkit.h>
 #include <OverlayUnidraw/ovline.h>
+#include <OverlayUnidraw/ovmanips.h>
 #include <OverlayUnidraw/ovviews.h>
 #include <OverlayUnidraw/ovviewer.h>
 #include <OverlayUnidraw/paramlist.h>
@@ -39,7 +40,6 @@
 
 #include <Unidraw/clipboard.h>
 #include <Unidraw/editor.h>
-#include <Unidraw/manips.h>
 #include <Unidraw/selection.h>
 #include <Unidraw/statevars.h>
 
@@ -192,15 +192,16 @@ Manipulator* LineOvView::CreateManipulator (
         v->Constrain(e.x, e.y);
         GetEndpoints(x0, y0, x1, y1);
 	rub = new SlidingLine(nil, nil, x0, y0, x1, y1, e.x, e.y);
-        m = new DragManip(
-	    v, rub, rel, tool, DragConstraint(HorizOrVert | Gravity)
+        m = new OpaqueDragManip(
+	    v, rub, rel, tool, DragConstraint(HorizOrVert | Gravity),
+	    GetGraphic()
 	);
 
     } else if (tool->IsA(SCALE_TOOL)) {
         v->Constrain(e.x, e.y);
         GetEndpoints(x0, y0, x1, y1);
         rub = new ScalingLine(nil, nil, x0, y0, x1, y1, (x0+x1)/2, (y0+y1)/2);
-        m = new DragManip(v, rub, rel, tool, Gravity);
+        m = new OpaqueDragManip(v, rub, rel, tool, Gravity, GetGraphic());
 
     } else if (tool->IsA(ROTATE_TOOL)) {
         v->Constrain(e.x, e.y);
@@ -208,7 +209,7 @@ Manipulator* LineOvView::CreateManipulator (
         rub = new RotatingLine(
             nil, nil, x0, y0, x1, y1, (x0+x1)/2, (y0+y1)/2, e.x, e.y
         );
-        m = new DragManip(v, rub, rel, tool, Gravity);
+        m = new OpaqueDragManip(v, rub, rel, tool, Gravity, GetGraphic());
 
     } else if (tool->IsA(RESHAPE_TOOL)) {
         v->Constrain(e.x, e.y);

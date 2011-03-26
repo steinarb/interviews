@@ -107,7 +107,8 @@ Time::Time()
 */
 {
 	sec = time(0);
-	sec += 2177452800L;	/* seconds from 1/1/01 to 1/1/70 */
+	unsigned long nsecs = 2177452800Lu;	/* seconds from 1/1/01 to 1/1/70 */
+	sec += nsecs;
 }
 
 Time::Time(hourTy h, minuteTy m, secondTy s, boolean dst)

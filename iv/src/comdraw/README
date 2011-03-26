@@ -57,6 +57,8 @@ VIEWER COMMANDS
 
 update() -- update viewer
 
+import(pathname) -- import graphic file from pathname or URL
+
 ncols() -- onscreen horizontal extent in pixels
 nrows() -- onscreen vertical extent in pixels
 

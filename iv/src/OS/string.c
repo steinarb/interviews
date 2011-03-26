@@ -280,7 +280,7 @@ boolean String::convert(double& value) const {
  */
 
 boolean String::contains(const char* str, int start) const {
-  return strstr(string(), str+start)!= nil;
+  return strstr(string()+start, str)!= nil;
 }
 
 /*

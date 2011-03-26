@@ -171,6 +171,7 @@ static PropertyData properties[] = {
     { "*toolbarloc",    "l"  },
     { "*twidth",        "512" },
     { "*zoomer_off",    "false"  },
+    { "*opaque_off",    "false"  },
 #ifdef HAVE_ACE
     { "*import",        "20001" },
     { "*comdraw",          "20002" },
@@ -208,6 +209,8 @@ static OptionDesc options[] = {
     { "-twidth", "*twidth", OptionValueNext },
     { "-zoff", "*zoomer_off", OptionValueImplicit, "true" },
     { "-zoomer_off", "*zoomer_off", OptionValueImplicit, "true" },
+    { "-opaque_off", "*opaque_off", OptionValueImplicit, "true" },
+    { "-opoff", "*opaque_off", OptionValueImplicit, "true" },
 #ifdef HAVE_ACE
     { "-import", "*import", OptionValueNext },
     { "-comdraw", "*port", OptionValueNext },
@@ -220,8 +223,8 @@ static OptionDesc options[] = {
 #ifdef HAVE_ACE
 static char* usage =
 "Usage: comdraw [any idraw parameter] [-comdraw port] [-color5] \n\
-[-color6] [-import portnum] [-gray5] [-gray6] [-gray7] [-pagecols|-ncols] \n\
-[-pagerows|-nrows] [-panner_off|-poff] \n\
+[-color6] [-import portnum] [-gray5] [-gray6] [-gray7] [-opaque_off|-opoff] \n\
+[-pagecols|-ncols] [-pagerows|-nrows] [-panner_off|-poff] \n\
 [-panner_align|-pal tl|tc|tr|cl|c|cr|cl|bl|br|l|r|t|b|hc|vc] \n\
 [-rampsize n ] [-scribble_pointer|-scrpt ] [-slider_off|-soff] \n\
 [-toolbarloc|-tbl r|l ] [-theight|-th n] [-tile] [-twidth|-tw n] \n\
@@ -229,8 +232,8 @@ static char* usage =
 #else
 static char* usage =
 "Usage: comdraw [any idraw parameter] [-color5] \n\
-[-color6] [-gray5] [-gray6] [-gray7] [-pagecols|-ncols] \n\
-[-pagerows|-nrows] [-panner_off|-poff] \n\
+[-color6] [-gray5] [-gray6] [-gray7] [-opaque_off|-opoff] \n\
+[-pagecols|-ncols] [-pagerows|-nrows] [-panner_off|-poff] \n\
 [-panner_align|-pal tl|tc|tr|cl|c|cr|cl|bl|br|l|r|t|b|hc|vc] \n\
 [-rampsize n ] [-scribble_pointer|-scrpt ] [-slider_off|-soff] \n\
 [-toolbarloc|-tbl r|l ] [-theight|-th n] [-tile] [-twidth|-tw n] \n\

@@ -214,7 +214,6 @@ boolean OverlayCatalog::Retrieve (const char* filename, Component*& comp) {
 	    OvImportCmd importcmd(ed);
 	    importcmd.pathname(name);
 	    if (ParamList::urltest(name)) {
-	      importcmd.is_url(true);
 	      comp = importcmd.Import(name);
 	    } else {
 	      boolean empty;

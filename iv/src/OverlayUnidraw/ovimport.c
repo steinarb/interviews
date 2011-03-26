@@ -264,7 +264,7 @@ ReadPpmIterator::ReadPpmIterator(OverlayRaster* r)
 }
 
 void ReadPpmIterator::getPixels(strstream& in) {
-// cerr << "pcount: " << in.pcount() << "\ttellg: " << in.tellg() << endl;
+  //  cerr << "pcount: " << in.pcount() << "\ttellg: " << in.tellg() << endl;
   while((in.pcount() - in.tellg()) >= 3) { 
     u_char r, g, b;
     in.get(r);
@@ -349,7 +349,7 @@ ReadImageHandler::ReadImageHandler(
   _handlers.append(this);
   set_fl(fd, O_NONBLOCK);
   Dispatcher::instance().link(fd, Dispatcher::ReadMask, this);
-  Dispatcher::instance().startTimer(120, 0, this); // ### magic number
+  Dispatcher::instance().startTimer(120, 0, this);
 }
 
 
@@ -463,8 +463,12 @@ int ReadImageHandler::process(const char* newdat, int len) {
       OverlayRasterRect* rr = _comp->GetOverlayRasterRect();
       rr->SetRaster(new OverlayRaster(width, height, 2));
 
+
       // prevent OvRasterRect::load_image
       rr->GetOverlayRaster()->initialize();
+
+      // center if enabled
+      OvImportCmd::center_import(_ed, _comp);
 
       _header = true;
       _itr = new ReadPpmIterator(rr->GetOverlayRaster());
@@ -536,7 +540,6 @@ int ReadImageHandler::inputReady(int fd) {
     int stat = read(_fd, sbuf, SBUFSIZE);
 
     if (stat > 0) {
-      // ###
       // cerr << "im: " << _fd << ", read: " << stat << "\n";
       int ret = process(sbuf, stat);  
       if (ret == -1) {
@@ -919,6 +922,7 @@ OvImportCmd::OvImportCmd (ControlInfo* c, ImportChooser* f)
 }
 
 void OvImportCmd::Init(ImportChooser* f) {
+    comp_ = nil;
     chooser_ = f;    
     if (chooser_) 
 	Resource::ref(chooser_);
@@ -926,7 +930,6 @@ void OvImportCmd::Init(ImportChooser* f) {
     path_ = nil;
     popen_ = false;
     preserve_selection_ = false;
-    _is_url = false;
     helper_ = new FileHelper;
 }
 
@@ -951,51 +954,55 @@ void OvImportCmd::preserve_selection(boolean ps) {
 
 void OvImportCmd::Execute () { 
 
-    GraphicComp* comp = nil;
     boolean from_dialog = !inptr_ && !path_;
     boolean empty = false;
 
     /* nothing known -- use dialog box */
     if (from_dialog)
-      comp = PostDialog();
+      comp_ = PostDialog();
 
     /* pathname or command known */
     else if (path_) {
       FILE* fptr = nil;
 
       /* open pathname or... */
-      if (!popen_) {
+      if (!popen_ && !is_url()) {
 	inptr_ = new ifstream(path_);
 
       /* popen command line */
-      } else {
+      } else if (!is_url()) {
 	fptr = popen(path_, "r");
 	if (fptr) {
 	  ifstream* ifs = new ifstream;
           ifs->rdbuf()->attach(fileno(fptr));
 	  inptr_ = ifs;
 	}
-      }
+      }	
 
       boolean empty;
       if (inptr_) helper_->add_stream(inptr_);
       if (fptr) helper_->add_pipe(fptr);
 
-      if (inptr_) comp =  Import(*inptr_, empty);
+      if (inptr_) comp_ =  Import(*inptr_, empty);
+      else comp_ = Import(path_);
     }
     
     /* input stream known */
     else 
-      comp = Import(*inptr_, empty);
+      comp_ = Import(*inptr_, empty);
     
-    if (comp != nil) {
+    if (comp_ != nil) {
         OverlaySelection* oldsel;
 	if (preserve_selection_)
 	  oldsel = new OverlaySelection((OverlaySelection*)GetEditor()->GetSelection());
 	((OverlayEditor*)GetEditor())->DoAutoNewFrame();
-	PasteCmd* paste_cmd = new PasteCmd(GetEditor(), new Clipboard(comp));
-	paste_cmd->Execute();
-	paste_cmd->Log();
+	if (comp_->IsA(GRAPHIC_COMP)) {
+	    PasteCmd* paste_cmd = new PasteCmd(GetEditor(), new Clipboard((GraphicComp*)comp_));
+	    paste_cmd->Execute();
+	    paste_cmd->Log();
+	} else 
+	  cerr << "something other than a GraphicComp imported\n";
+#if 0      
 	if (chooser_ && chooser_->centered()) {
 	  GetEditor()->GetViewer()->Align(comp, /* Center */ 4);
 	  if (GetEditor()->GetViewer()->GetGrid() != nil) {
@@ -1011,6 +1018,11 @@ void OvImportCmd::Execute () {
 	    }
 	  }
 	}
+#else
+	if ((chooser_ && chooser_->centered() || !chooser_) 
+	    && comp_ && comp_->IsA(GRAPHIC_COMP))
+	  center_import(GetEditor(), (GraphicComp*)comp_); 
+#endif
 
         // let components configures themselves with the editor
         ((OverlayEditor*)GetEditor())->InformComponents();
@@ -1024,6 +1036,24 @@ void OvImportCmd::Execute () {
 	GAcknowledgeDialog::post(w, "import failed", nil, "import failed");
       }
     }
+}
+
+
+/* static */ void OvImportCmd::center_import(Editor* ed, GraphicComp* comp) {
+  if (!ed) return;
+  ed->GetViewer()->Align(comp, /* Center */ 4);
+  if (ed->GetViewer()->GetGrid() != nil) {
+    GravityVar* grav = (GravityVar*) ed->GetState("GravityVar");
+    if (grav != nil && grav->IsActive()) {
+      // seems we need one for each dimension, x and y
+      AlignToGridCmd* algcmd = new AlignToGridCmd(ed);
+      algcmd->Execute();
+      algcmd->Log();
+      AlignToGridCmd* alg2cmd = new AlignToGridCmd(ed);
+      alg2cmd->Execute();
+      alg2cmd->Log();
+    }
+  }
 }
 
 boolean OvImportCmd::Reversible () { return false; }
@@ -1186,57 +1216,57 @@ GraphicComp* OvImportCmd::Import (const char* path) {
 
     GraphicComp* comp = nil;
     FILE* fptr = nil;
-    boolean urlflag = false;
+    boolean incremental_flag = false;
     if (chooser_ && chooser_->auto_convert()) {
       char buffer[BUFSIZ];
       sprintf( buffer, "anytopnm %s", path );
       fptr = popen(buffer, "r");
     } else if (chooser_ && chooser_->from_command()) {
+      incremental_flag = false;  // will work for binary PPM if true
+      cerr << "importing from command: " << path << "\n";
       fptr = popen(path, "r");
-    } else {
-      if (ParamList::urltest(path)) {
-	urlflag = true;
-	char buffer[BUFSIZ];
-	static boolean use_w3c = OverlayKit::bincheck("w3c");
-	static boolean use_curl = OverlayKit::bincheck("curl");
-	if (use_w3c) 
-	  sprintf(buffer,"w3c %s", path);
-	else if (use_curl)
-	  sprintf(buffer,"curl %s", path);
-	else
-	  sprintf(buffer,"ivdl %s -", path);
-	cerr << buffer << "\n";
-	fptr = popen(buffer, "r");
-
-        OverlayRaster* place = CreatePlaceImage();
-        OverlayRasterRect* rr = new OverlayRasterRect(place);
-        RasterOvComp* rcomp = new RasterOvComp(rr);
-        comp = rcomp;
-        rr->GetOverlayRaster()->initialize();
-
-        // ### taken from bottom of Import
-        rcomp->SetByPathnameFlag(false);
-
-        helper_->add_pipe(fptr);
-        new ReadImageHandler(
-          *helper_, rcomp, fileno(fptr), GetEditor(), pathname()
-        );
-        helper_->forget();
-        fptr = nil;
-      } else 
-	fptr = fopen(path, "r");
-
-      pathname(path);
-      is_url(urlflag);
-    }
+    } else if (ParamList::urltest(path)) {
+      incremental_flag = true;
+      char buffer[BUFSIZ];
+      static boolean use_w3c = OverlayKit::bincheck("w3c");
+      static boolean use_curl = OverlayKit::bincheck("curl");
+      if (use_w3c) 
+	sprintf(buffer,"w3c %s", path);
+      else if (use_curl)
+	sprintf(buffer,"curl %s", path);
+      else
+	sprintf(buffer,"ivdl %s -", path);
+      cerr << buffer << "\n";
+      fptr = popen(buffer, "r");
+    } 
+    if(fptr) {
+      if (incremental_flag) {
+	OverlayRaster* place = CreatePlaceImage();
+	OverlayRasterRect* rr = new OverlayRasterRect(place);
+	RasterOvComp* rcomp = new RasterOvComp(rr);
+	comp = rcomp;
+	rr->GetOverlayRaster()->initialize();
+	
+	rcomp->SetByPathnameFlag(false);
+	
+	helper_->add_pipe(fptr);
+	new ReadImageHandler(
+			     *helper_, rcomp, fileno(fptr), GetEditor(), pathname()
+			     );
+	helper_->forget();
+	fptr = nil;
+      }
+    } else
+      fptr = fopen(path, "r");
+    pathname(path);
+    
 
     if (fptr) {
       ifstream* in = new ifstream;
       in->rdbuf()->attach(fileno(fptr));
       helper_->add_stream(in);
 
-      if (urlflag || 
-	  (chooser_ && (chooser_->auto_convert() || chooser_->from_command())))
+      if ((chooser_ && (chooser_->auto_convert() || chooser_->from_command())))
 	helper_->add_pipe(fptr);
       else
 	helper_->add_file(fptr);
@@ -1244,7 +1274,7 @@ GraphicComp* OvImportCmd::Import (const char* path) {
       comp = Import(*in);
     }    
 
-    if (comp && pathname()) {
+    if (comp && !incremental_flag) {
       ((OverlayComp*)comp)->SetPathName(pathname());
       if (chooser_) {
 	((OverlayComp*)comp)->SetByPathnameFlag(chooser_->by_pathname());
@@ -1257,7 +1287,6 @@ GraphicComp* OvImportCmd::Import (const char* path) {
       }
     }
     pathname(nil);
-    is_url(false);
 
     return comp;
 #endif
@@ -1271,23 +1300,23 @@ GraphicComp* OvImportCmd::Import (istream& in) {
 
 
 GraphicComp* OvImportCmd::Import (istream& instrm, boolean& empty) {
-  // ### this will fail for a url
+  // ### this will fail for a continuously read stream
 
   int fd;
   GraphicComp* comp = DoImport(
-    instrm, empty, *helper_, GetEditor(), is_url(), pathname(), fd
+    instrm, empty, *helper_, GetEditor(), false, pathname(), fd
   );
 
   return comp;
 }
 
 
-// if is_url is true, this should not return a comp, but should set up the
+// if return_fd is true, this should not return a comp, but should set up the
 // fd for raw bits PPM reads. fd set to -1 if failure.
 
 /* static */ GraphicComp* OvImportCmd::DoImport(
     istream& instrm, boolean& empty, FileHelper& helper, Editor* ed, 
-    boolean is_url, const char* pathname, int& pnmfd
+    boolean return_fd, const char* pathname, int& pnmfd
 ) {
     GraphicComp* comp = nil;
     pnmfd = -1;
@@ -1309,7 +1338,7 @@ GraphicComp* OvImportCmd::Import (istream& instrm, boolean& empty) {
     boolean compressed = false;
     if (filetype==CompressedFile) {
       compressed = true;
-      if (pathname && !is_url) {
+      if (pathname && !return_fd) {
 	char buffer[BUFSIZ];
 	sprintf(buffer, "gunzip -c %s", pathname);
 	gunzip_fptr = popen(buffer, "r");
@@ -1351,7 +1380,7 @@ GraphicComp* OvImportCmd::Import (istream& instrm, boolean& empty) {
 	if (OverlayKit::bincheck("pstoedit")) {
 	  FILE* pptr = nil;
 	  int new_fd;
-	  if (pathname && !is_url) {
+	  if (pathname && !return_fd) {
 	    char buffer[BUFSIZ];
 	    if (compressed) 
 	      sprintf(buffer, "gzip -c %s | pstoedit -f idraw", pathname);
@@ -1374,11 +1403,18 @@ GraphicComp* OvImportCmd::Import (istream& instrm, boolean& empty) {
     } else if (strncmp(creator, "PBM", 3)==0 ||
 	       strncmp(creator, "PGM", 3)==0 ||
 	       strncmp(creator, "PPM", 3)==0) {
-      comp = PNM_Image(*in, creator);
+      if (return_fd) {
+	if (strcmp(creator, "PPM")==0)
+	  pnmfd = Pipe_Filter(*in, nil);
+	else
+	  cerr << "only binary PPM supported for asynchronous incremental raster loading\n";
+	return nil;
+      } else
+	comp = PNM_Image(*in, creator);
 
     } else if (strncmp(creator, "GIF", 3)==0) {
       if (OverlayKit::bincheck("giftopnm")) {
-	if (pathname && !is_url) {
+	if (pathname && !return_fd) {
 	  char buffer[BUFSIZ];
 	  if (compressed)
 	    sprintf(buffer, "gzip -c %s | giftopnm", pathname);
@@ -1393,16 +1429,16 @@ GraphicComp* OvImportCmd::Import (istream& instrm, boolean& empty) {
 	    pclose(pptr);
 	  }
 	} else	
-	  comp = PNM_Image_Filter(*in, is_url, pnmfd, "giftopnm");
+	  comp = PNM_Image_Filter(*in, return_fd, pnmfd, "giftopnm");
       } else 
 	cerr << "giftopnm not found\n";
 
     } else if (strncmp(creator, "TIFF", 4)==0) {
-      if (pathname && !is_url && strcmp(pathname,"-")!=0 && !compressed) 
+      if (pathname && !return_fd && strcmp(pathname,"-")!=0 && !compressed) 
 	comp = TIFF_Image(pathname);
       else {
 	if (OverlayKit::bincheck("tiftopnm"))
-	  comp = PNM_Image_Filter(*in, is_url, pnmfd, "tiftopnm");
+	  comp = PNM_Image_Filter(*in, return_fd, pnmfd, "tiftopnm");
 	else
 	  cerr << "tiftopnm not found\n";
       }
@@ -1411,7 +1447,7 @@ GraphicComp* OvImportCmd::Import (istream& instrm, boolean& empty) {
       if (OverlayKit::bincheck("stdcmapppm") && 
 	  OverlayKit::bincheck("djpeg")) {
 
-	if (pathname && !is_url) {
+	if (pathname && !return_fd) {
 	  char buffer[BUFSIZ];
 	  if (compressed) 
 	    sprintf(buffer, "cm=`tmpnam`;stdcmapppm>$cm;gzip -c %s | djpeg -map $cm -dither fs -pnm;rm $cm", pathname);
@@ -1427,14 +1463,12 @@ GraphicComp* OvImportCmd::Import (istream& instrm, boolean& empty) {
 	    comp = PNM_Image(*new_in);
 	  }
 	} else
-	  comp = PNM_Image_Filter(*in, is_url, pnmfd, "cm=`tmpnam`;stdcmapppm>$cm;djpeg -map $cm -dither fs -pnm;rm $cm");
+	  comp = PNM_Image_Filter(*in, return_fd, pnmfd, "cm=`tmpnam`;stdcmapppm>$cm;djpeg -map $cm -dither fs -pnm;rm $cm");
       } else
 	cerr << "djpeg or stdcmapppm not found\n";
 
     }
 
-    // ### do the following still work given the changes?
- 
     if (comp && comp->IsA(OVRASTER_COMP)) 
       ((RasterOvComp*)comp)->SetByPathnameFlag(false);
     
@@ -2098,7 +2132,7 @@ GraphicComp* OvImportCmd::PPM_Image (istream& in, boolean ascii) {
 
 OverlayRaster* OvImportCmd::PPM_Raster (istream& in, boolean ascii) {
     char* buffer;
-    in.gets(&buffer); // ### two gets, why?
+    in.gets(&buffer); // read magic number
 
     do { // CREATOR and other comments
         in.gets(&buffer);
@@ -2109,7 +2143,8 @@ OverlayRaster* OvImportCmd::PPM_Raster (istream& in, boolean ascii) {
     int maxval;
     sscanf(buffer, "%d", &maxval);
     if (maxval != 255) {
-        return nil; 
+      cerr << "PPM maxval of " << maxval << "\n";
+      if (maxval<255) maxval=255;
     }
 
     OverlayRaster* raster = new OverlayRaster(ncols, nrows);
@@ -2132,19 +2167,18 @@ OverlayRaster* OvImportCmd::PPM_Raster (istream& in, boolean ascii) {
         }
     }
     
-    if (raster)  // ### why check?
-        raster->flush();
+    raster->flush();
     return raster;
 }
 
 
 GraphicComp* OvImportCmd::PNM_Image_Filter (
-  istream& in, boolean url, int& fd, const char* filter
+  istream& in, boolean return_fd, int& fd, const char* filter
 ) {
   GraphicComp* comp = nil;
   int outfd = Pipe_Filter(in, filter);
 
-  if (url) {
+  if (return_fd) {
     fd = outfd;
   }
   else {
@@ -2163,12 +2197,20 @@ GraphicComp* OvImportCmd::PNM_Image_Filter (
 
 int OvImportCmd::Pipe_Filter (istream& in, const char* filter)
 {
-  int pfdout[2], pfdin[2];
+  int pipe1[2], pipe2[2];
 
-  cerr << "input filtered by " << filter << "\n";
+  if (filter)
+    cerr << "input filtered by " << filter << "\n";
+  else
+    cerr << "internally supported format, no filter required\n";
 
-  if (pipe(pfdout)==-1 || pipe(pfdin)==-1) 
-    cerr << "error opening pipes\n";
+
+  if (pipe(pipe1)==-1) 
+    cerr << "error opening pipe for reading\n";
+  if (filter) {
+    if (pipe(pipe2)==-1)
+      cerr << "error opening pipe for writing to filter\n";
+  }
 
   /* open child to write to filter */
   switch(fork()) {
@@ -2178,32 +2220,38 @@ int OvImportCmd::Pipe_Filter (istream& in, const char* filter)
   case 0:
 
     /* open grandchild to execute filter */
-    switch(fork()) {
-    case -1:
-      cerr << "error in second fork\n";
-      break;
-    case 0:
-      if(close(0)==-1)
-	cerr << "error in grandchild close of 0\n";
-      if (dup(pfdout[0]) != 0)
-	cerr << "error in grandchild dup of pfdout[0]\n";
-      if(close(1)==-1)
-	cerr << "error in grandchild close of 1\n";
-      if (dup(pfdin[1]) != 1)
-	cerr << "error in grandchild dup of pfdint[1]\n";
-      if(close(pfdout[0])==-1 || close(pfdout[1])==-1 ||
-	 close(pfdin[0])==-1 || close(pfdin[1])==-1)
-	cerr << "error in grandchild close of pipes\n";
-      execlp("sh", "sh", "-c", filter, NULL);     
-      cerr << "error in ever getting here after execlp\n";
-      exit(-1);
+    if (filter) {
+      switch(fork()) {
+      case -1:
+	cerr << "error in second fork\n";
+	break;
+      case 0:
+	if(close(0)==-1)
+	  cerr << "error in grandchild close of 0\n";
+	if (dup(pipe1[0]) != 0)
+	  cerr << "error in grandchild dup of pipe1[0]\n";
+	if(close(1)==-1)
+	  cerr << "error in grandchild close of 1\n";
+	if (dup(pipe2[1]) != 1)
+	  cerr << "error in grandchild dup of pipe2t[1]\n";
+	if(close(pipe1[0])==-1 || close(pipe1[1])==-1 ||
+	   close(pipe2[0])==-1 || close(pipe2[1])==-1)
+	  cerr << "error in grandchild close of pipes\n";
+	execlp("sh", "sh", "-c", filter, NULL);     
+	cerr << "error in ever getting here after execlp\n";
+	exit(-1);
+      }
     }
     
-    if(close(pfdout[0])==-1 || 
-       close(pfdin[0])==-1 || close(pfdin[1])==-1)
-      cerr << "error in child close of three out of 4 pipes\n";
+    if (filter) {
+      if(close(pipe1[0])==-1 || 
+	 close(pipe2[0])==-1 || close(pipe2[1])==-1)
+	cerr << "error in child close of three out of 4 pipes\n";
+    } else
+      if(close(pipe1[0])==-1) 
+	cerr << "error in child close of front end of pipe\n";
     ofstream out;
-    out.rdbuf()->attach(pfdout[1]);
+    out.rdbuf()->attach(pipe1[1]);
     char buffer[BUFSIZ];
     while (!in.eof() && in.good()) {
       in.read(buffer, BUFSIZ);
@@ -2211,26 +2259,32 @@ int OvImportCmd::Pipe_Filter (istream& in, const char* filter)
 	out.write(buffer, in.gcount());
     }
     out.flush();
-    if(close(pfdout[1])==-1)
+    if(close(pipe1[1])==-1)
       cerr << "error in child closing its output pipe\n";
     int status;
-    if(wait(&status) ==-1)
+    if(filter && wait(&status) ==-1)
       cerr << "error in child waiting for grandchild\n";
     exit(0);
   }
 
-  if(close(pfdout[0])==-1 || close(pfdin[1]) == -1 || 
-     close(pfdout[1])==-1)
-    cerr << "error in parent closing unused three ends of the pipes\n";
-  return pfdin[0];
+  if (filter) {
+    if(close(pipe1[0])==-1 || close(pipe2[1]) == -1 || 
+       close(pipe1[1])==-1) 
+      cerr << "error in parent closing unused three ends of the pipes\n";
+    else 
+      return pipe2[0]; 
+  } else {
+    if(close(pipe1[1])==-1) 
+      cerr << "error in parent closing back end of the pipe\n";
+    else 
+      return pipe1[0]; 
+  }
 }
 
-GraphicComp* OvImportCmd::PNM_Image (istream& in, const char* creator) 
-{
+GraphicComp*  OvImportCmd::PNM_Image (istream& in, const char* creator) {
 
   FileType filetype;
   if (!creator) creator = ReadCreator(in, filetype);
-
 
   if (strncmp(creator, "PPM", 3)==0) {
     boolean asciiflag = creator[3] == 'A';
@@ -2417,3 +2471,6 @@ Bitmap* OvImportCmd::PBM_Bitmap (istream& in) {
     return bitmap;
 }
 
+boolean OvImportCmd::is_url() {
+  return ParamList::urltest(pathname());
+}

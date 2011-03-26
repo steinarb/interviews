@@ -164,6 +164,7 @@ static PropertyData properties[] = {
     { "*toolbarloc",    "l"  },
     { "*twidth",        "512" },
     { "*zoomer_off",    "false"  },
+    { "*opaque_off",    "false"  },
     { "*slideshow",     "0"  },
 #ifdef HAVE_ACE
     { "*comdraw",       "20002" },
@@ -202,6 +203,8 @@ static OptionDesc options[] = {
     { "-tw", "*twidth", OptionValueNext },
     { "-zoomer_off", "*zoomer_off", OptionValueImplicit, "true" },
     { "-zoff", "*zoomer_off", OptionValueImplicit, "true" },
+    { "-opaque_off", "*opaque_off", OptionValueImplicit, "true" },
+    { "-opoff", "*opaque_off", OptionValueImplicit, "true" },
     { "-slideshow", "*slideshow", OptionValueNext },
 #ifdef HAVE_ACE
     { "-import", "*import", OptionValueNext },
@@ -216,7 +219,7 @@ static OptionDesc options[] = {
 static char* usage =
 "Usage: flipbook [any idraw parameter] [-bookgeom] [-comdraw port] \n\
 [-color5] [-color6] [-import port] [-gray5] [-gray6] [-gray7] \n\
-[-pagecols|-ncols] [-pagerows|-nrows] [-panner_off|-poff] \n\
+[-opaque_off|-opoff] [-pagecols|-ncols] [-pagerows|-nrows] [-panner_off|-poff] \n\
 [-panner_align|-pal tl|tc|tr|cl|c|cr|cl|bl|br|l|r|t|b|hc|vc ] \n\
 [-scribble_pointer|-scrpt ] [-slideshow sec] [-slider_off|-soff] \n\
 [-toolbarloc|-tbl r|l ] [-theight|-th n] [-tile] [-twidth|-tw n] \n\
@@ -224,7 +227,7 @@ static char* usage =
 #else
 static char* usage =
 "Usage: flipbook [any idraw parameter] [-bookgeom] \n\
-[-color5] [-color6] [-gray5] [-gray6] [-gray7] \n\
+[-color5] [-color6] [-gray5] [-gray6] [-gray7] [-opaque_off|-opoff] \n\
 [-pagecols|-ncols] [-pagerows|-nrows] [-panner_off|-poff] \n\
 [-panner_align|-pal tl|tc|tr|cl|c|cr|cl|bl|br|l|r|t|b|hc|vc ] \n\
 [-scribble_pointer|-scrpt ] [-slideshow sec] [-slider_off|-soff] \n\

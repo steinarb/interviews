@@ -36,7 +36,7 @@
  * VersionNumber
  */
 #ifndef Version
-#define	Version 0.7.4
+#define	Version 0.7.5
 #endif
 
    VERSION = Version

@@ -166,6 +166,7 @@ static PropertyData properties[] = {
     { "*toolbarloc",    "l"  },
     { "*twidth",        "512" },
     { "*zoomer_off",    "false"  },
+    { "*opaque_off",    "false"  },
 #ifdef HAVE_ACE
     { "*import",        "20001" },
 #endif
@@ -197,6 +198,8 @@ static OptionDesc options[] = {
     { "-tbl", "*toolbarloc", OptionValueNext },
     { "-zoomer_off", "*zoomer_off", OptionValueImplicit, "true" },
     { "-zoff", "*zoomer_off", OptionValueImplicit, "true" },
+    { "-opaque_off", "*opaque_off", OptionValueImplicit, "true" },
+    { "-opoff", "*opaque_off", OptionValueImplicit, "true" },
 #ifdef HAVE_ACE
     { "-import", "*import", OptionValueNext },
 #endif
@@ -207,8 +210,8 @@ static OptionDesc options[] = {
 
 static char* usage =
 "Usage: drawtool [any idraw parameter] [-color5] [-gray5] [-gray6] [-gray7] \n\
-[-nocolor6] [-pagecols|-ncols] [-pagerows|-nrows] [-panner_off|-poff] \n\
-[-panner_align|-pal tl|tc|tr|cl|c|cr|cl|bl|br|l|r|t|b|hc|vc ] \n\
+[-nocolor6] [-opaque_off|-opoff] [-pagecols|-ncols] [-pagerows|-nrows] \n\
+[-panner_off|-poff] [-panner_align|-pal tl|tc|tr|cl|c|cr|cl|bl|br|l|r|t|b|hc|vc] \n\
 [-scribble_pointer|-scrpt ] [-slider_off|-soff] [-toolbarloc|-tbl r|l ] \n\
 [-zoomer_off|-zoff] [file]";
 

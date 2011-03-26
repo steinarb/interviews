@@ -152,6 +152,7 @@ OverlayUnidraw/ovimport.h
 OverlayUnidraw/ovipcmds.h
 OverlayUnidraw/ovkit.h
 OverlayUnidraw/ovline.h
+OverlayUnidraw/ovmanips.h
 OverlayUnidraw/ovpage.h
 OverlayUnidraw/ovpainter.h
 OverlayUnidraw/ovpanner.h

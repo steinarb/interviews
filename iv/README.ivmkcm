@@ -1,14 +1,20 @@
+ivmkcm is a set of Perl scripts that use CVS to manage source tree
+directories.  The Makefile hierarchy of ivtools contains built-in
+targets described below that facilitate the hierarchical use of
+ivmkcm. You can acquire ivmkcm from http://www.vectaport.com/ivmkcm/.
+It is licensed under the GPL.
+
 This file documents the Makefile targets associated with ivmkcm,
 and gives information on how to use them.  For further information on
 ivmkcm see the man page (and related man pages).
+
 
 make cmchkin
 
 Create a cm repository under the top-level directory (if none exists)
 and check in this directory and each sub-directory as its own package.
 The package name is defined by a PACKAGE makefile variable in the
-Imakefile.  Make sure to add the appropriate cm pathname to your
-CMPATH environment variable.  See the cmchkin man page for further
+Imakefile.  See the cmchkin man page for further
 details.
 
 make cmadd

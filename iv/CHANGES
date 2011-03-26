@@ -1,3 +1,102 @@
+March 19th 1999 ivtools-0.7.5
+
+Drawing Editor Changes
+
+	* re-center rasters imported from a URL as soon as the width and
+ 	height are known.
+
+	* fully animate move/scale/stretch/rotate tools.  Can be disabled
+ 	with -opaque_off or -opoff given to drawtool or any derivative
+ 	editor.
+
+Interpreter Changes
+
+	* add an import command to comdraw, which for now takes a raster
+ 	URL and imports it into the drawing editor.  To try it out, run
+ 	ivtools flipbook, enable auto-new-frame (under the View menu),
+ 	then enter something like the following into stdin:
+
+	  for(x=1 x<5 x++ :body 
+	    import(print("http://www.vectaport.com/ivtools/aaron-%d.gif" x :string)))
+
+Library Changes
+
+	-- OS --
+
+	* make the offset for String::contains apply to the internal
+ 	string.  Didn't make much sense applied to the first argument.
+
+	-- IV-2_6 -- 
+
+	* add a ClassId system to all the classes derived from Rubberband,
+ 	for use of the OpaqueDragManip described below.
+
+	-- ComTerp -- 
+
+	* add short and ushort output to ComValue ostream operator.
+
+	-- OverlayUnidraw --
+
+	* fixed a bug in OvImportCmd where imports via ACE were getting
+ 	treated like URL imports for asynchronous incremental download
+	(because the is_url flag was set).
+
+	* migrate OvImportCmd::is_url to be a method that computes its
+ 	value from a pathname, instead of needing to be set and cleared.
+
+	* in OvImportCmd, separate out the code fragment for centering a
+ 	newly imported component, snapping to grid if gravity on:
+
+	  static void OvImportCmd::center_import(Editor*, GraphicComp*)
+
+	then use it to re-center a raster being imported from a URL as
+ 	soon as the width and height are known.
+
+	* create OpaqueDragManip (OverlayUnidraw/ovmanips.c) to replace
+ 	the rubberbands with directly visualization of graphical
+ 	transformations (move/scale/stretch/rotate).
+	
+	Care was taken in the creation of OpaqueDragManip, making sure
+ 	that there was no cumulative error accrued with many small mouse
+ 	moves, so hopefully you'll never see the graphic jump when you let
+ 	go of the mouse button.
+	
+	-- FrameUnidraw --
+
+	* fixed a bug in FrameViewer::Update, where ::Update was getting
+ 	erroneously called when a resize was needed (same problem was
+ 	fixed a short while back in OverlayViewer::Update).
+
+Config and Miscellaneous Changes
+
+	* upgrade the configure script to auto-determine the CPU type, the
+ 	PWD, the XCONFIGDIR, and the GPLUSPLUSINCLUDEDIR.  This greatly
+ 	simplifies the INSTALL directions.  Now the following command is
+ 	all it should take to build from source on most commercial Unix'es
+ 	(as long as imake invokes a gcc version of cpp):
+
+	  ./configure;make World;su -c "make install"
+
+	To do this I had to generate two output files from configure, one
+ 	to feed the imake process as before (a config/config-<os>-gcc.defs
+ 	generated from config/config.defs.in), and another
+ 	(config/config.mk) to be directly pulled in by the top-level
+ 	Makefile (and every other Makefile).
+
+	* restructure the declaration of make variables for library
+ 	pathnames in config/local.def (adds a new file,
+ 	config/makevars.def), so that each library has to be listed only
+ 	twice, once for the LIB* variable, and once for the DEP* variable.
+	
+	* add support for file: to ParamList::urltest and
+ 	OpenFileChooser::urltest (this is conditional on finding w3c or
+ 	curl).
+
+	* gcc-2.8.1 warnings fixed.
+
+	* remove a duplicate -I on the src directory when compiling.
+
+
 February 27th 1999 ivtools-0.7.4
 
 Drawing Editor Changes

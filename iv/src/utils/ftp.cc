@@ -121,11 +121,11 @@ void CFtp::DoRetrieve() {
   // IPAddress(comma separated segments),
   // Portnumber/256,
   // remainder of previous divide.
-  register char *p, *a;
-  a = (char *)&my_addr.sin_addr;
-  p = (char *)&my_addr.sin_port;
+  register unsigned char *p, *a;
+  a = (unsigned char *)&my_addr.sin_addr;
+  p = (unsigned char *)&my_addr.sin_port;
 
-#define	UC(b)	(((int)b)&0xff)
+#define	UC(b)	(((unsigned int)b)&0xff)
 
   if(! (control_stream << "Port "
 	<< UC(a[0]) << "," 
@@ -145,7 +145,12 @@ void CFtp::DoRetrieve() {
     Shutdown(control_fd);
     Thrower("FTP server reply could not be read from network.");
   }
+
   sreply = reply;
+  while (sreply.contains("230",0)) {
+    control_stream.getline(reply, BUFSIZ, '\n'); 
+    sreply = reply;
+  }
   if( !(sreply.contains("200",0)) ) { // PORT command unsuccessful.
     control_stream.close();
     Shutdown(control_fd);

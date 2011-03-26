@@ -142,6 +142,10 @@ public:
     virtual void DoAutoNewFrame() { };
     // empty method for use by multi-frame editors for creating a new frame
     // when auto-new-frame is enabled.
+
+    static boolean opaque_flag();
+    // return global flag indicating whether opaque tranformations are enabled.
+
 protected:
     void Init(OverlayComp* = nil, const char* = "OverlayEditor");
     // construct empty component tree if necessary, and pass to

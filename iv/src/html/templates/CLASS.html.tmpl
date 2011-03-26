@@ -16,7 +16,7 @@
 <br><br>
 
 <DD><FONT FACE=Times SIZE=4>
-{if brief}<B>{brief}</B><br><br>{endif}
+{if brief}{brief}<br><br>{endif}
 
 <B>Type:</B><br>
 <UL>
@@ -56,7 +56,7 @@
     {if throws} <FONT COLOR="red"> throws {throwclass}({throwargs}) </FONT>{endif}{endif}
     {if enum} {lb}{args}{rb} {endif}
     <DD><FONT FACE=Times SIZE=3><UL>
-      {if brief}  <B>{brief}</B> <br> {endif}
+      {if brief}  {brief} <br> {endif}
       {if detail} {detail} <br> {endif}
       <br>
       {if in} {in} {endif}
@@ -80,7 +80,7 @@
     {if throws} <FONT COLOR="red"> throws {throwclass}({throwargs}) </FONT>{endif}{endif}
     {if enum} {lb}{args}{rb} {endif}
     <DD><FONT FACE=Times SIZE=3><UL>
-      {if brief}  <B>{brief}</B> <br> {endif}
+      {if brief}  {brief} <br> {endif}
       {if detail} {detail} <br> {endif}
       <br>
       {if in} {in} <br> {endif}
@@ -104,7 +104,7 @@
     {if throws} <FONT COLOR="red"> throws {throwclass}({throwargs}) </FONT>{endif}{endif}
     {if enum} {lb}{args}{rb} {endif}
     <DD><FONT FACE=Times SIZE=3><UL>
-      {if brief}  <B>{brief}</B> <br> {endif}
+      {if brief}  {brief} <br> {endif}
       {if detail} {detail} <br> {endif}
       <br>
       {if in} {in} <br> {endif}
@@ -119,7 +119,7 @@
 {endif friend}
 
 {!autolink}
-<A HREF="http://www.vectaport.com/ivtools/doc/index.html">(more documentation)</A>
+<A HREF="../index.html">(more documentation)</A>
 {autolink}
 <br><br>
 

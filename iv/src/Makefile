@@ -12,10 +12,10 @@
 # -------------------------------------------------------------------------
 # from <local.def>:
 
-     GPLUSPLUS_INCLUDE_DIR = /usr/local/include/g++
+     GPLUSPLUS_INCLUDE_DIR = /usr/include/g++
           TOOL_INCLUDE_DIR = /usr/local/include
 
-    NORM_CCINCLUDES = -I$(CURRENT_DIR)/.. -I$(CURRENT_DIR)/../.. -I$(TOP)/src -I$(IVTOOLSSRC) $(BACKWARD_CCINCLUDES) -I$(IVTOOLSSRC)/include -I$(IVTOOLSSRC)/include/ivstd $(X_CCINCLUDES)
+    NORM_CCINCLUDES = -I$(CURRENT_DIR)/.. -I$(CURRENT_DIR)/../..  -I$(IVTOOLSSRC) $(BACKWARD_CCINCLUDES) -I$(IVTOOLSSRC)/include -I$(IVTOOLSSRC)/include/ivstd $(X_CCINCLUDES)
 
     APP_CCINCLUDES = $(NORM_CCINCLUDES)
 
@@ -34,6 +34,8 @@ LIBGLYPHTERP = -Wl,-rpath,$(IVTOOLSSRC)/GlyphTerp/$(CPU) -L$(IVTOOLSSRC)/GlyphTe
 LIBUNIIDRAW = -Wl,-rpath,$(IVTOOLSSRC)/UniIdraw/$(CPU) -L$(IVTOOLSSRC)/UniIdraw/$(CPU) -lUniIdraw
 LIBTOPOFACE = -Wl,-rpath,$(IVTOOLSSRC)/TopoFace/$(CPU) -L$(IVTOOLSSRC)/TopoFace/$(CPU) -lTopoFace
 LIBOVERLAYUNIDRAW = -Wl,-rpath,$(IVTOOLSSRC)/OverlayUnidraw/$(CPU) -L$(IVTOOLSSRC)/OverlayUnidraw/$(CPU) -lOverlayUnidraw
+
+LIBIUESERV = -Wl,-rpath,$(IVTOOLSSRC)/IueServ/$(CPU) -L$(IVTOOLSSRC)/IueServ/$(CPU) -lIueServ
 
 LIBACEDISPATCH = -Wl,-rpath,$(IVTOOLSSRC)/AceDispatch/$(CPU) -L$(IVTOOLSSRC)/AceDispatch/$(CPU) -lAceDispatch
 
@@ -56,6 +58,8 @@ DEPUNIIDRAW = $(IVTOOLSSRC)/UniIdraw/$(CPU)/libUniIdraw.so.$(VERSION)
 DEPTOPOFACE = $(IVTOOLSSRC)/TopoFace/$(CPU)/libTopoFace.so.$(VERSION)
 DEPOVERLAYUNIDRAW = $(IVTOOLSSRC)/OverlayUnidraw/$(CPU)/libOverlayUnidraw.so.$(VERSION)
 
+DEPIUESERV = $(IVTOOLSSRC)/IueServ/$(CPU)/libIueServ.so.$(VERSION)
+
 DEPACEDISPATCH = $(IVTOOLSSRC)/AceDispatch/$(CPU)/libAceDispatch.so.$(VERSION)
 
 DEPCOMUNIDRAW = $(IVTOOLSSRC)/ComUnidraw/$(CPU)/libComUnidraw.so.$(VERSION)
@@ -69,7 +73,7 @@ DEPDRAWSERV = $(IVTOOLSSRC)/DrawServ/$(CPU)/libDrawServ.so.$(VERSION)
 
    RELEASE = ivtools-0.7
 
-   VERSION = 0.7.4
+   VERSION = 0.7.5
 
    REPOSITORY_FILES = *.c *.cc *.cxx *.C *.h Imakefile *.def template README INSTALL VERSION MANIFEST COPYRIGHT ANNOUNCE README.ivmkcm *.patch *.bugfix.? *.script *.sed comutil.arg comterp.err comutil.ci comterp.arg comterp.ci site.def.SUN4 site.def.LINUX site.def.SGI site.def.HP800 site.def.ALPHA WishList *.defaults *.cf HOWTO Copyright *.sh CHANGES CHANGES-0.? *.cpp ivmkmf *.bash *.1  *.3 config.guess config.sub configure configure.in MANIFEST.perceps *.mk config.mk.in *.tmpl *.flt
 
@@ -119,7 +123,7 @@ DEPDRAWSERV = $(IVTOOLSSRC)/DrawServ/$(CPU)/libDrawServ.so.$(VERSION)
 
  CLIPPOLY_CCDEFINES = -DCLIPPOLY
       ACE_CCDEFINES = -DHAVE_ACE
-      IUE_CCDEFINES =
+      IUE_CCDEFINES = -DIUE -DGCC272
 
          CCINCLUDES = $(APP_CCINCLUDES) $(OTHER_CCINCLUDES) $(EXTRA_CCINCLUDES)
       IV_CCINCLUDES = IvCCIncludes
@@ -130,11 +134,13 @@ BACKWARD_CCINCLUDES =
 
 CLIPPOLY_CCINCLUDES = -I$(CLIPPOLYDIR)
      ACE_CCINCLUDES = -I$(ACEDIR)
-     IUE_CCINCLUDES =
+     IUE_CCINCLUDES = -I$(IUEDIR)/COOL -I$(IUEDIR)/GeneralUtility -I$(IUEDIR)/Image -I$(IUEDIR)/Smallg++ -I$(IUEDIR)/Tasks-IUE/RegionsOfInterest-AAI -I$(IUEDIR)/Image-IUE -I$(IUEDIR)/Basics-IUE -I$(IUEDIR)/Dex2
 
         CLIPPOLYDIR = /proj/clippoly
 
              ACEDIR = /proj/ACE_wrappers
+
+             IUEDIR = /xtra4/iue/v3.1-b3
 
              CFLAGS = $(APP_CCFLAGS) $(IV_CCFLAGS) $(OTHER_CCFLAGS) $(EXTRA_CCFLAGS)
 
@@ -176,8 +182,8 @@ NONSHARED_CCLDFLAGS =
        ACE_CCLDLIBS = -L$(ACEDIR)/ace -lACE
           ACELIBDIR = /proj/ACE_wrappers/ace
          ACELIBBASE = libACE.so
-       IUE_CCLDLIBS =
-          IUELIBDIR =
+       IUE_CCLDLIBS = -Wl,-rpath,$(IUEDIR)/lib.$(CPU) -L$(IUELIBDIR) -lCOOL -liue-math -lnetlib -lJPEG -lSmallg++ -lBasics -lNumerics -lImageClasses -lEasyImage -lImageProcessing -lInstances01 -lIPGeneric -lIUE-Image -lIUE-Root -lStat -lDex2 -lTraits -lIaf -lIUE-Container -lIUE-Math-Basics -lRegionsOfInterest-AAI -lIUE-\SO-CellLattice -lIUE-\SO-BinaryOps -lIUE-\SO-AxisAlignedBox -lIUE-\SO-Base -lIUE-CS-Base -lIUE-\SO-Point -lIUE-\SO-Line -lIUE-\SO-Curve -lIUE-\SO-Plane -lIUE-\SO-Sample -lIUE-\SO-Surface -lIUE-IF-ImageFeature -lIUE-IF-Region -lDexTestIUE -lIUE-Unit -lTIFF
+          IUELIBDIR = /xtra4/iue/v3.1-b3/lib.LINUX
          IUELIBBASE = libIUE.so
 
             INSTALL = install
@@ -235,6 +241,8 @@ NONSHARED_CCLDFLAGS =
             XLIBDIR = /usr/X11R6/lib
           PSFONTDIR = /usr/lib/ps
 
+include $(RELTOP)/config/config.mk
+
 all::
 
 Makefile::
@@ -247,11 +255,17 @@ Makefile::
 	echo >.toplevel-make-makefile; else \
 	echo >.not-toplevel-make-makefile; fi
 	-@if [ -f .toplevel-make-makefile ]; then \
-	$(IMAKE) $(IMAKEFLAGS) -I$(shell pwd)/config \
-	-DTOPDIR=$(shell pwd) -DRELTOPDIR=$(RELTOP) -DCURDIR=$(shell pwd);fi
+	echo;\
+	echo "remaking top-level Makefile using:";\
+	echo "    top-level directory -- $(ABSTOP)";\
+	echo "    ivtools config directory -- $(CONFIGSRC)";\
+	echo "    X11 config directory -- $(XCONFIGDIR)";\
+	echo;\
+	$(IMAKE) $(IMAKEFLAGS) -I$(ABSTOP)/config \
+	-DTOPDIR=$(ABSTOP) -DRELTOPDIR=$(RELTOP) -DCURDIR=$(ABSTOP); fi
 	-@if [ -f .not-toplevel-make-makefile ]; then \
 	$(IMAKE) $(IMAKEFLAGS) -DTOPDIR=$(TOP) \
-	-DRELTOPDIR=$(RELTOP) -DCURDIR=$(shell pwd); fi
+	-DRELTOPDIR=$(RELTOP) -DCURDIR=$(CURRENT_DIR); fi
 	-@if [ $(TOP) = $(CURRENT_DIR) ]; then \
 	$(RM) .toplevel-make-makefile; else \
 	$(RM) .not-toplevel-make-makefile; fi
@@ -271,7 +285,7 @@ clean::
 
 PACKAGE = src_ivtools
 
-IUEDIRS =
+IUEDIRS = IueServ iueserv
 
 ACEDISPATCH = AceDispatch
 
