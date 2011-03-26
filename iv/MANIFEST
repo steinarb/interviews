@@ -1372,7 +1372,7 @@ ivtools-0.7/src/scripts/cntsrclines.bash
 ivtools-0.7/src/scripts/config.guess
 ivtools-0.7/src/scripts/config.sub
 ivtools-0.7/src/scripts/cpu.sh
-ivtools-0.7/src/scripts/install.sh
+ivtools-0.7/src/scripts/install-sh
 ivtools-0.7/src/scripts/ivcd.cpp
 ivtools-0.7/src/scripts/ivct.cpp
 ivtools-0.7/src/scripts/ivds.cpp

@@ -37,6 +37,7 @@ public:
 
     void execute_log(Command*);
 
+    Editor* GetEditor() { return editor(); }
     Editor* editor() { return _ed; }
 protected:
     Editor* _ed;

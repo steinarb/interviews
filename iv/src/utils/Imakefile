@@ -30,7 +30,7 @@ stdcmapppm.o: ../stdcmapppm.c
 ivdl: ivdl.o downloader.o ftp.o http.o sockets.o thrower.o
 ivdl.o: ../ivdl.cc
 	@$(RM) ivdl.o
-	$(CDRIVER) -c ../ivdl.cc
+	$(CCDRIVER) -c ../ivdl.cc
 
 CCSUFFIX = cc
 

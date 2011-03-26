@@ -692,7 +692,7 @@ void GrayRaster::gainbias_minmax(double& gain, double& bias,
     for(int x=0; x < w; x++) {
       for(int y=0; y < h; y++) {
 	me->vpeek(x, h-y-1, av);
-#if !defined(__svr4__) && !defined(__alpha)
+#if !defined(__svr4__) && !defined(__alpha) || defined(__linux__)
 	if (av.double_val()==NAN) continue;
 #else
 	if (IsNANorINF(av.double_val)) continue;

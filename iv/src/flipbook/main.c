@@ -266,7 +266,7 @@ int main (int argc, char** argv) {
     int portnum = atoi(portstr);
     if (peer_acceptor->open 
 	(ACE_INET_Addr (portnum)) == -1)
-        cerr << "comdraw:  unable to open port " << portnum << "\n";
+        cerr << "flipbook:  unable to open port " << portnum << "\n";
 
     else if (COMTERP_REACTOR::instance ()->register_handler 
 	     (peer_acceptor, ACE_Event_Handler::READ_MASK) == -1)

@@ -381,7 +381,7 @@ boolean ComTerp::skip_arg(ComValue* topval, int& offset, int& tokcnt) {
 	if (next.is_type(ComValue::KeywordType)) {
 	  skip_key(topval, offset, subtokcnt);
 	  tokcnt += subtokcnt + 1;
-	  count++;
+	  if (subtokcnt) count++;
 	} else if (next.is_type(ComValue::CommandType) ||
 		   next.is_type(ComValue::SymbolType)) {
 	  skip_arg(topval, offset, subtokcnt);

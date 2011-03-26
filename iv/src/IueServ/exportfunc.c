@@ -84,6 +84,7 @@ void IueExportFunc::execute() {
 	    out.write(bytes, ncols);
 	  }
 	  break;
+
 	case Image::INT16:  
 	case Image::UINT16: 
 	  out << "P5\n" << ncols << " " << nrows << "\n65535\n";
@@ -91,6 +92,19 @@ void IueExportFunc::execute() {
 	    unsigned short words[ncols];
 	    image->GetSection(&words, 0, y, ncols, 1);
 	    out.write(words, ncols*2);
+	  }
+	  break;
+
+	case Image::INT32:  /* truncation might occur */
+	case Image::UINT32: 
+	  out << "P5\n" << ncols << " " << nrows << "\n65535\n";
+	  for (int y=0; y<nrows; y++) {
+	    unsigned int ints[ncols];
+	    image->GetSection(&ints, 0, y, ncols, 1);
+	    for (int x=0; x<ncols; x++) {
+	      unsigned short word = ints[x];
+	      out.write(&word, 1);
+	    }
 	  }
 	  break;
 
@@ -114,9 +128,7 @@ void IueExportFunc::execute() {
 
 	  break;
 
-	case Image::UINT32: 
 	case Image::RGB_32:
-	case Image::INT32:  
 	case Image::FLOAT:  
 	case Image::COMPLEX_FLOAT:
 	case Image::DOUBLE: 

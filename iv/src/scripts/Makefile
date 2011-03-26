@@ -26,7 +26,6 @@
            LIBTIME = -Wl,-rpath,$(IVTOOLSSRC)/Time/$(CPU) -L$(IVTOOLSSRC)/Time/$(CPU) -lTime
       LIBATTRIBUTE = -Wl,-rpath,$(IVTOOLSSRC)/Attribute/$(CPU) -L$(IVTOOLSSRC)/Attribute/$(CPU) -lAttribute
         LIBCOMUTIL = -Wl,-rpath,$(IVTOOLSSRC)/ComUtil/$(CPU) -L$(IVTOOLSSRC)/ComUtil/$(CPU) -lComUtil
-    LIBACEDISPATCH = -Wl,-rpath,$(IVTOOLSSRC)/AceDispatch/$(CPU) -L$(IVTOOLSSRC)/AceDispatch/$(CPU) -lAceDispatch
         LIBCOMTERP = -Wl,-rpath,$(IVTOOLSSRC)/ComTerp/$(CPU) -L$(IVTOOLSSRC)/ComTerp/$(CPU) -lComTerp
         LIBIVGLYPH = -Wl,-rpath,$(IVTOOLSSRC)/IVGlyph/$(CPU) -L$(IVTOOLSSRC)/IVGlyph/$(CPU) -lIVGlyph
       LIBATTRGLYPH = -Wl,-rpath,$(IVTOOLSSRC)/AttrGlyph/$(CPU) -L$(IVTOOLSSRC)/AttrGlyph/$(CPU) -lAttrGlyph
@@ -38,6 +37,8 @@
 
        LIBIUESERV = -Wl,-rpath,$(IVTOOLSSRC)/IueServ/$(CPU) -L$(IVTOOLSSRC)/IueServ/$(CPU) -lIueServ
 
+    LIBACEDISPATCH = -Wl,-rpath,$(IVTOOLSSRC)/AceDispatch/$(CPU) -L$(IVTOOLSSRC)/AceDispatch/$(CPU) -lAceDispatch
+
      LIBCOMUNIDRAW = -Wl,-rpath,$(IVTOOLSSRC)/ComUnidraw/$(CPU) -L$(IVTOOLSSRC)/ComUnidraw/$(CPU) -lComUnidraw
    LIBFRAMEUNIDRAW = -Wl,-rpath,$(IVTOOLSSRC)/FrameUnidraw/$(CPU) -L$(IVTOOLSSRC)/FrameUnidraw/$(CPU) -lFrameUnidraw
    LIBGRAPHUNIDRAW = -Wl,-rpath,$(IVTOOLSSRC)/GraphUnidraw/$(CPU) -L$(IVTOOLSSRC)/GraphUnidraw/$(CPU) -lGraphUnidraw
@@ -48,7 +49,6 @@
            DEPTIME = $(IVTOOLSSRC)/Time/$(CPU)/libTime.so.$(VERSION)
       DEPATTRIBUTE = $(IVTOOLSSRC)/Attribute/$(CPU)/libAttribute.so.$(VERSION)
         DEPCOMUTIL = $(IVTOOLSSRC)/ComUtil/$(CPU)/libComUtil.so.$(VERSION)
-    DEPACEDISPATCH = $(IVTOOLSSRC)/AceDispatch/$(CPU)/libAceDispatch.so.$(VERSION)
         DEPCOMTERP = $(IVTOOLSSRC)/ComTerp/$(CPU)/libComTerp.so.$(VERSION)
         DEPIVGLYPH = $(IVTOOLSSRC)/IVGlyph/$(CPU)/libIVGlyph.so.$(VERSION)
       DEPATTRGLYPH = $(IVTOOLSSRC)/AttrGlyph/$(CPU)/libAttrGlyph.so.$(VERSION)
@@ -59,6 +59,8 @@
  DEPOVERLAYUNIDRAW = $(IVTOOLSSRC)/OverlayUnidraw/$(CPU)/libOverlayUnidraw.so.$(VERSION)
 
        DEPIUESERV = $(IVTOOLSSRC)/IueServ/$(CPU)/libIueServ.so.$(VERSION)
+
+    DEPACEDISPATCH = $(IVTOOLSSRC)/AceDispatch/$(CPU)/libAceDispatch.so.$(VERSION)
 
      DEPCOMUNIDRAW = $(IVTOOLSSRC)/ComUnidraw/$(CPU)/libComUnidraw.so.$(VERSION)
    DEPFRAMEUNIDRAW = $(IVTOOLSSRC)/FrameUnidraw/$(CPU)/libFrameUnidraw.so.$(VERSION)
@@ -71,7 +73,7 @@
 
    RELEASE = ivtools-0.7
 
-   VERSION = 0.7.0
+   VERSION = 0.7.1
 
    REPOSITORY_FILES = *.c *.cc *.cxx *.C *.h Imakefile *.def template README INSTALL VERSION MANIFEST COPYRIGHT ANNOUNCE README.ivmkcm *.patch *.bugfix.? *.script *.sed comutil.arg comterp.err comutil.ci comterp.arg comterp.ci site.def.SUN4 site.def.LINUX site.def.SGI site.def.HP800 site.def.ALPHA WishList *.defaults *.cf HOWTO Copyright *.sh CHANGES CHANGES-0.5 *.cpp ivmkmf *.bash *.1 config.guess config.sub configure configure.in MANIFEST.perceps *.mk config.mk.in
 
@@ -138,7 +140,7 @@ CLIPPOLY_CCINCLUDES = -I$(CLIPPOLYDIR)
 
              ACEDIR = /proj/ACE_wrappers
 
-             IUEDIR = /xtra4/iue/v3.1-beta
+             IUEDIR = /xtra4/iue/v3.1-b3
 
              CFLAGS = $(APP_CCFLAGS) $(IV_CCFLAGS) $(OTHER_CCFLAGS) $(EXTRA_CCFLAGS)
 
@@ -180,8 +182,8 @@ NONSHARED_CCLDFLAGS =
        ACE_CCLDLIBS = -L$(ACEDIR)/ace -lACE
           ACELIBDIR = /proj/ACE_wrappers/ace
          ACELIBBASE = libACE.so
-       IUE_CCLDLIBS = -L$(IUELIBDIR) -lCOOL -liue-math -lnetlib -lJPEG -lSmallg++ -lBasics -lNumerics -lImageClasses -lEasyImage -lImageProcessing -lTIFF
-          IUELIBDIR = /xtra4/iue/v3.1-beta/lib.LINUX
+       IUE_CCLDLIBS = -Wl,-rpath,$(IUEDIR)/lib.$(CPU) -L$(IUELIBDIR) -lCOOL -liue-math -lnetlib -lJPEG -lSmallg++ -lBasics -lNumerics -lImageClasses -lEasyImage -lImageProcessing -lInstances01 -lIPGeneric -lIUE-Image -lIUE-Root -lStat -lDex2 -lTraits -lIaf -lIUE-Container -lIUE-Math-Basics -lRegionsOfInterest-AAI -lIUE-\SO-CellLattice -lIUE-\SO-BinaryOps -lIUE-\SO-AxisAlignedBox -lIUE-\SO-Base -lIUE-CS-Base -lIUE-\SO-Point -lIUE-\SO-Line -lIUE-\SO-Curve -lIUE-\SO-Plane -lIUE-\SO-Sample -lIUE-\SO-Surface -lIUE-IF-ImageFeature -lIUE-IF-Region -lDexTestIUE -lIUE-Unit -lTIFF
+          IUELIBDIR = /xtra4/iue/v3.1-b3/lib.LINUX
          IUELIBBASE = libIUE.so
 
             INSTALL = install
@@ -337,41 +339,6 @@ install:: $(PROGRAMS)
 	(set -x; $(INSTALL) -c $(INSTBINFLAGS) $$i $(BINDIR)); \
 	done
 
-install:: anytopnm.sh
-	-@if [ -d $(BINDIR) ]; then exit 0; \
-	else (set -x; $(MKDIRHIER) $(BINDIR)); fi
-	$(INSTALL) -c $(INSTBINFLAGS) anytopnm.sh $(BINDIR)/anytopnm
-
-install:: mkgif89a.bash
-	-@if [ -d $(BINDIR) ]; then exit 0; \
-	else (set -x; $(MKDIRHIER) $(BINDIR)); fi
-	$(INSTALL) -c $(INSTBINFLAGS) mkgif89a.bash $(BINDIR)/mkgif89a
-
-install:: mkgif89ac.bash
-	-@if [ -d $(BINDIR) ]; then exit 0; \
-	else (set -x; $(MKDIRHIER) $(BINDIR)); fi
-	$(INSTALL) -c $(INSTBINFLAGS) mkgif89ac.bash $(BINDIR)/mkgif89ac
-
-install:: pnmtopgm.sh
-	-@if [ -d $(BINDIR) ]; then exit 0; \
-	else (set -x; $(MKDIRHIER) $(BINDIR)); fi
-	$(INSTALL) -c $(INSTBINFLAGS) pnmtopgm.sh $(BINDIR)/pnmtopgm
-
-install:: ivgetjpg.bash
-	-@if [ -d $(BINDIR) ]; then exit 0; \
-	else (set -x; $(MKDIRHIER) $(BINDIR)); fi
-	$(INSTALL) -c $(INSTBINFLAGS) ivgetjpg.bash $(BINDIR)/ivgetjpg
-
-install:: cntsrclines.bash
-	-@if [ -d $(BINDIR) ]; then exit 0; \
-	else (set -x; $(MKDIRHIER) $(BINDIR)); fi
-	$(INSTALL) -c $(INSTBINFLAGS) cntsrclines.bash $(BINDIR)/cntsrclines
-
-install:: tiftopnm.bash
-	-@if [ -d $(BINDIR) ]; then exit 0; \
-	else (set -x; $(MKDIRHIER) $(BINDIR)); fi
-	$(INSTALL) -c $(INSTBINFLAGS) tiftopnm.bash $(BINDIR)/tiftopnm
-
 LDLIB_SPEC = LD_LIBRARY_PATH='$(LIBABSDIR)':$$LD_LIBRARY_PATH
 PATH_SPEC = PATH='$(BINDIR)':$$PATH
 
@@ -404,6 +371,41 @@ ivds::  ivds.cpp
 	$(RM) $@
 	$(CPP) -DLDLIB_SPEC='$(LDLIB_SPEC)' -DPATH_SPEC='$(PATH_SPEC)' <ivds.cpp | sed -e '/^#  *[0-9][0-9]*  *.*$$/d' -e '/^XCOMM$$/s//#/' -e '/^XCOMM[^a-zA-Z0-9_]/s/^XCOMM/#/' >$@
 	chmod a+x $@
+
+install:: mkgif89a.bash
+	-@if [ -d $(BINDIR) ]; then exit 0; \
+	else (set -x; $(MKDIRHIER) $(BINDIR)); fi
+	$(INSTALL) -c $(INSTBINFLAGS) mkgif89a.bash $(BINDIR)/mkgif89a
+
+install:: mkgif89ac.bash
+	-@if [ -d $(BINDIR) ]; then exit 0; \
+	else (set -x; $(MKDIRHIER) $(BINDIR)); fi
+	$(INSTALL) -c $(INSTBINFLAGS) mkgif89ac.bash $(BINDIR)/mkgif89ac
+
+install:: ivgetjpg.bash
+	-@if [ -d $(BINDIR) ]; then exit 0; \
+	else (set -x; $(MKDIRHIER) $(BINDIR)); fi
+	$(INSTALL) -c $(INSTBINFLAGS) ivgetjpg.bash $(BINDIR)/ivgetjpg
+
+install:: cntsrclines.bash
+	-@if [ -d $(BINDIR) ]; then exit 0; \
+	else (set -x; $(MKDIRHIER) $(BINDIR)); fi
+	$(INSTALL) -c $(INSTBINFLAGS) cntsrclines.bash $(BINDIR)/cntsrclines
+
+install:: tiftopnm.bash
+	-@if [ -d $(BINDIR) ]; then exit 0; \
+	else (set -x; $(MKDIRHIER) $(BINDIR)); fi
+	$(INSTALL) -c $(INSTBINFLAGS) tiftopnm.bash $(BINDIR)/tiftopnm
+
+install:: anytopnm.sh
+	-@if [ -d $(BINDIR) ]; then exit 0; \
+	else (set -x; $(MKDIRHIER) $(BINDIR)); fi
+	$(INSTALL) -c $(INSTBINFLAGS) anytopnm.sh $(BINDIR)/anytopnm
+
+install:: pnmtopgm.sh
+	-@if [ -d $(BINDIR) ]; then exit 0; \
+	else (set -x; $(MKDIRHIER) $(BINDIR)); fi
+	$(INSTALL) -c $(INSTBINFLAGS) pnmtopgm.sh $(BINDIR)/pnmtopgm
 
 clean::
 	$(RM) $(PROGRAMS) $(PROGRAMS2)

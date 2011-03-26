@@ -2,13 +2,13 @@
 			README for ivtools 0.7
 
 
-This directory contains a release of ivtools 0.7.0 from Vectaport
+This directory contains a release of ivtools 0.7.1 from Vectaport
 Inc..  You should read the rest of this file for information on what
 ivtools is and the INSTALL file for instructions on how to build it.
-It is known to build with many versions of gcc (gcc-2.7.2 and <,
-gcc-2.8.1 and >, egcs-1.0.1 and >) and on a variety of Unix'es: SunOS
-4.1 (MIT's X11R5), Solaris 2.6 (X11R6), Irix 5.2 (SGI's X11R5), Linux
-1.2 (Slackware 3.0, XFree86 3.1) and Linux 2.0 (RedHat 4.0 thru 5.1,
+It is known to build with many versions of gcc (<= gcc-2.7.2, >=
+gcc-2.8.1, >= egcs-1.0.1) and on a variety of Unix'es: SunOS 4.1
+(MIT's X11R5), Solaris 2.6 (X11R6), Irix 5.2 (SGI's X11R5), Linux 1.2
+(Slackware 3.0, XFree86 3.1) and Linux 2.0 (RedHat 4.0 thru 5.1,
 Debian 2.0).  There are contributed configs for HPUX and Alpha. You
 can pick up Linux-ELF binaries from the ivtools web page
 (http://www.vectaport.com/ivtools/).
@@ -148,6 +148,23 @@ libraries:
 
 	* IUE (the Image Understanding Environment) from Amerinex
 	(half public-domain, half licensed similar to X Windows)
+
+ivtools detects and uses at runtime a variety of third-party executables:
+
+	* qhull from the University of Minnesota Geometry Center
+
+	* pstoedit from Wolfgang Glunz
+
+	* ghostscript from L. Peter Deutsch and Aladdin Systems
+
+	* djpeg from the JPEG group
+
+	* giftopnm from Jef Poskanzer's pbmplus toolkit
+	(a copy of anytopnm from the same toolkit is incorporated into
+	the scripts directory)
+
+OverlayUnidraw incorporates Version 3.1 of a "C++ Vector and Matrix
+Algebra routnes" (algebra3.h) from Jean-Francois Doue.
 	
 HPUX (HP-800) config contributed by Neal Becker.  ALPHA config
 contributed by Bruno Delfosse at Thomson CSF.
@@ -296,9 +313,9 @@ contract to Vectaport Inc.
 
 Keung Chi Ng of IET Inc. has provided a good deal of feedback on
 ivtools over the years, and has assisted in demonstrating the
-viability of the various application frameworks by developing a
-variety of vertical applications on top of OverlayUnidraw,
-FrameUnidraw, and GraphUnidraw.
+viability of the application frameworks by developing a variety of
+vertical applications on top of OverlayUnidraw, FrameUnidraw, and
+GraphUnidraw.
 
 The balance of ivtools has been developed by Vectaport Inc. (P.O. Box
 7141, Redwood City, CA 94063), with additional support from IET Inc.

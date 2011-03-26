@@ -142,15 +142,15 @@ void IueThresholdFunc::execute() {
 
   IueImageComp* comp = image_comp(img);
   if (comp) {
-    Image* image = comp->image();
-    if (image) {
-      int sx = image->GetSizeX(); int sy = image->GetSizeY();
-      MemoryImage* src = new MemoryImage(image); 
-      src->SetFormat(image->GetFormat());
-      src->PutSection(image->GetSection((void*)0,0,0,sx,sy),0,0,sx,sy);
-      BufferXY* fsrc = GetFloatBuffer(src);
-      if (!fsrc) {
-	delete src;
+    Image* src = comp->image();
+    if (src) {
+      int sx = src->GetSizeX(); int sy = src->GetSizeY();
+      MemoryImage* dst = new MemoryImage(src); 
+      dst->SetFormat(src->GetFormat());
+      dst->PutSection(src->GetSection((void*)0,0,0,sx,sy),0,0,sx,sy);
+      BufferXY* fdst = GetFloatBuffer(dst);
+      if (!fdst) {
+	delete dst;
 	push_stack(ComValue::nullval());
 	return;
       }
@@ -174,18 +174,18 @@ void IueThresholdFunc::execute() {
       }
       for (unsigned y=0; y<sy; y++) {
 	for (unsigned x=0; x<sx; x++) {
-	  float ival = floatPixel(*fsrc, x, y);
+	  float ival = floatPixel(*fdst, x, y);
 	  float oval = 0.0;
 	  int tcnt = 0;
 	  while (tcnt<nthresh) {
 	    if (threshs[tcnt]<=ival) oval=threshs[tcnt];
 	    tcnt++;
 	  }
-	  floatPixel(*fsrc, x, y) = oval;
+	  floatPixel(*fdst, x, y) = oval;
 	}
       }
-      PutFloatBuffer(src, fsrc);
-      IueImageComp* imagecomp = new IueImageComp(src);
+      PutFloatBuffer(dst, fdst);
+      IueImageComp* imagecomp = new IueImageComp(dst);
       ComValue retval(ComValue::ObjectType, new ComponentView(imagecomp));
       retval.obj_type_ref() = IueImageComp::symbolid();
       push_stack(retval);

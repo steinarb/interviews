@@ -32,7 +32,7 @@ public:
 
     virtual void execute();
     virtual const char* docstring() { 
-      return "%s(iueobj) -- export IUE object to host/port"; }
+      return "%s(iueobj host port) -- export IUE object to host/port"; }
 
 };
 

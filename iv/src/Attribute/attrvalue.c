@@ -26,7 +26,9 @@
 #include <Attribute/attrlist.h>
 
 #include <iostream.h>
+#if !defined(solaris)
 #include <memory.h>
+#endif
 #include <stdio.h>
 #include <string.h>
 

@@ -36,7 +36,7 @@
  * VersionNumber
  */
 #ifndef Version
-#define	Version 0.7.0
+#define	Version 0.7.1
 #endif
 
    VERSION = Version
@@ -803,7 +803,158 @@ NONSHARED_CCLDFLAGS = NonSharedCCLdFlags
 
 #ifndef IueCCLdLibs
 #ifdef IueDir
-#define IueCCLdLibs -L$(IUELIBDIR) -lCOOL -liue-math -lnetlib -lJPEG -lSmallg++ -lBasics -lNumerics -lImageClasses -lEasyImage -lImageProcessing -lTIFF /* -lIPGeneric -lIUE-Image  */
+#if UseRpath
+#define _arg -Wl,-rpath,$(IUEDIR)/lib.$(CPU) -L$(IUELIBDIR)
+#else
+#define _arg -L$(IUELIBDIR)
+#endif
+#if 0
+#define IueCCLdLibs  _arg \
+-lArcInfoIO \
+-lBasicRelation \
+-lBasics \
+-lCOOL \
+-lChangeDetection-AAI \
+-lCompGeom \
+-lCurveFormation-Brunel \
+-lCurveFormation-CSU \
+-lCurveFormation-IUE \
+-lCurveFormation-Stanford \
+-lDEXTableIO \
+-lDXFIO \
+-lDex2 \
+-lDex2Test \
+-lDexTestIUE \
+-lDexTestNonIUE \
+-lDigitalGeometry \
+-lDigitalSurface \
+-lEasyImage \
+-lEdgeDetection-IUE \
+-lFEXIO \
+-lFitting-IUE \
+-lFredIO \
+-lGeometry \
+-lGraphTools \
+-lGroups \
+-lIPGeneric \
+-lIUCameras \
+-lIUCamerasDEX \
+-lIUE-CS-Base \
+-lIUE-CS-CartesianSystem \
+-lIUE-CS-ColorSystem \
+-lIUE-CS-ColorTransform \
+-lIUE-CS-Functional-Transform \
+-lIUE-CS-GeographicSystem \
+-lIUE-CS-GeographicTransform \
+-lIUE-CS-GeometricSystem \
+-lIUE-CS-GeometricTransform \
+-lIUE-CS-HomogeneousTransform \
+-lIUE-CS-NonHomogeneousTransform \
+-lIUE-Container \
+-lIUE-IF-Curve \
+-lIUE-IF-Edgel \
+-lIUE-IF-ImageFeature \
+-lIUE-IF-Point \
+-lIUE-IF-Region \
+-lIUE-IF-Topology \
+-lIUE-Image \
+-lIUE-Math-Basics \
+-lIUE-Root \
+-lIUE-\SO-AxisAlignedBox \
+-lIUE-\SO-Base \
+-lIUE-\SO-BinaryOps \
+-lIUE-\SO-CellLattice \
+-lIUE-\SO-Conic \
+-lIUE-\SO-Curve \
+-lIUE-\SO-FunctionalSurface \
+-lIUE-\SO-Line \
+-lIUE-\SO-PlanarPatch \
+-lIUE-\SO-Plane \
+-lIUE-\SO-Point \
+-lIUE-\SO-Rectangle \
+-lIUE-\SO-Sample \
+-lIUE-\SO-SampledCurve \
+-lIUE-\SO-Spline \
+-lIUE-\SO-Surface \
+-lIUE-\SO-Topology \
+-lIUE-\SO-Volume \
+-lIUE-SpatialIndex \
+-lIUE-Stat \
+-lIUE-Unit \
+-lIUE-templates \
+-lIaf \
+-lImageClasses \
+-lImageDEX \
+-lImageGeneration \
+-lImageProcessing \
+-lImageProcessingBasics \
+-lInstances01 \
+-lJPEG \
+-lLineDetection-USC \
+-lNumerics \
+-lPointDetection-AAI \
+-lPointDetection-IUE \
+-lPrinting \
+-lQv \
+-lRegionFormation-IUE \
+-lRegionsOfInterest-AAI \
+-lSmallg++ \
+-lSolarFeatureDetection-AAI \
+-lSolver \
+-lSpatialBasics \
+-lSpatialObjectDEX \
+-lStat \
+-lSurfaceTest \
+-lTIFF \
+-lTargetDetection-CSU \
+-lTopology \
+-lTraits \
+-lVRMLIO \
+-lbyteTest \
+-ldex_generic \
+-liue-math-extensions \
+-liue-math \
+-lnetlib
+#else
+#define IueCCLdLibs  _arg \
+-lCOOL \
+-liue-math \
+-lnetlib \
+-lJPEG \
+-lSmallg++ \
+-lBasics \
+-lNumerics \
+-lImageClasses \
+-lEasyImage \
+-lImageProcessing \
+-lInstances01 \
+-lIPGeneric \
+-lIUE-Image \
+-lIUE-Root \
+-lStat \
+-lDex2 \
+-lTraits \
+-lIaf \
+-lIUE-Container \
+-lIUE-Math-Basics \
+-lRegionsOfInterest-AAI \
+-lIUE-\SO-CellLattice \
+-lIUE-\SO-BinaryOps \
+-lIUE-\SO-AxisAlignedBox \
+-lIUE-\SO-Base \
+-lIUE-CS-Base \
+-lIUE-\SO-Point \
+-lIUE-\SO-Line \
+-lIUE-\SO-Curve \
+-lIUE-\SO-Plane \
+-lIUE-\SO-Sample \
+-lIUE-\SO-Surface \
+-lIUE-IF-ImageFeature \
+-lIUE-IF-Region \
+-lDexTestIUE \
+-lIUE-Unit \
+-lTIFF
+#endif
 #else
 #define IueCCLdLibs /**/
 #endif
@@ -818,7 +969,7 @@ NONSHARED_CCLDFLAGS = NonSharedCCLdFlags
 #endif
 
 #ifndef IueLibBase 
-#define IueLibBase libIUE.so  /* only for installing symbolic link */
+#define IueLibBase libIUE.so   /* only for installing symbolic link */
 #endif
 
 #ifndef OtherCCLdLibs

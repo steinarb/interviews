@@ -25,6 +25,7 @@
 #include <IueServ/ipfunc.h>
 #include <IueServ/iuehandler.h>
 #include <IueServ/iuefunc.h>
+#include <IueServ/roifunc.h>
 #include <ComTerp/comterpserv.h>
 
 #include <iostream.h>
@@ -43,5 +44,6 @@ IueHandler::IueHandler (void)
   comterp_->add_command("pixtype", new IuePixTypeFunc(comterp_));
   comterp_->add_command("gaussian", new IueGaussianFunc(comterp_));
   comterp_->add_command("threshold", new IueThresholdFunc(comterp_));
+  comterp_->add_command("conncomp", new IueConnCompFunc(comterp_));
 }
 

@@ -103,7 +103,7 @@ public:
     static const char mouse_scl[]  = "l-drag: Scale; m-drag: Move; r-click/drag: Select";
     static const char mouse_str[]  = "l-drag: Stretch; m-drag: Move; r-click/drag: Select";
     static const char mouse_rot[]  = "l-drag: Rotate; m-drag: Move; r-click/drag: Select";
-    static const char mouse_alt[]  = "l-click: Alter; m-m-drag: Move; r-click/drag: Select";
+    static const char mouse_alt[]  = "l-click: Alter; m-drag: Move; r-click/drag: Select";
     static const char mouse_mag[]  = "l-drag: Magnify; m-drag: Move; r-click/drag: Select";
     static const char mouse_txt[]  = "l-click: Text; m-drag: Move; r-click/drag: Select";
     static const char mouse_lin[]  = "l-drag: Line; m-drag: Move; r-click/drag: Select";

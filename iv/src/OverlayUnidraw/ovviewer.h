@@ -57,9 +57,6 @@ public:
     virtual void StartBuffering();
     virtual void FinishBuffering(boolean);
 
-    Transformer* GetRel();
-    Transformer* ComputeGravityRel();
-
     virtual OverlayView* GetOverlayView();
 
     void Chain(boolean pan = true, boolean zoom = true);

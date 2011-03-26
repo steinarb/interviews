@@ -418,6 +418,13 @@ const char* OvImportCmd::ReadCreator (istream& in, FileType& ftype) {
     if (*creator && ftype==UnknownFile) ftype = OvImportCmd::RasterFile;
     
 
+    /* partial idraw format */
+    if (!*creator && line[0] == '%' && line[1] == 'I' ) {
+      strcpy(creator, "idraw");
+      if (ftype==UnknownFile) ftype = OvImportCmd::PostscriptFile;
+    }
+    
+    /* fullup idraw format */
     if (!*creator && line[0] == '%' && line[1] == '!' ) {
       do {
 	if (sscanf(line, "%%%%Creator: %s", creator)) {
@@ -728,7 +735,9 @@ GraphicComp* OvImportCmd::Import (const char* path) {
       if (ParamList::urltest(path)) {
 	urlflag = true;
 	char buffer[BUFSIZ];
-	sprintf(buffer, "ivdl %s -", path);
+	boolean use_w3c = OverlayKit::bincheck("w3c");
+	sprintf(buffer,"%s %s %s", 
+		use_w3c ? "w3c" : "ivdl", path, use_w3c ? "" : "-");
 	cerr << buffer << "\n";
 	fptr = popen(buffer, "r");
       } else 
