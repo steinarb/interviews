@@ -97,7 +97,7 @@ public:
 };
 
 //: remote execution command for ComTerp.
-// remote(hoststr portnum cmdstr) -- remotely evaluate command string then locally 
+// remote(hoststr portnum cmdstr :nowait) -- remotely evaluate command string then locally 
 // evaluate result string.
 class RemoteFunc : public ComFunc {
 public:
@@ -105,7 +105,7 @@ public:
 
     virtual void execute();
     virtual const char* docstring() { 
-      return "%s(hoststr portnum cmdstr) -- remotely evaluate command string then locally evaluate result string"; }
+      return "%s(hoststr portnum cmdstr :nowait) -- remotely evaluate command string then locally evaluate result string"; }
 
 };
 

@@ -33,6 +33,7 @@
 #include <ComTerp/ctrlfunc.h>
 #include <ComTerp/helpfunc.h>
 #include <ComTerp/iofunc.h>
+#include <ComTerp/listfunc.h>
 #include <ComTerp/mathfunc.h>
 #include <ComTerp/numfunc.h>
 #include <ComTerp/postfunc.h>
@@ -681,6 +682,9 @@ void ComTerp::add_defaults() {
     add_command("stream", new StreamFunc(this));
     add_command("repeat", new RepeatFunc(this));
     add_command("iterate", new IterateFunc(this));
+
+    add_command("at", new ListAtFunc(this));
+    add_command("size", new ListSizeFunc(this));
 
     add_command("sum", new SumFunc(this));
     add_command("mean", new MeanFunc(this));

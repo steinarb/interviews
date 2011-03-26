@@ -1,3 +1,71 @@
+May 3rd 1999 ivtools-0.7.7
+
+Drawing Editor and Drawing Editor Framework Changes
+
+	* add Ellipse::ellipse_to_polygon method, to return
+	a list of points that define an ellipse as a polygon.
+
+Interpreter and Interpreter Framework Changes
+
+	* add command to return the size of a list (ListSizeFunc/size).
+	
+	* add command to return the nth member of a list (ListAtFunc/at).
+
+	* add a :nowait argument to the remote command, to allow for
+	asynchronous transmission of commands to a remote interpreter.
+
+	* add a ComFunc::exec method for use of derived class ::execute
+	methods.  It calls ComFunc::push_funcstate, then ::execute, then
+	ComFunc::pop_funcstate.
+
+	* fix a bug where the print command was passing a double
+	to a float format string.
+
+	* add an AttributeList::merge method, for combining the contents of
+ 	two AttributeList's.
+
+	* add a ComFunc::stack_keys method, for returning all the
+ 	keyword/value pairs of a ComFunc invocation in an AttributeList.
+
+	* create a SetAttrFunc in ComUnidraw that can be used to set the
+ 	attributes of a graphic component via the command
+ 	interpreter. 
+
+Config and Miscellaneous Changes
+
+	* fix problem with relative install of shared libraries that
+	was recently introduced.
+
+	* TopoFace/fgeomobjs.c temporarily incorporated into Unidraw-common
+	so it can be made use of from comterp and other IV-free
+	applications.  The better long-term approach is to link the
+	TopoFace library into comterp, and incorporate any IV or
+	Unidraw classes that it relies on into IV-common or
+	Unidraw-common.
+
+	* Experiment with a MANIFEST.comterp that specifies a
+	stand-alone subset of ivtools that excludes the bulk of IV and
+	Unidraw.  The resultant source tree builds with a
+	"./configure;make World", but there are lots of warnings and
+	errors to be smoothed over.
+
+	* increment all the buffer sizes associated with comterp from the
+ 	default 1K (BUFSIZ) to 1M.  A better solution would be to revisit
+ 	the continuity of command input over multiple input buffers for
+ 	the various modes of input (or at least make it a command line
+ 	parameter or X resource).  When entering command via stdin it is
+ 	easy enough to use command line continuation (automatically
+ 	invoked if an expression is incomplete) or character string
+ 	continuation (a backslash followed immediately by a newline).  But
+ 	this generality does not apply to socketed interactions, etc..
+
+	The buffer overrun (at 1K) was being correctly detected, and
+	disaster averted, but it was still a problem because there was
+	no course of correction.  So upping it to 1M is a quick fix.  
+
+	* fix a file id limitation of 20 on Solaris.
+
+
 April 16th 1999 ivtools-0.7.6
 
 Drawing Editor and Library Changes

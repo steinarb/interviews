@@ -33,6 +33,7 @@
 #include <OS/types.h>
 #include <ComTerp/comvalue.h>
 
+class AttributeList;
 class ComFuncState;
 class ComTerp;
 class ComTerpServ;
@@ -49,6 +50,10 @@ public:
     virtual void execute() = 0;
     // method that needs to be filled in, that will take ComValue arguments
     // off the stack, then compute and push a ComValue result on the stack.
+
+    void exec(int nargs, int nkeys, int pedepth=0, int command_symid=0);
+    // invokes push_funcstate, then plain execute, then pop_funcstate.
+    // for use from the body of regular execute methods.
 
     int& nargs();
     // number of white space separated arguments inside parentheses
@@ -137,6 +142,12 @@ public:
     // the keyword.  If 'use_dflt_for_no_key' is true, 'dflt' gets returned
     // as the value when a keyword is not found.
 
+    AttributeList* stack_keys(boolean symbol = false, 
+			      AttributeValue& dflt=ComValue::trueval());
+    // return newly-constructed AttributeList (which needs referencing)
+    // that contains a copy of each keyword/value pair in the arguments
+    // to the invocation of this ComFunc.  'dflt' is used whenever a 
+    // keyword has no matching argument.
 
     ComValue& lookup_symval(ComValue&);
     void assign_symval(int id, ComValue*);

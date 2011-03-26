@@ -118,6 +118,8 @@ void RemoteFunc::execute() {
   ComValue hostv(stack_arg(0, true));
   ComValue portv(stack_arg(1));
   ComValue cmdstrv(stack_arg(2));
+  static int nowait_sym = symbol_add("nowait");
+  ComValue nowaitv(stack_key(nowait_sym));
   reset_stack();
 
 #ifdef HAVE_ACE
@@ -142,13 +144,15 @@ void RemoteFunc::execute() {
     out << cmdstr;
     if (cmdstr[strlen(cmdstr)-1] != '\n') out << "\n";
     out.flush();
-    filebuf ifbuf;
-    ifbuf.attach(socket.get_handle());
-    istream in(&ifbuf);
-    char* buf;
-    in.gets(&buf);
-    ComValue& retval = comterpserv()->run(buf, true);
-    push_stack(retval);
+    if (nowaitv.is_false()) {
+      filebuf ifbuf;
+      ifbuf.attach(socket.get_handle());
+      istream in(&ifbuf);
+      char* buf;
+      in.gets(&buf);
+      ComValue& retval = comterpserv()->run(buf, true);
+      push_stack(retval);
+    }
 
     if (socket.close () == -1)
         ACE_ERROR ((LM_ERROR, "%p\n", "close"));

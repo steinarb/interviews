@@ -101,7 +101,7 @@ void ComEditor::InitCommands() {
 }
 
 void ComEditor::AddCommands(ComTerp* comterp) {
-    comterp->add_defaults();
+    ((ComTerpServ*)comterp)->add_defaults();
 
     comterp->add_command("rect", new CreateRectFunc(comterp, this));
     comterp->add_command("line", new CreateLineFunc(comterp, this));
@@ -121,6 +121,8 @@ void ComEditor::AddCommands(ComTerp* comterp) {
     comterp->add_command("nbrushes", new NBrushesFunc(comterp, this));
     comterp->add_command("npatterns", new NPatternsFunc(comterp, this));
     comterp->add_command("ncolors", new NColorsFunc(comterp, this));
+
+    comterp->add_command("setattr", new SetAttrFunc(comterp, this));
 
     comterp->add_command("select", new SelectFunc(comterp, this));
     comterp->add_command("move", new MoveFunc(comterp, this));

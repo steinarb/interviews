@@ -8,6 +8,7 @@ ivtools-0.7/INSTALL
 ivtools-0.7/INSTALL.old
 ivtools-0.7/Imakefile
 ivtools-0.7/MANIFEST
+ivtools-0.7/MANIFEST.comterp
 ivtools-0.7/MANIFEST.perceps
 ivtools-0.7/Makefile
 ivtools-0.7/README
@@ -147,6 +148,8 @@ ivtools-0.7/src/ComTerp/helpfunc.h
 ivtools-0.7/src/ComTerp/iofunc.c
 ivtools-0.7/src/ComTerp/iofunc.h
 ivtools-0.7/src/ComTerp/lexscan.h
+ivtools-0.7/src/ComTerp/listfunc.c
+ivtools-0.7/src/ComTerp/listfunc.h
 ivtools-0.7/src/ComTerp/mathfunc.c
 ivtools-0.7/src/ComTerp/mathfunc.h
 ivtools-0.7/src/ComTerp/numfunc.c
@@ -755,6 +758,7 @@ ivtools-0.7/src/UniIdraw/idvars.h
 ivtools-0.7/src/UniIdraw/idversion.h
 ivtools-0.7/src/Unidraw-common/Imakefile
 ivtools-0.7/src/Unidraw-common/Makefile
+ivtools-0.7/src/Unidraw-common/fgeomobjs.c
 ivtools-0.7/src/Unidraw-common/iterator.c
 ivtools-0.7/src/Unidraw-common/ulist.c
 ivtools-0.7/src/Unidraw/Imakefile

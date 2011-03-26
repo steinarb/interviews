@@ -28,13 +28,18 @@
 
 #include <iostream.h>
 
+#if BUFSIZ>1024
+#undef BUFSIZ
+#define BUFSIZ 1024
+#endif
+
 /*****************************************************************************/
 
 // Default constructor.
 
 ComterpHandler::ComterpHandler (void)
 {
-    comterp_ = new ComTerpServ(BUFSIZ);
+    comterp_ = new ComTerpServ(BUFSIZ*BUFSIZ);
     comterp_->handler(this);
     comterp_->add_defaults();
     _timeoutscriptid = -1;
@@ -112,14 +117,17 @@ ComterpHandler::handle_timeout (const ACE_Time_Value &,
 // Perform the logging record receive. 
 static const unit = 15;
 
+// #define INPUT_BY_READ
+
 int
 ComterpHandler::handle_input (ACE_HANDLE fd)
 {
 #if 1
-    const int bufsiz = BUFSIZ;
+    const int bufsiz = BUFSIZ*BUFSIZ;
     char inbuf[bufsiz];
     char outbuf[bufsiz];
     inbuf[0] = '\0';
+#if !defined(INPUT_BY_READ)
     filebuf ibuf(fd);
     istream istr(&ibuf);
     istr.getline(inbuf, bufsiz);
@@ -132,6 +140,19 @@ ComterpHandler::handle_input (ACE_HANDLE fd)
       ostr.flush();
       return 0;
     }
+#else
+    int len = 0;
+    while (len<bufsiz-2) {
+      int nread = read(fd, inbuf+len, 1);
+      if (nread!=1) {
+	cerr << "zero bytes read, connection closed\n";
+	return -1;
+      }
+      if (inbuf[len] == '\n') break;
+      len++;
+    }
+    inbuf[len] = '\0';
+#endif
     comterp_->load_string(inbuf);
     if (fd) 
       cerr << "command via ACE -- " << inbuf << "\n";
@@ -163,7 +184,11 @@ ComterpHandler::handle_input (ACE_HANDLE fd)
     }
 #endif
 #if 1
+#if !defined(INPUT_BY_READ)
     return (istr.good() ? 0 : -1) && status;
+#else
+    return status;
+#endif
 #else
     return comterp_->_instat ? 0 : -1;
 #endif

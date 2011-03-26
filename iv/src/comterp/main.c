@@ -39,6 +39,11 @@ static const char *const SERVER_HOST = ACE_DEFAULT_SERVER_HOST;
 
 #include <version.h>
 
+#if BUFSIZ>1024
+#undef BUFSIZ
+#define BUFSIZ 1024
+#endif
+
 int main(int argc, char *argv[]) {
 
     boolean server_flag = argc>1 && strcmp(argv[1], "server") == 0;
@@ -100,7 +105,7 @@ int main(int argc, char *argv[]) {
         ACE_ERROR_RETURN ((LM_ERROR, "%p\n", "open"), -1);
   
     FILE* fptr = fdopen(server.get_handle(), "r+");
-    char buffer[BUFSIZ];
+    char buffer[BUFSIZ*BUFSIZ];
 
     FILE* inptr = argc>=5 ? fopen(argv[4], "r") : stdin;
 
@@ -115,7 +120,7 @@ int main(int argc, char *argv[]) {
       istream in(&ibuf);
       
       for (;;) {
-	fgets(buffer, BUFSIZ, inptr);
+	fgets(buffer, BUFSIZ*BUFSIZ, inptr);
 	if (feof(inptr)) break;
 	out << buffer;
 	out.flush();
@@ -148,9 +153,9 @@ int main(int argc, char *argv[]) {
 	out << ch;
       }
 #else
-      char buffer[BUFSIZ];
+      char buffer[BUFSIZ*BUFSIZ];
       while(!in.eof() && in.good()) {
-	in.read(buffer, BUFSIZ);
+	in.read(buffer, BUFSIZ*BUFSIZ);
 	if (!in.eof() || in.gcount())
 	  out.write(buffer, in.gcount());
       }
@@ -159,12 +164,12 @@ int main(int argc, char *argv[]) {
       
 #if 0
       for (;;) {
-	fgets(buffer, BUFSIZ, inptr);
+	fgets(buffer, BUFSIZ*BUFSIZ, inptr);
 	if (feof(inptr)) break;
 	fputs(buffer, fptr);
 	fflush(fptr);
 #if 0
-	fgets(buffer, BUFSIZ, fptr);
+	fgets(buffer, BUFSIZ*BUFSIZ, fptr);
 	fputs(buffer, stdout);
 #else
 	char ch;
@@ -174,14 +179,14 @@ int main(int argc, char *argv[]) {
 	  if (ch != ' ') {
 	    ungetc(ch, fptr);
 	    ungetc('>', fptr);
-	    fgets(buffer, BUFSIZ, fptr);
+	    fgets(buffer, BUFSIZ*BUFSIZ, fptr);
 	    fputs(buffer, stdout);
 	  } else {
 	    printf( "> " );
 	  }
 	} else {
 	  ungetc(ch, fptr);
-	  fgets(buffer, BUFSIZ, fptr);
+	  fgets(buffer, BUFSIZ*BUFSIZ, fptr);
 	  fputs(buffer, stdout);
 	}
 #endif
@@ -201,7 +206,7 @@ int main(int argc, char *argv[]) {
 #endif
 
     if (server_flag || remote_flag) {
-      ComTerpServ* terp = new ComTerpServ();
+      ComTerpServ* terp = new ComTerpServ(BUFSIZ*BUFSIZ);
       terp->add_defaults();
       struct stat buf;
       int status = fstat(fileno(stdin), &buf);

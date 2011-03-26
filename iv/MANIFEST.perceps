@@ -29,6 +29,7 @@ ComTerp/ctrlfunc.h
 ComTerp/helpfunc.h
 ComTerp/iofunc.h
 ComTerp/lexscan.h
+ComTerp/listfunc.h
 ComTerp/mathfunc.h
 ComTerp/numfunc.h
 ComTerp/parser.h

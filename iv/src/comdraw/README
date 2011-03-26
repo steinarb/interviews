@@ -53,6 +53,10 @@ move(dx dy) -- move current selection
 scale(xflt yflt) -- scale current selection
 rotate(degflt) -- rotate current selection
 
+ATTRIBUTE COMMANDS
+
+compview=setattr(compview [:keyword value [:keyword value [...]]]) -- set attributes of a graphic component
+
 VIEWER COMMANDS
 
 update() -- update viewer

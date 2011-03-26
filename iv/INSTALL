@@ -1,7 +1,7 @@
 
 			INSTALL for ivtools-0.7
 
-Instructions for building ivtools-0.7.6 from source:
+Instructions for building ivtools-0.7.7 from source:
 
 0. Compilation Environment
 
@@ -74,7 +74,7 @@ See http://www.aai.com/AAI/IUE/IUE.html for details on acquiring and
 building this sizeable collection of public-domain and free software
 class libraries for image understanding application development.
 
-1. Configuring ivtools
+1. Configuring ivtools:
 
 1.a. You no longer need to set your CPU environment variable to build
 ivtools, but you still need a CPU specific configuration file.  LINUX,

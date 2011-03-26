@@ -28,6 +28,7 @@ SUBDIRS = \
 	\
 	ComUtil \
 	Attribute \
+	TopoFace \
 	ComTerp \
 	comtest \
 	comterp \
@@ -55,7 +56,6 @@ SUBDIRS = \
 	UniIdraw \
 	idraw \
 	\
-	TopoFace \
 	$(ACEDISPATCH) \
 	OverlayUnidraw \
 	drawtool \

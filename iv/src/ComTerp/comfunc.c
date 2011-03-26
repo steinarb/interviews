@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994-1998 Vectaport Inc.
+ * Copyright (c) 1994-1999 Vectaport Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
@@ -24,6 +24,7 @@
 #include <ComTerp/comfunc.h>
 #include <ComTerp/comterp.h>
 #include <ComTerp/comvalue.h>
+#include <Attribute/attrlist.h>
 #include <string.h>
 
 #define TITLE "ComFunc"
@@ -305,6 +306,13 @@ void ComFunc::pop_funcstate() {
   _comterp->pop_funcstate();
 }
 
+void ComFunc::exec(int nargs, int nkeys, int pedepth,
+		   int command_symid) {
+  push_funcstate(nargs, nkeys, pedepth, command_symid);
+  execute();
+  pop_funcstate();
+}
+
 int& ComFunc::nargs() {
   return _comterp->top_funcstate()->nargs();
 }
@@ -376,6 +384,30 @@ int ComFunc::nargskey() {
 
 int& ComFunc::pedepth() {
   return _comterp->top_funcstate()->pedepth();
+}
+
+AttributeList* ComFunc::stack_keys(boolean symbol, AttributeValue& dflt) {
+  AttributeList* al = new AttributeList();
+  int count = nargs() + nkeys() - npops();
+  for (int i=0; i<count; i++) {
+    ComValue& keyref = _comterp->stack_top(-i);
+    if( keyref.type() == ComValue::KeywordType) {
+      int key_symid = keyref.symbol_val();
+      if (i+1==count || keyref.keynarg_val() == 0) 
+	al->add_attr(key_symid, dflt);
+      else {
+	ComValue& valref = _comterp->stack_top(-i-1);
+	if (valref.type() == ComValue::KeywordType) 
+	  al->add_attr(key_symid, dflt);
+	else {
+	  if (!symbol) 
+	    valref = _comterp->lookup_symval(valref);
+	  al->add_attr(key_symid, valref);
+	}
+      }
+    }
+  }
+  return al;
 }
 
 /*****************************************************************************/
