@@ -51,13 +51,15 @@ ComterpHandler::~ComterpHandler() {
 const char* ComterpHandler::timeoutscript() { return symbol_pntr(_timeoutscriptid); }
 
 void ComterpHandler::timeoutscript(const char* timeoutscript) {
-    _timeoutscriptid = -1;
     if (timeoutscript)
-        _timeoutscriptid = symbol_add((char *)timeoutscript);
+        timeoutscriptid(symbol_add((char *)timeoutscript));
 }
 
 int ComterpHandler::timeoutscriptid() { return _timeoutscriptid; }
 void ComterpHandler::timeoutscriptid(int timeoutscriptid) {
+    if (_timeoutscriptid != -1) 
+      COMTERP_REACTOR::instance ()->cancel_timer (this);
+
     _timeoutscriptid = timeoutscriptid;
     if (_timeoutscriptid != -1) {
       if (COMTERP_REACTOR::instance ()->schedule_timer
@@ -68,8 +70,6 @@ void ComterpHandler::timeoutscriptid(int timeoutscriptid) {
 	/* ACE_ERROR_RETURN ((LM_ERROR, 
 	   "can'(%P|%t) t register with reactor\n"), -1) */;
     }
-    else
-      COMTERP_REACTOR::instance ()->cancel_timer (this);
 }
 
 void
@@ -163,7 +163,7 @@ ComterpHandler::handle_input (ACE_HANDLE fd)
     comterp_->_outfunc = (outfuncptr)&ComTerpServ::fd_fputs;
 
 #if 1
-   int status = comterp_->ComTerp::run(true);
+    int  status = comterp_->ComTerp::run(false /* !once */);
 #else
     if (comterp_->read_expr()) {
         if (comterp_->eval_expr()) {
@@ -203,8 +203,10 @@ ComterpHandler::open (void *)
     return -1;
   else
     {
-      ACE_OS::strncpy (this->peer_name_, 
-		       addr.get_host_name (), 
+      const char* hostname = addr.get_host_name();
+      char buffer[MAXHOSTNAMELEN];
+      addr.addr_to_string(buffer, MAXHOSTNAMELEN);
+      ACE_OS::strncpy (this->peer_name_, buffer,
 		       MAXHOSTNAMELEN + 1);
 
       if (COMTERP_REACTOR::instance ()->register_handler 

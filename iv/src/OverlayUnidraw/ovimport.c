@@ -2164,7 +2164,9 @@ OverlayRaster* OvImportCmd::PPM_Raster (istream& in, boolean ascii) {
             raster->poke(column, row,
                float(red)/0xff, float(green)/0xff, float(blue)/0xff, 1.0);
           }
+	  if (!in.good()) break;
         }
+	if (!in.good()) break;
     }
     
     raster->flush();

@@ -244,6 +244,10 @@ void SetAttrFunc::execute() {
     ComValue viewval(stack_arg(0));
     AttributeList* al = stack_keys();
     reset_stack();
+    if (!viewval.is_object()) {
+      push_stack(ComValue::nullval());
+      return;
+    }
 
     ComponentView* view = (ComponentView*)viewval.obj_val();
     OverlayComp* comp = (OverlayComp*)view->GetSubject();

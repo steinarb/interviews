@@ -96,7 +96,7 @@ public:
 
     virtual void execute();
     virtual const char* docstring() { 
-      return "++ is the increment before operator (prefix) and the "; }
+      return "++ is the increment-before operator (prefix) and the "; }
 };
 
 //: (increment after)++  operator.
@@ -106,7 +106,7 @@ public:
 
     virtual void execute();
     virtual const char* docstring() { 
-      return "increment after as well (postfix)"; }
+      return "increment-after as well (postfix)"; }
 };
 
 //: --(decrement before)  operator.
@@ -116,7 +116,7 @@ public:
 
     virtual void execute();
     virtual const char* docstring() { 
-      return "-- is the decrement before operator (prefix) and the "; }
+      return "-- is the decrement-before operator (prefix) and the "; }
 };
 
 //: (decrement after)--  operator.
@@ -126,7 +126,7 @@ public:
 
     virtual void execute();
     virtual const char* docstring() { 
-      return "decrement after as well (postfix)"; }
+      return "decrement-after as well (postfix)"; }
 };
 
 #endif /* !defined(_assignfunc_h) */

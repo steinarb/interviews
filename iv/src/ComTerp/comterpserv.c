@@ -30,6 +30,11 @@
 #include <iostream.h>
 #include <string.h>
 
+#if BUFSIZ>1024
+#undef BUFSIZ
+#define BUFSIZ 1024
+#endif
+
 ComTerpServ::ComTerpServ(int bufsize, int fd)
 : ComTerp()
 {
@@ -246,7 +251,7 @@ int ComTerpServ::runfile(const char* filename) {
     _outfunc = nil;
     _linenum = 0;
 
-    const int bufsiz = BUFSIZ;
+    const int bufsiz = BUFSIZ*BUFSIZ;
     char inbuf[bufsiz];
     char outbuf[bufsiz];
     inbuf[0] = '\0';

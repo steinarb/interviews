@@ -223,7 +223,9 @@ public:
     boolean is_floatingpoint() { return is_floatingpoint(type()); }
     // returns true if is_float() || is_double().
     boolean is_num() { return is_integer(type()) || is_floatingpoint(type()); }
-    // returns ture if is_integer() || is_floatingpoint().
+    // returns true if is_integer() || is_floatingpoint().
+    boolean is_numeric() { return is_num(); }
+    // same as AttributeValue::is_num().
 
     boolean is_array() { return is_type(ArrayType); }
     // returns true if ArrayType.
@@ -239,6 +241,8 @@ public:
     // returns true if StringType || SymbolType.
     boolean is_command() { return is_type(CommandType); }
     // returns true if CommandType (for use of ComTerp).
+    boolean is_object() { return is_type(ObjectType); }
+    // returns true if ObjectType.
 
     static boolean is_char(ValueType t) 
       { return t==CharType || t==UCharType; }

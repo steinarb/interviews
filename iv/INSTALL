@@ -1,7 +1,7 @@
 
 			INSTALL for ivtools-0.7
 
-Instructions for building ivtools-0.7.7 from source:
+Instructions for building ivtools-0.7.8 from source:
 
 0. Compilation Environment
 
@@ -37,11 +37,11 @@ polygon clipping from:
 
 http://www.ph.tn.tudelft.nl/People/klamer/clippoly_entry.html
 
-Be sure to compile with -fPIC, then make a libclippoly.so in the
-clippoly directory with: "gcc -shared -o libclippoly.so *.o" (you can
-leave out test.o if you want).
+Add -fPIC to the CCFLAGS in the Makefile, then do a make, then make
+shared library in the clippoly directory with: "gcc -shared -o
+libclippoly.so *.o" (you can leave out test.o if you want).
 
-0.e. You also might want to acquire and build ACE, a C++ middleware
+i0.e. You also might want to acquire and build ACE, a C++ middleware
 toolkit available from:
 
 http://www.cs.wustl.edu/%7Eschmidt/ACE.html
@@ -95,7 +95,7 @@ between the two OS'es by checking for SVR4'ness.
 
 1.b Run the configure script in the top-level directory, by entering
 "./configure" followed by any of the following arguments(--with
-arguments are recognized with --enable as well):
+arguments are recognized as --enable as well):
 
   --with-ace=<path>                Path to ACE source
   --with-ace-libs=<path>           Path to ACE libraries

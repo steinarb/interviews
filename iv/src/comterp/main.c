@@ -132,6 +132,8 @@ int main(int argc, char *argv[]) {
 	else {
 	  in.unget();
 	  in.gets(&inbuf);
+	  if (client_flag) 
+	    cout << inbuf << "\n";
 	}
       }
       

@@ -30,7 +30,11 @@
 
 #include <OS/math.h>
 #include <math.h>
+#if defined(__GLIBC__) && __GLIBC__>=2
+#include <bits/nan.h>
+#else
 #include <nan.h>
+#endif
 
 #include <OverlayUnidraw/grayraster.h>
 #include <OverlayUnidraw/ovcatalog.h>

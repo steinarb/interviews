@@ -52,7 +52,7 @@ public:
 
     virtual void execute();
     virtual const char* docstring() { 
-      return "val=at(list n) -- return the nth item in a list"; }
+      return "val=size(list -- return the size of the list"; }
 };
 
 #endif /* !defined(_listfunc_h) */
