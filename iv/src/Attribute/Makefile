@@ -19,7 +19,7 @@
 
     APP_CCINCLUDES = $(NORM_CCINCLUDES)
 
-             IVTOOLSSRC = /proj/ivtools-0.7/src
+             IVTOOLSSRC = /xtra3/ivtools-0.7/src
 
   LIBUNIDRAWCOMMON = -Wl,-rpath,$(IVTOOLSSRC)/Unidraw-common/$(CPU) -L$(IVTOOLSSRC)/Unidraw-common/$(CPU) -lUnidraw-common
        LIBIVCOMMON = -Wl,-rpath,$(IVTOOLSSRC)/IV-common/$(CPU) -L$(IVTOOLSSRC)/IV-common/$(CPU) -lIV-common
@@ -69,9 +69,9 @@
 
    RELEASE = ivtools-0.7
 
-   VERSION = 0.7.2
+   VERSION = 0.7.3
 
-   REPOSITORY_FILES = *.c *.cc *.cxx *.C *.h Imakefile *.def template README INSTALL VERSION MANIFEST COPYRIGHT ANNOUNCE README.ivmkcm *.patch *.bugfix.? *.script *.sed comutil.arg comterp.err comutil.ci comterp.arg comterp.ci site.def.SUN4 site.def.LINUX site.def.SGI site.def.HP800 site.def.ALPHA WishList *.defaults *.cf HOWTO Copyright *.sh CHANGES CHANGES-0.5 *.cpp ivmkmf *.bash *.1 config.guess config.sub configure configure.in MANIFEST.perceps *.mk config.mk.in
+   REPOSITORY_FILES = *.c *.cc *.cxx *.C *.h Imakefile *.def template README INSTALL VERSION MANIFEST COPYRIGHT ANNOUNCE README.ivmkcm *.patch *.bugfix.? *.script *.sed comutil.arg comterp.err comutil.ci comterp.arg comterp.ci site.def.SUN4 site.def.LINUX site.def.SGI site.def.HP800 site.def.ALPHA WishList *.defaults *.cf HOWTO Copyright *.sh CHANGES CHANGES-0.5 *.cpp ivmkmf *.bash *.1  *.3 config.guess config.sub configure configure.in MANIFEST.perceps *.mk config.mk.in
 
               SHELL = /bin/sh
 
@@ -82,7 +82,7 @@
 	$(SPECIAL_IMAKEFLAGS)
  SPECIAL_IMAKEFLAGS =
              DEPEND = makedepend
-     DEPEND_CCFLAGS = -D__GNUG__ -DMAKEDEPEND $(CCDEFINES) $(CCINCLUDES) -I$(GPLUSPLUS_INCLUDE_DIR) -I$(TOOL_INCLUDE_DIR)
+     DEPEND_CCFLAGS = -DMAKEDEPEND $(CCDEFINES) $(CCINCLUDES) -I$(GPLUSPLUS_INCLUDE_DIR) -I$(TOOL_INCLUDE_DIR)
                MAKE = make
            PASSARCH = ARCH="$(ARCH)" SPECIAL_IMAKEFLAGS="$(SPECIAL_IMAKEFLAGS)" CMFLAGS="$(CMFLAGS)" CMMSG="$(CMMSG)"
           ARCHORCPU = $$CPU
@@ -93,7 +93,7 @@
            CCSUFFIX = c
             CDRIVER = gcc
             CSUFFIX = c
-                SRC = /proj/ivtools-0.7/src/Attribute/.
+                SRC = /xtra3/ivtools-0.7/src/Attribute/.
               SLASH = /
                SRCS = $(SRC)$(SLASH)*.$(CCSUFFIX)
                OBJS = *.o
@@ -206,11 +206,11 @@ NONSHARED_CCLDFLAGS =
              RM_CMD = $(RM) ,* .emacs_* *..c *.BAK *.CKP *.a *.bak *.ln *.o a.out core errs make.log make.out tags TAGS
               TROFF = groff
 
-                TOP = /proj/ivtools-0.7
+                TOP = /xtra3/ivtools-0.7
              RELTOP = ../../.
-        CURRENT_DIR = /proj/ivtools-0.7/src/Attribute
+        CURRENT_DIR = /xtra3/ivtools-0.7/src/Attribute
 
-              IVSRC = /proj/ivtools-0.7/src
+              IVSRC = /xtra3/ivtools-0.7/src
              BINSRC = $(IVSRC)/bin
           CONFIGSRC = $(RELTOP)/config
              INCSRC = $(IVSRC)/include

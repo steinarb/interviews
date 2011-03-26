@@ -12,7 +12,11 @@ BuildProgram(tmpnam,NullParameter,tmpnam.o,,)
 InstallProgram(tmpnam,$(BINDIR),tmpnam)
 BuildProgram(stdcmapppm,NullParameter,stdcmapppm.o,,)
 InstallProgram(stdcmapppm,$(BINDIR),stdcmapppm)
+#if defined(SVR4Architecture) && defined(SunArchitecture)
+BuildProgram(ivdl,NullParameter,ivdl.o downloader.o ftp.o http.o sockets.o thrower.o -lg++ -lsocket -lnsl,,)
+#else
 BuildProgram(ivdl,NullParameter,ivdl.o downloader.o ftp.o http.o sockets.o thrower.o -lg++,,)
+#endif
 InstallProgram(ivdl,$(BINDIR),ivdl)
 
 DependTarget();
@@ -31,6 +35,7 @@ ivdl: ivdl.o downloader.o ftp.o http.o sockets.o thrower.o
 ivdl.o: ../ivdl.cc
 	@$(RM) ivdl.o
 	$(CCDRIVER) -c ../ivdl.cc
+
 
 CCSUFFIX = cc
 

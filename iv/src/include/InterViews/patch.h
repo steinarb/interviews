@@ -32,6 +32,8 @@
 #include <InterViews/monoglyph.h>
 #include <InterViews/transformer.h>
 
+//: glyph able to redraw itself.
+// <a href=../refman3.1/refman.html#PAGE13>in reference manual</a>.
 class Patch : public MonoGlyph {
 public:
     Patch(Glyph*);

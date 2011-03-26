@@ -77,6 +77,10 @@ ParamStruct::ParamStruct(const char* name, ParamFormat format, param_callback if
     _indirection = indirection;
 }
 
+ParamStruct::ParamStruct(ParamStruct& ps) {
+    *this = ps;
+}
+
 ParamStruct::~ParamStruct() {
     delete _name;
 }
@@ -129,7 +133,7 @@ ParamList::ParamList (ParamList* s) {
         ALIterator i;
 
         for (s->First(i); !s->Done(i); s->Next(i)) {
-	    insert(GetStruct(i));
+	    insert(new ParamStruct(*GetStruct(i)));
 	}
     }
 }

@@ -114,10 +114,25 @@ AttributeList* OverlayComp::GetAttributeList() {
     return _attrlist;
 }
 
+#if 0 // experimentation with attribute changing
+#include <Attribute/attrlist.h>
+#include <Attribute/attrvalue.h>
+#endif
+
 void OverlayComp::SetAttributeList(AttributeList* al) {
     Unref(_attrlist);
     _attrlist = al;
     Resource::ref(_attrlist);
+
+#if 0 // experimentation with attribute changing
+    if (al) {
+      static int hidden_symid = symbol_find("hidden");
+      AttributeValue* av = al->find(hidden_symid);
+      if (av)
+	_gr->Hide(av->is_true());
+    }
+#endif
+    Observable::notify();
 }
 
 const char* OverlayComp::GetAnnotation() {

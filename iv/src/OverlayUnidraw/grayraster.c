@@ -695,7 +695,11 @@ void GrayRaster::gainbias_minmax(double& gain, double& bias,
 #if !defined(__svr4__) && !defined(__alpha) || defined(__linux__)
 	if (av.double_val()==NAN) continue;
 #else
-	if (IsNANorINF(av.double_val)) continue;
+      {
+	double test = av.double_val();
+
+      	if (IsNANorINF(test)) continue;
+      }
 #endif
 	if (av.double_val()<dmin) dmin = av.double_val();
 	if (av.double_val()>dmax) dmax = av.double_val();

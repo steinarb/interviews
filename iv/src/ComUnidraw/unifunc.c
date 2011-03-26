@@ -42,7 +42,6 @@
 #include <ComTerp/comvalue.h>
 #include <Attribute/attrlist.h>
 #include <stdio.h>
-#include <fstream.h>
 #include <unistd.h>
 
 #define TITLE "UnidrawFunc"
@@ -183,80 +182,4 @@ void ReadOnlyFunc::execute() {
     al->add_attr("readonly", ComValue::trueval());
 
     push_stack(viewval);
-}
-
-/*****************************************************************************/
-
-BarPlotFunc::BarPlotFunc(ComTerp* comterp, Editor* ed) : UnidrawFunc(comterp, ed) {
-  _title_symid = symbol_add("title");
-  _valtitle_symid = symbol_add("valtitle");
-  _xtitle_symid = symbol_add("xtitle");
-  _ytitle_symid = symbol_add("ytitle");
-}
-
-void BarPlotFunc::execute() {
-  if (Component::use_unidraw()) {
-    boolean ok;
-    char* tmpfilename = tempnam(NULL,"plot");
-    ofstream out(tmpfilename);
-
-    ComValue title(stack_key(_title_symid));
-    ComValue xtitle(stack_key(_xtitle_symid));
-    ComValue ytitle(stack_key(_ytitle_symid));
-    ComValue vtitle(stack_key(_valtitle_symid));
-    char* ts = "";
-    char* xs = "";
-    char* ys = "";
-    char* vs = "";
-    if (title.is_string())
-      ts = (char*)title.string_ptr();
-    if (xtitle.is_string())
-      xs = (char*)xtitle.string_ptr();
-    if (ytitle.is_string())
-      ys = (char*)ytitle.string_ptr();
-    if (vtitle.is_string())
-      vs = (char*)vtitle.string_ptr();
-
-    out << "$ DATA=BARCHART\n";
-    out << "% toplabel = \"" << ts << "\"\n";
-    out << "% xlabel = \"" << xs << "\"\n";
-    out << "% ylabel = \"" << ys << "\"\n";
-    out << "\t\"" << vs << "\"\n";
-
-    for (int i = 0; i < nargsfixed(); i += 2) {
-      ComValue var(stack_arg(i));
-      ComValue val(stack_arg(i+1));
-      if (var.is_string() && val.is_num()) {
-	char* vars = (char*)var.string_ptr();
-	double v = val.double_val();
-	out << "\"" << vars << "\"  " << v << "\n";
-      }
-    }
-
-    out << "$ END\n";
-    out.flush();
-    out.close();
-
-    char cmd[256];
-    char* pstmp = tempnam(NULL,"ps");
-    sprintf(cmd, "plotmtv -noxplot -color -o %s %s", pstmp, tmpfilename);
-    FILE* plotp = popen(cmd, "w");
-    fprintf(plotp, "n\n");
-    pclose(plotp);
-
-    char* idtmp = tempnam(NULL,"idraw");
-    sprintf(cmd, "pstoedit -f idraw < %s > %s", pstmp, idtmp);
-fprintf(stderr, "%s\n", cmd);
-    system(cmd);
-
-    ComEditor* ed = new ComEditor((const char*)nil);
-    unidraw->Open(ed);
-    OvImportCmd* imp = new OvImportCmd(ed);
-    imp->pathname(idtmp);
-    imp->Execute();
-
-    //remove(pstmp);
-    //remove(tmpfilename);
-  }
-  reset_stack();
 }

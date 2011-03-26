@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998 Vectaport Inc.
+ * Copyright (c) 1998,1999 Vectaport Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
@@ -32,6 +32,8 @@
 
 class ComTerp;
 
+//: help command for ComTerp.
+// help([command] [command...] :all) -- help for commands.
 class HelpFunc : public ComFunc {
 public:
     HelpFunc(ComTerp*);
@@ -42,6 +44,8 @@ public:
       return "%s([command] [command...] :all) -- help for commands"; }
 };
 
+//: symbol id command for ComTerp.
+// symid(symbol [symbol...]) -- return id associated with symbol
 class SymIdFunc : public ComFunc {
 public:
     SymIdFunc(ComTerp*);
@@ -52,6 +56,8 @@ public:
       return "%s(symbol [symbol...]) -- return id associated with symbol"; }
 };
 
+//: symbol value command for ComTerp.
+// symval(symid [symid...]) -- return symbol associated with id.
 class SymValFunc : public ComFunc {
 public:
     SymValFunc(ComTerp*);

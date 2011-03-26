@@ -227,7 +227,7 @@ void ExportChooserImpl::build() {
     }
     Button* byfn_bttn = nil;
     if (_by_pathname_flag_button) {
-	byfn_bttn = kit.check_box("save by path", printer);
+	byfn_bttn = kit.check_box("save by path", by_pathname);
 	byfn_bttn->state()->set(_by_pathname_flag ? 0xffff : 0x0000, _by_pathname_flag);
 	hbox->append(layout.vcenter(byfn_bttn));
 	hbox->append(layout.hglue(5.0));
@@ -311,10 +311,13 @@ void ExportChooserImpl::free() {
 
 void ExportChooserImpl::to_printer_callback() {
     _to_printer = !_to_printer;
-    if (!_to_printer) 
-	editor_->field( "./" );
-    else 
-	editor_->field(command(format()));
+    if (!_to_printer) {
+        if (strcmp(editor_->text()->string(), command(format()))==0)
+	  editor_->field( "./" );
+    } else {
+        if (strcmp(editor_->text()->string(), "./")==0)
+	  editor_->field(command(format()));
+    }
 }
 
 void ExportChooserImpl::by_pathname_callback() {
@@ -387,8 +390,9 @@ void ExportEnumEditor::buildbox() {
 }
 
 void ExportEnumEditor::edit(String i) {
+    String oldstring = _obs->labelvalue();
     _obs->setvalue(_obs->value(i));
-    if (_eci->_to_printer) 
+    if (_eci->_to_printer && oldstring==_eci->editor_->text()->string()) 
 	_eci->editor_->field(_eci->command(_obs->labelvalue(_obs->value(i)).string()));
 }
 

@@ -46,6 +46,8 @@ class String;
 class Style;
 class WindowRep;
 
+// object that can be mapped onto a screen.
+// <a href=../refman3.1/refman.html#PAGE29>in reference manual</a>.
 class Window {
 protected:
     Window(Glyph*);

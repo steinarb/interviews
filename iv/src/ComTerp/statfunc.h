@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998 Vectaport Inc.
+ * Copyright (c) 1998,1999 Vectaport Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
@@ -32,47 +32,55 @@
 
 class ComTerp;
 
+//: sum-of-values command for ComTerp.
+// val=sum(val1[,val2[,...,valn]]) -- return sum of values.
 class SumFunc : public ComFunc {
 public:
     SumFunc(ComTerp*);
 
     virtual void execute();
     virtual const char* docstring() { 
-      return "%s(val1[,val2[,...,valn]]) -- return sum of values"; }
+      return "val=%s(val1[,val2[,...,valn]]) -- return sum of values"; }
 
 protected:
     boolean _meanfunc;
 
 };
 
+//: mean-of-values command for ComTerp.
+// val=mean(val1[,val2[,...,valn]]) -- return mean of values.
 class MeanFunc : public SumFunc {
 public:
     MeanFunc(ComTerp*);
 
     virtual const char* docstring() { 
-      return "%s(val1[,val2[,...,valn]]) -- return mean of values"; }
+      return "val=%s(val1[,val2[,...,valn]]) -- return mean of values"; }
 
 };
 
+//: variance-of-values command for ComTerp.
+// val=var(val1[,val2[,...,valn]]) -- return variance of values.
 class VarFunc : public ComFunc {
 public:
     VarFunc(ComTerp*);
 
     virtual void execute();
     virtual const char* docstring() { 
-      return "%s(val1[,val2[,...,valn]]) -- return variance of values"; }
+      return "val=%s(val1[,val2[,...,valn]]) -- return variance of values"; }
 
 protected:
     boolean _stddevfunc;
 
 };
 
+//: standard-deviation-of-values command for ComTerp.
+// val=stddev(val1[,val2[,...,valn]]) -- return standard deviation of values.
 class StdDevFunc : public VarFunc {
 public:
     StdDevFunc(ComTerp*);
 
     virtual const char* docstring() { 
-      return "%s(val1[,val2[,...,valn]]) -- return standard deviation of values"; }
+      return "val=%s(val1[,val2[,...,valn]]) -- return standard deviation of values"; }
 
 };
 

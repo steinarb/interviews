@@ -34,6 +34,8 @@
 
 #include <InterViews/_enter.h>
 
+//: a 3x2 matrix for use in translating 2d coordinates.
+// <a href=../refman3.1/refman.html#PAGE40>in reference manual</a>
 class Transformer : public Resource {
 public:
     Transformer();	/* identity */

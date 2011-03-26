@@ -84,6 +84,16 @@ assigned to an interpreter variable.
  largepanleft() -- large pan left
  largepanright() -- large pan right
 
+.SH IMAGING COMMANDS
+
+tilefile(inpath outpath [xsize] [ysiz]) -- tile pgm or ppm image file
+
+.SH PLOTTING COMMANDS
+
+-- requires plotmtv and pstoedit --
+barplot([var_str value_float] [...] :title title_str :xtitle xtitle_str 
+	:ytitle ytitle_str :valtitle valtitle_str :newview) -- display a barplot
+
 .SH OTHER COMMANDS
 
  run(filename) -- run commands from file

@@ -26,10 +26,12 @@
 
 #include <OverlayUnidraw/ovprecise.h>
 #include <OverlayUnidraw/ovclasses.h>
+#include <OverlayUnidraw/ovpage.h>
 #include <Unidraw/Commands/transforms.h>
 #include <IVGlyph/enumform.h>
 #include <IVGlyph/stredit.h>
 #include <Unidraw/editor.h>
+#include <Unidraw/viewer.h>
 #include <InterViews/window.h>
 #include <stdio.h>
 #include <string.h>
@@ -177,6 +179,51 @@ void OvPreciseRotateCmd::Execute () {
       }
       delete default_rotatestr;
       default_rotatestr = rotatestr;
+    }
+}
+
+/*****************************************************************************/
+
+ClassId OvPrecisePageCmd::GetClassId () { return OVPRECISEPAGE_CMD; }
+
+boolean OvPrecisePageCmd::IsA (ClassId id) {
+    return OVPRECISEPAGE_CMD == id || PrecisePageCmd::IsA(id);
+}
+
+OvPrecisePageCmd::OvPrecisePageCmd (ControlInfo* c) : PrecisePageCmd(c) {}
+OvPrecisePageCmd::OvPrecisePageCmd (Editor* ed) : PrecisePageCmd(ed) {}
+OvPrecisePageCmd::~OvPrecisePageCmd () {}
+
+Command* OvPrecisePageCmd::Copy () {
+    Command* copy = new OvPrecisePageCmd(CopyControlInfo());
+    InitCopy(copy);
+    return copy;
+}
+
+void OvPrecisePageCmd::Execute () {
+    static char* default_pagestr = nil;
+    if (!default_pagestr) {
+      OverlayPage* page = (OverlayPage*) GetEditor()->GetViewer()->GetPage();
+      char buffer[BUFSIZ];
+      sprintf( buffer, "%d %d\0", (int) ((PageGraphic*)page->GetGraphic())->Width(), 
+	(int) ((PageGraphic*)page->GetGraphic())->Height());
+      default_pagestr = strdup(buffer);
+    }
+    char* pagestr = 
+      StrEditDialog::post(GetEditor()->GetWindow(),
+			  "Enter width and height of page:",
+			  default_pagestr);
+    if (pagestr) {
+      istrstream in(pagestr);
+      int xpage, ypage;
+      in >> xpage >> ypage;
+      if (in.good() && xpage !=0 && ypage != 0) {
+	Viewer* viewer = GetEditor()->GetViewer();
+	viewer->SetPage(new OverlayPage(xpage, ypage, true));
+	viewer->Update();
+      }
+      delete default_pagestr;
+      default_pagestr = pagestr;
     }
 }
 

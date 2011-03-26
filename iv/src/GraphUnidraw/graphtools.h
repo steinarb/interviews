@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998 Vectaport Inc.
+ * Copyright (c) 1998,1999 Vectaport Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
@@ -30,11 +30,14 @@
 
 #include <Unidraw/Tools/move.h>
 
+//: specialized MoveTool for graph manipulation.
 class GraphMoveTool : public MoveTool {
 public:
     GraphMoveTool(ControlInfo* = nil);
 
     virtual Command* InterpretManipulator(Manipulator*);
+    // handles all the wierd cases, like dumbbell moving;
+    // other cases already worked via normal Unidraw mechanisms.
 
     virtual Tool* Copy();
     virtual ClassId GetClassId();

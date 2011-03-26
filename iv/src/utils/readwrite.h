@@ -22,7 +22,7 @@
   WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.             
 */
 
-int CDownLoader::ReadWrite(fstream in, String header) {
+int CDownLoader::ReadWrite(fstream& in, String header) {
   
   char buffer[BUFSIZ]; // Buffer for I/O.
   

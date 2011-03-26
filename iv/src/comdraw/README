@@ -82,8 +82,9 @@ tilefile(inpath outpath [xsize] [ysiz]) -- tile pgm or ppm image file
 
 PLOTTING COMMANDS
 
+-- requires plotmtv and pstoedit --
 barplot([var_str value_float] [...] :title title_str :xtitle xtitle_str 
-	:ytitle ytitle_str :valtitle valtitle_str) -- display a barplot
+	:ytitle ytitle_str :valtitle valtitle_str :newview) -- display a barplot
 
 OTHER COMMANDS
 

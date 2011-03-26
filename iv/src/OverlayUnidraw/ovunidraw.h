@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994 Vectaport Inc.
+ * Copyright (c) 1994,1999 Vectaport Inc.
  * Copyright (c) 1990, 1991 Stanford University
  *
  * Permission to use, copy, modify, distribute, and sell this software and
@@ -33,6 +33,9 @@
 class Command;
 class MacroCmd;
 
+//: derived Unidraw object with extra mechanisms.
+// derived Unidraw object with extra mechanisms for logging and deferred
+// execution of commands.
 class OverlayUnidraw : public Unidraw {
 public:
     OverlayUnidraw(

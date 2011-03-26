@@ -348,7 +348,7 @@ all:: deps
 #ifndef DependTarget
 #define DependTarget()							 @@\
 depend::								 @@\
-	$(CCDRIVER) -M $(DEPEND_CCFLAGS) $(SRCS) >Makefile.depend
+	gcc -M $(DEPEND_CCFLAGS) $(SRCS) >Makefile.depend
 #endif
 
 /*

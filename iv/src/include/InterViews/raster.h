@@ -37,6 +37,8 @@
 
 class RasterRep;
 
+//: raster data object.
+// <a href=../refman3.1/refman.html#PAGE43>in reference manual</a>
 class Raster : public Resource {
 public:
     Raster(unsigned long width, unsigned long height);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994,1995,1998 Vectaport Inc.
+ * Copyright (c) 1994,1995,1998,1999 Vectaport Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
@@ -28,6 +28,8 @@
 
 class ComTerp;
 
+//: quit command for ComTerp.
+// quit() -- quit this interpreter.
 class QuitFunc : public ComFunc {
 public:
     QuitFunc(ComTerp*);
@@ -38,6 +40,8 @@ public:
 
 };
 
+//: exit command for ComTerp.
+// exit() -- exit entire application.
 class ExitFunc : public ComFunc {
 public:
     ExitFunc(ComTerp*);
@@ -48,6 +52,7 @@ public:
 
 };
 
+//: ; (sequence) operator.
 class SeqFunc : public ComFunc {
 public:
     SeqFunc(ComTerp*);
@@ -58,6 +63,7 @@ public:
 
 };
 
+//: . (dot) operator.
 class DotFunc : public ComFunc {
 public:
     DotFunc(ComTerp*);
@@ -66,6 +72,8 @@ public:
 
 };
 
+//: timer expression command for ComTerp.
+// timeexpr(comstr :sec n) -- command string to execute at intervals.
 class TimeExprFunc : public ComFunc {
 public:
     TimeExprFunc(ComTerp*);
@@ -76,6 +84,8 @@ public:
 
 };
 
+//: run command for ComTerp.
+// run(filename) -- run commands from a file.
 class RunFunc : public ComFunc {
 public:
     RunFunc(ComTerp*);
@@ -86,6 +96,9 @@ public:
 
 };
 
+//: remote execution command for ComTerp.
+// remote(hoststr portnum cmdstr) -- remotely evaluate command string then locally 
+// evaluate result string.
 class RemoteFunc : public ComFunc {
 public:
     RemoteFunc(ComTerp*);
@@ -96,6 +109,8 @@ public:
 
 };
 
+//: shell escape command for ComTerp.
+// shell(cmdstr) -- evaluate command in shell.
 class ShellFunc : public ComFunc {
 public:
     ShellFunc(ComTerp*);

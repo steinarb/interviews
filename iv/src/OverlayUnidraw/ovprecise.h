@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998 Vectaport Inc.
+ * Copyright (c) 1998,1999 Vectaport Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and its
  * documentation for any purpose is hereby granted without fee, provided
@@ -28,10 +28,12 @@
 #define ovprecise_h
 
 #include <UniIdraw/idcmds.h>
+#include <OverlayUnidraw/ovcmds.h>
 
 class Glyph;
 class ObservableEnum;
 
+//: glyphified PreciseMoveCmd.
 class OvPreciseMoveCmd : public PreciseMoveCmd {
 public:
     OvPreciseMoveCmd(ControlInfo*);
@@ -52,6 +54,7 @@ protected:
     static int _default_enumval;
 };
 
+//: glyphified PreciseScaleCmd.
 class OvPreciseScaleCmd : public PreciseScaleCmd {
 public:
     OvPreciseScaleCmd(ControlInfo*);
@@ -65,11 +68,26 @@ public:
     virtual boolean IsA(ClassId);
 };
 
+//: glyphified PreciseRotateCmd.
 class OvPreciseRotateCmd : public PreciseRotateCmd {
 public:
     OvPreciseRotateCmd(ControlInfo*);
     OvPreciseRotateCmd(Editor* = nil);
     virtual ~OvPreciseRotateCmd();
+
+    virtual void Execute();
+
+    virtual Command* Copy();
+    virtual ClassId GetClassId();
+    virtual boolean IsA(ClassId);
+};
+
+//: glyphified PrecisePageCmd.
+class OvPrecisePageCmd : public PrecisePageCmd {
+public:
+    OvPrecisePageCmd(ControlInfo*);
+    OvPrecisePageCmd(Editor* = nil);
+    virtual ~OvPrecisePageCmd();
 
     virtual void Execute();
 

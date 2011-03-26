@@ -85,17 +85,4 @@ protected:
     int _clear_symid;
 };
 
-class BarPlotFunc : public UnidrawFunc {
-public:
-    BarPlotFunc(ComTerp*,Editor*);
-    virtual void execute();
-    virtual const char* docstring() { 
-	return "%s([var_str value_float] [...] :title title_str :xtitle xtitle_str :ytitle ytitle_str :valtitle valtitle_str) -- display a barplot"; }
-protected:
-  int _title_symid;
-  int _xtitle_symid;
-  int _ytitle_symid;
-  int _valtitle_symid;
-};
-
 #endif /* !defined(_unifunc_h) */

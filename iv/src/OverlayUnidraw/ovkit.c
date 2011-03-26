@@ -1121,7 +1121,7 @@ MenuItem* OverlayKit::MakeViewMenu() {
     MakeMenu(mbi, new PageCmd(new ControlInfo("Page on/off",
 					      "p", "p")),
 	     "Page on/off   ");
-    MakeMenu(mbi, new PrecisePageCmd(new ControlInfo("Precise Page",
+    MakeMenu(mbi, new OvPrecisePageCmd(new ControlInfo("Precise Page",
 					     "^P", "\020")),
 	     "Precise Page   ");
     MakeMenu(mbi, new NormSizeCmd(new ControlInfo("Normal Size",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 1995 Vectaport Inc.
+ * Copyright (c) 1994,1995,1999 Vectaport Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
@@ -34,14 +34,17 @@
 class ComTerp;
 class ComValue;
 
+//: base class for all numeric ComTerp commands.
 class NumFunc : public ComFunc {
 public:
     NumFunc(ComTerp*);
 
     void promote(ComValue&, ComValue&);
+    // method to do C-style promotion of operand types.
 
 };
 
+//: + (plus) operator.
 class AddFunc : public NumFunc {
 public:
     AddFunc(ComTerp*);
@@ -52,6 +55,7 @@ public:
 
 };
 
+//: - (subtraction) operator.
 class SubFunc : public NumFunc {
 public:
     SubFunc(ComTerp*);
@@ -62,6 +66,7 @@ public:
 
 };
 
+//: - (unary prefix minus) operator.
 class MinusFunc : public NumFunc {
 public:
     MinusFunc(ComTerp*);
@@ -71,6 +76,7 @@ public:
       return " and the unary prefix minus"; }
 };
 
+//: * (multiply) operator.
 class MpyFunc : public NumFunc {
 public:
     MpyFunc(ComTerp*);
@@ -81,6 +87,7 @@ public:
 
 };
 
+//: / (divide) operator.
 class DivFunc : public NumFunc {
 public:
     DivFunc(ComTerp*);
@@ -91,6 +98,7 @@ public:
 
 };
 
+//: modulo command for ComTerp.
 class ModFunc : public NumFunc {
 public:
     ModFunc(ComTerp*);
@@ -101,6 +109,8 @@ public:
 
 };
 
+//: minimum command for ComTerp.
+// n=min(a b) -- return minimum of a and b.
 class MinFunc : public NumFunc {
 public:
     MinFunc(ComTerp*);
@@ -111,6 +121,8 @@ public:
 
 };
 
+//: maximum command for ComTerp.
+// n=max(a b) -- return maximum of a and b.
 class MaxFunc : public NumFunc {
 public:
     MaxFunc(ComTerp*);
@@ -121,6 +133,8 @@ public:
 
 };
 
+//: absolute-value command for ComTerp.
+// n=abs(a) -- return absolute value of a.
 class AbsFunc : public NumFunc {
 public:
     AbsFunc(ComTerp*);

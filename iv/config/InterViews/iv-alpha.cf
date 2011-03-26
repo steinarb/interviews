@@ -11,7 +11,7 @@
 #ifndef ExtraCCDefines
 #define ExtraCCDefines -D__STDC__ -Ualpha
 #endif
-#ifndef ExtraCCLdFlags
+#ifndef ExtraCCLdLibs
 #define ExtraCCLdLibs -ldnet_stub
 #endif
 

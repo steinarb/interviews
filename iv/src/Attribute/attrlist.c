@@ -76,6 +76,25 @@ void AttributeList::add_attr(const char* name, AttributeValue* value) {
     }
 }
 
+void AttributeList::add_attr(int symid, AttributeValue& value) {
+  add_attr(symid, new AttributeValue(value));
+}
+
+void AttributeList::add_attr(int symid, AttributeValue* value) {
+    Attribute* attr = new Attribute(symid, value);
+    if (add_attr(attr)) {
+        attr->valueptr = nil;
+	delete attr;
+    }
+}
+
+void AttributeList::add_attribute(Attribute* attr) {
+    if (add_attr(attr)) {
+        attr->valueptr = nil;
+	delete attr;
+    }
+}
+
 int AttributeList::add_attr(Attribute* attr) {
     ALIterator i;
     for (First(i); !Done(i); Next(i)) {

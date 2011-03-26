@@ -92,6 +92,8 @@ FieldEditorCallback(T)::~FieldEditorCallback(T)() { } \
 void FieldEditorCallback(T)::accept(FieldEditor* f) { (obj_->*accept_)(f); } \
 void FieldEditorCallback(T)::cancel(FieldEditor* f) { (obj_->*cancel_)(f); }
 
+//: field editor.
+// <a href=../refman3.1/refman.html#PAGE58>in reference manual</a>
 class FieldEditor : public InputHandler {
 public:
     FieldEditor(

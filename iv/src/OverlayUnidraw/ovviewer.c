@@ -84,10 +84,8 @@ OverlayViewer::~OverlayViewer () {}
 
 
 void OverlayViewer::Update () {
-    if (_needs_resize)  {
-      Update();
+    if (_needs_resize)
       return;
-    }
 
     OverlaySelection* s = (OverlaySelection*)GetSelection();
     OverlayView* view = GetOverlayView();

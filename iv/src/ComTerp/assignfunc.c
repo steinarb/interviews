@@ -46,7 +46,7 @@ void AssignFunc::execute() {
 	    Resource::ref(attrlist);
 	    Attribute* attr = new Attribute(operand1.symbol_val(), 
 					    new AttributeValue(*operand2));
-	    attrlist->add_attr(attr);
+	    attrlist->add_attribute(attr);
 	    Unref(attrlist);
 	} else 
 	    comterp()->localtable()->insert(operand1.symbol_val(), operand2);

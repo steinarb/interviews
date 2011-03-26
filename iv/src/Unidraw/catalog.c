@@ -1131,6 +1131,26 @@ PSBrush* Catalog::FindBrush (int p, int w) {
     return brush;
 }
 
+PSBrush* Catalog::FindBrush (int p, float w) {
+    PSBrush* brush = nil;
+
+    for (UList* u = _brs->First(); u != _brs->End(); u = u->Next()) {
+        brush = getbr(u);
+
+        if (
+            !brush->None() && brush->GetLinePattern() == p &&
+            brush->width() == w
+        ) {
+            return brush;
+        }
+    }
+    brush = new PSBrush(p, w);
+    Ref(brush);
+    _brs->Append(new UList(brush));
+
+    return brush;
+}
+
 PSBrush* Catalog::ReadBrush (const char* n, int index) {
     const char* def = GetAttribute(Name(n, index));
 
