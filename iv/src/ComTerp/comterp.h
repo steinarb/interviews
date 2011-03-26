@@ -104,7 +104,7 @@ public:
     void list_commands(ostream& out, boolean sorted = false);
     // print an optionally sorted list of commands to an ostream.
     int* get_commands(int &ncommands, boolean sorted = false);
-    // return anoptionally sorted list of command names.
+    // return an optionally sorted list of command names.
 
     ComValue& pop_stack(boolean lookupsym=true);
     // return a reference (on the stack) to what was the top of the stack,
@@ -171,9 +171,10 @@ public:
     // local symbol table.
 
     void handler(ComterpHandler* h );
-    // set handler for invoking ComTerp execute methods.
+    // set handler for invoking ComFunc execute methods.
     ComterpHandler* handler();
-    // return point to handler for invoking ComTerp execute methods.
+    // return pointer to handler that can read_expressions from
+    // a connection and interpret them.
 
     void disable_prompt();
     // disable '>' prompting sent in response to an unfinished input expression.
@@ -184,6 +185,9 @@ public:
     // number of arguments in the input postfix buffer of a tokenized 
     // tree like expression ready to be evaluated, but not yet
     // converted to ComValue objects.
+
+    virtual boolean is_serv() { return false; } 
+    // flag to test if ComTerp or ComTerpServ
 
 protected:
     void incr_stack();

@@ -52,10 +52,18 @@ public:
     void SetComTerp(ComTerpServ* terp) { _terp = terp;}
     // set pointer to associated ComTerp (always a ComTerpServ).
 
+    virtual void ExecuteCmd(Command* cmd);
+    // indirect command execution for distributed whiteboard mechanism.
+
+    boolean whiteboard();
+    // test for distributed whiteboard mode, which only exists when
+    // used with a ComEditor.
+
 protected:
 
     ComTerpServ* _terp;
     ComTerpIOHandler* _terp_iohandler;
+    int _whiteboard; // -1 == unitialized, 0 = false, 1 = true
 };
 
 #endif

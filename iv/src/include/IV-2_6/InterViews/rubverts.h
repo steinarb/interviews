@@ -66,7 +66,9 @@ public:					// obsolete calls
     virtual void AppendVertex(IntCoord, IntCoord);
     virtual void GetOriginal(IntCoord*& px, IntCoord*& py, int& n);
     virtual void GetCurrent(IntCoord*& px, IntCoord*& py, int& n);
+    int Count() { return count; }
 };
+
 
 class GrowingMultiLine : public GrowingVertices {
 public:

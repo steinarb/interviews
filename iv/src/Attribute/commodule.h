@@ -27,6 +27,10 @@
 #include <stdio.h>
 #include <iostream.h>
 
+extern "C" {
+#include <ComUtil/comterp.h>
+}
+
 //: pointer to fgets-like function.
 typedef char* (*infuncptr)(char*,int,void*);
 //: pointer to feof-like function.
@@ -55,6 +59,17 @@ public:
 
     void reset();
     // re-allocate internal buffers and reset internal pointers.
+
+    int infix_symid(const char*);
+    // symbol id for binary infix operator
+    int prefix_symid(const char*);
+    // symbol id for unary prefix operator
+    int postfix_symid(const char*);
+    // symbol id for unary postfix operator
+
+    void op_symid(const char*, int& infix, int& prefix, int& postfix);
+    // symbol ids for binary infix, unary prefix and postfix for a given
+    // operator string.
 
 protected:
     void init();

@@ -52,7 +52,7 @@ class RasterOvComp;
 // as full-on command for hooking into a file menu.
 class OvImportCmd : public Command {
 public:
-    enum FileType { UnknownFile, RasterFile, PostscriptFile, IvtoolsFile, CompressedFile };
+    enum FileType { UnknownFile, RasterFile, PostScriptFile, IvtoolsFile, CompressedFile };
     // types of files to be imported.
 
     OvImportCmd(Editor* = nil, ImportChooser* = nil);

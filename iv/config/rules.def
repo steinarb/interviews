@@ -33,6 +33,8 @@ World::									@@\
 	@echo "Building $(RELEASE) on `date`"				@@\
 	@echo ""							@@\
 	$(MAKE) Makefile CONFIGSRC=$(CONFIGSRC) XCONFIGDIR=$(XCONFIGDIR)@@\
+	@echo "twice to propogate new toplevel pathname"							@@\
+	$(MAKE) Makefile 						@@\
 	@echo ""							@@\
 	$(MAKE) Makefiles						@@\
 	@echo ""							@@\
@@ -1028,3 +1030,15 @@ uninstall::								@@\
 #endif
 #endif	
 #endif
+
+/* 
+ * Command to install X Default files with correct permissions
+ */
+
+#ifndef InstallXDefaultAs                                        
+#define InstallXDefaultAs(source,dest,destname)                          @@\
+install:: source                                                         @@\
+	MakeDir(dest)                                                    @@\
+	$(INSTALL) -c $(INSTINCFLAGS) source dest/destname
+#endif
+

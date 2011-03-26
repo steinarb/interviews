@@ -58,9 +58,10 @@ public:
 protected:
 
     friend class Component;
+public:
     virtual void SetSubject(Component*);
-    virtual void SetParent(ComponentView* child, ComponentView* parent);
 protected:
+    virtual void SetParent(ComponentView* child, ComponentView* parent);
     Component* _subject;
 };
 

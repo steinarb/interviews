@@ -48,7 +48,7 @@ extern "C" {
 #endif
 #if defined(sun) && !defined(__SYSENT_H)
 #if !defined(__svr4__)
-    extern int read(int, void*, long unsigned int);
+    extern int read(int, void*, unsigned int);
 #endif
 #endif
 #if defined(AIXV3)

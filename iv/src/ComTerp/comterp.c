@@ -737,6 +737,7 @@ void ComTerp::add_defaults() {
     add_command("timeexpr", new TimeExprFunc(this));
 #endif
 
+    add_command("eval", new EvalFunc(this));
     add_command("shell", new ShellFunc(this));
     add_command("quit", new QuitFunc(this));
     add_command("exit", new ExitFunc(this));

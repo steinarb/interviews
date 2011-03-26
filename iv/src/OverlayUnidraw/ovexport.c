@@ -109,8 +109,8 @@ void OvExportCmd::Execute () {
 	style = new Style(Session::instance()->style());
 	style->attribute("subcaption", "Export selected graphics to file:");
 	style->attribute("open", "Export");
-	const char *formats[] = {"idraw", "drawtool"};
-	const char *commands[] = {"idraw %s", "drawtool %s"};
+	const char *formats[] = {"PostScript", "idraw", "drawtool"};
+	const char *commands[] = {"ghostview %s", "idraw %s", "drawtool %s"};
 	chooser_ = new ExportChooser(".", WidgetKit::instance(), style,
 				     formats, sizeof(formats)/sizeof(char*), commands, nil, true);
 	Resource::ref(chooser_);
@@ -174,7 +174,7 @@ boolean OvExportCmd::Export (const char* pathname) {
 	Iterator i;
 	s->First(i);
 	while (!s->Done(i)) {
-	    if (chooser_->idraw_format())
+	    if (chooser_->idraw_format() || chooser_->postscript_format())
 		false_top->Append(new OverlayComp(s->GetView(i)->GetGraphicComp()->GetGraphic()->Copy()));
 	    else
 		false_top->Append((OverlayComp*)s->GetView(i)->GetGraphicComp()->Copy());
@@ -182,7 +182,7 @@ boolean OvExportCmd::Export (const char* pathname) {
 	}
 	
 	OverlayPS* ovpsv;
-	if (chooser_->idraw_format())
+	if (chooser_->idraw_format() || chooser_->postscript_format())
 	    ovpsv = (OverlayPS*) false_top->Create(POSTSCRIPT_VIEW);
 	else
 	    ovpsv = (OverlayPS*) false_top->Create(SCRIPT_VIEW);

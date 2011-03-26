@@ -33,6 +33,7 @@
 #include <OverlayUnidraw/ovselection.h>
 #include <OverlayUnidraw/ovviewer.h>
 #include <OverlayUnidraw/ovviews.h>
+#include <OverlayUnidraw/ovunidraw.h>
 
 #include <UniIdraw/idclasses.h>
 #include <UniIdraw/ided.h>
@@ -86,6 +87,7 @@ OverlayViewer::~OverlayViewer () {}
 
 
 void OverlayViewer::Update () {
+    ((OverlayUnidraw*)unidraw)->CurrentViewer(this);
     if (_needs_resize)
       return;
 
@@ -121,6 +123,7 @@ void OverlayViewer::Update () {
 
 void OverlayViewer::Draw() 
 {
+    ((OverlayUnidraw*)unidraw)->CurrentViewer(this);
     OverlaySelection* s = (OverlaySelection*)GetSelection();
 
     _editor->GetWindow()->cursor(hourglass);
@@ -138,6 +141,7 @@ void OverlayViewer::Draw()
 
 void OverlayViewer::Redraw(Coord x0, Coord y0, Coord x1, Coord y1) 
 {
+    ((OverlayUnidraw*)unidraw)->CurrentViewer(this);
     OverlaySelection* s = (OverlaySelection*)GetSelection();
 
     _editor->GetWindow()->cursor(hourglass);
@@ -197,13 +201,17 @@ void OverlayViewer::UseTool (Tool* t, Event& e) {
         Command* cmd = t->InterpretManipulator(m);
 
         if (cmd != nil) {
+#if 0
             cmd->Execute();
-
             if (cmd->Reversible()) {
                 cmd->Log();
 	    } else {
 		delete cmd;
             }
+#else
+	    ((OverlayEditor*)GetEditor())->ExecuteCmd(cmd);
+#endif
+
 	    ((OverlaySelection*)GetSelection())->RepairClear(this, t->IsA(SELECT_TOOL));
         } else 
 	    ((OverlaySelection*)GetSelection())->RepairClear(this, true);
@@ -388,8 +396,10 @@ void OverlayViewer::DrawingToScreen(float xdraw, float ydraw,
 				    Coord& xscreen, Coord& yscreen) {
   float fxscreen, fyscreen;
   DrawingToScreen(xdraw, ydraw, fxscreen, fyscreen);
-  xscreen = int(fxscreen);
-  yscreen = int(fyscreen);
+//  xscreen = int(fxscreen);
+//  yscreen = int(fyscreen);
+  xscreen = round(fxscreen);
+  yscreen = round(fyscreen);
   return;
   
 }
@@ -480,3 +490,4 @@ void OverlayViewer::SetMagnification (float newmag) {
   }
   Viewer::SetMagnification(newmag);
 }    
+

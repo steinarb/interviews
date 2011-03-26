@@ -466,6 +466,7 @@ void Viewer::CenterOp () {
 }
 
 void Viewer::Magnify (Coord left, Coord bottom, Coord right, Coord top) {
+  if( left != right || top != bottom) {
     Perspective np = *perspective;
     NormalRect(left, bottom, right, top);
     np.curx += left;
@@ -473,6 +474,16 @@ void Viewer::Magnify (Coord left, Coord bottom, Coord right, Coord top) {
     np.curwidth = Math::max(right - left, 1);
     np.curheight = Math::max(top - bottom, 1);
     Adjust(np);
+  }
+  else {
+    Perspective np = *perspective;
+    NormalRect(left, bottom, right, top);
+    np.curx = np.curx + left - np.curwidth/4;
+    np.cury = np.cury + bottom - np.curheight/4;
+    np.curwidth = np.curwidth/2;
+    np.curheight = np.curheight/2;
+    Adjust(np);
+  }
 }
 
 void Viewer::ReduceToFit () {

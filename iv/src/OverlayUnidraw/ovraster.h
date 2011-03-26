@@ -133,6 +133,7 @@ public:
 
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
+
 };
 
 //: "PostScript" view of RasterOvComp.
@@ -234,13 +235,35 @@ public:
     virtual OverlayRasterRect& operator = (OverlayRasterRect&);
     // assignment operator.
 
+    boolean damage_done() { return _damage_done; }
+    // indicates if a damage rectangle has been set for this raster.
+    
+    void damage_done(boolean flag) { _damage_done = flag; }
+    // set flag that indicates damage rectangle specified for this
+    // raster.
+    
+    void damage_flush();
+    // if a damage rectangle is set this does a partial flush
+    // by calling Raster::flushrect.  This clears the flag
+    // returned by ::damage_done.
+
+    void damage_rect(IntCoord l, IntCoord b, IntCoord r, IntCoord t);
+    // set rectangle used by ::damage_flush for calling Raster::flushrect.
+
 protected:
     IntCoord _xbeg;
     IntCoord _xend;
     IntCoord _ybeg;
     IntCoord _yend;
 
+    boolean _damage_done;
+    IntCoord _damage_l;
+    IntCoord _damage_b;
+    IntCoord _damage_r;
+    IntCoord _damage_t;
+
 friend RasterOvComp;
+friend RasterOvView;
 };
 
 #include <Attribute/attrvalue.h>
@@ -307,6 +330,11 @@ public:
 
     virtual void flush() const;
     // flush internal XImage data structure to a pixmap on the X server.
+
+    virtual void flushrect(IntCoord l, IntCoord b, IntCoord t, IntCoord t) const;
+    // flush rectangular region of internal XImage data structure 
+    // to a pixmap on the X server.
+
     virtual int status() const;
     virtual OverlayRaster* copy() const;
 

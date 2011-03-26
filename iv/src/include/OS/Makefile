@@ -19,7 +19,7 @@
 
     APP_CCINCLUDES = $(NORM_CCINCLUDES)
 
-             IVTOOLSSRC = /xtra3/ivtools-0.7/src
+             IVTOOLSSRC = /proj/ivtools-0.7/src
 
 LIBUNIDRAWCOMMON = -Wl,-rpath,$(IVTOOLSSRC)/Unidraw-common/$(CPU) -L$(IVTOOLSSRC)/Unidraw-common/$(CPU) -lUnidraw-common
 LIBIVCOMMON = -Wl,-rpath,$(IVTOOLSSRC)/IV-common/$(CPU) -L$(IVTOOLSSRC)/IV-common/$(CPU) -lIV-common
@@ -69,7 +69,7 @@ DEPDRAWSERV = $(IVTOOLSSRC)/DrawServ/$(CPU)/libDrawServ.so.$(VERSION)
 
    RELEASE = ivtools-0.7
 
-   VERSION = 0.7.8
+   VERSION = 0.7.9
 
    REPOSITORY_FILES = *.c *.cc *.cxx *.C *.h Imakefile *.def template README INSTALL VERSION MANIFEST COPYRIGHT ANNOUNCE README.ivmkcm *.patch *.bugfix.? *.script *.sed comutil.arg comterp.err comutil.ci comterp.arg comterp.ci site.def.SUN4 site.def.LINUX site.def.SGI site.def.HP800 site.def.ALPHA WishList *.defaults *.cf HOWTO Copyright *.sh CHANGES CHANGES-0.? *.cpp ivmkmf *.bash *.1  *.3 config.guess config.sub configure configure.in MANIFEST.perceps MANIFEST.comterp *.mk config.mk.in *.tmpl *.flt *.m4
 
@@ -78,7 +78,7 @@ DEPDRAWSERV = $(IVTOOLSSRC)/DrawServ/$(CPU)/libDrawServ.so.$(VERSION)
               IMAKE = imake
          IMAKEFLAGS = \
 	-T "template"\
-	-I$(TOP)/config -I$(CONFIGSRC) -I$(XCONFIGDIR) -I$(IVTOOLSSRC)/../config\
+	-I$(ABSTOP)/config -I$(CONFIGSRC) -I$(XCONFIGDIR) -I$(IVTOOLSSRC)/../config\
 	$(SPECIAL_IMAKEFLAGS)
  SPECIAL_IMAKEFLAGS =
              DEPEND = makedepend
@@ -93,7 +93,7 @@ DEPDRAWSERV = $(IVTOOLSSRC)/DrawServ/$(CPU)/libDrawServ.so.$(VERSION)
            CCSUFFIX = c
             CDRIVER = gcc
             CSUFFIX = c
-                SRC = /xtra3/ivtools-0.7/src/include/OS/.
+                SRC = /proj/ivtools-0.7/src/include/OS/.
               SLASH = /
                SRCS = $(SRC)$(SLASH)*.$(CCSUFFIX)
                OBJS = *.o
@@ -206,11 +206,11 @@ NONSHARED_CCLDFLAGS =
              RM_CMD = $(RM) ,* .emacs_* *..c *.BAK *.CKP *.a *.bak *.ln *.o a.out core errs make.log make.out tags TAGS
               TROFF = groff
 
-                TOP = /xtra3/ivtools-0.7
+                TOP = /proj/ivtools-0.7
              RELTOP = ../../../.
-        CURRENT_DIR = /xtra3/ivtools-0.7/src/include/OS
+        CURRENT_DIR = /proj/ivtools-0.7/src/include/OS
 
-              IVSRC = /xtra3/ivtools-0.7/src
+              IVSRC = /proj/ivtools-0.7/src
              BINSRC = $(IVSRC)/bin
           CONFIGSRC = $(RELTOP)/config
              INCSRC = $(IVSRC)/include
@@ -218,7 +218,7 @@ NONSHARED_CCLDFLAGS =
              MANSRC = $(IVSRC)/man
           SCRIPTSRC = $(RELTOP)/src/scripts
 
-             BINDIR = $(TOP)/bin/$(ARCH)
+             BINDIR = $(RELTOP)/bin/$(ARCH)
           CONFIGDIR = $(TOP)/config
              INCDIR = $(TOP)/include
              LIBDIR = $(RELTOP)/lib/$(ARCH)

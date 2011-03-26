@@ -100,7 +100,11 @@ int CSocket::Listen(){
 			(struct sockaddr *)&Pclient_addr, 
 			(int *)&Palen)) < 0) {
     // we can break out of accept if the system call was interrupted
+#ifndef ERESTART	/* ERESTART not defined on some systems */
+    if (errno != EINTR) {
+#else
     if ((errno != ERESTART) && (errno != EINTR)) {
+#endif /* ERESTART */
       Thrower("accept failed");
     }
   }

@@ -13,6 +13,7 @@ MakeLibrary($(LIB),$(VERSION))
 
 #define Obj(file) MakeObjectFromSrcFlags(file,)
 
+Obj(geomobjs)
 Obj(iterator)
 Obj(ulist)
 

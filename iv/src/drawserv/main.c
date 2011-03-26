@@ -53,20 +53,9 @@
 #include <stream.h>
 #include <string.h>
 #include <math.h>
-
 #include <version.h>
 
 static int nmsg = 0;
-
-#if defined(__sun) && !defined(__svr4__)
-/* Disables atan2(0.0,0.0) warning messages */
-extern "C" {
-    int matherr(struct exception *x) {
-	if (x && strcmp(x->name, "atan2") == 0) return 1;
-	else return 0;
-    }
-}
-#endif
 
 static OverlayEditor* launch_comdraw() {
   ComEditor* ed = new ComEditor((const char*)nil, OverlayKit::Instance());

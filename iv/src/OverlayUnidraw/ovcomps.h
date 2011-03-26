@@ -64,8 +64,9 @@ class istream;
 
 //: derived GraphicComp
 // derived GraphicComp  with extensions for property lists of arbitrary 
-// AttributeValue objects, event propogation inherited from Observer and Observable,
-// and new persistence mechanisms (serialization) derived from ExternView.
+// AttributeValue objects, event propogation inherited from Observer and 
+// Observable, and new persistence mechanisms (serialization) derived from 
+// ExternView (OverlayScript).
 class OverlayComp : public GraphicComp, public Observer, public Observable {
 public:
     OverlayComp(Graphic* g = nil, OverlayComp* parent = nil);

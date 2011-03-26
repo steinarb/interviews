@@ -85,7 +85,7 @@ public:
 };
 
 //: interpreter command for plugging together AttrDialog and SetAttrByExprCmd.
-// interpreter command used to indicate when doin iterating over all the components 
+// interpreter command used to indicate when done iterating over all the components 
 // in the current selection.
 class DoneSetAttrFunc : public AttrListFunc {
 public:

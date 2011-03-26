@@ -26,6 +26,7 @@
 #ifndef _unidraw_import_handler_
 #define _unidraw_import_handler_
 
+#include <signal.h>
 #include <ace/Acceptor.h>
 #include <ace/Reactor.h>
 #include <ace/Singleton.h>

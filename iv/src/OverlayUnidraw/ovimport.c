@@ -26,6 +26,7 @@
 /*
  * OvImportCmd implementation.
  */
+// #define OPEN_DRAWTOOL_URL // define for drawtool document loading from a URL
 
 #include <OverlayUnidraw/grayraster.h>
 #include <OverlayUnidraw/ovcatalog.h>
@@ -37,6 +38,8 @@
 #include <OverlayUnidraw/ovstencil.h>
 #include <OverlayUnidraw/ovpainter.h>
 #include <OverlayUnidraw/oved.h>
+#include <OverlayUnidraw/ovviewer.h>
+#include <OverlayUnidraw/ovunidraw.h>
 
 #include <IVGlyph/gdialogs.h>
 #include <IVGlyph/importchooser.h>
@@ -46,6 +49,7 @@
 
 #include <Unidraw/Components/grcomp.h>
 
+#include <Unidraw/Graphic/damage.h>
 #include <Unidraw/Graphic/rasterrect.h>
 #include <Unidraw/Graphic/ustencil.h>
 
@@ -77,6 +81,7 @@
 #include <OS/string.h>
 #include <OS/list.h>
 
+#include <math.h>
 #include <pfstream.h>
 #include <stdio.h>
 #include <stream.h>
@@ -233,6 +238,10 @@ public:
   ReadPpmIterator(OverlayRaster*);
   void getPixels(strstream&);
   OverlayRaster* raster() const;
+  u_long xcur() { return _xcur; }
+  u_long ycur() { return _ycur; }
+  u_long width() { return _width; }
+  u_long height() { return _height; }
 protected:
   void poke(float r, float g, float b);
 
@@ -306,7 +315,8 @@ static void set_fl(int fd, int flags) {
 class ReadImageHandler : public IOHandler {
 public:
   ReadImageHandler(
-    FileHelper&, RasterOvComp* r, int fd, Editor* ed, const char* path
+    FileHelper&, RasterOvComp* r, int fd, Editor* ed, const char* path,
+    boolean centered=false
   );
   ~ReadImageHandler();
 
@@ -332,6 +342,8 @@ protected:
   boolean _header;
   boolean _begun;
   boolean _timed_out;
+  boolean _centered;
+  float _lastmag;
 
   ReadPpmIterator* _itr;
 
@@ -341,10 +353,12 @@ protected:
 HandlerList ReadImageHandler::_handlers;
 
 ReadImageHandler::ReadImageHandler(
-  FileHelper& h, RasterOvComp* r, int fd, Editor* ed, const char* path
+  FileHelper& h, RasterOvComp* r, int fd, Editor* ed, const char* path,
+  boolean centered
 )
   : _path(path ? strnew(path) : nil), _ed(ed), _comp(r), _helper(h), _fd(fd),
-    _creator(true), _header(false), _itr(nil), _begun(false), _timed_out(false)
+    _creator(true), _header(false), _itr(nil), _begun(false), _timed_out(false),
+    _centered(centered), _lastmag(1.)
 {
   _handlers.append(this);
   set_fl(fd, O_NONBLOCK);
@@ -468,7 +482,8 @@ int ReadImageHandler::process(const char* newdat, int len) {
       rr->GetOverlayRaster()->initialize();
 
       // center if enabled
-      OvImportCmd::center_import(_ed, _comp);
+      if (_centered) 
+	OvImportCmd::center_import(_ed, _comp);
 
       _header = true;
       _itr = new ReadPpmIterator(rr->GetOverlayRaster());
@@ -476,12 +491,60 @@ int ReadImageHandler::process(const char* newdat, int len) {
   }
 
   if (_header) {
-    _itr->getPixels(in); 
+    OverlayRasterRect* rr = _comp->GetOverlayRasterRect();
+    
+    OverlayViewer *viewer =  ((OverlayUnidraw*)unidraw)->CurrentViewer();
+    float mag = viewer ? viewer->GetMagnification() : 1.;
 
+    int h = rr->GetOverlayRaster()->pheight();
+    int w = rr->GetOverlayRaster()->pwidth();
+    int xbeg = 0;
+    int yend = min(_itr->ycur() + (int)ceil(1./mag), h-1);
+    _itr->getPixels(in); 
+    int xend = w-1;
+    int ybeg = _itr->ycur() + 1;
+
+    // cerr << "xbeg,ybeg,xend,yend" 
+	 // << xbeg << "," << ybeg << ","
+	 // << xend << "," << yend << "\n";
+    // damage for partial flush
+    if (mag == _lastmag)
+      rr->damage_rect(xbeg,ybeg,xend,yend);
+    else 
+      _lastmag = mag;
+
+    if (viewer) {
+      
+      IntCoord sxbeg, sybeg, sxend, syend;
+      viewer->GraphicToScreen(rr, (float)xbeg, (float)ybeg, sxbeg, sybeg);
+      viewer->GraphicToScreen(rr, (float)xend, (float)yend, sxend, syend);
+      
+      // cerr << "sxbeg,sybeg,sxend,syend" 
+	   // << sxbeg << "," << sybeg << ","
+	   // << sxend << "," << syend << "\n";
+      
+//      if ( _lastmag == mag ) 
+	viewer->GetDamage()->Incur(min(sxbeg,sxend)-1,min(sybeg,syend)-1, max(sxend, sxbeg)+1, max(syend, sybeg)+1);
+//      else {
+//	cerr << "ReadImageHandler::process -- damaging entire raster\n";
+//	cerr << "ReadImageHandler::process -- mag is now " << mag << "\n";
+//	viewer->GetDamage()->Incur(rr);
+//      }
+//    _lastmag = mag;
+    }
+    
     // the raster has changed so cached versions are obsolete
+    rr->GetOverlayRaster()->rep()->modified_ = true;
     OverlayPainter::Uncache(_itr->raster());
 
-    _comp->Notify();
+    // sets the damage indicator on the view side raster graphic
+    // in RasterOvView::Update
+    
+    _comp->Notify();    
+   
+    // clear the damage indicator on the comp side raster graphic
+    rr->damage_done(0); 
+
     unidraw->Update();
   }
 
@@ -517,8 +580,15 @@ int ReadImageHandler::inputReady(int fd) {
     GraphicComp* comp = OvImportCmd::DoImport(
       *ifs, empty, _helper, _ed, true, _path, newfd
     );
-    assert(!comp);
 
+#if defined(OPEN_DRAWTOOL_URL)
+    if (comp && comp->IsA(OVERLAY_IDRAW_COMP)) {
+      _ed->SetComponent(comp); 
+      return -1;
+    }
+#endif
+
+    // does this need to be done anyways if OVERLAY_IDRAW_COMP above?
     Dispatcher::instance().unlink(_fd);
     _fd = newfd;
 
@@ -862,7 +932,7 @@ const char* OvImportCmd::ReadCreator (istream& in, FileType& ftype) {
     /* partial idraw format */
     if (!*creator && line[0] == '%' && line[1] == 'I' ) {
       strcpy(creator, "idraw");
-      if (ftype==UnknownFile) ftype = OvImportCmd::PostscriptFile;
+      if (ftype==UnknownFile) ftype = OvImportCmd::PostScriptFile;
     }
     
     /* fullup idraw format */
@@ -876,7 +946,7 @@ const char* OvImportCmd::ReadCreator (istream& in, FileType& ftype) {
 	}
       } while (in.getline(line, linesz) != NULL);
       chcnt = 0;
-      if (*creator && ftype==UnknownFile) ftype = OvImportCmd::PostscriptFile;
+      if (*creator && ftype==UnknownFile) ftype = OvImportCmd::PostScriptFile;
     }
     
     
@@ -912,7 +982,7 @@ boolean OvImportCmd::IsA (ClassId id) {
 }
 
 OvImportCmd::OvImportCmd (Editor* ed, ImportChooser* f) 
-: Command(ed) { 
+: Command((Editor*)ed) { 
     Init(f);
 }
 
@@ -1251,8 +1321,8 @@ GraphicComp* OvImportCmd::Import (const char* path) {
 	
 	helper_->add_pipe(fptr);
 	new ReadImageHandler(
-			     *helper_, rcomp, fileno(fptr), GetEditor(), pathname()
-			     );
+			     *helper_, rcomp, fileno(fptr), GetEditor(), pathname(), 
+			     chooser_ ? chooser_->centered() : false);
 	helper_->forget();
 	fptr = nil;
       }
@@ -1369,7 +1439,7 @@ GraphicComp* OvImportCmd::Import (istream& instrm, boolean& empty) {
 	  : nil;
         comp = new OverlayIdrawComp(*in, pathname, parent_comp);
 
-    } else if (filetype == OvImportCmd::PostscriptFile) { 
+    } else if (filetype == OvImportCmd::PostScriptFile) { 
 
       /* idraw formatted PostScript */
       if (strncmp(creator, "idraw", 5) == 0) 

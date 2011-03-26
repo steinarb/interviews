@@ -30,11 +30,7 @@
 
 #include <OS/math.h>
 #include <math.h>
-#if defined(__GLIBC__) && __GLIBC__>=2
-#include <bits/nan.h>
-#else
 #include <nan.h>
-#endif
 
 #include <OverlayUnidraw/grayraster.h>
 #include <OverlayUnidraw/ovcatalog.h>
@@ -696,13 +692,16 @@ void GrayRaster::gainbias_minmax(double& gain, double& bias,
     for(int x=0; x < w; x++) {
       for(int y=0; y < h; y++) {
 	me->vpeek(x, h-y-1, av);
-#if !defined(__svr4__) && !defined(__alpha) || defined(__linux__)
+#if !defined(__sun) && !defined(__svr4__) && !defined(__alpha) || defined(__linux__)
 	if (av.double_val()==NAN) continue;
 #else
       {
 	double test = av.double_val();
-
+#if defined(__sun__)
+        if (isnan(test) || isinf(test)) continue;
+#else
       	if (IsNANorINF(test)) continue;
+#endif	
       }
 #endif
 	if (av.double_val()<dmin) dmin = av.double_val();

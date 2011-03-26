@@ -50,6 +50,8 @@ void AssignFunc::execute() {
 	    Unref(attrlist);
 	} else 
 	    comterp()->localtable()->insert(operand1.symbol_val(), operand2);
+    } else {
+        cerr << "assignment to something other than a symbol ignored\n";
     }
     push_stack(*operand2);
 }

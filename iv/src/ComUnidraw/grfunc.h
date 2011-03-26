@@ -27,7 +27,8 @@
 #include <ComUnidraw/unifunc.h>
 
 //: rectangle drawing command for comdraw.
-// compview=rect(x0,y0,x1,y1) -- create a rectangle
+// compview=rect(x0,y0,x1,y1) -- create a rectangle <br>
+// compview=rectangle(x0,y0,x1,y1) -- same as rect
 class CreateRectFunc : public UnidrawFunc {
 public:
     CreateRectFunc(ComTerp*,Editor*);
@@ -37,7 +38,8 @@ public:
 };
 
 //: line drawing command for comdraw.
-// compview=line(x0,y0,x1,y1) -- create a line
+// compview=line(x0,y0,x1,y1) -- create a line <br>
+// compview=arrowline(x0,y0,x1,y1) -- same as line
 class CreateLineFunc : public UnidrawFunc {
 public:
     CreateLineFunc(ComTerp*,Editor*);
@@ -47,13 +49,13 @@ public:
 };
 
 //: ellipse drawing command for comdraw.
-// compview=ellipse(x0,y0,r1,r2) -- create a rectangle
+// compview=ellipse(x0,y0,r1,r2) -- create an ellipse
 class CreateEllipseFunc : public UnidrawFunc {
 public:
     CreateEllipseFunc(ComTerp*,Editor*);
     virtual void execute();
     virtual const char* docstring() { 
-	return "compview=%s(x0,y0,r1,r2) -- create a rectangle"; }
+	return "compview=%s(x0,y0,r1,r2) -- create an ellipse"; }
 };
 
 //: text drawing command for comdraw.
@@ -67,7 +69,8 @@ public:
 };
 
 //: multiline drawing command for comdraw.
-// compview=multiline(x0,y0[,x1,y1,...]) -- create a multiline
+// compview=multiline(x0,y0[,x1,y1,...]) -- create a multiline <br>
+// compview=arrowmultiline(x0,y0[,x1,y1,...]) -- same as multiline
 class CreateMultiLineFunc : public UnidrawFunc {
 public:
     CreateMultiLineFunc(ComTerp*,Editor*);
@@ -77,7 +80,8 @@ public:
 };
 
 //: open spline drawing command for comdraw.
-// compview=openspline(x0,y0[,x1,y1,...]) -- create an open spline
+// compview=openspline(x0,y0[,x1,y1,...]) -- create an open spline <br>
+// compview=arrowspline(x0,y0[,x1,y1,...]) -- same as openspline
 class CreateOpenSplineFunc : public UnidrawFunc {
 public:
     CreateOpenSplineFunc(ComTerp*,Editor*);

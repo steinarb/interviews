@@ -181,7 +181,7 @@ Run contents of file then exit.
 
  help(cmdname [cmdname ...]) -- help for commands
 
-[str]=print(fmtstr val :string) -- print value with format string
+[str]=print(fmtstr val :string|:str :err) -- print value with format string
 
  symid(symbol [symbol...]) -- return id associated with symbol
 
@@ -199,6 +199,8 @@ Run contents of file then exit.
  val=run(filename) -- run commands from file
 
  val=remote(hoststr portnum cmdstr :nowait) -- remotely evaluate command string then locally evaluate result string
+
+ val=eval(cmdstr) -- evaluate string as commands
 
  val=shell(cmdstr) -- evaluate command in shell
 

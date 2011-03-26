@@ -87,6 +87,12 @@ boolean ExportChooser::idraw_format() {
 	: false;
 }
 
+boolean ExportChooser::postscript_format() { 
+    return ((ExportChooserImpl*)impl_)->_obse 
+	? strcmp(((ExportChooserImpl*)impl_)->_obse->labelvalue().string(), "idraw") == 0  || strcasecmp(((ExportChooserImpl*)impl_)->_obse->labelvalue().string(), "PostScript") == 0 
+	: false;
+}
+
 boolean ExportChooser::execute_flag() { 
     return ((ExportChooserImpl*)impl_)->_execute_flag;
 }

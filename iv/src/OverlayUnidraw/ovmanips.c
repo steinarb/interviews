@@ -59,6 +59,8 @@ void OpaqueDragManip::Init(Graphic* graphic, Rubberband* rub) {
     if (!_graphic->GetTransformer()) {
       _notrans = true;
       _graphic->SetTransformer(new Transformer());
+      // cerr << "OpaqueDragManip::Init -- nil transformer set to identity\n";
+      // cerr << "_graphic pointer " << _graphic << "\n";
       _origtrans = new Transformer();
     } else
       _origtrans = new Transformer(*_graphic->GetTransformer());
@@ -134,7 +136,9 @@ void OpaqueDragManip::Track (IntCoord x, IntCoord y) {
   IntCoord oldx, oldy;
   Rubberband* rub = _r2;
   ClassId id = rub->GetClassId();
-  
+
+  // cerr << "OpaqueDragManip::Track -- _graphic and GetTransformer() " <<
+  //  _graphic << "," << _graphic->GetTransformer() << "\n";
   if (id == SLIDINGLINE || id == SLIDINGLINELIST || id == SLIDINGRECT) {
     *_graphic->GetTransformer() = *_origtrans;
     rub->SetTrack(x, y);

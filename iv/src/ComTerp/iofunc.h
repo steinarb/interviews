@@ -41,7 +41,7 @@ public:
 
     virtual void execute();
     virtual const char* docstring() { 
-      return "[str]=%s(fmtstr val :string) -- print value with format string"; }
+      return "[str]=%s(fmtstr val :string|:str :err) -- print value with format string"; }
 };
 
 #endif /* !defined(_iofunc_h) */

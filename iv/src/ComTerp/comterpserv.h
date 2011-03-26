@@ -65,6 +65,9 @@ public:
     void add_defaults();
     // add a default list of ComFunc objects to this interpreter.
 
+    virtual boolean is_serv() { return true; } 
+    // flag to test if ComTerp or ComTerpServ
+
 protected:
 
     static char* s_fgets(char* s, int n, void* serv);

@@ -202,6 +202,16 @@ void AddFunc::execute() {
     case ComValue::DoubleType:
 	result.double_ref() = operand1.double_val() + operand2.double_val();
 	break;
+    case ComValue::StringType:
+        { // braces are work-around for gcc-2.8.1 bug in stack mgmt.
+	  int len1 = strlen(operand1.string_ptr()); 
+	  int len2 = strlen(operand2.string_ptr()); 
+	  char buffer[len1+len2+1];
+	  strcpy(buffer, operand1.string_ptr());
+	  strcpy(buffer+len1, operand2.string_ptr());
+	  result.string_ref()  = symbol_add(buffer);
+	}
+	break;
     }
     reset_stack();
     push_stack(result);

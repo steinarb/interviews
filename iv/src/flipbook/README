@@ -46,7 +46,8 @@ format drawings can be imported via the "Import Graphic" command
 drawtool is supported as well.  "Export Graphic" exports currently
 selected graphics in idraw or drawtool format.  The Print command
 (under the File menu) generates a multi-page Postscript document, one
-page per frame except for the zeroth frame.
+page per frame except for the zeroth frame which is always the
+background.
 
 OPTIONS
 
@@ -55,7 +56,8 @@ OPTIONS
 this mode.
 
 "-slideshow sec" continuously plays the contents of a flipbook file
-with "sec" delay between frames.  
+with "sec" delay between frames (currently only available when built
+with ACE).
 
 Also see "-help" for more options.
 

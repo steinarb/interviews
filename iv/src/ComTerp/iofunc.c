@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998 Vectaport Inc.
+ * Copyright (c) 1999 Vectaport Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
@@ -40,21 +40,25 @@ PrintFunc::PrintFunc(ComTerp* comterp) : ComFunc(comterp) {
 void PrintFunc::execute() {
   ComValue formatstr(stack_arg(0));
   ComValue printval(stack_arg(1));
+  static int str_symid = symbol_add("str");
+  ComValue strflag(stack_key(str_symid));
   static int string_symid = symbol_add("string");
   ComValue stringflag(stack_key(string_symid));
+  static int err_symid = symbol_add("err");
+  ComValue errflag(stack_key(err_symid));
   reset_stack();
 
   const char* fstr = formatstr.is_string() ? formatstr.string_ptr() : "nil";
 
   streambuf* strmbuf = nil;
-  if (stringflag.is_false()) {
+  if (stringflag.is_false() && strflag.is_false()) {
     filebuf * fbuf = new filebuf();
     strmbuf = fbuf;
     if (comterp()->handler()) {
       int fd = max(1, comterp()->handler()->get_handle());
       fbuf->attach(fd);
     } else
-      fbuf->attach(fileno(stdout));
+      fbuf->attach(fileno(errflag.is_false() ? stdout : stderr));
   } else {
     strmbuf = new strstreambuf();
   }

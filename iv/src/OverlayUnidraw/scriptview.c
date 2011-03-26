@@ -703,26 +703,28 @@ Iterator OverlayScript::MatchedPic(Clipboard* cb, int& count) {
 
 boolean OverlayScript::EmitPts(ostream& out, Clipboard* cb, boolean prevout) {
     if (GetGraphicComp()->IsA(OVVERTICES_COMP) && MatchedPts(cb)<0) {
-	if (prevout) 
-	    out << ",\n    ";
-	else
-	    out << "\n    ";
-	prevout = true;
-	out << "pts(";
 	MultiLineObj* pts = ((Vertices*)GetGraphicComp()->GetGraphic())->GetOriginal();
-	const int rowsz = 10;
-	Coord* x = pts->x();
-	Coord* y = pts->y();
-	int count = pts->count();
-	for (int i=0; i<count; i+= rowsz) {
+	if (pts->count()>0) {
+	  if (prevout) 
+	    out << ",\n    ";
+	  else
+	    out << "\n    ";
+	  prevout = true;
+	  out << "pts(";
+	  const int rowsz = 10;
+	  Coord* x = pts->x();
+	  Coord* y = pts->y();
+	  int count = pts->count();
+	  for (int i=0; i<count; i+= rowsz) {
 	    if (i!=0) out << ",\n        ";
 	    for (int j=i; j<i+rowsz && j<count; j++) {
-		if (j!=i) out << ",";
-		out << "(" << x[j] << "," << y[j] << ")";
+	      if (j!=i) out << ",";
+	      out << "(" << x[j] << "," << y[j] << ")";
 	    }
+	  }
+	  out << ")";
+	  cb->Append(GetGraphicComp());
 	}
-	out << ")";
-	cb->Append(GetGraphicComp());
     }
     return prevout;
 }
@@ -805,7 +807,7 @@ Clipboard* OverlayScript::GetGSList() {
 	curr = parent;
 	parent = (OverlayScript*) curr->GetParent();
     }
-    return curr->GetGSList();
+    return curr != this ? curr->GetGSList() : nil;
 }
 
 Clipboard* OverlayScript::GetPtsList() {
@@ -815,7 +817,7 @@ Clipboard* OverlayScript::GetPtsList() {
 	curr = parent;
 	parent = (OverlayScript*) curr->GetParent();
     }
-    return curr->GetPtsList();
+    return curr != this ? curr->GetPtsList() : nil;
 }
 
 Clipboard* OverlayScript::GetPicList() {
@@ -825,7 +827,7 @@ Clipboard* OverlayScript::GetPicList() {
 	curr = parent;
 	parent = (OverlayScript*) curr->GetParent();
     }
-    return curr->GetPicList();
+    return curr != this ? curr->GetPicList() : nil;
 }
 
 /*****************************************************************************/

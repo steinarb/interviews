@@ -49,20 +49,9 @@
 #include <stream.h>
 #include <string.h>
 #include <math.h>
+#include <version.h>
 
 static int nmsg = 0;
-
-#if defined(__sun) && !defined(__svr4__)
-/* Disables atan2(0.0,0.0) warning messages */
-extern "C" {
-    int matherr(struct exception *x) {
-	if (x && strcmp(x->name, "atan2") == 0) return 1;
-	else return 0;
-    }
-}
-#endif
-
-#include <version.h>
 
 /*****************************************************************************/
 
@@ -174,7 +163,11 @@ static PropertyData properties[] = {
     { "*opaque_off",    "false"  },
 #ifdef HAVE_ACE
     { "*import",        "20001" },
-    { "*comdraw",          "20002" },
+    { "*comdraw",       "20002" },
+    { "*wbmaster",      "false" },
+    { "*wbslave",       "false" },
+    { "*wbhost",        "localhost" },
+    { "*wbport",        "20002" },
 #endif
     { "*help",          "false"  },
     { "*font",          "-adobe-helvetica-medium-r-normal--14-140-75-75-p-77-iso8859-1"  },
@@ -213,7 +206,11 @@ static OptionDesc options[] = {
     { "-opoff", "*opaque_off", OptionValueImplicit, "true" },
 #ifdef HAVE_ACE
     { "-import", "*import", OptionValueNext },
-    { "-comdraw", "*port", OptionValueNext },
+    { "-comdraw", "*comdraw", OptionValueNext },
+    { "-wbmaster", "*wbmaster", OptionValueImplicit, "true" },
+    { "-wbslave", "*wbslave", OptionValueImplicit, "true" },
+    { "-wbhost", "*wbhost", OptionValueNext },
+    { "-wbport", "*wbport", OptionValueNext },
 #endif
     { "-help", "*help", OptionValueImplicit, "true" },
     { "-font", "*font", OptionValueNext },
@@ -228,7 +225,7 @@ static char* usage =
 [-panner_align|-pal tl|tc|tr|cl|c|cr|cl|bl|br|l|r|t|b|hc|vc] \n\
 [-rampsize n ] [-scribble_pointer|-scrpt ] [-slider_off|-soff] \n\
 [-toolbarloc|-tbl r|l ] [-theight|-th n] [-tile] [-twidth|-tw n] \n\
-[-zoomer_off|-zoff] [file]";
+[-wbhost host] [-wbmaster] [-wbslave] [-wbport port] [-zoomer_off|-zoff] [file]";
 #else
 static char* usage =
 "Usage: comdraw [any idraw parameter] [-color5] \n\
