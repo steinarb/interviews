@@ -1,0 +1,199 @@
+November 12th 1998 ivtools-0.7
+
+Drawing Editor Changes
+
+ 	* ivtools drawtool (and every drawing editor that inherits the
+ 	same mechanism) can now import or open a wide variety of graphics
+ 	file by URL.  This is done with a separate ivtools executable,
+ 	ivdl, written by Eric Kahler, which makes a straightforward
+ 	attempt to connect to any http or ftp server and download the
+ 	requested file.  Any error messsages are printed to stderr.
+
+	This means that ivtools now supports hyper-structured-graphics, as
+ 	defined (invented?) by William Chia-Wei Cheng, the author of Tgif:
+
+		http://bourbon.cs.umd.edu:8001/tgif/hgviewer.html
+
+	To try it out, acquire or build a copy of ivtools drawtool, and
+ 	launch it on this URL:
+
+	        http://www.vectaport.com/ivtools/anteaters.drs
+
+	* In addition to URL support, ivtools drawtool supports launching
+ 	or importing (to an import port if built with ACE) on any JPEG,
+ 	GIF, TIFF, or pbmplus image file, any idraw format PostScript, and
+ 	non-raster portions of any arbitrary PostScript file.  These
+ 	capabilities require the use of the following executables
+ 	distributed separately from ivtools: djpeg, giftopnm, tifftopnm,
+ 	pstoedit.	
+
+	* ivtools drawtool supports launching or importing of any graphic
+ 	file compressed by gzip or compress as well.	
+
+	* The "auto-convert" check-box on the import dialog box has been
+ 	removed (by default).  This feature is still available for use in
+ 	custom applications, or the same effect can be had by entering an
+ 	"anytopnm" command line into the import dialog box, and selecting
+ 	the "from command" checkbox before hitting the Import button.	
+
+	* this release fixes a very old stay-on-grid-when-zooming problem
+ 	in drawtool.  The changes ended up being very minor, and will be
+ 	propogated to idraw by ivtools-0.7.1, but for now they exist only
+ 	in drawtool to facilitate independent verification that the
+ 	problem is gone.
+
+	This might have been one of the inadvertent reasons why Fresco
+ 	went to all floating-point coordinates.  In the Unidraw graphics
+ 	library, the graphics are all rendered in integers (collected from
+ 	the screen coordinates of the original drawing events), then
+ 	mapped to a floating point drawing coordinate system with a
+ 	floating point affine transform.  There was an unsolved problem
+ 	with this strategy, and you can reproduce it in idraw with these
+ 	steps:
+
+	0) turn on the grid (?) and gravity (,)
+	1) zoom in once
+	2) pan left once (while at 2x magnification)
+	3) zoom back to 1x magnification
+	4) draw a rectangle 
+	5) zoom in four times or so -- you'll see rectangle isn't on grid
+
+	The reason is that the pan at 2x is really the equivalent of a
+ 	fractional pan at 1x, so when you get back to 1x the grid is no
+ 	longer on an integer boundary, but halfway between pixels.  Of
+ 	course this is impractical for drawing the grid, so the grid
+ 	coordinates are rounded before rendering.  The same thing is done
+ 	for the x,y coordinates of the mouse events in Grid::Constrain.
+
+	The resultant rectangle looks great at 1x, where the rounding
+ 	effects on the grid display match up with the integer-constrained
+ 	coordinates that define the rectangle.  But as you zoom in, the
+ 	grid positions are no longer rounded, and you see the error
+ 	between the actual grid location and the rectangle drawn with
+ 	gravity on.
+
+	The fix was to simply ensure that the transformer used to
+ 	construct a graphic when gravity is on would always produce
+ 	integerized drawing coordinates, by rounding the last two
+ 	arguments of the affine transform used to map from screen
+ 	coordinates to drawing coordinates.  This counters for the
+ 	necessary rounding effect when x,y events are constrained
+ 	(Grid::Constrain) not to the actual floating point location of the
+ 	grid, but to the nearest pixel.  Try the above directions in an
+ 	ivtools-0.7 copy of drawtool, and you'll see the problem is gone.
+
+	Bug reported by Larry Larson and others.
+
+Server Changes
+
+	* a new server, iueserv, was set up to begin experimenting with
+ 	the packaging of the extensive capability of the Image
+ 	Understanding Environment class libraries into the command
+ 	language of comterp.  The IUE is available from:
+
+		http://www.aai.com/AAI/IUE/IUE.html
+
+	--with-iue and --with-iue-libs arguments were added to the
+ 	configure script to facilitate this.  See src/iueserv/README for
+ 	more details.
+
+	* add affine transform funcs to comterp, to assist in debugging:
+
+	point=xform(x,y a00,a01,a10,a11,a20,a21) 
+		-- affine transform of x,y coordinates
+	affine=invert(a00,a01,a10,a11,a20,a21) 
+		-- invert affine transform
+	
+Utility Changes
+
+	* incorporate a URL downloading utility written by Eric F. Kahler,
+ 	now called ivdl, into the src/utils directory.
+
+Library Changes
+
+	-- IVGlyph --
+
+	* make changes to the ::accept_editor methods of OpenFileChooser
+ 	and ImportChooser to recognize a URL and avoid pre-processing it
+ 	like it was a local pathname.
+
+	-- Unidraw --
+
+	* fix bug where the modified flag on a drawing editor was getting
+ 	inadvertently cleared when the user does the following:
+
+	     - open and modify a drawing
+	     - invoke open again, and say No to saving the drawing
+	     - type in the same pathname
+
+	The result is that the system recognizes the drawing is the same,
+ 	and does not reload it, but clears the modified flag without ever
+ 	saving it.  This is now fixed.  Bug reported by K.C. Ng.
+
+	-- OverlayUnidraw --
+
+	* the majority of work on URL open/import, and compressed image
+ 	open/import was done in the OvImportCmd.  One evolution (from
+ 	ivtools-0.6.12) was the use of the ::pathname() method to indicate
+ 	when a file was coming from a file (instead of just a pipe), which
+ 	would then allow the import command to configure a filtering
+ 	command to be popen'ed.  Without knowing the pathname (or when the
+ 	pathname was an URL or "-"), there was a need to use
+ 	double-fork/double-pipe architecture, with the child reading the
+ 	source and writing to the grandchild, and the grandchild exec'ing
+ 	the filter, causing the result to be written back to the original
+ 	process. 
+
+	* support for GIF and JPEG file formats was extended by extending
+ 	the RasterOvComp istream constructor to invoke an OvImportCmd to
+ 	read them in.  In this way GIF and JPEG files can be
+ 	saved/restored by pathname, in the same manner long supported
+ 	for TIFF and pbmplus raster files.
+
+	-- GraphUnidraw -- 
+
+	* fix bug in Alter tool (RESHAPE_TOOL) to make it set the modified
+ 	flag when something is changed.
+
+	* fix another bug in Alter tool, reported by K.C. Ng, that caused
+ 	the recreated TextGraphic to have a foreground color with a nil
+ 	name.
+
+	* finally, fix old problem with moving more than one arc reported
+ 	by K.C. Ng as well.  The problem occurred when two arcs were
+ 	selected then moved -- nothing would happen.  This had been
+ 	disabled a long time ago, because there was a solution in place to
+ 	handle moving one edge (the CreateManipulator pre-selected the
+ 	nodes on each end of the edge as well), but there had never been a
+ 	solution for more than one edge at once.  The fix was simple, in
+ 	that it only required a derived MoveTool (GraphMoveTool) with a
+ 	single derived method of note, ::InterpretManipulator, that checks
+ 	for a selection list longer than 1, and runs through it to augment
+ 	the selection with any nodes that lie between selected edges.
+	
+
+Config/Build Changes
+
+	* a new library, AceDispatch, was set up to isolate any use of the
+ 	ACE library from the InterViews Dispatch library.  In this way
+ 	older executables, like idraw, can run without any reference to
+ 	ACE shared library.	
+
+	* further work was done to isolate older executables from newer
+ 	shared libraries.  This required #ifdef 0'ing all the OTHER_* make
+ 	variables defined in config/params.def (OTHER_CCFLAGS,
+ 	OTHER_CCDEFINES, OTHER_CCINCLUDES, OTHER_CCLDLIBS,
+ 	OTHER_CCDEPLIBS) and instead defining them within the relevant
+ 	Imakefile's.  For example, src/comterp/Imakefile has these new
+ 	definitions:
+
+	OTHER_CCDEFINES = $(ACE_CCDEFINES)
+	OTHER_CCINCLUDES = $(ACE_CCINCLUDES)
+	OTHER_CCLDLIBS = $(ACE_CCLDLIBS)
+
+	* extraneous arguments were manually trimmed from the configure
+ 	script generated by autoconf from configure.in.  This process
+ 	needs to be repeated each time autoconf is run until the time
+ 	someone figures out how to change configure.in to remove the
+ 	Cygnus-standard options that are not utilized in the ivtools
+ 	setup.

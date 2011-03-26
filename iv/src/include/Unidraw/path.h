@@ -45,7 +45,7 @@ public:
 
     virtual void Visit(Connector*);
     virtual boolean Visited(Connector*);
-private:
+protected:
     class UList* _slot[SLOTS];
 };
 

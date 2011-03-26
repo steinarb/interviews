@@ -1,0 +1,55 @@
+XCOMM
+XCOMM ivtools utilities
+XCOMM
+
+PACKAGE = utils_ivtools
+
+#ifdef InObjectCodeDir
+
+all:: tmpnam stdcmapppm ivdl
+
+BuildProgram(tmpnam,NullParameter,tmpnam.o,,)
+InstallProgram(tmpnam,$(BINDIR),tmpnam)
+BuildProgram(stdcmapppm,NullParameter,stdcmapppm.o,,)
+InstallProgram(stdcmapppm,$(BINDIR),stdcmapppm)
+BuildProgram(ivdl,NullParameter,ivdl.o downloader.o ftp.o http.o sockets.o thrower.o -lg++,,)
+InstallProgram(ivdl,$(BINDIR),ivdl)
+
+DependTarget();
+
+tmpnam: tmpnam.o
+tmpnam.o: ../tmpnam.c
+	@$(RM) tmpnam.o
+	$(CDRIVER) -c ../tmpnam.c
+
+stdcmapppm: stdcmapppm.o
+stdcmapppm.o: ../stdcmapppm.c
+	@$(RM) stdcmapppm.o
+	$(CDRIVER) -c ../stdcmapppm.c
+
+ivdl: ivdl.o downloader.o ftp.o http.o sockets.o thrower.o
+ivdl.o: ../ivdl.cc
+	@$(RM) ivdl.o
+	$(CDRIVER) -c ../ivdl.cc
+
+CCSUFFIX = cc
+
+#define Obj(file) MakeObjectFromSrcFlags(file,)
+
+Obj(downloader)
+Obj(ftp)
+Obj(http)
+Obj(sockets)
+Obj(thrower)
+
+
+IncludeDependencies()
+
+clean::
+	@$(RM) tmpnam.o tmpnam stdcmapppm.o stdcmapppm ivdl.o ivdl downloader.o ftp.o http.o sockets.o throwser.o
+
+#else
+
+MakeInObjectCodeDir()
+
+#endif

@@ -4,8 +4,10 @@ XCOMM "make World" builds everything.
 XCOMM "make install" installs everything.
 XCOMM
 
+PACKAGE = top_ivtools
+
 WORLDOPTS = -k
-SUBDIRS = src
+SUBDIRS = src config
 
 MakeCPU()
 MakeWorld($(WORLDOPTS))

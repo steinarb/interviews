@@ -34,6 +34,7 @@
 class Ellipse : public Graphic {
 public:
     void GetOriginal(Coord&, Coord&, int&, int&);
+    void SetOriginal(Coord, Coord, int, int);
 protected:
     Ellipse(Coord x0, Coord y0, int r1, int r2, Graphic* gr = nil);
 
@@ -48,7 +49,7 @@ protected:
     Coord _x0, _y0;
     int _r1, _r2;
     static Coord _x[8], _y[8];
-private:
+protected:
     void CalcControlPts(Transformer*);
 };
 
@@ -66,7 +67,7 @@ protected:
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
     virtual void draw(Canvas*, Graphic*);
-private:
+protected:
     PSBrush* _br;
 };
 
@@ -84,7 +85,7 @@ protected:
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
     virtual void draw(Canvas*, Graphic*);
-private:
+protected:
     PSPattern* _pat;
 };
 
@@ -99,12 +100,13 @@ public:
     virtual PSPattern* GetPattern();
 
     virtual Graphic* Copy();
+    virtual ClassId CompId();
 protected:
     virtual void getExtent(float&, float&, float&, float&, float&, Graphic*);
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
     virtual void draw(Canvas*, Graphic*);
-private:
+protected:
     PSBrush* _br;
     PSPattern* _pat;
 };

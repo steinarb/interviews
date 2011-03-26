@@ -108,7 +108,7 @@ protected:
     PSFont* GetFont(UList*);
     PostScriptView* View(UList*);
     PostScriptView* CreatePSView(GraphicComp*);
-private:
+protected:
     UList* _fonts;
 };
 

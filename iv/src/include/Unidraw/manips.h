@@ -122,7 +122,7 @@ public:
 protected:
     void Init(Viewer*, Rubberband*, Transformer*, Tool*, DragConstraint);
     virtual void Constrain(Event&);
-private:
+protected:
     Viewer* _viewer;
     Rubberband* _r;
     Transformer* _relative;
@@ -145,6 +145,19 @@ public:
     virtual boolean Manipulating(Event&);
 
     GrowingVertices* GetGrowingVertices();
+};
+
+class ScribbleVertexManip : public VertexManip {
+public:
+    ScribbleVertexManip(
+        Viewer*, GrowingVertices*, Transformer* = nil, Tool* = nil,
+        DragConstraint = None
+    );
+
+    virtual boolean Manipulating(Event&);
+
+protected:
+    boolean _first;
 };
 
 class ConnectManip : public DragManip {
@@ -219,14 +232,14 @@ public:
 
     boolean Contains(Coord, Coord);
     int Locate(Coord, Coord);
-private:
+protected:
     void Init(
         Viewer*, Painter*, Coord, Coord, Tool*, boolean,const char* =nil,int =0
     );
     void InitTextDisplay(const char*, int);
     void PlaceTextDisplay (Coord, Coord);
     void CheckBuf(int more);
-private:
+protected:
     boolean _prepositioned;
     boolean _selecting;
     Coord _xpos, _ypos;

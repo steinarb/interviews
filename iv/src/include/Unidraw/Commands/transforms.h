@@ -85,6 +85,22 @@ protected:
 
 inline float RotateCmd::GetRotation () { return _angle; }
 
+class Transformer;
+
+class TransformCmd : public Command {
+public:
+    TransformCmd(ControlInfo*, Transformer* = nil);
+    TransformCmd(Editor* = nil, Transformer* = nil);
+
+    Transformer* GetTransformer();
+
+    virtual Command* Copy();
+    virtual ClassId GetClassId();
+    virtual boolean IsA(ClassId);
+protected:
+    Transformer* _t;
+};
+
 #include <IV-2_6/_leave.h>
 
 #endif

@@ -91,22 +91,64 @@ public:
     virtual void Stencil(
 	Canvas*, Coord x, Coord y, Bitmap* image, Bitmap* mask = nil
     );
+#ifdef RasterRect
+#undef RasterRect
     virtual void RasterRect(Canvas*, Coord x, Coord y, Raster*);
+#define RasterRect _lib_iv(RasterRect)
+#else
+    virtual void RasterRect(Canvas*, Coord x, Coord y, Raster*);
+#endif /* RasterRect */
+#ifdef Point
+#undef Point
     virtual void Point(Canvas*, Coord x, Coord y);
+#define Point _lib_iv(Point)
+#else
+    virtual void Point(Canvas*, Coord x, Coord y);
+#endif /* Point */
     virtual void MultiPoint(Canvas*, Coord x[], Coord y[], int n);
+#ifdef Line
+#undef Line
     virtual void Line(Canvas*, Coord x1, Coord y1, Coord x2, Coord y2);
+#define Line _lib_iv(Line)
+#else
+    virtual void Line(Canvas*, Coord x1, Coord y1, Coord x2, Coord y2);
+#endif /* Line */
     virtual void Rect(Canvas*, Coord x1, Coord y1, Coord x2, Coord y2);
     virtual void FillRect(Canvas*, Coord x1, Coord y1, Coord x2, Coord y2);
     virtual void ClearRect(Canvas*, Coord x1, Coord y1, Coord x2, Coord y2);
     virtual void Circle(Canvas*, Coord x, Coord y, int r);
     virtual void FillCircle(Canvas*, Coord x, Coord y, int r);
+#ifdef Ellipse
+#undef Ellipse
     virtual void Ellipse(Canvas*, Coord x, Coord y, int r1, int r2);
+#define Ellipse _lib_iv(Ellipse)
+#else
+    virtual void Ellipse(Canvas*, Coord x, Coord y, int r1, int r2);
+#endif /* Ellipse */
     virtual void FillEllipse(Canvas*, Coord x, Coord y, int r1, int r2);
+#ifdef MultiLine
+#undef MultiLine
     virtual void MultiLine(Canvas*, Coord x[], Coord y[], int n);
+#define MultiLine _lib_iv(MultiLine)
+#else
+    virtual void MultiLine(Canvas*, Coord x[], Coord y[], int n);
+#endif /* MultiLine */
+#ifdef Polygon
+#undef Polygon
     virtual void Polygon(Canvas*, Coord x[], Coord y[], int n);
+#define Polygon _lib_iv(Polygon)
+#else
+    virtual void Polygon(Canvas*, Coord x[], Coord y[], int n);
+#endif /* Polygon */
     virtual void FillPolygon(Canvas*, Coord x[], Coord y[], int n);
     virtual void BSpline(Canvas*, Coord x[], Coord y[], int n);
+#ifdef ClosedBSpline
+#undef ClosedBSpline
     virtual void ClosedBSpline(Canvas*, Coord x[], Coord y[], int n);
+#define ClosedBSpline _lib_iv(ClosedBSpline)
+#else
+    virtual void ClosedBSpline(Canvas*, Coord x[], Coord y[], int n);
+#endif /* ClosedBSpline */
     virtual void FillBSpline(Canvas*, Coord x[], Coord y[], int n);
     virtual void Curve(Canvas*,
 	Coord x0, Coord y0, Coord x1, Coord y1,

@@ -41,7 +41,7 @@ class Patch;
 class TelltaleState;
 class Window;
 
-class MenuItem : public Observer {
+class MenuItem : public Resource, public Observer {
 public:
     MenuItem(Glyph*, TelltaleState*);
     MenuItem(Glyph*, TelltaleState*, Action*);

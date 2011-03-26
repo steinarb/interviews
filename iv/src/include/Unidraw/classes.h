@@ -136,6 +136,7 @@ inline ClassId Combine (ClassId subj, ClassId view) {return 10000*subj + view;}
 #define STENCIL_COMP        9105
 #define IMPORT_CMD          9106
 #define NOP_CMD             9107
+#define TRANSFORM_CMD       9108
 
 /* Composite ids associating subjects with their views */
 

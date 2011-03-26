@@ -48,7 +48,7 @@ protected:
     virtual void Reconfig();
 protected:
     StateVar* _subject;
-private:
+protected:
     friend class StateVar;
     virtual void SetSubject(StateVar*);
 };

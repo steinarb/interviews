@@ -39,6 +39,7 @@ public:
 
     virtual void body(Glyph*);
     virtual Glyph* body() const;
+    void bodyclear();
 
     virtual void request(Requisition&) const;
     virtual void allocate(Canvas*, const Allocation&, Extension&);

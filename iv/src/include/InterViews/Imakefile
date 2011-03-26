@@ -2,12 +2,14 @@ XCOMM
 XCOMM include files for using the InterViews library
 XCOMM
 
-HEADERS = *.h
-DEST = $(INCDIR)/InterViews
-SUBDIRS = 2.6 Bitmaps
+PACKAGE = include_interviews
 
-InstallMultipleFlags($(HEADERS),$(DEST),$(INSTINCFLAGS))
-MakeInSubdirs($(SUBDIRS))
+IvmkcmTargets($(PACKAGE))
 
-gendefs:
-	./_gendefs
+InstallIncludes(InterViews)
+
+XCOMM install::
+XCOMM	MakeDir($(INCDIR)/InterViews)
+XCOMM	$(INSTALL) $(INSTINCFLAGS) *.h $(INCDIR)/IInterViews
+
+

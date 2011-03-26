@@ -37,6 +37,9 @@ class Button;
 class FileBrowser;
 class MarginFrame;
 
+#undef FileChooser
+#define FileChooser _lib_iv2_6(FileChooser)
+
 class FileChooser : public StringChooser {
 public:
     FileChooser(

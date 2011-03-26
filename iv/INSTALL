@@ -1,0 +1,183 @@
+
+			INSTALL for ivtools-0.7
+
+Instructions for building ivtools-0.7.0 from source:
+
+0. Compilation Environment
+
+Tools you will need before you can build:
+
+0.a. a Unix machine.  We know it has been built on Linux, SunOS,
+Solaris, and Irix.  We've incorporated diffs to build on HPUX 9.05.
+It should build on most any Unix machine with similar config changes.
+
+0.b. The gcc compiler.  Recently we've been building and testing with
+gcc-2.7.2.1.  gcc-2.7.2, and gcc-2.6.3 will probably still work.
+egcs-1.0.* and gcc-2.8.* have been known to work.  You will also need
+an equivalent copy of libg++.  The libg++ version numbers stay roughly
+in synch with the compiler version numbers.  If you have if you have
+gcc-2.6.3 you'd want libg++-2.6.3, etc..  This might no longer be true
+since the advent of egcs.
+
+0.c. An installed copy of X11R4, X11R5, or X11R6 as distributed by
+MIT, or equivalent (i.e., XFree86 for Linux, etc.)  If you use a
+vendor's X11 product, the product should be based on R4 or later and
+the product should include imake and the config files.
+
+If imake is not in the same place as the other X11 binaries are or
+anywhere else on your system, you can get the sources for imake from
+the X11R5 or X11R6 distribution at several public ftp archives (such
+as ftp.x.org).  
+
+** warning -- different combinations of imake (openwin vs. X11R6) and
+** the C preprocessor (Sun's vs. gcc's vs. egcs's) have been known to
+** cause trouble with the build process on Solaris.  If anyone can
+** accurately characterize the combinations that work and do not work
+** please send e-mail to ivtools-info@vectaport.com
+
+0.d. You also might want to acquire and build clippoly, a LGPLed library for
+polygon clipping from:
+
+http://www.ph.tn.tudelft.nl/People/klamer/clippoly_entry.html
+
+Be sure to compile with -fPIC, then make a libclippoly.so in the
+clippoly directory with: "gcc -shared -o libclippoly.so *.o". 
+
+0.e. You also might want to acquire and build ACE, a C++ middleware
+toolkit available from:
+
+http://www.cs.wustl.edu/%7Eschmidt/ACE.html
+
+Follow the instructions to build a shared library.  We currently use
+ACE-4.2, with a patch applied to alleviate warnings:
+
+http://www.vectaport.com/pub/src/ace4.2warnpatch
+
+ACE-4.5 has worked as well with recent versions of gcc and egcs.  Once
+again, ensure -fPIC is used for compilation.
+
+0.f some version of lesstif or Motif (libXm), if you want to build the
+ivxt example program, which demonstrates the embedding of a ivtools
+drawing editor inside Motif widgets.  Without these libraries and
+include files the build of ivxt will fail, which can be safely
+ignored.  To enable the ivxt build change line 7 of src/Imakefile from
+"#if 0" to "#if 1".
+
+0.g Finally, you might have an interest in building the IueServ
+library and iueserv program, a networked command interpreter wrapped
+around the class libraries of the Image Understanding Environment.
+See http://www.aai.com/AAI/IUE/IUE.html for details on acquiring and
+building this sizeable collection of public-domain and free software
+class libraries for image understanding application development.
+
+1. Configuring ivtools
+
+1.a. Set your CPU environment variable to one of the supported types
+(grep config/arch.def for ArchitectureName to get a complete list or
+try "make CPU" from the top directory of ivtools).  Use "setenv
+CPU arch" for csh or "export CPU=arch" for sh/bash.  LINUX, SUN4, and
+SGI, HPUX, and ALPHA are known to work.
+
+1.b Run the configure script in the top-level directory, by entering a
+"./configure" followed by any of the following arguments:
+
+  --x-includes=DIR        X include files are in DIR
+  --x-libraries=DIR       X library files are in DIR
+
+
+  --enable-install-relative[=ARG]  install relative to source tree
+  --prefix=DIR			   to use when install-relative false
+				   (default is /usr/local)
+
+  --enable-use-rpath=[=ARG]        use -rpath when linking
+
+--enable and --with options recognized:
+  --with-ace=<path>                Path to ACE source
+  --with-ace-libs=<path>           Path to ACE libraries
+  --with-clippoly=<path>           Path to clippoly source
+  --with-clippoly-libs=<path>      Path to clippoly libraries
+  --with-iue=<path>                Path to IUE source
+  --with-iue-libs=<path>           Path to IUE libraries
+
+If the arguments for ACE, clippoly, or IUE are not supplied, the
+configure script prints a reminder, then proceeds to set up to build
+ivtools without these libraries.  The configure script is usually able
+to automatically determine --x-includes and --x-libraries.
+
+Here is an example of using the configure script with ACE and clippoly
+libraries:
+
+./configure --with-ace=/proj/ACE_wrappers --with-ace-libs=/proj/ACE_wrappers/ace --with-clippoly=/proj/clippoly --with-clippoly-libs=/proj/clippoly
+
+Special notes on the configure script:
+
+** There still remains the vestiges of an older, imake-only style of
+** configuration within the ivtools source tree.  If you have problems
+** with this newer configure script, you can revert to the old-style
+** config'ing, by simply changing the "#if 0" near the end of any
+** config/site.def.$CPU file to "#if 1", and following the
+** instructions in the INSTALL.old file.
+
+** Note for Solaris users of the configure script: you may have to
+** manually set the PWD environment variable prior to running the
+** configure script, if the shell your using does not automatically
+** support this environment variable.  Any suggestions on how to avoid
+** this PWD environment variable dependency with autoconf and
+** configure are welcome.  Send e-mail to ivtools-info@vectaport.com.
+
+** Also, anyone experienced in customizing the command line options of
+** the configure script should get in touch.  Right now there are
+** several Cygnus-standard options still supported by the script that
+** have no effect, and are only removed from the output of --help by
+** manual editing of the configure script after it is generated by
+** autoconf.
+
+2. Compiling ivtools:
+
+2.a. cd to the ivtools-0.7/ directory (you'd already be in this
+directory after running the configure script).
+
+2.b. Compile it with a "make World" command. 
+
+This command generates Makefiles hierarchically, sets up makefile
+dependencies, and builds everything.
+
+3. Testing:
+
+Each directory under ivtools-0.7/src that begins in lower case (except
+for "include" and "scripts") contains executables that exercise some
+particular functionality.  "cd" to each particular directory, type
+"$CPU/a.out" and see what happens (the utils directory contains more
+than one executable, things named other than a.out).  Most of the
+directories have README's that go into further detail on how to use
+the programs.  ivtools-0.7/src/glyphs contains sub-directories of
+glyph example programs.
+
+4. Installation:
+
+"make install" is supported for all the libraries and a subset of the
+more utilitarian example programs: the four original InterViews
+programs (idraw, iclass, idemo, and dclock), the four idraw derived
+programs (drawtool, netdraw, flipbook, and comdraw) and the two
+comterp programs (comterp and glyphterp).  In addition the scripts in
+src/scripts and utilities in src/utils get installed.
+
+When InstallRelative is NO (the default for the configure script) the
+binaries are installed as stripped executables in BinDir, the
+libraries are installed in LibDir, and the run-time X resource and
+config files are installed in LibAllDir.
+
+When InstallRelative is YES (--use-install-relative for the configure
+script), the binaries are installed in ivtools-0.7/bin/$CPU, the
+libraries are installed in ivtools-0.7/lib/$CPU, and the run-time X
+resource and config files are installed in ivtools-0.7/lib/ivtools.
+
+note: idemo, comterp, glyphterp, and comdraw have config files that
+must be installed (either relative or non-relative) for the program to
+find them at runtime.  drawtool relies on several scripts and
+utilities for accessing graphics and image files that must be
+installed as well.
+
+
+
+

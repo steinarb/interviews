@@ -56,9 +56,9 @@ public:
     void* GetOwner();
 
     virtual ControlInfo* Copy();
-private:
+protected:
     void Init(const char*, const char*, void*);
-private:
+protected:
     GraphicComp* _label;
     char* _keyLabel;
     char* _keyCode;

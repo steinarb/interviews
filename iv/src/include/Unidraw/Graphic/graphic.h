@@ -28,6 +28,7 @@
 #ifndef unidraw_graphic_graphic_h
 #define unidraw_graphic_graphic_h
 
+#include <Unidraw/globals.h>
 #include <Unidraw/Graphic/geomobjs.h>
 #include <Unidraw/Graphic/pspaint.h>
 
@@ -110,6 +111,11 @@ public:
 
     virtual Graphic& operator = (Graphic&);
     virtual Graphic* Copy();
+    virtual ClassId CompId();
+
+    static boolean use_iv() { return _use_iv; }
+    static void use_iv(boolean flag) { _use_iv = flag; }
+
 protected:
     Graphic(Graphic* gr = nil);
 /*
@@ -159,6 +165,7 @@ protected:
 /*
  * Graphics state concatentation operations.
  */
+public:
     virtual void concatGS(Graphic* a, Graphic* b, Graphic* dest);
     virtual void concatTransformer(
         Transformer* a, Transformer* b, Transformer* dest
@@ -170,6 +177,7 @@ protected:
  * transformer of the supplied Graphic if there is one; otherwise this'
  * transformer is used.
  */
+protected:
     void transform(Coord& x, Coord& y, Graphic* = nil);
     void transform(Coord x, Coord y, Coord& tx, Coord& ty, Graphic* = nil);
     void transform(float x, float y, float& tx, float& ty, Graphic* = nil);
@@ -230,6 +238,23 @@ protected:
     PSColor* _bg;
     void* _tag;
     Transformer* _t;
+
+    /* extensions required by OverlayUnidraw */
+public:
+    void Hide(boolean hide=true);
+    void Show(boolean show=true);
+    boolean Hidden();
+    void Desensitize(boolean desensitize=true);
+    void Sensitize(boolean sensitize=true);
+    boolean Desensitized();
+    void ToggleHide();
+    void ToggleDesensitize();
+
+protected:
+    unsigned int _flags;
+    static unsigned int _hide_mask;
+    static unsigned int _desensitize_mask;
+    static boolean _use_iv;
 };
 
 class FullGraphic : public Graphic {
@@ -245,10 +270,11 @@ public:
     virtual PSFont* GetFont();
 
     virtual Graphic* Copy();
-private:
+protected:
     PSPattern* _pat;
     PSBrush* _br;
     PSFont* _font;
+
 };
 
 /*
@@ -282,31 +308,77 @@ inline void Graphic::getBounds (
     t += tol;
 }
 
+inline void Graphic::Hide(boolean hide) {
+    if (hide)
+        _flags |= _hide_mask;
+    else
+        _flags &= ~_hide_mask;
+}
+
+inline void Graphic::Show(boolean show) {
+    if (show)
+        _flags &= ~_hide_mask;
+    else
+        _flags |= _hide_mask;
+}
+
+inline boolean Graphic::Hidden(
+) {
+    return _flags & _hide_mask;
+}
+
+inline void Graphic::Desensitize(boolean desensitize) {
+    if (desensitize)
+       _flags |= _desensitize_mask;
+    else
+       _flags &= ~_desensitize_mask;
+}
+
+inline void Graphic::Sensitize(boolean sensitize) {
+    if (sensitize)
+        _flags &= ~_desensitize_mask;
+    else
+        _flags |= _desensitize_mask;
+}
+
+inline boolean Graphic::Desensitized(
+) {
+    return _flags & _desensitize_mask;
+}
+
+inline void Graphic::ToggleHide() {
+  if (Hidden()) Show(); else Hide();
+}
+
+inline void Graphic::ToggleDesensitize() {
+  if (Desensitized()) Sensitize(); else Desensitize();
+}
+
 inline void Graphic::drawGraphic (Graphic* g, Canvas* c, Graphic* gs) {
-     g->draw(c, gs);
+     if (!g->Hidden()) g->draw(c, gs);
 }
 inline void Graphic::eraseGraphic (Graphic* g, Canvas* c, Graphic* gs) {
-    g->erase(c, gs);
+    if (!g->Hidden()) g->erase(c, gs);
 }
 
 inline void Graphic::drawClippedGraphic (
     Graphic* g, Canvas* c, Coord l, Coord b, Coord r, Coord t, Graphic* gs
-) { g->drawClipped(c, l, b, r, t, gs); }
+) { if (!g->Hidden()) g->drawClipped(c, l, b, r, t, gs); }
 
 inline void Graphic::eraseClippedGraphic (
     Graphic* g, Canvas* c, Coord l, Coord b, Coord r, Coord t, Graphic* gs
-) { g->eraseClipped(c, l, b, r, t, gs); }
+) { if (!g->Hidden()) g->eraseClipped(c, l, b, r, t, gs); }
 
 inline void Graphic::getExtentGraphic (
     Graphic* g, float& l, float& b, float& r, float& t, float& tol, Graphic* gs
 ) { g->getExtent(l, b, r, t, tol, gs); }
 
 inline boolean Graphic::containsGraphic (Graphic* g, PointObj& p, Graphic* gs){
-    return g->contains(p, gs);
+    return g->Desensitized() ? nil : g->contains(p, gs);
 }
 
 inline boolean Graphic::intersectsGraphic (Graphic* g, BoxObj& b, Graphic* gs){
-    return g->intersects(b, gs);
+    return g->Desensitized() ? nil : g->intersects(b, gs);
 }
 
 inline boolean Graphic::extentCachedGraphic (Graphic* g) {

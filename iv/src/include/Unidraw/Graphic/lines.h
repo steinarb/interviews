@@ -37,6 +37,7 @@ public:
     virtual ~Point();
 
     void GetOriginal(Coord&, Coord&);
+    void SetOriginal(Coord, Coord);
 
     virtual void SetBrush(PSBrush*);
     virtual PSBrush* GetBrush();
@@ -58,11 +59,13 @@ public:
     virtual ~Line();
 
     void GetOriginal(Coord& x0, Coord& y0, Coord& x1, Coord& y1);
+    void SetOriginal(Coord x0, Coord y0, Coord x1, Coord y1);
 
     virtual void SetBrush(PSBrush*);
     virtual PSBrush* GetBrush();
 
     virtual Graphic* Copy();
+    virtual ClassId CompId();
 protected:
     virtual void getExtent(float&, float&, float&, float&, float&, Graphic*);
     virtual boolean contains(PointObj&, Graphic*);
@@ -96,7 +99,7 @@ protected:
     virtual void getExtent(float&, float&, float&, float&, float&, Graphic*);
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
-    void virtual draw(Canvas*, Graphic*);
+    virtual void draw(Canvas*, Graphic*);
 protected:
     PSBrush* _br;
 };
@@ -112,12 +115,13 @@ public:
     virtual PSPattern* GetPattern();
 
     virtual Graphic* Copy();
+    virtual ClassId CompId();
 protected:
     virtual void getExtent(float&, float&, float&, float&, float&, Graphic*);
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
     virtual void draw(Canvas*, Graphic*);
-private:
+protected:
     PSBrush* _br;
     PSPattern* _pat;
 };

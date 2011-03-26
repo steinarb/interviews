@@ -75,7 +75,7 @@ public:
     void SetHistoryLength(int);
     int GetHistoryLength();
 
-    void Log(Command*);
+    virtual void Log(Command*);
     void Undo(Component*, int = 1);
     void Redo(Component*, int = 1);
     void ClearHistory(Component* = nil);
@@ -98,7 +98,7 @@ protected:
 
     void alive(boolean);
     void updated(boolean);
-private:
+protected:
     void Init(Catalog*, World*);
     void InitAttributes();
     void DeleteComponent(Component*);
@@ -106,7 +106,7 @@ private:
     Editor* editor(UList*);
     Editor* FindAny(Component*, UList*);
     Editor* FindAnyDead(Component*);
-private:
+protected:
     Catalog* _catalog;
     World* _world;
     UList* _editors;

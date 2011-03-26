@@ -53,9 +53,9 @@ public:
     virtual boolean IsA(ClassId);
 protected:
     boolean _executed;
-private:
+protected:
     void Init(GraphicComp*);
-private:
+protected:
     GraphicComp* _group;
 };
 
@@ -79,9 +79,9 @@ public:
     virtual boolean IsA(ClassId);
 protected:
     boolean _executed;
-private:
+protected:
     void Init();
-private:
+protected:
     Clipboard* _kids;
 };
 

@@ -89,11 +89,8 @@ protected:
     TimerQueue* _queue;
     ChildQueue* _cqueue;
 
-#if defined(sgi)
     static void sigCLD(...);
-#else
-    static void sigCLD();
-#endif
+
 private:
     static Dispatcher* _instance;
 private:

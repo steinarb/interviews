@@ -32,14 +32,24 @@
 
 #include <IV-2_6/_enter.h>
 
+class TopoElement;
+
 class Vertices : public Graphic {
 public:
     virtual ~Vertices();
 
     virtual int GetOriginal(const Coord*&, const Coord*&);
+    virtual int SetOriginal(const Coord*, const Coord*);
+    
+    virtual MultiLineObj* GetOriginal();
+    virtual void SetOriginal(MultiLineObj*);
 
     virtual boolean operator == (Vertices&);
     virtual boolean operator != (Vertices&);
+
+    int count();
+    Coord* x();
+    Coord* y();
 
     virtual Graphic* Copy();
 protected:
@@ -54,9 +64,8 @@ protected:
     void s_getExtent(float&, float&, float&, float&, float&, Graphic*);
     void f_getExtent(float&, float&, float&, float&, float&, Graphic*);
 protected:
-    Coord* _x, *_y;
-    int _count;
     Extent* _extent;
+    MultiLineObj* _pts;
 };
 
 #include <IV-2_6/_leave.h>

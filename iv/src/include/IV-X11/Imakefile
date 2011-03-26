@@ -2,7 +2,9 @@ XCOMM
 XCOMM internal include files for direct use of X11 functions
 XCOMM
 
-HEADERS = *.h
-DEST = $(INCDIR)/IV-X11
+PACKAGE = include_x11
 
-InstallMultipleFlags($(HEADERS),$(DEST),$(INSTINCFLAGS))
+IvmkcmTargets($(PACKAGE))
+
+InstallIncludes(IV-X11)
+

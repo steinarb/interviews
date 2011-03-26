@@ -46,7 +46,7 @@ public:
     const char* GetName(int index);
     const char* GetInfo(const char* name);
     const char* GetInfo(int index);
-private:
+protected:
     virtual UMapElem* FindId(void*);
     virtual UMapElem* FindTag(void*);
 };

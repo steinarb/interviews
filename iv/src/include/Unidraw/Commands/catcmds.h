@@ -52,7 +52,7 @@ public:
     virtual void Write(ostream&);
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-private:
+protected:
     Component* prototype_;
 };
 
@@ -83,7 +83,7 @@ public:
     virtual Command* Copy();
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-private:
+protected:
     FileChooser* chooser_;
 };
 
@@ -112,7 +112,7 @@ public:
     virtual Command* Copy();
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-private:
+protected:
     FileChooser* chooser_;
 };
 

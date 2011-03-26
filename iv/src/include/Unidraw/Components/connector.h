@@ -74,7 +74,7 @@ protected:
     UList* _cnxns;                             /* list of connections */
     StateVar* _stateVar;
     TransMethod _transMethod;
-private:
+protected:
     friend class CSolver;
     CSolverInfo* _csinfo;
 };

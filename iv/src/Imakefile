@@ -2,11 +2,83 @@ XCOMM
 XCOMM everything to be built or installed
 XCOMM
 
+PACKAGE = src_ivtools
+
+#if 0
+#define ivxt_name ivxt
+#else
+#define ivxt_name /**/
+#endif
+
+#ifdef IueDir
+IUEDIRS = IueServ iueserv
+#else
+IUEDIRS =	
+#endif
+
+#ifdef AceDir
+ACEDISPATCH = AceDispatch
+#else
+ACEDISPATCH =
+#endif
+
 SUBDIRS = \
-	config \
+	IV-common \
+	Unidraw-common \
+	\
+	ComUtil \
+	Attribute \
+	ComTerp \
+	comtest \
+	comterp \
+	\
+	IV \
+	InterViews \
+	IV-2_6 \
+	IV-X11 \
+	OS \
+	TIFF \
+	Dispatch \
+	dclock \
+	iclass \
+	idemo \
+	\
+	Time \
+	IVGlyph \
+	glyphs \
+	\
+	AttrGlyph \
+	ComGlyph \
+	glyphterp \
+	\
+	Unidraw \
+	UniIdraw \
+	idraw \
+	\
+	TopoFace \
+	$(ACEDISPATCH) \
+	OverlayUnidraw \
+	drawtool \
+	\
+	$(IUEDIRS) \
+	\
+	ComUnidraw \
+	comdraw \
+	\
+	FrameUnidraw \
+	flipbook \
+	\
+	GraphUnidraw \
+	graphdraw \
+	\
+	DrawServ \
+	drawserv \
+	\
 	include \
-	lib \
-	bin \
+	scripts \
+	utils \
+	\
+	ivxt_name \
 	man
 
 MakeInSubdirs($(SUBDIRS))

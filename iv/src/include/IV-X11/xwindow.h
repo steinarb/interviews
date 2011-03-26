@@ -79,6 +79,7 @@ public:
 	unsigned short r, unsigned short g, unsigned short b, XColor&
     );
 
+    unsigned long x_or(const Style&) const;
     unsigned long xor(const Style&) const;
 
     XDisplay* display() const;

@@ -79,6 +79,7 @@ class TableIterator(Table) { \
 public: \
     TableIterator(Table)(Table&); \
 \
+    TableEntry(Table)* cur_entry(); \
     Key& cur_key(); \
     Value& cur_value(); \
     boolean more(); \
@@ -89,6 +90,7 @@ private: \
     TableEntry(Table)** last_; \
 }; \
 \
+inline TableEntry(Table)* TableIterator(Table)::cur_entry() { return cur_; } \
 inline Key& TableIterator(Table)::cur_key() { return cur_->key_; } \
 inline Value& TableIterator(Table)::cur_value() { return cur_->value_; } \
 inline boolean TableIterator(Table)::more() { return entry_ <= last_; }

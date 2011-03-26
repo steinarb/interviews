@@ -1,0 +1,24 @@
+XCOMM
+XCOMM generic InterViews demo
+XCOMM
+
+PACKAGE = idemo
+
+#ifdef InObjectCodeDir
+
+CLIPPOLY_CCLDLIBS =
+
+Use_libInterViews()
+ComplexProgramTarget(idemo)
+
+MakeObjectFromSrcFlags(main,)
+
+InstallScriptAs(../Idemo.defaults,$(LIBALLDIR),Idemo)
+
+IncludeDependencies()
+
+#else
+
+MakeInObjectCodeDir()
+
+#endif

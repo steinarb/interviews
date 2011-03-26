@@ -101,7 +101,7 @@ protected:
 protected:
     Coord _x, _y, _length;
     PSBrush* _br;
-private:
+protected:
     friend class SlotComp;
     void SetOrientation(Orientation);
 };

@@ -57,7 +57,7 @@ protected:
     Tool(ControlInfo* = nil);
 
     ControlInfo* CopyControlInfo();
-private:
+protected:
     ControlInfo* _ctrlInfo;
 };
 

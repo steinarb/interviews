@@ -81,7 +81,7 @@ public:
 protected:
     Editor();
     void Insert(Interactor*);
-private:
+protected:
     ManagedWindow* _window;
     EditorImpl* _impl;
 };

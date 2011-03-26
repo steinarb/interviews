@@ -41,7 +41,7 @@ public:
     virtual Tool* Copy();
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-private:
+protected:
     ConnectorView* _source;
 };
 
