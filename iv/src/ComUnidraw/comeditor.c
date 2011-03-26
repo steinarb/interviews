@@ -25,6 +25,7 @@
 #include <ComUnidraw/comeditor.h>
 #include <ComUnidraw/comterp-iohandler.h>
 #include <ComUnidraw/nfunc.h>
+#include <ComUnidraw/plotfunc.h>
 
 #include <ComTerp/ctrlfunc.h>
 #include <ComTerp/comterpserv.h>
@@ -77,7 +78,9 @@ void ComEditor::Init (OverlayComp* comp, const char* name) {
     if (!comp) comp = new OverlayIdrawComp;
     _terp = new ComTerpServ();
     AddCommands(_terp);
-    add_comterp("Comdraw", _terp);
+    char buffer[BUFSIZ];
+    sprintf(buffer, "Comdraw%d", ncomterp());
+    add_comterp(buffer, _terp);
     _overlay_kit->Init(comp, name);
     
 }
@@ -91,8 +94,10 @@ void ComEditor::InitCommands() {
       _terp_iohandler = new ComTerpIOHandler(_terp, stdin);
     else
       _terp_iohandler = nil;
+#if 0
     _terp->add_defaults();
     AddCommands(_terp);
+#endif
 }
 
 void ComEditor::AddCommands(ComTerp* comterp) {
@@ -143,7 +148,8 @@ void ComEditor::AddCommands(ComTerp* comterp) {
     comterp->add_command("nrows", new NRowsFunc(comterp, this));
     comterp->add_command("handles", new HandlesFunc(comterp, this));
 
-    comterp->add_command("barplot", new BarPlotFunc(comterp, this));
+    if (OverlayKit::bincheck("plotmtv"))
+      comterp->add_command("barplot", new BarPlotFunc(comterp, this));
 }
 
 

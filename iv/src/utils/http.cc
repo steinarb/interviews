@@ -125,7 +125,7 @@ void CHttp::DoGet() {
 #endif
 
       // Read from socket and write to file.
-      if(!(ReadWrite(socket_stream, NULL, localfile))) {
+      if(!(ReadWrite(socket_stream, (const char *)NULL, localfile))) {
 	socket_stream.close();
 	Shutdown(fd);
       }

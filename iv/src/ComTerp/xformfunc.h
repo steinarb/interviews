@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998 Vectaport Inc.
+ * Copyright (c) 1998,1999 Vectaport Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
@@ -32,6 +32,8 @@
 
 class ComTerp;
 
+//: ComTerp command to apply an affine-transform to a 2d coordinate.
+// point=xform(x,y a00,a01,a10,a11,a20,a21) -- affine transform of x,y coordinates.
 class XformFunc : public ComFunc {
 public:
     XformFunc(ComTerp*);
@@ -42,6 +44,8 @@ public:
 
 };
 
+//: ComTerp command to invert an affine transform.
+// affine=invert(a00,a01,a10,a11,a20,a21) -- invert affine transform.
 class InvertXformFunc : public ComFunc {
 public:
     InvertXformFunc(ComTerp*);

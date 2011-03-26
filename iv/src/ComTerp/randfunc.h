@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998 Vectaport Inc.
+ * Copyright (c) 1998,1999 Vectaport Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
@@ -32,16 +32,20 @@
 
 class ComTerp;
 
+//: random-number command for ComTerp.
+// val=rand([minval,maxval]) -- return random number between 0 and 1 or minval,maxval.
 class RandFunc : public ComFunc {
 public:
     RandFunc(ComTerp*);
 
     virtual void execute();
     virtual const char* docstring() { 
-      return "%s([minval,maxval]) -- return random number between 0 and 1 or minval,maxval"; }
+      return "val=%s([minval,maxval]) -- return random number between 0 and 1 or minval,maxval"; }
 
 };
 
+//: command to seed ComTerp random number generator.
+// srand(seedval) -- seed random number generator.
 class SRandFunc : public ComFunc {
 public:
     SRandFunc(ComTerp*);

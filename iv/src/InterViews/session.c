@@ -453,7 +453,7 @@ void SessionRep::init(
 void SessionRep::parse_args(int& argc, char** argv, const OptionDesc* opts) {
     int i;
     int newargc = 1;
-    char* newargv[1024];
+    char** newargv = new char*[argc];
     newargv[0] = argv[0];
     for (i = 1; i < argc; i++) {
 	boolean matched = false;
@@ -476,6 +476,7 @@ void SessionRep::parse_args(int& argc, char** argv, const OptionDesc* opts) {
 	argc = newargc;
 	argv[argc] = nil;
     }
+    delete [] newargv;
 }
 
 /*

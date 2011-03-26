@@ -519,6 +519,7 @@ boolean GraphIdrawScript::Emit (ostream& out) {
     out << "\n";
     FullGS(out);
     Annotation(out);
+    Attributes(out);
     out << ")\n";
     return status;
 }
@@ -582,6 +583,8 @@ int GraphIdrawScript::ReadChildren (istream& in, void* addr1, void* addr2, void*
     edges[i]->Edge()->
       attach_nodes(start_id < 0 ? nil : nodes[start_id]->Node(), 
 		   end_id < 0 ? nil : nodes[end_id]->Node());
+    if (start_id >=0 && end_id >=0) 
+      edges[i]->NodeStart()->attach(edges[i]->NodeEnd());
   }
   return 0;
 }

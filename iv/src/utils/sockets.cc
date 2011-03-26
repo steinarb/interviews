@@ -23,7 +23,7 @@
 */           
 
 
-#include <sys/errno.h>
+#include <errno.h>
 #include "sockets.h"
 
 CSocket::CSocket(String hstnm, int prt) {
@@ -57,7 +57,7 @@ void CSocket::PConnect(){
     Thrower("cannot create socket");
   }
   
-  setsockopt(Psocket_fd, SOL_SOCKET, SO_REUSEADDR, &sockoptval,
+  setsockopt(Psocket_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&sockoptval,
 	     sizeof(int));
   
   // set up our address
@@ -73,7 +73,7 @@ void CSocket::PConnect(){
 
   // Populate the my_addr structure with our hostname info.
   // Now we wont be stuck with the loopback as our only known address.
-  bcopy(hp->h_addr, &my_addr.sin_addr, hp->h_length);
+  bcopy(hp->h_addr, (char *)&my_addr.sin_addr, hp->h_length);
 
   // bind to the address to which the service will be offered
   
@@ -98,7 +98,7 @@ int CSocket::Listen(){
   int data_fd;
   if ((data_fd = accept(Psocket_fd,
 			(struct sockaddr *)&Pclient_addr, 
-			(unsigned int *)&Palen)) < 0) {
+			(int *)&Palen)) < 0) {
     // we can break out of accept if the system call was interrupted
     if ((errno != ERESTART) && (errno != EINTR)) {
       Thrower("accept failed");
@@ -161,7 +161,7 @@ int CSocket::AConnect(){
   
 };
 
-int CSocket::ReadWrite(fstream in, String header, char* localfile) {
+int CSocket::ReadWrite(fstream& in, String header, char* localfile) {
   
   char buffer[BUFSIZ]; // Buffer for I/O.
   

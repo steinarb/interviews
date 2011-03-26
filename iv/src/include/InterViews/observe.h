@@ -36,6 +36,8 @@
 class Observer;
 class ObserverList;
 
+//: observable mixin.
+// <a href=../refman3.1/refman.html#PAGE27>in reference manual</a>.
 class Observable {
 public:
     Observable();
@@ -48,6 +50,8 @@ private:
     ObserverList* observers_;
 };
 
+//: observer mixin.
+// <a href=../refman3.1/refman.html#PAGE27>in reference manual</a>.
 class Observer {
 protected:
     Observer();

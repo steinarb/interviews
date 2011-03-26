@@ -71,7 +71,7 @@ void IueConnCompFunc::execute() {
       }
       IueImageComp* imagecomp = new IueImageComp(dst);
       ComValue retval(ComValue::ObjectType, new ComponentView(imagecomp));
-      retval.obj_type_ref() = IueImageComp::symbolid();
+      retval.obj_type_ref() = IueImageComp::class_symid();
       push_stack(retval);
       return;
 

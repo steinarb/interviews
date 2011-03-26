@@ -31,6 +31,8 @@
 
 class Event;
 
+// object passed an an event to process.
+// <a href=../refman3.1/refman.html#PAGE24>in reference manual</a>.
 class Handler : public Resource {
 protected:
     Handler();

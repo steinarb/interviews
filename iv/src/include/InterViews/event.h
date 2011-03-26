@@ -60,6 +60,8 @@ static const int LEFTMOUSE = 0;
 static const int MIDDLEMOUSE = 1;
 static const int RIGHTMOUSE = 2;
 
+// user input events.
+// <a href=../refman3.1/refman.html#PAGE23>in reference manual</a>.
 class Event {
 public:
     enum { undefined, motion, down, up, key, other_event };

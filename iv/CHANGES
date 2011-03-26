@@ -1,3 +1,225 @@
+January 26th 1998 ivtools-0.7.3
+
+Drawing Editor Changes
+
+	* add support for CR and ESC to the attribute editing dialog box
+ 	of any drawing editor.  Now CR accepts the contents of the two
+ 	field editors (when the focus is in one of them) and ESC clears
+ 	the field editor with current focus.  Also the current contents of
+ 	the field editors is added to the attribute list whenever OK is
+ 	clicked.
+
+	* glyphify (grayish 3d look) the "Precise Page" dialog box, which
+ 	invokes the command to reset the drawing editor page size.
+
+	* fix the use of the "save by pathname" checkbox on the export
+ 	dialog box.
+
+	* change both the export and print dialog boxes so that they don't
+ 	clobber a command line or pathname that has been entered when you
+ 	click on the "to command" checkbox or the output format
+ 	enums/checkboxes.  This is done by disabling the auto-update
+ 	feature (the thing that automatically places a
+ 	ghostview/idraw/drawtool command line when "to command" is
+ 	checked) whenever the contents of the field-editor has changed
+ 	from the default.
+
+Utility Changes
+
+	* add a -d argument to iclass to dump an html file of links to web
+ 	pages named the same, i.e. Interactor.html or OverlayComp.html.
+  	Each class link is followed by a menu of derived classes.  See the
+ 	result when used on ivtools at
+ 	http://www.vectaport.com/ivtools/doc/classes/derivedclasses.html.
+
+Library Changes
+
+	-- Attribute --
+
+	* add a ParamStruct copy constructor.
+
+	* protect "int AttributeList::add_attr(Attribute*)", because it
+ 	requires the user to be aware of the return status and free memory
+ 	if required, and replace it with a public "void
+ 	AttributeList::add_attribute(Attribute*)".  NOTE: This is a
+ 	less-than 100% backward compatible change to the API of the
+ 	Attribute library.  You may have to switch your code over to the
+ 	new method, and in the process you might remove a memory leak.
+
+	* add AttributeList::add_attr methods that take an "int symid".
+
+	-- ComTerp -- 
+
+	* changes ComTerp/assignfunc.c to use AttributeList::add_attribute
+ 	instead of the now protected ::add_attr(Attribute*);
+
+	-- InterViews -- 
+
+	* remove limitation of 1024 command line arguments for any
+ 	program.  Found while running iclass with more than 1024 header
+ 	files in the command line.
+
+	-- Unidraw --
+
+	* add a ::Width() and ::Height() method to PageGraphic.
+
+	* change the copyright notices on all the Graphic-related files
+ 	that were changed back in 1994 to accomodate hide/show/sensitivity
+ 	and gs/pts/pic compaction.
+
+	-- UniIdraw --
+
+	* add support for floating point line widths to idraw, as
+ 	requested by Robert S. Maier, the GNU plotutils guy.  This is
+ 	indicated by Version 11 of the idraw format, but a floating point
+ 	line width can a) be successfully read if incorporated in an older
+ 	idraw format, and b) can be successfully ignored by older idraw
+ 	executables (because the istream method for reading an integer can
+ 	handle floats).  This was easy to do, because the object
+ 	underlying the idraw brush object PSBrush is Brush, and it had
+ 	always supported a floating point line width.  Further plans for
+ 	Version 11 of idraw format include support for the capstyle and
+ 	joinstyle of a brush.
+
+	* fix an egcs revealed problem in the Arrowhead class
+ 	(UniIdraw/idarrowhead.*), where an Arrowhead&
+ 	Arrowhead::operator=(Arrowhead&) needed to be defined as well as
+ 	the existing Graphic& Arrowhead::operator=(Arrowhead&) (Debian bug
+ 	#30749).  This had not been a problem with earlier C++ compilers,
+ 	because they defaulted to using the assignment operator for
+ 	Graphic& whenever an assignment operator for Arrowhead& wasn't
+ 	available.
+
+	-- OverlayUnidraw --
+
+	* remove a mysterious call to OverlayViewer::Update from within
+ 	OverlayViewer::Update (invoked when _needs_resize is true).
+
+	* change the classid macro in OverlayUnidraw/ovcomps.h so that it
+ 	adds methods ::class_name() and ::class_symid() to any class
+ 	definition (instead of the previous ::classname() and ::classid(),
+ 	the latter which had a confusing similarity to the ::ClassId()
+ 	method on Unidraw components).  NOTE: this is a less-than 100%
+ 	backward compatible change to the OverlayUnidraw API, and may
+ 	require changes in third-party code that makes use of the macro.
+	
+	* add a call to Observable::notify at the end of
+ 	OverlayComp::SetAttributeList (something that gets invoked when an
+ 	attribute editing dialog box gets OK clicked).  By default this
+ 	invokes OverlayComp::update, which calls OverlayComp::Notify, so
+ 	the ::notify method (used for generic observable/observer
+ 	notification) quickly gets transmuted into a subject/view sort of
+ 	Notify/Update. However a derived class can override this (by
+ 	providing a different ::update method), keeping the two tracks of
+ 	notify/update separate, which is exactly what happens in NodeComp
+ 	described below.
+
+	-- ComUnidraw --
+
+	* create ComUnidraw/plotfunc.(ch) to hold BarPlotFunc and the
+ 	forthcoming LinePlotFunc and ScatPlotFunc.
+
+	* set up a :newview argument to the barplot func, to make plotting
+ 	in the current viewer the default behavior.  
+
+	* wrap an OverlayKit::bincheck("plotmtv") around the
+ 	comterp->add_command for the barplot func.
+
+	-- GraphUnidraw -- 
+
+	* make each end-node an Observer of each start-node (whenever an
+ 	edge connects two nodes).  Create this observer/observable link in
+ 	the EdgeConnectCmd, remove it within a GraphDeleteCmd, and restore
+ 	it after a graphdraw document is newly opened.
+
+	* use this new observer/observable mechanism between nodes to
+ 	trigger a dataflow process, where each node recomputes its :value
+ 	attribute based on a :valexpr attribute when told to ::update
+ 	itself.  Nothing happens if no :valexpr attribute exists.  The
+ 	command that makes up a valexpr assumes in1, in2, etc.. are
+ 	predefined.  The NodeComp::update method goes out and gets these
+ 	values and builds up a string for ComTerp to evaluate that first
+ 	sets the values within the interpreter, then executes the
+ 	:valexpr.  The result is place back within a :value attribute.
+
+	* Here is an example of a graphdraw document with embedded
+ 	dataflow. The executable script (the :valexpr) with each of the
+ 	three computational nodes represent the AND, OR, and NOT operators
+ 	of 4-value Null Convention Logic, 4NCL (http://www.theseus.com):
+
+
+graphdraw(5,5
+    gs( :fillbg 1 :brush 65535,0 :fgcolor "Black",0,0,0 :bgcolor "White",1,1,1 :font "-*-helvetica-medium-r-normal-*-12-*-*-*-*-*-*-*","Helvetica",12 :graypat 1),
+    gs( :fillbg 1 :brush 65535,0 :fgcolor "Black",0,0,0 :bgcolor "White",1,1,1 :graypat 0),
+    node( :reqlabel 1 :ellipse 300,458,35,20 :ellipsetrans 1,0,0,1,15,36 :text 12,"NOT" :texttrans 1,0,0,1,302.5,487 :gs 0 :valexpr "if(in1=='I'||in1=='N' :then in1 :else !in1) /* NOT */" :val N),
+    node( :reqlabel 1 :ellipse 300,458,35,20 :ellipsetrans 1,0,0,1,-102,-33 :text 12,"AND" :texttrans 1,0,0,1,185,418 :gs 0 :valexpr "if(in1=='I'||in2=='I' :then 'I' :else if(in1=='N'||in2=='N' :then if(in1=='N'&&in2=='N' :then 'N' :else 'I') :else in1&&in2)) /* OR */" :val 'N'),
+    node( :reqlabel 1 :ellipse 300,458,35,20 :ellipsetrans 1,0,0,1,151,-34 :text 12,"OR" :texttrans 1,0,0,1,442.5,418 :gs 0 :transform 1,0,0,1,0,1 :valexpr "if(in1=='I'||in2=='I' :then 'I' :else if(in1=='N'||in2=='N' :then if(in1=='N'&&in2=='N' :then 'N' :else 'I') :else in1||in2)) /* OR */" :val 'N'),
+    node( :reqlabel 0 :ellipse 178,503,35,20 :ellipsetrans 1,0,0,1,-118,-3 :text 16,"" :texttrans 1,0,0,1,60,485 :gs 0 :val 'N'),
+    node( :reqlabel 0 :ellipse 172,341,35,20 :ellipsetrans 1,0,0,1,-116,15 :text 16,"" :texttrans 1,0,0,1,56,341 :gs 0 :val 'N'),
+    edge(85,486,173,439 :arrowscale 1.5 :tail :startnode 3 :endnode 1 :gs 1),
+    edge(82,369,172,412 :arrowscale 1.5 :tail :startnode 4 :endnode 1 :gs 1),
+    edge(222,439,291,480 :arrowscale 1.5 :tail :startnode 1 :endnode 0 :gs 1),
+    edge(341,481,425,438 :arrowscale 1.5 :tail :startnode 0 :endnode 2 :gs 1),
+    edge(233,425,416,424 :arrowscale 1.5 :tail :startnode 1 :endnode 2 :gs 1)
+)
+
+	* add these methods to ease access of other components from an
+ 	EdgeComp:
+
+    EdgeComp* EdgeIn(int n) const;
+    // return pointer to nth incoming edge.
+
+    EdgeComp* EdgeOut(int n) const;
+    // return pointer to nth outgoing edge.
+
+    EdgeComp* EdgeByDir(int n, boolean out_edge) const;
+    // return pointer to nth edge of given direction.
+
+    NodeComp* NodeIn(int n) const;
+    // return pointer to node on other side of nth incoming edge.
+
+    NodeComp* NodeOut(int n) const;
+    // return pointer to node on other side of nth outgoing edge.
+
+	* add these methods to ease access of other components from an
+ 	NodeComp:
+
+    NodeComp* NodeStart() const;
+    // return pointer to start node.
+
+    NodeComp* NodeEnd() const;
+    // return pointer to end node.
+
+Configuration, Documentation, and Miscellaneous Changes
+
+	* add PERCEPS (http://friga.mer.utexas.edu/mark/perl/perceps/)
+ 	extractable documentation to the header files of these class
+ 	libraries: Attribute, ComTerp, OverlayUnidraw, GraphUnidraw.
+  	Result can be found at
+ 	http://www.vectaport.com/ivtools/doc/classes/index.html.
+
+	* add man pages from iv/src/man/(Dispatch|InterViews|Unidraw) to
+ 	src/man/man3/.  Also put them online at
+ 	http://www.vectaport.com/ivtools/doc/man3.1/
+
+	* add PostScript copy of InterViews 3.1 reference manual.  Also
+ 	put up online at http://www.vectaport.com/ivtools/doc/refman3.1/
+
+	* add in PERCEPS class comments with URLs to point to man page
+ 	from InterViews 3.1 (i.e. href=../man3.1/Border.html) to be
+ 	embedded in PERCEPS generated web pages, as well as comments with
+ 	reference manual web page URLs.
+	
+	* add output of attributes when serializing a toplevel
+ 	FrameUnidrawComp or GraphUnidrawComp.
+
+	* fix Solaris build problems with OverlayUnidraw/grayraster.c and
+ 	utils/ivdl, thanks to feedback from Dan DeJohn at Digicomp.
+
+	* same fixes apply to an Alpha build, given feedback from Bruno
+ 	Delfosse at Thomson CSF.
+
+
 December 23rd 1998 ivtools-0.7.2
 
 Drawing Editor Changes

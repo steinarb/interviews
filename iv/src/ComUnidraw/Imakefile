@@ -21,6 +21,7 @@ Obj26(grfunc)
 Obj26(comeditor)
 Obj26(comterp-iohandler)
 Obj26(nfunc)
+Obj26(plotfunc)
 Obj26(unifunc)
 
 #ifdef AceDir

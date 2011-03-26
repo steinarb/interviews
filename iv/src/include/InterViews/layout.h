@@ -53,6 +53,8 @@ class Color;
 class Font;
 class PolyGlyph;
 
+//: factory object for layout glyphs.
+// <a href=../refman3.1/refman.html#PAGE61>in reference manual</a>
 class LayoutKit {
 protected:
     LayoutKit();

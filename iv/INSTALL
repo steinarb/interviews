@@ -1,7 +1,7 @@
 
 			INSTALL for ivtools-0.7
 
-Instructions for building ivtools-0.7.2 from source:
+Instructions for building ivtools-0.7.3 from source:
 
 0. Compilation Environment
 
@@ -102,7 +102,8 @@ SGI, HPUX, and ALPHA are known to work.
 If the arguments for ACE, clippoly, or IUE are not supplied, the
 configure script prints a reminder, then proceeds to set up to build
 ivtools without these libraries.  The configure script is usually able
-to automatically determine --x-includes and --x-libraries.
+to automatically determine --x-includes and --x-libraries.  (=0 or =1
+can be substituted for =ARG. Default is =1 when not specified.)
 
 Here is an example of using the configure script with ACE and clippoly
 libraries:
@@ -181,10 +182,10 @@ binaries are installed as stripped executables in BinDir, the
 libraries are installed in LibDir, and the run-time X resource and
 config files are installed in LibAllDir.
 
-When InstallRelative is YES (--use-install-relative for the configure
-script), the binaries are installed in ivtools-0.7/bin/$CPU, the
-libraries are installed in ivtools-0.7/lib/$CPU, and the run-time X
-resource and config files are installed in ivtools-0.7/lib/ivtools.
+When InstallRelative is YES (--enable-install-relative for the
+configure script), the binaries are installed in ivtools-0.7/bin/$CPU,
+the libraries are installed in ivtools-0.7/lib/$CPU, and the run-time
+X resource and config files are installed in ivtools-0.7/lib/ivtools.
 
 note: idemo, comterp, glyphterp, and comdraw have config files that
 must be installed (either relative or non-relative) for the program to

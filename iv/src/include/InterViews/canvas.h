@@ -46,6 +46,8 @@ class Window;
 /* anachronism */
 typedef unsigned int CanvasLocation;
 
+//: 2d area for drawing.
+// <a href=../refman3.1/refman.html#PAGE43>in reference manual</a>
 class Canvas {
 public:
     Canvas();

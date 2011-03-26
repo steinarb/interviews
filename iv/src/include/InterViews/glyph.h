@@ -42,6 +42,8 @@ class Printer;
 typedef long GlyphIndex;
 typedef unsigned int GlyphBreakType;
 
+//: InterViews 3.1 lightweight glyphs
+// <a href=../refman3.1/refman.html#PAGE14>in reference manual</a>.
 class Glyph : public Resource {
 public:
     enum { no_break, pre_break, in_break, post_break };

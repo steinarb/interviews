@@ -371,6 +371,7 @@ boolean FrameIdrawScript::Emit (ostream& out) {
     out << "\n";
     FullGS(out);
     Annotation(out);
+    Attributes(out);
     out << ")\n";
     return status;
 }

@@ -141,7 +141,7 @@ install:: Concat(lib,libname.a)						@@\
 /* --------------- autconf way of configuring --------------- */
 
 /* file output by configure script */
-#include "config-alpha-gcc.mk"
+#include "config-alpha4-gcc.mk"
 
 #endif
 

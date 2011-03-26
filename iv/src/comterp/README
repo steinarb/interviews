@@ -139,15 +139,15 @@ affine=invert(a00,a01,a10,a11,a20,a21) -- invert affine transform
 
 STATISTICAL/RANDOM COMMANDS: 
 
-sum(val1[,val2[,...,valn]]) -- return sum of values
+val=sum(val1[,val2[,...,valn]]) -- return sum of values
 
-mean(val1[,val2[,...,valn]]) -- return mean of values
+val=mean(val1[,val2[,...,valn]]) -- return mean of values
 
-var(val1[,val2[,...,valn]]) -- return variance of values
+val=var(val1[,val2[,...,valn]]) -- return variance of values
 
-stddev(val1[,val2[,...,valn]]) -- return standard deviation of values
+val=stddev(val1[,val2[,...,valn]]) -- return standard deviation of values
 
-rand([minval,maxval]) -- return random number between 0 and 1 or minval,maxval
+val=rand([minval,maxval]) -- return random number between 0 and 1 or minval,maxval
 
 srand(seedval) -- seed random number generator
 

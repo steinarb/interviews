@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996 Vectaport Inc.
+ * Copyright (c) 1996,1999 Vectaport Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
@@ -46,6 +46,8 @@
 
 declareActionCallback(AttributeListEditor)
 implementActionCallback(AttributeListEditor)
+declareFieldEditorCallback(AttributeListEditor)
+implementFieldEditorCallback(AttributeListEditor)
 
 AttributeListEditor::AttributeListEditor(AttributeList* al)
 : Patch(nil) {
@@ -53,8 +55,14 @@ AttributeListEditor::AttributeListEditor(AttributeList* al)
     Resource::ref(_list);
     DialogKit& dk = *DialogKit::instance();
     WidgetKit& wk = *WidgetKit::instance();
-    _namefe = dk.field_editor("", wk.style());
-    _valfe = dk.field_editor("", wk.style());
+    _namefe = dk.field_editor("", wk.style(), 
+			      new FieldEditorCallback(AttributeListEditor)
+			      (this, &AttributeListEditor::fe_add, 
+			       &AttributeListEditor::fe_clr));
+    _valfe = dk.field_editor("", wk.style(),
+			     new FieldEditorCallback(AttributeListEditor)
+			     (this, &AttributeListEditor::fe_add, 
+			      &AttributeListEditor::fe_clr));
     Style* s = new Style(wk.style());
     s->attribute("rows", "10");
     s->attribute("columns", "30");
@@ -164,4 +172,8 @@ void AttributeListEditor::build() {
     _mainglyph->append(lk.hcenter(_ete));
     ih->body(wk.outset_frame(lk.margin(_mainglyph, 10)));
     body(ih);
+}
+
+void AttributeListEditor::fe_clr(FieldEditor* fe) {
+    fe->field("");
 }
