@@ -193,8 +193,13 @@ OvImportCmd* ImportFunc::import(const char* path) {
   OvImportCmd* cmd = new OvImportCmd(editor());
   cmd->pathname(path);
   execute_log(cmd);
+  if (cmd->component()) {
+    ((OverlayComp*)cmd->component())->SetPathName(path);
+    ((OverlayComp*)cmd->component())->SetByPathnameFlag(true);
+  }
   return cmd;
 }
+
 void ImportFunc::execute() {
     ComValue pathnamev(stack_arg(0));
     reset_stack();

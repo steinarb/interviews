@@ -8,6 +8,7 @@
 #define GlyphIndex _lib_iv(GlyphIndex)
 #define IntCoord _lib_iv(IntCoord)
 #define PixelCoord _lib_iv(PixelCoord)
+#define FloatCoord _lib_iv(FloatCoord)
 #define Selection _lib_iv(Selection)
 #define Action _lib_iv(Action)
 #define ActiveHandler _lib_iv(ActiveHandler)

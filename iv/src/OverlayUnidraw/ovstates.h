@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 1994,1999 Vectaport Inc.
- * Copyright (c) 1990, 1991 Stanford University
+ * Copyright 1999 Vectaport Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
@@ -22,41 +21,30 @@
  * 
  */
 
-/*
- * OverlayUnidraw - Unidraw derived for OverlayUnidraw library
- */
-#ifndef ovunidraw_h
-#define ovunidraw_h
+#ifndef ovstates_h
+#define ovstates_h
 
-#include <Unidraw/unidraw.h>
+#include <IVGlyph/namestate.h>
+#include <InterViews/coord.h>
 
-class Command;
-class Event;
-class MacroCmd;
+class OverlayEditor;
 
-//: derived Unidraw object with extra mechanisms.
-// derived Unidraw object with extra mechanisms for logging and deferred
-// execution of commands.
-class OverlayUnidraw : public Unidraw {
+//: state variable to display pointer location in drawing coordinates.
+class PtrLocState : public NameState {
 public:
-    OverlayUnidraw(
-        Catalog*, int& argc, char** argv, 
-        OptionDesc* = nil, PropertyData* = nil
-    );
-    OverlayUnidraw(Catalog*, World*);
-    virtual ~OverlayUnidraw();
+    PtrLocState(PixelCoord x, PixelCoord y, OverlayEditor*);
+    virtual ~PtrLocState();
+    virtual void ptrcoords(PixelCoord x, PixelCoord y);
+    // set current pointer coordinates.
 
-    virtual void Run();
-    virtual void Log(Command*, boolean dirty);
-
-    void Append(Command*);
-
-    static boolean unidraw_updated();
-    static boolean unidraw_updated_or_command_pushed();
-    static void pointer_tracker_func(Event&);
 protected:
-    static MacroCmd* _cmdq;
-    static boolean* _updated_ptr;
+    PtrLocState(); // empty constructor for use of derived class
+    void init(OverlayEditor*); 						  
+
+    float _x;
+    float _y;
+    char* _buf;
+    OverlayEditor* _ed;
 };
 
 #endif

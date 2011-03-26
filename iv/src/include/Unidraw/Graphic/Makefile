@@ -35,8 +35,6 @@ LIBUNIIDRAW = -Wl,-rpath,$(IVTOOLSSRC)/UniIdraw/$(CPU) -L$(IVTOOLSSRC)/UniIdraw/
 LIBTOPOFACE = -Wl,-rpath,$(IVTOOLSSRC)/TopoFace/$(CPU) -L$(IVTOOLSSRC)/TopoFace/$(CPU) -lTopoFace
 LIBOVERLAYUNIDRAW = -Wl,-rpath,$(IVTOOLSSRC)/OverlayUnidraw/$(CPU) -L$(IVTOOLSSRC)/OverlayUnidraw/$(CPU) -lOverlayUnidraw
 
-LIBIUESERV = -Wl,-rpath,$(IVTOOLSSRC)/IueServ/$(CPU) -L$(IVTOOLSSRC)/IueServ/$(CPU) -lIueServ
-
 LIBACEDISPATCH = -Wl,-rpath,$(IVTOOLSSRC)/AceDispatch/$(CPU) -L$(IVTOOLSSRC)/AceDispatch/$(CPU) -lAceDispatch
 
 LIBCOMUNIDRAW = -Wl,-rpath,$(IVTOOLSSRC)/ComUnidraw/$(CPU) -L$(IVTOOLSSRC)/ComUnidraw/$(CPU) -lComUnidraw
@@ -58,8 +56,6 @@ DEPUNIIDRAW = $(IVTOOLSSRC)/UniIdraw/$(CPU)/libUniIdraw.so.$(VERSION)
 DEPTOPOFACE = $(IVTOOLSSRC)/TopoFace/$(CPU)/libTopoFace.so.$(VERSION)
 DEPOVERLAYUNIDRAW = $(IVTOOLSSRC)/OverlayUnidraw/$(CPU)/libOverlayUnidraw.so.$(VERSION)
 
-DEPIUESERV = $(IVTOOLSSRC)/IueServ/$(CPU)/libIueServ.so.$(VERSION)
-
 DEPACEDISPATCH = $(IVTOOLSSRC)/AceDispatch/$(CPU)/libAceDispatch.so.$(VERSION)
 
 DEPCOMUNIDRAW = $(IVTOOLSSRC)/ComUnidraw/$(CPU)/libComUnidraw.so.$(VERSION)
@@ -73,9 +69,9 @@ DEPDRAWSERV = $(IVTOOLSSRC)/DrawServ/$(CPU)/libDrawServ.so.$(VERSION)
 
    RELEASE = ivtools-0.7
 
-   VERSION = 0.7.5
+   VERSION = 0.7.6
 
-   REPOSITORY_FILES = *.c *.cc *.cxx *.C *.h Imakefile *.def template README INSTALL VERSION MANIFEST COPYRIGHT ANNOUNCE README.ivmkcm *.patch *.bugfix.? *.script *.sed comutil.arg comterp.err comutil.ci comterp.arg comterp.ci site.def.SUN4 site.def.LINUX site.def.SGI site.def.HP800 site.def.ALPHA WishList *.defaults *.cf HOWTO Copyright *.sh CHANGES CHANGES-0.? *.cpp ivmkmf *.bash *.1  *.3 config.guess config.sub configure configure.in MANIFEST.perceps *.mk config.mk.in *.tmpl *.flt
+   REPOSITORY_FILES = *.c *.cc *.cxx *.C *.h Imakefile *.def template README INSTALL VERSION MANIFEST COPYRIGHT ANNOUNCE README.ivmkcm *.patch *.bugfix.? *.script *.sed comutil.arg comterp.err comutil.ci comterp.arg comterp.ci site.def.SUN4 site.def.LINUX site.def.SGI site.def.HP800 site.def.ALPHA WishList *.defaults *.cf HOWTO Copyright *.sh CHANGES CHANGES-0.? *.cpp ivmkmf *.bash *.1  *.3 config.guess config.sub configure configure.in MANIFEST.perceps *.mk config.mk.in *.tmpl *.flt *.m4
 
               SHELL = /bin/sh
 
@@ -89,7 +85,7 @@ DEPDRAWSERV = $(IVTOOLSSRC)/DrawServ/$(CPU)/libDrawServ.so.$(VERSION)
      DEPEND_CCFLAGS = -DMAKEDEPEND $(CCDEFINES) $(CCINCLUDES) -I$(GPLUSPLUS_INCLUDE_DIR) -I$(TOOL_INCLUDE_DIR) -UHAVE_ACE
                MAKE = make
            PASSARCH = ARCH="$(ARCH)" SPECIAL_IMAKEFLAGS="$(SPECIAL_IMAKEFLAGS)" CMFLAGS="$(CMFLAGS)" CMMSG="$(CMMSG)"
-          ARCHORCPU = $$CPU
+          ARCHORCPU = $(CPU)
                ARCH = $(ARCHORCPU)$(SPECIAL_ARCH)
        SPECIAL_ARCH =
 
@@ -123,7 +119,7 @@ DEPDRAWSERV = $(IVTOOLSSRC)/DrawServ/$(CPU)/libDrawServ.so.$(VERSION)
 
  CLIPPOLY_CCDEFINES = -DCLIPPOLY
       ACE_CCDEFINES = -DHAVE_ACE
-      IUE_CCDEFINES = -DIUE -DGCC272
+      IUE_CCDEFINES =
 
          CCINCLUDES = $(APP_CCINCLUDES) $(OTHER_CCINCLUDES) $(EXTRA_CCINCLUDES)
       IV_CCINCLUDES = IvCCIncludes
@@ -134,13 +130,11 @@ BACKWARD_CCINCLUDES =
 
 CLIPPOLY_CCINCLUDES = -I$(CLIPPOLYDIR)
      ACE_CCINCLUDES = -I$(ACEDIR)
-     IUE_CCINCLUDES = -I$(IUEDIR)/COOL -I$(IUEDIR)/GeneralUtility -I$(IUEDIR)/Image -I$(IUEDIR)/Smallg++ -I$(IUEDIR)/Tasks-IUE/RegionsOfInterest-AAI -I$(IUEDIR)/Image-IUE -I$(IUEDIR)/Basics-IUE -I$(IUEDIR)/Dex2
+     IUE_CCINCLUDES =
 
         CLIPPOLYDIR = /proj/clippoly
 
              ACEDIR = /proj/ACE_wrappers
-
-             IUEDIR = /xtra4/iue/v3.1-b3
 
              CFLAGS = $(APP_CCFLAGS) $(IV_CCFLAGS) $(OTHER_CCFLAGS) $(EXTRA_CCFLAGS)
 
@@ -182,8 +176,8 @@ NONSHARED_CCLDFLAGS =
        ACE_CCLDLIBS = -L$(ACEDIR)/ace -lACE
           ACELIBDIR = /proj/ACE_wrappers/ace
          ACELIBBASE = libACE.so
-       IUE_CCLDLIBS = -Wl,-rpath,$(IUEDIR)/lib.$(CPU) -L$(IUELIBDIR) -lCOOL -liue-math -lnetlib -lJPEG -lSmallg++ -lBasics -lNumerics -lImageClasses -lEasyImage -lImageProcessing -lInstances01 -lIPGeneric -lIUE-Image -lIUE-Root -lStat -lDex2 -lTraits -lIaf -lIUE-Container -lIUE-Math-Basics -lRegionsOfInterest-AAI -lIUE-\SO-CellLattice -lIUE-\SO-BinaryOps -lIUE-\SO-AxisAlignedBox -lIUE-\SO-Base -lIUE-CS-Base -lIUE-\SO-Point -lIUE-\SO-Line -lIUE-\SO-Curve -lIUE-\SO-Plane -lIUE-\SO-Sample -lIUE-\SO-Surface -lIUE-IF-ImageFeature -lIUE-IF-Region -lDexTestIUE -lIUE-Unit -lTIFF
-          IUELIBDIR = /xtra4/iue/v3.1-b3/lib.LINUX
+       IUE_CCLDLIBS =
+          IUELIBDIR =
          IUELIBBASE = libIUE.so
 
             INSTALL = install

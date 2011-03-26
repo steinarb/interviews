@@ -252,7 +252,15 @@ void OverlayComp::SetPathName(const char* pathname) {}
 const char* OverlayComp::GetPathName() { return nil;}
 
 Component* OverlayComp::GetParent () { 
-    return _parent ? _parent : GraphicComp::GetParent();
+  if (_parent) 
+    return _parent;
+  else {
+    if (GetGraphic()) {
+      Graphic* parent = GetGraphic()->Parent();
+      return !parent ? nil : GetGraphicComp(parent);
+    } else
+      return nil;
+  }
 }
 
 void OverlayComp::SetParent (Component* child, Component* parent) {

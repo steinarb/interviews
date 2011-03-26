@@ -1247,7 +1247,7 @@ GraphicComp* OvImportCmd::Import (const char* path) {
 	comp = rcomp;
 	rr->GetOverlayRaster()->initialize();
 	
-	rcomp->SetByPathnameFlag(false);
+        rcomp->SetByPathnameFlag(chooser_ ? chooser_->by_pathname() : true);
 	
 	helper_->add_pipe(fptr);
 	new ReadImageHandler(

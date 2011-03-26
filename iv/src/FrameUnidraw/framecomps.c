@@ -647,7 +647,11 @@ void FrameIdrawComp::Uninterpret (Command* cmd) {
 	cmd->IsA(UNGROUP_CMD) ||
 	cmd->IsA(FRONT_CMD) ||
 	cmd->IsA(BACK_CMD)) 
-	ed->GetFrame()->GetGraphicComp()->Uninterpret(cmd);
+	if (OverlaysView* frameview = ed->GetFrame()) 
+	  frameview->GetGraphicComp()->Uninterpret(cmd);
+	else
+	  OverlaysComp::Uninterpret(cmd);
+
     else if (cmd->IsA(CREATEFRAME_CMD)) {
 	boolean after = ((CreateFrameCmd*)cmd)->After();
 	Iterator frame;

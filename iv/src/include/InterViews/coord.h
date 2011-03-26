@@ -32,6 +32,7 @@
 #include <InterViews/enter-scope.h>
 
 typedef float _lib_iv(Coord);
+typedef float _lib_iv(FloatCoord);
 typedef int _lib_iv(IntCoord);
 typedef int _lib_iv(PixelCoord);
 

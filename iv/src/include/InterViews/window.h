@@ -46,7 +46,7 @@ class String;
 class Style;
 class WindowRep;
 
-// object that can be mapped onto a screen.
+//: object that can be mapped onto a screen.
 // <a href=../refman3.1/refman.html#PAGE29>in reference manual</a>.
 class Window {
 protected:
@@ -97,6 +97,8 @@ public:
     virtual void ungrab_pointer() const;
 
     virtual void repair();
+
+    virtual void offset_from_toplevel(PixelCoord& dx, PixelCoord& dy);
 
     WindowRep* rep() const;
 protected:

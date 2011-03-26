@@ -53,9 +53,11 @@
 #include <InterViews/transformer.h>
 #include <InterViews/window.h>
 #include <IV-X11/xcanvas.h>
+#include <IV-X11/xwindow.h>
 #include <IV-2_6/InterViews/painter.h>
 #include <IV-2_6/InterViews/sensor.h>
 #include <OS/math.h>
+#include <iostream.h>
 
 /*****************************************************************************/
 
@@ -336,6 +338,20 @@ void OverlayViewer::Manipulate (Manipulator* m, Event& e) {
     GetCanvas()->window()->grab_pointer();
     do {
         Read(e);
+
+	/* correct for motion events that arrive before the */
+        /* GetCanvas()->window()->grab_pointer() takes affect */
+        /* this also has the pleasant side effect of fixing a */
+        /* bug in computing x,y location when the mouse rolls */
+        /* off the canvas */
+	if (e.type() == Event::motion && e.window() && 
+	    e.window() != GetCanvas()->window()) {
+	  WindowRep& ew = *e.window()->rep();
+	  WindowRep& cw = *GetCanvas()->window()->rep();
+	  e.x -=  cw.xpos_-ew.xpos_;
+	  e.y +=  cw.ypos_-ew.ypos_;
+	}
+
 	b = m->Manipulating(e);
     } while (b);
     GetCanvas()->window()->ungrab_pointer();

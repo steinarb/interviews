@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 1994,1999 Vectaport Inc.
- * Copyright (c) 1990, 1991 Stanford University
+ * Copyright 1994, 1995, 1999 Vectaport Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
@@ -22,41 +21,35 @@
  * 
  */
 
-/*
- * OverlayUnidraw - Unidraw derived for OverlayUnidraw library
- */
-#ifndef ovunidraw_h
-#define ovunidraw_h
+#include <OverlayUnidraw/oved.h>
+#include <OverlayUnidraw/ovstates.h>
+#include <OverlayUnidraw/ovviewer.h>
+#include <stdio.h>
 
-#include <Unidraw/unidraw.h>
+/*****************************************************************************/
 
-class Command;
-class Event;
-class MacroCmd;
+PtrLocState::PtrLocState(PixelCoord x, PixelCoord y, OverlayEditor* ed) :NameState(nil)
+{
+  init(ed);
+  ptrcoords(x, y);
+}
 
-//: derived Unidraw object with extra mechanisms.
-// derived Unidraw object with extra mechanisms for logging and deferred
-// execution of commands.
-class OverlayUnidraw : public Unidraw {
-public:
-    OverlayUnidraw(
-        Catalog*, int& argc, char** argv, 
-        OptionDesc* = nil, PropertyData* = nil
-    );
-    OverlayUnidraw(Catalog*, World*);
-    virtual ~OverlayUnidraw();
+PtrLocState::PtrLocState() : NameState(nil) {
+  _buf = nil;
+  _ed = nil;
+}
 
-    virtual void Run();
-    virtual void Log(Command*, boolean dirty);
+void PtrLocState::init(OverlayEditor* ed) {
+  _buf = (char*) new char[256];
+  _ed = ed;
+}
 
-    void Append(Command*);
+PtrLocState::~PtrLocState() {
+  delete _buf;
+}
 
-    static boolean unidraw_updated();
-    static boolean unidraw_updated_or_command_pushed();
-    static void pointer_tracker_func(Event&);
-protected:
-    static MacroCmd* _cmdq;
-    static boolean* _updated_ptr;
-};
-
-#endif
+void PtrLocState::ptrcoords(PixelCoord x, PixelCoord y) {
+  ((OverlayViewer*)_ed->GetViewer())->ScreenToDrawing(x, y, _x, _y);
+  sprintf(_buf, "%.2f %.2f", _x, _y);
+  name(_buf, true);
+}

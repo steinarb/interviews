@@ -118,7 +118,7 @@ void File::close() {
 #endif
 	}
 	if (i->buf_ != nil) {
-	    delete i->buf_;
+	    delete[] i->buf_;
 	}
 	::close(i->fd_);
 	i->fd_ = -1;

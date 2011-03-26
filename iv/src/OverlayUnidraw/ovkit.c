@@ -58,7 +58,9 @@
 #include <OverlayUnidraw/ovselection.h>
 #include <OverlayUnidraw/ovshowhide.h>
 #include <OverlayUnidraw/ovspline.h>
+#include <OverlayUnidraw/ovstates.h>
 #include <OverlayUnidraw/ovtext.h>
+#include <OverlayUnidraw/ovunidraw.h>
 #include <OverlayUnidraw/ovviewer.h>
 #include <OverlayUnidraw/setattrbyexpr.h>
 #include <OverlayUnidraw/slctbyattr.h>
@@ -76,7 +78,6 @@
 #include <Unidraw/kybd.h>
 #include <Unidraw/statevars.h>
 #include <Unidraw/uctrls.h>
-#include <Unidraw/unidraw.h>
 #include <Unidraw/viewer.h>
 
 #include <Unidraw/Commands/align.h>
@@ -117,6 +118,7 @@
 #include <InterViews/background.h>
 #include <InterViews/deck.h>
 #include <InterViews/display.h>
+#include <InterViews/event.h>
 #include <InterViews/frame.h>
 #include <InterViews/label.h>
 #include <InterViews/layout.h>
@@ -306,6 +308,25 @@ void OverlayKit::InitLayout(const char* name) {
 }
 
 Glyph* OverlayKit::MakeStates() {
+  Catalog* catalog = unidraw->GetCatalog();
+  const char* ptrlocstr = catalog->GetAttribute("ptrloc");
+  if (ptrlocstr && strcmp(ptrlocstr, "true")==0) {
+    if (Event::event_tracker() != OverlayUnidraw::pointer_tracker_func)
+	Event::event_tracker(OverlayUnidraw::pointer_tracker_func);
+
+    _ed->_ptrlocstate = new PtrLocState(0,0, _ed);
+    NameView* ptrlocview = new NameView(_ed->ptrlocstate());
+
+    LayoutKit& lk = *LayoutKit::instance();
+    WidgetKit& kit = *WidgetKit::instance();
+    return kit.inset_frame(
+	lk.margin(
+	    lk.hbox(lk.hglue(), ptrlocview),
+	    4, 2
+	    )
+    );
+
+  } else
     return nil;
 }
 

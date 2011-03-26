@@ -43,6 +43,7 @@ class OverlayComp;
 class OverlayPanner;
 class OverlayViewer;
 class OverlaysView;
+class PtrLocState;
 class UPage;
 class TextObserver;
 class Viewer;
@@ -146,6 +147,12 @@ public:
     static boolean opaque_flag();
     // return global flag indicating whether opaque tranformations are enabled.
 
+    PtrLocState* ptrlocstate() { return _ptrlocstate; }
+    // state variable for displaying pointer location within document.
+
+    void ptrlocstate(PtrLocState* ptrlocstate) { _ptrlocstate = ptrlocstate; }
+    // set state variable for displaying pointer location within document.
+
 protected:
     void Init(OverlayComp* = nil, const char* = "OverlayEditor");
     // construct empty component tree if necessary, and pass to
@@ -164,6 +171,7 @@ protected:
     OverlayKit* _overlay_kit;
     Tool* _curtool;
     ObservableText* _mousedoc;
+    PtrLocState* _ptrlocstate;
     static AttributeList* _edlauncherlist;
     static AttributeList* _comterplist;
 

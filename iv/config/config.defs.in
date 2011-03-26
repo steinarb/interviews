@@ -15,10 +15,12 @@
 
 #if @ACE_ENABLED@
 #define AceDir @ACE@
+#define AceLibDir @ACE_LIBS@
 #endif
 
 #if @CLIPPOLY_ENABLED@
 #define ClipPolyDir @CLIPPOLY@
+#define ClipPolyLibDir @CLIPPOLY_LIBS@
 #endif
 
 #if @IUE_ENABLED@
@@ -33,7 +35,7 @@
 #define CDriver @CC@
 
 #undef GPlusPlusIncludeDir
-#define GPlusPlusIncludeDir @CXX_HDRDIR@
+#define GPlusPlusIncludeDir @CXX_INCLUDE_DIR@
 
 #undef InstallRelative
 #define InstallRelative @INSTALLRELATIVE@

@@ -41,7 +41,7 @@ class String;
 class Style;
 class Window;
 
-// X window display object.
+//: X window display object.
 // <a href=../refman3.1/refman.html#PAGE35>in reference manual</a>.
 class Display {
 public:
