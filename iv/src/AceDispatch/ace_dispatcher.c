@@ -22,7 +22,6 @@
  */
 
 #ifdef HAVE_ACE
-
 #include <AceDispatch/ace_dispatcher.h>
 #include <AceDispatch/ace_iohandler.h>
 #include <ace/Event_Handler.h>

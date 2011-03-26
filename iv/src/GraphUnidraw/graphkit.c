@@ -282,9 +282,9 @@ MenuItem* GraphKit::MakeViewMenu() {
     MenuItem* zoomi = kit.menu_item(kit.label("Zoom             "));
     Menu* zoom = kit.pullright();
     zoomi->menu(zoom);
-    MakeMenu(zoomi, new ZoomCmd(new ControlInfo("Zoom In"), 2.0),
+    MakeMenu(zoomi, new ZoomCmd(new ControlInfo("Zoom In", "Z", "Z"), 2.0),
 	     "Zoom In          ");
-    MakeMenu(zoomi, new ZoomCmd(new ControlInfo("Zoom Out"), 0.5),
+    MakeMenu(zoomi, new ZoomCmd(new ControlInfo("Zoom Out", "^Z", ""), 0.5),
 	     "Zoom Out         ");
     MakeMenu(zoomi, new PreciseZoomCmd(new ControlInfo("Precise Zoom")),
 	     "Precise Zoom     ");

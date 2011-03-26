@@ -281,9 +281,16 @@ void OverlayEditor::InformComponents() {
 }
 
 void OverlayEditor::SetComponent(Component* comp) {
+    Component* orig = GetComponent();
+
     GetSelection()->Clear();
     IdrawEditor::SetComponent(comp);
     DoInformComponents(this, comp);
+
+    if (orig != nil && unidraw->FindAny(orig) == nil) {
+        Component* root = orig->GetRoot();
+        delete root;
+    }
 }
 
 void OverlayEditor::Annotate(OverlayComp* comp) {
@@ -364,4 +371,13 @@ void OverlayEditor::ResetStateVars() {
     strcmp(unidraw->GetCatalog()->GetAttribute("opaque_off"), "true") != 0 :
     false;
   return opflag;
+}
+
+/* virtual */ void OverlayEditor::ExecuteCmd(Command* cmd) {
+  cmd->Execute();
+  if (cmd->Reversible()) {
+    cmd->Log();
+  } else {
+    delete cmd;
+  }
 }

@@ -130,15 +130,15 @@ public:
     // return pointer to static list of editor launching function pointers.
     
     static int ncomterp();
-    // number of ComTerp objects in static list.
+    // number of ComTerpServ objects in static list.
     static void add_comterp(const char* name, ComTerpServ* comterp);
-    // add ComTerp to static list.
+    // add ComTerpServ to static list.
     static ComTerpServ* comterp(const char *);
-    // get ComTerp by 'name' from static list.
+    // get ComTerpServ by 'name' from static list.
     static ComTerpServ* comterp(int symid);
-    // get ComTerp by 'symid' from static list.
+    // get ComTerpServ by 'symid' from static list.
     static AttributeList* comterplist() { return _comterplist; }
-    // return pointer to static list of ComTerp objects.
+    // return pointer to static list of ComTerpServ objects.
     
     virtual void DoAutoNewFrame() { };
     // empty method for use by multi-frame editors for creating a new frame
@@ -152,6 +152,10 @@ public:
 
     void ptrlocstate(PtrLocState* ptrlocstate) { _ptrlocstate = ptrlocstate; }
     // set state variable for displaying pointer location within document.
+
+    virtual void ExecuteCmd(Command* cmd);
+    // indirect command execution for distributed whiteboard mechanism.
+    // actual mechanism implemented in ComEditor.
 
 protected:
     void Init(OverlayComp* = nil, const char* = "OverlayEditor");

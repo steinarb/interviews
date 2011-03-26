@@ -1,7 +1,7 @@
 
 			INSTALL for ivtools-0.7
 
-Instructions for building ivtools-0.7.8 from source:
+Instructions for building ivtools-0.7.9 from source:
 
 0. Compilation Environment
 
@@ -17,10 +17,10 @@ The libstdc++ version numbers stay roughly in synch with the gcc
 version numbers.  If you have if you have gcc-2.8.1 you'd want
 libstdc++-2.8.1, etc..
 
-0.c. An installed copy of X11R4, X11R5, or X11R6 as distributed by
-MIT, or equivalent (i.e., XFree86 for Linux, etc.)  If you use a
-vendor's X11 product, the product should be based on R4 or later and
-the product should include imake and the config files.
+0.c. An installed copy of X11R6 as distributed by the Open Group, or
+an equivalent (XFree86 for Linux, or X11R5 from MIT).  If you use a
+vendor's X11 product, the product should be based on X11R4 or later
+and the product should include imake and the config files.
 
 If you can't find imake on your system, you can get the sources for
 imake from the X11R5 or X11R6 distribution at several public ftp
@@ -53,6 +53,10 @@ functions.  For example, on Linux RedHat 4.1 we had to add:
 
 #define ACE_LACKS_READIR_R
 
+You may also want to avoid building with thread support if you have
+any problems with using ACE.  ivtools makes no use of ACE threads
+capability.
+
 gcc-2.8.1 and egcs-1.0.2 or greater are needed for ACE-4.5 or greater.
 Ensure -fPIC is used when compiling.  If you are building with
 gcc-2.7.2.* or earlier, you'll want to use ACE-4.2 instead of the
@@ -77,17 +81,18 @@ class libraries for image understanding application development.
 1. Configuring ivtools:
 
 1.a. You no longer need to set your CPU environment variable to build
-ivtools, but you still need a CPU specific configuration file.  LINUX,
-SUN4 (and Solaris), SGI, HP800 (HPUX), and ALPHA are currently
-supported.
+ivtools, but you still need a CPU specific configuration file.
+Ready-made configurations that have been known to work exist for
+LINUX, SUN4 (and Solaris), SGI, HP800 (HPUX), and ALPHA.
 
 Use "make CPU" from the top directory to see the symbol ivtools will
 use for your OS (grep config/arch.def for ArchitectureName to get a
 complete list of possible OS'es).  Then look for a matching
-config/site.def.'CPU' file.  If it is there proceed to step 1.b.
+config/site.def.<CPU> file, where <CPU> is the value returned by "make
+CPU".  If it is there proceed to step 1.b.
 
 Other variants of Unix can be attempted by creating the corresponding
-config/site.def.'CPU', i.e. site.def.AIX or site.def.MIPS.
+config/site.def.<CPU>, i.e. site.def.AIX or site.def.MIPS.
 
 Use SUN4 for Solaris as well as SunOS.  Although SUN5 would be more
 correct, the config files automatically determine the difference
@@ -123,8 +128,7 @@ libraries.
 Here is an example of using the configure script with ACE and clippoly
 libraries:
 
-./configure --with-clippoly=/proj/clippoly --with-clippoly-libs=/proj/clippoly\
- --with-ace=/proj/ACE_wrappers --with-ace-libs=/proj/ACE_wrappers/ace
+./configure --with-clippoly=/proj/clippoly --with-ace=/proj/ACE_wrappers
 
 Running the configure script generates two files, a config/config.mk
 that gets included into each Makefile when used, and a
@@ -132,14 +136,14 @@ config/config-<os>-gcc.defs that gets used by "make Makefiles"
 described below.  <os> is something like linux.  The last line of
 output from the configure script shows this pathname.  Verify that
 this is the same as the file included at the end of the
-config/site.def.'CPU' file.  Change the site.def.'CPU' file if
+config/site.def.<CPU> file.  Change the site.def.<CPU> file if
 necessary.
 
 Also you may want to review the rest of the entries in the
-site.def.'CPU' file to see if they are good defaults for your system.
+site.def.<CPU> file to see if they are good defaults for your system.
 Some of these, like UseRpath and InstallRelative, are overridden in
 the config/config-<os>-gcc.defs file, so their value in
-config/site.def.'CPU' has no affect.
+config/site.def.<CPU> has no affect.
 
 ** See http://www.vectaport.com/ivtools/faq.html for more info.
 
@@ -158,7 +162,7 @@ directory after running the configure script).
 
 	- generates compilation dependencies for each 
 	  directory with code to compile -- see the
-	  Makefile.depend file in each 'CPU' sub-directory
+	  Makefile.depend file in each <CPU> sub-directory
 	  ("make depend").
 
 	- compiles and links everything ("make -k").
@@ -179,7 +183,7 @@ If you have any trouble at this stage take a look at:
 Each directory under ivtools-0.7/src that begins in lower case (except
 for "include" and "scripts") contains executables that exercise some
 particular functionality.  "cd" to each particular directory, type
-"'CPU'/a.out" and see what happens (the utils directory contains more
+"<CPU>/a.out" and see what happens (the utils directory contains more
 than one executable, things named other than a.out).  Quite a few
 directories have README's that go into further detail on how to use
 the programs.  ivtools-0.7/src/glyphs contains sub-directories of
@@ -205,8 +209,8 @@ uninstall" is supported as well.
 
 When relative install is enabled (--enable-install-relative for the
 configure script), the binaries are installed in
-ivtools-0.7/bin/'CPU', the libraries are installed in
-ivtools-0.7/lib/'CPU', and the run-time X resource and config files
+ivtools-0.7/bin/<CPU>, the libraries are installed in
+ivtools-0.7/lib/<CPU>, and the run-time X resource and config files
 are installed in ivtools-0.7/lib/ivtools.
 
 When relative install is disabled (the default for the configure

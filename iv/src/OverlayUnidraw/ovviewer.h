@@ -128,11 +128,16 @@ public:
 
     virtual void SetMagnification(float);
 
+    void ExecuteCmd(Command* cmd);
+    // indirect command execution for distributed whiteboard mechanism.
+    // bulk of mechanism implemented in ComEditor.
+
 protected:
     virtual void Zoom(Perspective&);
     virtual void Scroll(Perspective&);
     virtual void Manipulate(Manipulator*, Event&); // direct manipulation loop
     void PrepareDoubleBuf();
+
 protected:
     boolean _needs_resize;
     boolean _pan_chain;

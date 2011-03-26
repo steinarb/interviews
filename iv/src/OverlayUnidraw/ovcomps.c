@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994-1996 Vectaport Inc.
+ * Copyright (c) 1994-1999 Vectaport Inc.
  * Copyright (c) 1990, 1991 Stanford University
  *
  * Permission to use, copy, modify, distribute, and sell this software and
@@ -23,7 +23,7 @@
  */
 
 /*
- * OverlayIdrawComp implementation.
+ * OverlayUnidraw component implementation.
  */
 
 #include <OverlayUnidraw/ovclasses.h>

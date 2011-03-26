@@ -62,6 +62,7 @@ OverlayUnidraw::OverlayUnidraw (Catalog* c, int& argc, char** argv,
 				OptionDesc* od, PropertyData* pd) 
 : Unidraw(c, argc, argv, od, pd) {
     _cmdq = new MacroCmd();
+    _ovviewer = nil;
 
     /* replace default Painter with an OverlayPainter */
     OverlayGraphic::new_painter();
@@ -70,6 +71,7 @@ OverlayUnidraw::OverlayUnidraw (Catalog* c, int& argc, char** argv,
 OverlayUnidraw::OverlayUnidraw (Catalog* c, World* w) 
 : Unidraw(c, w) {
     _cmdq = new MacroCmd();
+    _ovviewer = nil;
 }
 
 OverlayUnidraw::~OverlayUnidraw () 

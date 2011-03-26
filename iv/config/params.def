@@ -36,7 +36,7 @@
  * VersionNumber
  */
 #ifndef Version
-#define	Version 0.7.8
+#define	Version 0.7.9
 #endif
 
    VERSION = Version
@@ -1189,7 +1189,7 @@ NONSHARED_CCLDFLAGS = NonSharedCCLdFlags
 #define BinDir InstalledRoot/bin
 #endif
 #ifndef RelativeBinDir
-#define RelativeBinDir $(TOP)/bin/$(ARCH)
+#define RelativeBinDir $(RELTOP)/bin/$(ARCH)
 #endif
 
 #ifndef ConfigDir

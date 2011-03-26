@@ -51,6 +51,11 @@ void RandFunc::execute() {
     }
   } 
 
+#ifndef RAND_MAX
+#include <sys/limits.h>
+#define RAND_MAX INT_MAX
+#endif
+
   double gain = (maxval-minval)/RAND_MAX;
   double bias = minval;
 

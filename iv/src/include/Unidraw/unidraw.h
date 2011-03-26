@@ -95,6 +95,7 @@ protected:
 
     UList* elem(Iterator);
     Command* command(UList*);
+public:
     boolean alive();
     boolean updated();
 

@@ -50,6 +50,7 @@
 #include <IV-X11/xraster.h>
 
 #include <assert.h>
+#include <iostream.h>
 
 #undef RasterRect
 
@@ -1083,7 +1084,7 @@ void OverlayPainter::DoRasterRect(
     rr->load_image();
 
     const OverlayRaster* r = or ? or : rr->GetOriginal();
-    r->flush();
+    rr->damage_flush();  // was r->flush()
 
     if (!icache_) {
         icache_ = new ImageCache();
@@ -1122,6 +1123,9 @@ void OverlayPainter::DoRasterRect(
 
     if (Rep()->clipped) {
         BoundingRectIntersect(Rep()->xclip[0], rg, bb);
+	// cerr << "used clipbox of " 
+	     // << Rep()->xclip[0].x << "," << Rep()->xclip[0].y << ","
+	     // << Rep()->xclip[0].width << "," << Rep()->xclip[0].height << "\n";
     }
     else {
         XRectangle canvas_rect;

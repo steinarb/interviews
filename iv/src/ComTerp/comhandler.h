@@ -30,6 +30,7 @@
 
 #ifdef HAVE_ACE
 
+#include <signal.h>
 #include <ace/Acceptor.h>
 #include <ace/Reactor.h>
 #include <ace/Singleton.h>

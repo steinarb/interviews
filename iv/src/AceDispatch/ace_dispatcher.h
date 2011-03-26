@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996 Vectaport Inc.
+ * Copyright (c) 1996,1999 Vectaport Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
@@ -26,6 +26,7 @@
 
 #ifdef HAVE_ACE
 
+#include <signal.h> 
 #include <Dispatch/dispatcher.h>
 #include <Dispatch/iohandler.h>
 #include <OS/table.h>

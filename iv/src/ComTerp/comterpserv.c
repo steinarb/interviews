@@ -414,6 +414,7 @@ void ComTerpServ::add_defaults() {
   if (!_defaults_added) {
     ComTerp::add_defaults();
     add_command("remote", new RemoteFunc(this));
+    add_command("eval", new EvalFunc(this));
   }
 }
 

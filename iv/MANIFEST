@@ -361,6 +361,7 @@ ivtools-0.7/src/IV-X11/xwindow.c
 ivtools-0.7/src/IV-common/Imakefile
 ivtools-0.7/src/IV-common/Makefile
 ivtools-0.7/src/IV-common/listimpl.c
+ivtools-0.7/src/IV-common/math.c
 ivtools-0.7/src/IV-common/memory.c
 ivtools-0.7/src/IV-common/regexp.c
 ivtools-0.7/src/IV-common/resource.c
@@ -758,7 +759,7 @@ ivtools-0.7/src/UniIdraw/idvars.h
 ivtools-0.7/src/UniIdraw/idversion.h
 ivtools-0.7/src/Unidraw-common/Imakefile
 ivtools-0.7/src/Unidraw-common/Makefile
-ivtools-0.7/src/Unidraw-common/fgeomobjs.c
+ivtools-0.7/src/Unidraw-common/geomobjs.c
 ivtools-0.7/src/Unidraw-common/iterator.c
 ivtools-0.7/src/Unidraw-common/ulist.c
 ivtools-0.7/src/Unidraw/Imakefile
@@ -1105,8 +1106,6 @@ ivtools-0.7/src/include/Dispatch/Imakefile
 ivtools-0.7/src/include/Dispatch/Makefile
 ivtools-0.7/src/include/Dispatch/_defines.h
 ivtools-0.7/src/include/Dispatch/_undefs.h
-ivtools-0.7/src/include/Dispatch/ace_dispatcher.h
-ivtools-0.7/src/include/Dispatch/ace_iohandler.h
 ivtools-0.7/src/include/Dispatch/dispatcher.h
 ivtools-0.7/src/include/Dispatch/dp.h
 ivtools-0.7/src/include/Dispatch/enter-scope.h
@@ -1494,6 +1493,7 @@ ivtools-0.7/src/include/Unidraw/viewer.h
 ivtools-0.7/src/include/ivstd/Imakefile
 ivtools-0.7/src/include/ivstd/Makefile
 ivtools-0.7/src/include/ivstd/math.h
+ivtools-0.7/src/include/ivstd/nan.h
 ivtools-0.7/src/include/ivstd/osfcn.h
 ivtools-0.7/src/include/ivstd/signal.h
 ivtools-0.7/src/include/ivstd/stdio.h

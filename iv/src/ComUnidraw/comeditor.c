@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994-1996 Vectaport Inc.
+ * Copyright (c) 1994-1999 Vectaport Inc.
  *
  * Permission to use, copy, modify, distribute, and sell this software and
  * its documentation for any purpose is hereby granted without fee, provided
@@ -31,16 +31,25 @@
 #include <ComTerp/comterpserv.h>
 #include <ComTerp/strmfunc.h>
 
+#include <OverlayUnidraw/ovclasses.h>
 #include <OverlayUnidraw/ovcomps.h>
+#include <OverlayUnidraw/scriptview.h>
 
 #include <Unidraw/catalog.h>
+#include <Unidraw/clipboard.h>
+#include <Unidraw/creator.h>
+#include <Unidraw/iterator.h>
 #include <Unidraw/keymap.h>
 #include <Unidraw/kybd.h>
 #include <Unidraw/unidraw.h>
 
+#include <Unidraw/Commands/command.h>
+
 #include <InterViews/frame.h>
 
 #include <Attribute/attrlist.h>
+
+#include <strstream.h>
 
 /*****************************************************************************/
 
@@ -72,6 +81,7 @@ ComEditor::ComEditor(const char* file, OverlayKit* kit)
 ComEditor::ComEditor(boolean initflag, OverlayKit* kit) 
 : OverlayEditor(initflag, kit) {
   _terp = nil;
+  _whiteboard = -1;
 }
 
 void ComEditor::Init (OverlayComp* comp, const char* name) {
@@ -82,7 +92,7 @@ void ComEditor::Init (OverlayComp* comp, const char* name) {
     sprintf(buffer, "Comdraw%d", ncomterp());
     add_comterp(buffer, _terp);
     _overlay_kit->Init(comp, name);
-    
+    _whiteboard = -1;
 }
 
 void ComEditor::InitCommands() {
@@ -104,11 +114,15 @@ void ComEditor::AddCommands(ComTerp* comterp) {
     ((ComTerpServ*)comterp)->add_defaults();
 
     comterp->add_command("rect", new CreateRectFunc(comterp, this));
+    comterp->add_command("rectangle", new CreateRectFunc(comterp, this));
     comterp->add_command("line", new CreateLineFunc(comterp, this));
+    comterp->add_command("arrowline", new CreateLineFunc(comterp, this));
     comterp->add_command("ellipse", new CreateEllipseFunc(comterp, this));
     comterp->add_command("text", new CreateTextFunc(comterp, this));
     comterp->add_command("multiline", new CreateMultiLineFunc(comterp, this));
+    comterp->add_command("arrowmultiline", new CreateMultiLineFunc(comterp, this));
     comterp->add_command("openspline", new CreateOpenSplineFunc(comterp, this));
+    comterp->add_command("arrowspline", new CreateOpenSplineFunc(comterp, this));
     comterp->add_command("polygon", new CreatePolygonFunc(comterp, this));
     comterp->add_command("closedspline", new CreateClosedSplineFunc(comterp, this));
 
@@ -156,5 +170,67 @@ void ComEditor::AddCommands(ComTerp* comterp) {
     comterp->add_command("import", new ImportFunc(comterp, this));
 }
 
+/* virtual */ void ComEditor::ExecuteCmd(Command* cmd) {
+  if(!whiteboard()) 
+    OverlayEditor::ExecuteCmd(cmd);
+  else {
+    ostrstream sbuf;
+    switch (cmd->GetClassId()) {
+    case PASTE_CMD:
+      {
+      boolean scripted = false;
+      Clipboard* cb = cmd->GetClipboard();
+      if (cb) {
+	Iterator it;
+	for (cb->First(it); !cb->Done(it); cb->Next(it)) {
+	  OverlayComp* comp = (OverlayComp*)cb->GetComp(it);
+	  if (comp) {
+	    Creator* creator = unidraw->GetCatalog()->GetCreator();
+	    OverlayScript* scripter = (OverlayScript*)
+	      creator->Create(Combine(comp->GetClassId(), SCRIPT_VIEW));
+	    if (scripter) {
+	      scripter->SetSubject(comp);
+	      if (scripted) 
+		sbuf << ';';
+	      else 
+		scripted = true;
+	      boolean status = scripter->Definition(sbuf);
+	      delete scripter;
+	    }
+	  }
+	}
+      }
+      if (!scripted)
+	sbuf << "print(\"Failed attempt to generate script for a PASTE_CMD\\n\" :err)";
+      sbuf.put('\0');
+      cerr << sbuf.str() << "\n";
+      GetComTerp()->run(sbuf.str());
+      delete cmd;
+      }
+      break;
+    default:
+      sbuf << "print(\"Attempt to convert unknown command (id == %d) to interpretable script\\n\" " << cmd->GetClassId() << " :err)";
+      cmd->Execute();
+      if (cmd->Reversible()) {
+	cmd->Log();
+      } else {
+	delete cmd;
+      }
+      break;
+    }
+  }
+}
 
-
+boolean ComEditor::whiteboard() { 
+  if (_whiteboard==-1) {
+    Catalog* catalog = unidraw->GetCatalog();
+    const char* wbmaster_str = catalog->GetAttribute("wbmaster");
+    const char* wbslave_str = catalog->GetAttribute("wbslave");
+    if (wbmaster_str && strcmp(wbmaster_str, "true")==0 || 
+	wbslave_str && strcmp(wbslave_str, "true")==0) 
+      _whiteboard = 1;
+    else
+      _whiteboard = 0;
+  }
+  return _whiteboard;
+}

@@ -27,6 +27,8 @@
 /*
  * RasterOvComp definitions.
  */
+// #define RASTER_DAMAGE1 // define for incremental flushing of raster
+// #define RASTER_DAMAGE2 // define to use mbr of incrementally loaded region for raster damage.
 
 #include <OS/math.h>
 #include <math.h>
@@ -41,13 +43,15 @@
 #include <OverlayUnidraw/ovraster.h>
 #include <OverlayUnidraw/paramlist.h>
 #include <OverlayUnidraw/ovipcmds.h>
+#include <OverlayUnidraw/ovviewer.h>
 
 #include <Unidraw/editor.h>
 #include <Unidraw/unidraw.h>
 #include <Unidraw/globals.h>
 
-#include <Unidraw/Graphic/rasterrect.h>
+#include <Unidraw/Graphic/damage.h>
 
+#include <Unidraw/Graphic/rasterrect.h>
 #include <IVGlyph/gdialogs.h>
 
 #include <InterViews/session.h>
@@ -305,9 +309,15 @@ void RasterOvView::Update () {
     OverlayRasterRect* raster = (OverlayRasterRect*)GetGraphic();
     OverlayRasterRect* subj = (OverlayRasterRect*)GetRasterOvComp()->GetGraphic();
 
-    IncurDamage(raster);
+#if defined(RASTER_DAMAGE2)
+    if (!subj->damage_done())
+#endif
+      IncurDamage(raster);
     *raster = *subj;
-    IncurDamage(raster);
+#if defined(RASTER_DAMAGE2)
+    if (!subj->damage_done())
+#endif
+      IncurDamage(raster);
     EraseHandles();
 }
 
@@ -884,6 +894,7 @@ OverlayRasterRect::OverlayRasterRect(OverlayRaster* r, Graphic* gr) : RasterRect
     Resource::ref(_p);
 #endif
     _xbeg = _xend = _ybeg = _yend = -1;
+    _damage_done = 0;
 }
 
 OverlayRasterRect::~OverlayRasterRect () {}
@@ -989,11 +1000,40 @@ OverlayRasterRect& OverlayRasterRect::operator = (OverlayRasterRect& rect) {
     _ybeg = rect.ybeg();
     _yend = rect.yend();
 
+    if( _damage_done = rect.damage_done()) {
+      _damage_l = rect._damage_l;
+      _damage_b = rect._damage_b;
+      _damage_r = rect._damage_r;
+      _damage_t = rect._damage_t;
+    }
+
     Unref(_raster);
     _raster = rect._raster;
     Resource::ref(_raster);
 
     return *this;
+}
+
+void OverlayRasterRect::damage_flush() {
+  if (_raster) {
+#if defined(RASTER_DAMAGE1)
+    if (_damage_done) {
+      _raster->flushrect(_damage_l, _damage_b, _damage_r, _damage_t);
+      _damage_done = 0;
+    } else
+#endif
+      _raster->flush();
+  }
+}
+
+void OverlayRasterRect::damage_rect(IntCoord l, IntCoord b, 
+				    IntCoord r, IntCoord t) 
+{
+  _damage_l = l;
+  _damage_b = b;
+  _damage_r = r;
+  _damage_t = t;
+  _damage_done = 1;
 }
 
 /*****************************************************************************/
@@ -1353,7 +1393,14 @@ void OverlayRaster::initialize() {
 void OverlayRaster::flush() const {
     RasterRep* r = rep();
     if (r->pixmap_)
-	Raster::flush();
+      Raster::flush();
+}
+
+void OverlayRaster::flushrect(IntCoord left, IntCoord bottom, 
+			      IntCoord right, IntCoord top) const {
+    RasterRep* r = rep();
+    if (r->pixmap_)
+	Raster::flushrect(left, bottom, right, top);
 }
 
 int OverlayRaster::status() const {

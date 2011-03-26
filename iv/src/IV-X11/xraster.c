@@ -327,3 +327,45 @@ void Raster::flush() const {
     }
 }
 
+void Raster::flushrect(IntCoord left, IntCoord bottom, 
+		       IntCoord right, IntCoord top) const {
+//  cerr << "Raster::flushrect l,b,r,t " <<
+//    left << "," << bottom << "," <<
+//    right << "," << top << "\n";
+  RasterRep* r = rep();
+  if (r->pixmap_)
+    {
+      if (r->modified_) {
+	
+#ifdef XSHM
+	if (r->shared_memory_) {
+//	  cerr << "Raster::flushrect args to XShmPutImage " <<
+//	     "...," << 
+//	    left << "," <<  r->pheight_ - top - 1 << "," <<
+//	    left << "," <<  r->pheight_ - top - 1 << "," <<
+//	    right-left+1 << "," << top-bottom+1 << "\n";
+	  XShmPutImage(
+		       r->display_->rep()->display_, r->pixmap_, r->gc_, r->image_,
+		       left, r->pheight_ - top - 1,
+		       left, r->pheight_ - top - 1,
+		       right-left+1, top-bottom+1, True
+		       );
+	XEvent xe;
+	// thank god for this routine
+	XIfEvent(r->display_->rep()->display_, &xe, completion, nil);
+	}
+#endif
+	if (!r->shared_memory_) {
+	  XPutImage(
+		    r->display_->rep()->display_, r->pixmap_, r->gc_, r->image_,
+		    left, r->pheight_ - top - 1,
+		    left, r->pheight_ - top - 1,
+		    right-left+1, top-bottom+1
+		    );
+	}
+	r->modified_ = false;
+      }
+    }
+}
+
+

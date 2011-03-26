@@ -44,6 +44,14 @@ static const char *const SERVER_HOST = ACE_DEFAULT_SERVER_HOST;
 #define BUFSIZ 1024
 #endif
 
+#define GEOMOBJS_LINKING_TEST
+#if defined (GEOMOBJS_LINKING_TEST)
+#include <Unidraw/Graphic/geomobjs.h>
+#include <TopoFace/fgeomobjs.h>
+PointObj ip(0,0);
+FPointObj fp(0.,0.);
+#endif
+
 int main(int argc, char *argv[]) {
 
     boolean server_flag = argc>1 && strcmp(argv[1], "server") == 0;

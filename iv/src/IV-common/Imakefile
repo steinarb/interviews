@@ -14,6 +14,7 @@ MakeLibrary($(LIB),$(VERSION))
 #define Obj(file) MakeObjectFromSrcFlags(file,$(OPTIMIZE_CCFLAGS))
 
 Obj(listimpl)
+Obj(math)
 Obj(memory)
 Obj(regexp)
 Obj(resource)

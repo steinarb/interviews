@@ -112,8 +112,9 @@ void AttributeListEditor::update_text(boolean update) {
 	if (name)
 	    strcat(buf, name);
 	int n;
-	for (n = 15; n > namelen; n--)
+	for (n = 15; n > namelen-1; n--)
 	    strcat(buf, " ");
+	strcat(buf, " ");
 	strstream valstr;
 	valstr << *attr->Value() << '\0';
 	const char* val = valstr.str();

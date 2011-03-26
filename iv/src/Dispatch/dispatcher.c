@@ -60,7 +60,7 @@ extern "C" {
 #endif
 }
 
-#if defined(__GLIBC__) && __GLIBC__>=2
+#if defined(__GLIBC__) && (__GLIBC__==2 && __GLIBC_MINOR__>0 || __GLIBC__>2)
 #define fds_bits __fds_bits
 #endif
 

@@ -109,6 +109,18 @@ public:
 
 };
 
+//: eval string command for ComTerp.
+// eval(cmdstr) -- evaluate string as commands.
+class EvalFunc : public ComFunc {
+public:
+    EvalFunc(ComTerp*);
+
+    virtual void execute();
+    virtual const char* docstring() { 
+      return "%s(cmdstr) -- evaluate string as commands"; }
+
+};
+
 //: shell escape command for ComTerp.
 // shell(cmdstr) -- evaluate command in shell.
 class ShellFunc : public ComFunc {
