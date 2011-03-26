@@ -34,6 +34,7 @@
 #include <InterViews/_enter.h>
 
 class Display;
+class Event;
 class EventRep;
 class Interactor;
 class Handler;
@@ -42,6 +43,7 @@ class World;
 
 typedef unsigned int EventType;
 typedef unsigned int EventButton;
+typedef void (*event_tracker_ptr)(Event&);
 
 /* anachronism */
 enum {
@@ -112,6 +114,11 @@ public:
     virtual unsigned int mapkey(char*, unsigned int len) const;
 
     EventRep* rep() const;
+
+    static event_tracker_ptr event_tracker() { return _event_tracker; }
+    static void event_tracker(event_tracker_ptr ptr) { _event_tracker = ptr; }
+protected:
+    static event_tracker_ptr _event_tracker;
 private:
     EventRep* rep_;
     char free_store_[200];

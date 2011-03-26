@@ -650,7 +650,7 @@ Concat(lib,libname.so.rev): depobjs					@@\
 	SharedLibraryCmd(ldobjs,-Wl\,-soname=Concat(lib\,libname.so.rev))@@\
 	$(RM) $@							@@\
 	$(MV) $@~ $@							@@\
- 	$(LN) $@ Concat(lib,libname.so)					@@\
+	$(LN) $@ Concat(lib,libname.so)					@@\
 									@@\
 clean::									@@\
 	$(RM) Concat(lib,libname.so.rev)
@@ -1009,12 +1009,22 @@ uninstall::								@@\
 #if InstallRelative
 #define InstallSymLink(dir, file) /**/
 #else
+#if !defined(SVR4)
 #define InstallSymLink(dir, file)					@@\
 install::								@@\
 	MakeDir(dir)							@@\
-	cp -d file dir							@@\
+	cp -fd file dir							@@\
 									@@\
 uninstall::								@@\
 	$(RM) dir/file	
+#else
+#define InstallSymLink(dir, file)					@@\
+install::								@@\
+	MakeDir(dir)							@@\
+	tar cf - file | (cd dir; tar xfp -)				@@\
+									@@\
+uninstall::								@@\
+	$(RM) dir/file	
+#endif
 #endif	
 #endif

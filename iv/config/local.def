@@ -1,12 +1,8 @@
 XCOMM -------------------------------------------------------------------------
 XCOMM from <local.def>:
 
-/*
- * Assume the use of gcc-2.3.3 or greater
- */ 
-#undef LanguageCCDefines
-#define LanguageCCDefines -Dcplusplus_2_1
-#include <gcc.def>
+/*********************************************************/
+/* start of things you might want to change in this file */
 
 /*
  * Default customization of kits.
@@ -40,6 +36,16 @@ XCOMM from <local.def>:
  */
 #undef RemoveAfterInstall
 #define RemoveAfterInstall NO
+
+/* end of things you might want to change in this file */
+/*******************************************************/
+
+/*
+ * Assume the use of gcc-2.3.3 or greater
+ */ 
+#undef LanguageCCDefines
+#define LanguageCCDefines -Dcplusplus_2_1
+#include <gcc.def>
 
 /* 
  * Where to look for config files.

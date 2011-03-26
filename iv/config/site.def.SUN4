@@ -9,6 +9,7 @@
 #define SVR4Architecture YES
 #define HasGcc2 YES
 #define HasGcc HasGcc2
+#define ManSuffix 1x
 #endif
 
 /* gcc command line with -V for version and -O for optimize */
@@ -80,11 +81,11 @@
 #ifndef InstallDynamicSharedLibrary
 #define InstallDynamicSharedLibrary(libname,rev,dest)                   @@\
 install:: Concat(lib,libname.so.rev)                                    @@\
-        MakeDir(dest)                                                   @@\
-        $(INSTALL) -c $(INSTLIBFLAGS) Concat(lib,libname.so.rev) dest   @@\
-        -@if [ -f dest/Concat(lib,libname.so) ]; then exit 0; else \    @@\
-        cd dest; \                                                   	@@\
-        $(LN) Concat(lib,libname.so.rev) Concat(lib,libname.so); fi	@@\
+	MakeDir(dest)                                                   @@\
+	$(INSTALL) -c $(INSTLIBFLAGS) Concat(lib,libname.so.rev) dest   @@\
+	-@if [ -f dest/Concat(lib,libname.so) ]; then exit 0; else \    @@\
+	cd dest; \                                                   	@@\
+	$(LN) Concat(lib,libname.so.rev) Concat(lib,libname.so); fi	@@\
 									@@\
 uninstall::								@@\
 	$(RM) dest/Concat(lib,libname.so.rev)				@@\

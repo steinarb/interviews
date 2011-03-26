@@ -13,7 +13,7 @@ InstallProgram(tmpnam,$(BINDIR),tmpnam)
 BuildProgram(stdcmapppm,NullParameter,stdcmapppm.o,,)
 InstallProgram(stdcmapppm,$(BINDIR),stdcmapppm)
 #if defined(SVR4Architecture) && defined(SunArchitecture)
-BuildProgram(ivdl,NullParameter,ivdl.o downloader.o ftp.o http.o sockets.o thrower.o -lsocket -lnsl,$(DEPIVCOMMON),$(LIBIVCOMMON)))
+BuildProgram(ivdl,NullParameter,ivdl.o downloader.o ftp.o http.o sockets.o thrower.o -lsocket -lnsl,$(DEPIVCOMMON),$(LIBIVCOMMON))
 #else
 BuildProgram(ivdl,NullParameter,ivdl.o downloader.o ftp.o http.o sockets.o thrower.o,$(DEPIVCOMMON),$(LIBIVCOMMON))
 #endif

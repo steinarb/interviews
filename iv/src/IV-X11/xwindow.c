@@ -606,6 +606,30 @@ void Window::resize() {
     w.needs_resize_ = true;
 }
 
+void Window::offset_from_toplevel(PixelCoord& dx, PixelCoord& dy) {
+  WindowRep& w = *rep();
+  XWindow xtoplevel = w.xtoplevel_;
+  dx = 0;
+  dy = 0;
+  XWindow curwin = w.xwindow_;
+  XWindowAttributes attributes;
+  while (1) {
+    XGetWindowAttributes(w.dpy(), curwin, &attributes);
+    dx += attributes.x;
+    dy += attributes.y;
+    
+    XWindow root;
+    XWindow parent;
+    XWindow* children;
+    unsigned int nchildren;
+    if(!XQueryTree(w.dpy(), curwin, &root, &parent, &children, &nchildren))  break;
+    XFree(children);
+    if (parent == xtoplevel) return;
+    curwin = parent;
+  }
+  cerr << "unexpected failure in traversing up X window tree\n";
+}
+
 /** class ManagedWindow **/
 
 ManagedWindow::ManagedWindow(Glyph* g) : Window(g) {

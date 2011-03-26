@@ -1,3 +1,115 @@
+April 16th 1999 ivtools-0.7.6
+
+Drawing Editor and Library Changes
+
+	* when reading rasters from URL's, set the "by-pathname" flag
+ 	based on import dialog box check box.  This flag controls whether
+ 	a raster is serialized with just a pathname or with all the pixel
+ 	data.
+
+	* update flipbook's view menu to include things like the scribble
+ 	pointer, etc..  Still no support for multiple viewers.
+
+	* fix some very old event handling bugs in drawtool etc..  Have
+ 	you ever seen the cursor jump the first time you draw or move
+ 	something in an editor?  There were two different problems, one
+ 	where X coordinates were not getting converted to IV coordinates
+ 	(upper-left origin to lower-left origin), and the other was a
+ 	little more tricky.  Whenever something is dragged in an editor,
+ 	the software issues an XGrabPointer to the server, so that all
+ 	subsequent events come through relative to the canvas of the
+ 	drawing editor.  Except, because of the client-server nature of X,
+ 	it was possible for some motion events to slip through before the
+ 	XGrabPointer had taken affect!
+
+	* add a pointer-tracking mechanism to drawtool (invoke with
+ 	-ptrloc command line argument).  This introduces an extra bar
+ 	across the top (below the menu-bar) with a constantly updated
+ 	readout of the pointer in document coordinates.
+
+	Several things had to be developed to make this work:
+
+	- a static function pointer (a callback) was added to the 
+	Event class, to be invoked (if defined) for every event
+	read from the X server.  This is its signature:
+
+    typedef void (*event_tracker_ptr)(Event&);
+
+	and these are the methods for setting and retrieving
+	the static function pointer:
+
+    static event_tracker_ptr event_tracker() { return _event_tracker; }
+    static void event_tracker(event_tracker_ptr ptr) { _event_tracker = ptr; }
+
+	- a static method on OverlayUnidraw was developed that matched
+	this signature:
+
+    static pointer_tracker_func(Event&);
+
+	this method ignores all but motion events, but still had to
+	deal with 3 different kinds of motion events:
+
+	1. motion events associated with the top-level window
+	(the ApplicationWindow) before the offset to Unidraw canvas
+	is known (this requires traversing the X Window tree to
+	compute the offset using a new method Window::offset_from_toplevel).
+
+	2. motion events associated with the top-level window after
+	the offset to Unidraw canvas is known (which happens after the
+	first mouse click within the Unidraw canvas).
+
+	3. motion events directly associated with the Unidraw canvas
+	(these occur during a drag operation within the canvas).
+
+	In each case the right thing was done to convert the raw
+	XEvent locations to canvas screen coordinates, which are
+	then converted to drawing coordinates using
+	OverlayViewer::ScreenToDrawing.  This method also deals
+	with multiple-editor/viewers, by searching the Unidraw editor
+	list to find which editor/viewer the event corresponds to.
+
+	- finally, a state variable was developed (PtrLocState) that
+	converts the screen coordinates to drawing coordinates and
+	displays them in a glyph.
+
+Config and Miscellaneous Changes
+
+	* really make things work without a CPU environment variable.  It
+ 	was necessary to change a $$CPU to a $(CPU) in the makefile stuff.
+
+	* modify configure script to allow for the specification of only
+ 	one pathname for each underlying library.  You can still specify
+ 	the second pathname to explicitly say where the libraries are, but
+ 	if it can find them without this everything works.  For example,
+ 	you only have to supply --with-ace, and not --with-ace-libs, if
+ 	the libraries and include files for ACE are co-located.
+
+	* fix unnecessary bash dependency in configure script.  
+
+	    export PWD=`pwd` 
+
+	is now 
+
+	    PWD=`pwd';export PWD.
+
+	* various fixes to Solaris 2.6 build and install submitted by Roy
+ 	M. Lecates of Fore Systems:
+
+	- workaround for collision with #define of ManDir
+	in config/config-solaris-gcc.mk
+
+	- new command line for installing symbolic links: 
+	"tar cf - file | (cd dir; tar xfp -)" instead of "cp -d"
+
+	- patch to make src/sripts/bsdinst.sh handle multiple files
+
+	* patch to add "[]" after delete where ever purify wants it,
+ 	submitted by Roy M. Lecates of Fore Systems.
+
+	* explicit definition of FloatCoord (same as the default Coord) in
+ 	src/include/InterViews/coord.h
+
+
 March 19th 1999 ivtools-0.7.5
 
 Drawing Editor Changes

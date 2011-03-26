@@ -1,4 +1,6 @@
-# initialize autoconf  (borrowed and modified from Target Jr 3.1)
+# ivtools configure.in  (borrowed and modified from Target Jr)
+
+# initialize autoconf  
 AC_INIT(configure.in)
 AC_CONFIG_AUX_DIR(src/scripts)
 # set the canonical host vars
@@ -26,11 +28,10 @@ esac
 AC_ARG_WITH(ace,[  --with-ace=<path>    Path to ACE include files],
 	ACE=$withval
 	if test -f $ACE/ace/ACE.h ; then
-		AC_MSG_RESULT( Found ace/ACE.h in $ACE/ace )
+		AC_MSG_RESULT( Found ace/ACE.h in $ACE )
 	else
-		AC_MSG_ERROR( Can not find ACE.h in $ACE/ace given with option --with-ace=$ACE )
+		AC_MSG_ERROR( Can not find ace/ACE.h in $ACE given with option --with-ace=$ACE )
 	fi
-        ACE_LIBS=$IV/ace
 )
 
 AC_ARG_WITH(ace-libs,[  --with-ace-libs=<path>    Path to ACE libraries],
@@ -40,7 +41,7 @@ AC_ARG_WITH(ace-libs,[  --with-ace-libs=<path>    Path to ACE libraries],
 ACE_ENABLED=0
 if test x"$ACE" = x; then
 	echo ""
-	echo "No ACE path specified!"
+	echo "No ACE path specified."
 	echo "Use --with-ace=<path> to point to ACE installed directory."
 	echo ""
 else
@@ -49,8 +50,15 @@ else
 		AC_MSG_RESULT( Found libACE.* in $ACE_LIBS )
 	        ACE_ENABLED=1
 	else
-		AC_MSG_ERROR( Can not find libACE.a or libACE.so in $ACE_LIBS.  
-Use --with-ace-libs to specifiy location of ACE )
+	        if test -f $ACE/ace/libACE.a -o -f $ACE/ace/libACE.so ; then
+			AC_MSG_RESULT( Found libACE.* in $ACE/ace )
+		        ACE_ENABLED=1
+			ACE_LIBS=$ACE/ace
+	        else
+			AC_MSG_ERROR( Can not find libACE.a or libACE.so in $ACE_LIBS ($ACE).
+			Use --with-ace-libs to specify location of ACE )
+	        fi
+
 	fi
 fi
 
@@ -63,7 +71,7 @@ AC_ARG_WITH(clippoly,[  --with-clippoly=<path>    Path to clippoly include file]
 		AC_MSG_ERROR( Can not find poly.h in $CLIPPOLY given with option --with-clippoly=$CLIPPOLY )
 	
 	fi
-        CLIPPOLY_LIBS=$IV/clippoly
+
 )
 
 AC_ARG_WITH(clippoly-libs,[  --with-clippoly-libs=<path>    Path to clippoly libraries],
@@ -73,7 +81,7 @@ AC_ARG_WITH(clippoly-libs,[  --with-clippoly-libs=<path>    Path to clippoly lib
 CLIPPOLY_ENABLED=0
 if test x"$CLIPPOLY" = x; then
 	echo ""
-	echo "No clippoly path specified!"
+	echo "No clippoly path specified."
 	echo "Use --with-clippoly=<path> to point to clippoly installed directory."
 	echo ""
 else
@@ -82,8 +90,15 @@ else
 		AC_MSG_RESULT( Found libclippoly.* in $CLIPPOLY_LIBS )
 		CLIPPOLY_ENABLED=1
 	else
+		if test -f $CLIPPOLY/libclippoly.a -o -f $CLIPPOLY/libclippoly.so ; then
+			AC_MSG_RESULT( Found libclippoly.* in $CLIPPOLY )
+			CLIPPOLY_ENABLED=1
+			CLIPPOLY_LIBS=$CLIPPOLY
+		else
+
 	        AC_MSG_ERROR( Can not find libclippoly.a or libclippoly.so in $CLIPPOLY ($CLIPPOLY_LIBS)  
-Use --with-clippoly-libs to specifiy location of clippoly libraries)
+Use --with-clippoly-libs to specify location of clippoly libraries)
+		fi
 	fi
 fi
 
@@ -114,7 +129,7 @@ AC_ARG_WITH(fresco-libs,[  --with-fresco-libs=<path> path to compiled Fresco lib
 if test x"$FRESCO" = x
 then
 	echo ""
-	echo "No Fresco path specified!"
+	echo "No Fresco path specified."
 	echo "Use --with-fresco=<path> to point to Fresco installed directory."
 else
    if test ! -f "$FRESCO"/Fresco/X11/X11Display.h
@@ -167,7 +182,7 @@ AC_ARG_WITH(iue-libs,[  --with-iue-libs=<path> path to compiled IUE libs],
 if test x"$IUE" = x
 then
 	echo ""
-	echo "No IUE path specified!"
+	echo "No IUE path specified."
 	echo "Use --with-iue=<path> to point to IUE installed directory."
 else
    if test ! -f "$IUE"/Image/ImageClasses/Image.h
@@ -209,6 +224,7 @@ AC_PATH_X
 #AC_CXX_BOOL
 # check for c++ standard headers
 #AC_CXX_HEADERS
+ICE_CXX_INCLUDE_DIR
 # check for EGCS or gcc 2.8.x
 #AC_CXX_EGCS
 # check for gettimeofday
@@ -283,14 +299,17 @@ AC_SUBST(prefix)
 #AC_SUBST(OPENGL)
 #AC_SUBST(XGL)
 #AC_SUBST(TCL)
-AC_SUBST(CXX_HDRDIR)
+#AC_SUBST(CXX_HDRDIR)
+AC_SUBST(CXX_INCLUDE_DIR)
 AC_SUBST(x_includes) 
 AC_SUBST(x_libraries)
 #AC_SUBST(BUILD_TREE)
 AC_SUBST(DEFS)
 AC_SUBST(ACE)
+AC_SUBST(ACE_LIBS)
 AC_SUBST(ACE_ENABLED)
 AC_SUBST(CLIPPOLY)
+AC_SUBST(CLIPPOLY_LIBS)
 AC_SUBST(CLIPPOLY_ENABLED)
 AC_SUBST(FRESCOLIBS)
 AC_SUBST(FRESCOINCS)
@@ -308,7 +327,7 @@ AC_SUBST(INSTALLRELATIVE)
 AC_SUBST(USERPATH)
 
 #output to config-$host_fragd 
-export PWD=`pwd`
+PWD=`pwd`; export PWD
 AC_OUTPUT(config/config-$host_fragd:config/config.defs.in)
 
 

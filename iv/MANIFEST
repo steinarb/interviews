@@ -13,6 +13,7 @@ ivtools-0.7/Makefile
 ivtools-0.7/README
 ivtools-0.7/README.ivmkcm
 ivtools-0.7/VERSION
+ivtools-0.7/aclocal.m4
 ivtools-0.7/comtop.tgz
 ivtools-0.7/config/Imakefile
 ivtools-0.7/config/InterViews/Imakefile
@@ -628,6 +629,8 @@ ivtools-0.7/src/OverlayUnidraw/ovshowhide.c
 ivtools-0.7/src/OverlayUnidraw/ovshowhide.h
 ivtools-0.7/src/OverlayUnidraw/ovspline.c
 ivtools-0.7/src/OverlayUnidraw/ovspline.h
+ivtools-0.7/src/OverlayUnidraw/ovstates.c
+ivtools-0.7/src/OverlayUnidraw/ovstates.h
 ivtools-0.7/src/OverlayUnidraw/ovstencil.c
 ivtools-0.7/src/OverlayUnidraw/ovstencil.h
 ivtools-0.7/src/OverlayUnidraw/ovtext.c

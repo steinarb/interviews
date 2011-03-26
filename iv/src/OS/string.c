@@ -384,7 +384,7 @@ void CopyString::set_value(const char* s, int len) {
 
 void CopyString::free() {
     char* s = (char*)(string());
-    delete s;
+    delete[] s;
 }
 
 /*
@@ -441,7 +441,7 @@ void NullTerminatedString::assign(const String& s) {
 void NullTerminatedString::free() {
     if (allocated_) {
 	char* s = (char*)(string());
-	delete s;
+	delete[] s;
 	allocated_ = false;
     }
 }

@@ -49,11 +49,11 @@
 #ifndef InstallDynamicSharedLibrary
 #define InstallDynamicSharedLibrary(libname,rev,dest)			@@\
 install:: Concat(lib,libname.so.rev)					@@\
-	MakeDir(dest)							@@\
+	MakeDir(dest)                                                   @@\
 	$(INSTALL) -c $(INSTLIBFLAGS) Concat(lib,libname.so.rev) dest   @@\
-	-@if [ -f dest/Concat(lib,libname.so) ]; then exit 0; else \    @@\
-	pushd dest; \                                                   @@\
-        $(LN) Concat(lib,libname.so.rev) Concat(lib,libname.so); popd; fi@@\
+	-@$(RM) dest/Concat(lib,libname.so)		                @@\
+	-@$(LN) dest/Concat(lib,libname.so.rev) \			@@\
+	dest/Concat(lib,libname.so)				        @@\
 									@@\
 uninstall::								@@\
 	$(RM) dest/Concat(lib,libname.so.rev)				@@\

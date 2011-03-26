@@ -661,7 +661,7 @@ void SessionRep::load_path(
     char* buf = new char[h.length() + t.length() + 1];
     sprintf(buf, "%s%s", h.string(), t.string());
     s->load_file(String(buf), priority);
-    delete buf;
+    delete[] buf;
 }
 
 const char* SessionRep::home() {
@@ -682,7 +682,7 @@ void SessionRep::load_path(
     char* buf = new char[h.length() + m.length() + t.length() + 1];
     sprintf(buf, "%s%s%s", h.string(), m.string(), t.string());
     s->load_file(String(buf), priority);
-    delete buf;
+    delete[] buf;
 }
 
 /*
