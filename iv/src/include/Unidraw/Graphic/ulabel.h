@@ -37,6 +37,7 @@ public:
     virtual ~ULabel();
 
     const char* GetOriginal();
+    void SetOriginal(const char *);
 
     virtual void SetFont(PSFont*);
     virtual PSFont* GetFont();

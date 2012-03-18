@@ -31,12 +31,15 @@
 
 #include <IV-2_6/_enter.h>
 
+//: point graphic
+// <a href=../man3.1/lines.html>man page</a>
 class Point : public Graphic {
 public:
     Point(Coord x, Coord y, Graphic* gr = nil);
     virtual ~Point();
 
     void GetOriginal(Coord&, Coord&);
+    void SetOriginal(Coord, Coord);
 
     virtual void SetBrush(PSBrush*);
     virtual PSBrush* GetBrush();
@@ -52,17 +55,21 @@ protected:
     PSBrush* _br;
 };
 
+//: line graphic
+// <a href=../man3.1/lines.html>man page</a>
 class Line : public Graphic {
 public:
     Line(Coord x0, Coord y0, Coord x1, Coord y1, Graphic* gr = nil);
     virtual ~Line();
 
     void GetOriginal(Coord& x0, Coord& y0, Coord& x1, Coord& y1);
+    void SetOriginal(Coord x0, Coord y0, Coord x1, Coord y1);
 
     virtual void SetBrush(PSBrush*);
     virtual PSBrush* GetBrush();
 
     virtual Graphic* Copy();
+    virtual ClassId CompId();
 protected:
     virtual void getExtent(float&, float&, float&, float&, float&, Graphic*);
     virtual boolean contains(PointObj&, Graphic*);
@@ -73,6 +80,8 @@ protected:
     PSBrush* _br;
 };
 
+//: multi-line graphic
+// <a href=../man3.1/lines.html>man page</a>
 class MultiLine : public Vertices {
 protected:
     MultiLine(Coord* x, Coord* y, int count, Graphic* gr = nil) ;
@@ -83,6 +92,8 @@ protected:
     boolean f_intersects(BoxObj&, Graphic*);
 };
 
+//: stroked multi-line graphic
+// <a href=../man3.1/lines.html>man page</a>
 class S_MultiLine : public MultiLine {
 public:
     S_MultiLine(Coord* x, Coord* y, int count, Graphic* gr = nil);
@@ -96,11 +107,13 @@ protected:
     virtual void getExtent(float&, float&, float&, float&, float&, Graphic*);
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
-    void virtual draw(Canvas*, Graphic*);
+    virtual void draw(Canvas*, Graphic*);
 protected:
     PSBrush* _br;
 };
 
+//: stroked-filled multi-line graphic
+// <a href=../man3.1/lines.html>man page</a>
 class SF_MultiLine : public MultiLine {
 public:
     SF_MultiLine(Coord* x, Coord* y, int count, Graphic* = nil);
@@ -112,12 +125,13 @@ public:
     virtual PSPattern* GetPattern();
 
     virtual Graphic* Copy();
+    virtual ClassId CompId();
 protected:
     virtual void getExtent(float&, float&, float&, float&, float&, Graphic*);
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
     virtual void draw(Canvas*, Graphic*);
-private:
+protected:
     PSBrush* _br;
     PSPattern* _pat;
 };

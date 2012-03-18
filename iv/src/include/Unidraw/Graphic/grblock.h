@@ -37,6 +37,8 @@ enum Zooming { Continuous, Binary };
 class Graphic;
 class Perspective;
 
+//: an Interactor that contains a Picture.
+// <a href=../man3.1/GraphicBlock.html>man page</a>
 class GraphicBlock : public Interactor {
 public:
     GraphicBlock(
@@ -73,13 +75,13 @@ protected:
     virtual float LimitMagnification(float);
 protected:
     Graphic* _graphic;
-private:
+protected:
     void Normalize(Perspective&);   /* normalize units */
     void Align();		    /* align graphic */
     void Fix();			    /* keep alignment fixed during resize */
     float NearestPow2(float);	    /* convert to nearest power of 2 */
     float ScaleFactor(Perspective&);
-private:
+protected:
     Coord _pad;
     Alignment _align;
     Zooming _zooming;

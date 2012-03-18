@@ -2,9 +2,11 @@ XCOMM
 XCOMM include files for using look+feel classes
 XCOMM
 
-HEADERS = *.h
-DEST = $(INCDIR)/IV-look
-SUBDIRS = 2.6
+PACKAGE = include_look
 
-InstallMultipleFlags($(HEADERS),$(DEST),$(INSTINCFLAGS))
-MakeInSubdirs($(SUBDIRS))
+IvmkcmTargets($(PACKAGE))
+
+InstallIncludes(IV-look)
+
+
+

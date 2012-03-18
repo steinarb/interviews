@@ -37,8 +37,9 @@
 #define nil 0
 #endif
 
-#ifndef iv_os_boolean
+#if !defined(iv_os_boolean) && !defined(os_boolean)
 #define iv_os_boolean
+#define os_boolean os_bool
 
 typedef unsigned boolean;
 

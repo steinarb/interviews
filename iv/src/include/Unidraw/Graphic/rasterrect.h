@@ -33,6 +33,8 @@
 
 class Raster;
 
+//: raster graphic
+// <a href=../man3.1/RasterRect.html>man page</a>
 class RasterRect : public Graphic {
 public:
     RasterRect(Raster*, Graphic* = nil);
@@ -41,12 +43,13 @@ public:
     Raster* GetOriginal();
 
     virtual Graphic* Copy();
+    virtual ClassId CompId();
 protected:
     virtual void getExtent(float&, float&, float&, float&, float&, Graphic*);
     virtual boolean contains(PointObj&, Graphic*);
     virtual boolean intersects(BoxObj&, Graphic*);
     virtual void draw(Canvas*, Graphic*);
-private:
+protected:
     Raster* _raster;
 };
 

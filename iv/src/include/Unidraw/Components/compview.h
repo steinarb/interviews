@@ -28,16 +28,23 @@
 #define unidraw_components_compview_h
 
 #include <Unidraw/globals.h>
+#include <InterViews/resource.h>
 
+#ifndef UnidrawCommon
 class Command;
+#endif
 class Component;
 class Iterator;
 
-class ComponentView {
+//: base class for views of objects that model domain-specific elements.
+// <a href=../man3.1/ComponentView.html>man page</a>
+class ComponentView : public Resource {
 public:
     virtual void Update();
+#ifndef UnidrawCommon
     virtual void Interpret(Command*);
     virtual void Uninterpret(Command*);
+#endif
     virtual ComponentView* GetParent();
 
     virtual void First(Iterator&);
@@ -51,13 +58,18 @@ public:
     virtual ~ComponentView();
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-protected:
+
     ComponentView(Component* subject = nil);
 
-    friend class Component;
-    virtual void SetSubject(Component*);
-    virtual void SetParent(ComponentView* child, ComponentView* parent);
+    virtual ComponentView* Duplicate() { return new ComponentView(); }
+
 protected:
+
+    friend class Component;
+public:
+    virtual void SetSubject(Component*);
+protected:
+    virtual void SetParent(ComponentView* child, ComponentView* parent);
     Component* _subject;
 };
 

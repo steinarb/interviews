@@ -34,6 +34,8 @@
 
 class StateVar;
 
+//: state variable view
+// <a href=../man3.1/StateVarView.html>man page</a>
 class StateVarView : public MonoScene {
 public:
     virtual ~StateVarView();
@@ -48,7 +50,7 @@ protected:
     virtual void Reconfig();
 protected:
     StateVar* _subject;
-private:
+protected:
     friend class StateVar;
     virtual void SetSubject(StateVar*);
 };

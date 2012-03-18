@@ -1,7 +1,0 @@
-XCOMM
-XCOMM config files
-XCOMM
-
-SUBDIRS = InterViews
-
-MakeInSubdirs($(SUBDIRS))

@@ -1,8 +1,9 @@
 XCOMM
-XCOMM include files for using the Unidraw graphic library
+XCOMM Unidraw Graphic include files
 XCOMM
 
-HEADERS = *.h
-DEST = $(INCDIR)/Unidraw/Graphic
+PACKAGE = include_graphic
 
-InstallMultipleFlags($(HEADERS),$(DEST),$(INSTINCFLAGS))
+IvmkcmTargets($(PACKAGE))
+
+InstallIncludes(Unidraw/Graphic)

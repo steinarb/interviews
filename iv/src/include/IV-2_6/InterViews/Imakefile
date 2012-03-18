@@ -2,7 +2,8 @@ XCOMM
 XCOMM include files for using old 2.6 InterViews classes
 XCOMM
 
-HEADERS = *.h
-DEST = $(INCDIR)/IV-2_6/InterViews
+PACKAGE = include_iviv-2_6
 
-InstallMultipleFlags($(HEADERS),$(DEST),$(INSTINCFLAGS))
+IvmkcmTargets($(PACKAGE))
+
+InstallIncludes(IV-2_6/InterViews)

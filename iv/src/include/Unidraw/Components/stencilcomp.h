@@ -33,6 +33,8 @@
 
 class UStencil;
 
+//: stencil component
+// <a href=../man3.1/StencilComp.html>man page</a>
 class StencilComp : public GraphicComp {
 public:
     StencilComp(UStencil* = nil, const char* filename = nil);
@@ -46,7 +48,7 @@ public:
     virtual void Write(ostream&);
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-private:
+protected:
     char* _filename;
 };
 

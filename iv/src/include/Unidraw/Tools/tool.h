@@ -35,9 +35,10 @@ class Viewer;
 class Event;
 class Manipulator;
 class Transformer;
-class istream;
-class ostream;
+#include <iosfwd>
 
+//: base class for tool objects.
+// <a href=../man3.1/Tool.html>man page</a>
 class Tool {
 public:
     virtual Manipulator* CreateManipulator(Viewer*, Event&, Transformer* =nil);
@@ -57,7 +58,7 @@ protected:
     Tool(ControlInfo* = nil);
 
     ControlInfo* CopyControlInfo();
-private:
+protected:
     ControlInfo* _ctrlInfo;
 };
 

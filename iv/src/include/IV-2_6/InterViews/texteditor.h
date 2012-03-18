@@ -36,6 +36,8 @@
 class TextDisplay;
 class TextBuffer;
 
+//: basic interactive editor for mulit-line text (iv-2.6)
+// <a href=../man3.1/TextEditor.html>man page</a>
 class TextEditor : public Interactor {
 public:
     TextEditor(int rows, int cols, int tabsize, int highlight);
@@ -77,6 +79,9 @@ public:
     void Select(int dot, int mark);
 
     int Locate(IntCoord x, IntCoord y);
+    void DisableCaret();
+    void EnableCaret();
+
 protected:
     virtual void Reconfig();
     virtual void Redraw(IntCoord, IntCoord, IntCoord, IntCoord);
@@ -95,6 +100,7 @@ private:
     int shaperows;
     int shapecolumns;
     Alignment scrollalign;
+    int caret_off;
 };
 
 inline int TextEditor::Dot () { return dot; }

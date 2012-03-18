@@ -41,6 +41,8 @@ class Font;
 class String;
 class StyleRep;
 
+//: user interface attribute object.
+// <a href=../refman3.1/refman.html#PAGE46>in reference manual</a>
 class Style : public Resource {
 public:
     Style();

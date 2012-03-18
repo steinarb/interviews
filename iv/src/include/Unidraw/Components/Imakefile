@@ -1,8 +1,9 @@
 XCOMM
-XCOMM include files for using Unidraw components
+XCOMM Unidraw Components include files
 XCOMM
 
-HEADERS = *.h
-DEST = $(INCDIR)/Unidraw/Components
+PACKAGE = include_components
 
-InstallMultipleFlags($(HEADERS),$(DEST),$(INSTINCFLAGS))
+IvmkcmTargets($(PACKAGE))
+
+InstallIncludes(Unidraw/Components)

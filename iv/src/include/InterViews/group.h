@@ -26,9 +26,14 @@
 #define iv_group_h
 
 #include <InterViews/glyph.h>
-
 class Aggregate;
 class Layout;
+
+// GlyphIndex list added by Chad Dawson to 3/4/94 to fix memory leak
+// in map_.
+
+#include <OS/list.h>
+declareList(GlyphIndexList,GlyphIndex);
 
 class Group : public Glyph {
 public:
@@ -43,7 +48,7 @@ private:
     Aggregate* aggregate_;
     DimensionName dimension_;
     Layout* layout_;
-    GlyphIndex* map_;
+    GlyphIndexList map_;
     int count_;
 };
 

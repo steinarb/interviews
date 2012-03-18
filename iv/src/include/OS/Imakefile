@@ -2,10 +2,8 @@ XCOMM
 XCOMM include files for using classes that encapsulate OS-dependent functions
 XCOMM
 
-HEADERS = *.h
-DEST = $(INCDIR)/OS
+PACKAGE = include_os
 
-InstallMultipleFlags($(HEADERS),$(DEST),$(INSTINCFLAGS))
+IvmkcmTargets($(PACKAGE))
 
-gendefs:
-	./_gendefs
+InstallIncludes(OS)

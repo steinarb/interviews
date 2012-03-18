@@ -42,7 +42,10 @@ enum CaretStyleOptions {
 
 class Painter;
 class Canvas;
+class TextLine;
 
+//: basic text display (iv-2.6)
+// <a href=../man3.1/TextDisplay.html>man page</a>
 class TextDisplay {
 public:
     TextDisplay(boolean autosized = false);

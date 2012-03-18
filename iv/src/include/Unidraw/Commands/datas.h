@@ -38,6 +38,8 @@ class Graphic;
 class PSColor;
 class FullGraphic;
 
+//: void data for command undo
+// <a href=../man3.1/datas.h>man page</a>
 class VoidData : public Data {
 public:
     VoidData(void*);
@@ -45,6 +47,8 @@ public:
     void* _void;
 };
 
+//: move data for command undo
+// <a href=../man3.1/datas.h>man page</a>
 class MoveData : public Data {
 public:
     MoveData(float, float);
@@ -52,6 +56,8 @@ public:
     float _dx, _dy;
 };
 
+//: color data for command undo
+// <a href=../man3.1/datas.h>man page</a>
 class ColorData : public Data {
 public:
     ColorData(PSColor*, PSColor*);
@@ -59,6 +65,8 @@ public:
     PSColor* _fg, *_bg;
 };
 
+//: graphic state data for command undo
+// <a href=../man3.1/datas.h>man page</a>
 class GSData : public Data {
 public:
     GSData(Graphic*);
@@ -67,12 +75,27 @@ public:
     FullGraphic* _gs;
 };
 
+//: mobility state data for command undo
+// <a href=../man3.1/datas.h>man page</a>
 class MobilityData : public Data {
 public:
     MobilityData(Mobility, Graphic*);
     virtual ~MobilityData();
 public:
     Mobility _mobility;
+    FullGraphic* _gs;
+};
+
+class GraphicComp;
+
+//: ungroup data for command undo
+// <a href=../man3.1/datas.h>man page</a>
+class UngroupData : public Data {
+public:
+    UngroupData(GraphicComp* parent, Graphic*);
+    virtual ~UngroupData();
+public:
+    GraphicComp* _parent;
     FullGraphic* _gs;
 };
 

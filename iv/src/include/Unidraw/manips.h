@@ -48,6 +48,8 @@ class TextDisplay;
 class Transformer;
 class UList;
 
+//: group manipulator
+// <a href=../man3.1/manips.html>man page</a>
 class ManipGroup : public Manipulator {
 public:
     ManipGroup(Viewer* = nil, Tool* = nil);
@@ -91,6 +93,8 @@ protected:
     Tool* _tool;
 };
 
+//: drag manipulator
+// <a href=../man3.1/manips.html>man page</a>
 class DragManip : public Manipulator {
 public:
     DragManip(
@@ -122,7 +126,7 @@ public:
 protected:
     void Init(Viewer*, Rubberband*, Transformer*, Tool*, DragConstraint);
     virtual void Constrain(Event&);
-private:
+protected:
     Viewer* _viewer;
     Rubberband* _r;
     Transformer* _relative;
@@ -135,6 +139,8 @@ private:
 
 inline const Event& DragManip::GraspEvent () { return _grasp_e; }
 
+//: vertex manipulator
+// <a href=../man3.1/manips.html>man page</a>
 class VertexManip : public DragManip {
 public:
     VertexManip(
@@ -147,6 +153,23 @@ public:
     GrowingVertices* GetGrowingVertices();
 };
 
+//: continuous vertex manipulator
+// <a href=../man3.1/manips.html>man page</a>
+class ScribbleVertexManip : public VertexManip {
+public:
+    ScribbleVertexManip(
+        Viewer*, GrowingVertices*, Transformer* = nil, Tool* = nil,
+        DragConstraint = None
+    );
+
+    virtual boolean Manipulating(Event&);
+
+protected:
+    boolean _first;
+};
+
+//: connection manipulator
+// <a href=../man3.1/manips.html>man page</a>
 class ConnectManip : public DragManip {
 public:
     ConnectManip(Viewer*, Rubberband*, Transformer* = nil, Tool* = nil);
@@ -157,6 +180,8 @@ protected:
     ConnectorView* _target;
 };
 
+//: text manipulator
+// <a href=../man3.1/manips.html>man page</a>
 class TextManip : public Manipulator {
 public:
     TextManip(Viewer*, Painter*, Coord tab, Tool* = nil);
@@ -219,14 +244,14 @@ public:
 
     boolean Contains(Coord, Coord);
     int Locate(Coord, Coord);
-private:
+protected:
     void Init(
         Viewer*, Painter*, Coord, Coord, Tool*, boolean,const char* =nil,int =0
     );
     void InitTextDisplay(const char*, int);
     void PlaceTextDisplay (Coord, Coord);
     void CheckBuf(int more);
-private:
+protected:
     boolean _prepositioned;
     boolean _selecting;
     Coord _xpos, _ypos;

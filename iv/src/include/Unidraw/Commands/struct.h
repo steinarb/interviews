@@ -33,6 +33,8 @@ class GraphicComp;
 class Iterator;
 class Selection;
 
+//: group command
+// <a href=../man3.1/struct.html>man page</a>
 class GroupCmd : public Command {
 public:
     GroupCmd(ControlInfo*, GraphicComp* dest = nil);
@@ -53,15 +55,17 @@ public:
     virtual boolean IsA(ClassId);
 protected:
     boolean _executed;
-private:
+protected:
     void Init(GraphicComp*);
-private:
+protected:
     GraphicComp* _group;
 };
 
 inline GraphicComp* GroupCmd::GetGroup () { return _group; }
 inline void GroupCmd::SetGroup (GraphicComp* g) { _group = g; }
 
+//: ungroup command
+// <a href=../man3.1/struct.html>man page</a>
 class UngroupCmd : public Command {
 public:
     UngroupCmd(ControlInfo*);
@@ -79,15 +83,17 @@ public:
     virtual boolean IsA(ClassId);
 protected:
     boolean _executed;
-private:
+protected:
     void Init();
-private:
+protected:
     Clipboard* _kids;
 };
 
 inline Clipboard* UngroupCmd::GetKids () { return _kids; }
 inline void UngroupCmd::SetKids (Clipboard* k) { _kids = k; }
 
+//: move-to-front command
+// <a href=../man3.1/struct.html>man page</a>
 class FrontCmd : public Command {
 public:
     FrontCmd(ControlInfo*);
@@ -101,6 +107,8 @@ public:
     virtual boolean IsA(ClassId);
 };
 
+//: move-to-back command
+// <a href=../man3.1/struct.html>man page</a>
 class BackCmd : public Command {
 public:
     BackCmd(ControlInfo*);

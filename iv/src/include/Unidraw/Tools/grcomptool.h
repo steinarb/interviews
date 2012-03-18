@@ -31,8 +31,9 @@
 
 class Command;
 class GraphicComp;
-class GraphicView;
 
+//: graphic component tool
+// <a href=../man3.1/GraphicCompTool.html>man page</a>
 class GraphicCompTool : public Tool {
 public:
     GraphicCompTool();
@@ -49,11 +50,11 @@ public:
     virtual void Write(ostream&);
     virtual ClassId GetClassId();
     virtual boolean IsA(ClassId);
-private:
+protected:
     void Init(GraphicComp*);
-private:
+protected:
     GraphicComp* _prototype;
-    GraphicView* _protoview;
+    class GraphicView* _protoview;
 };
 
 inline GraphicComp* GraphicCompTool::GetPrototype () { return _prototype; }

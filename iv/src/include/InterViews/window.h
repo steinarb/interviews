@@ -46,6 +46,8 @@ class String;
 class Style;
 class WindowRep;
 
+//: object that can be mapped onto a screen.
+// <a href=../refman3.1/refman.html#PAGE29>in reference manual</a>.
 class Window {
 protected:
     Window(Glyph*);
@@ -95,6 +97,8 @@ public:
     virtual void ungrab_pointer() const;
 
     virtual void repair();
+
+    virtual void offset_from_toplevel(PixelCoord& dx, PixelCoord& dy);
 
     WindowRep* rep() const;
 protected:
@@ -150,10 +154,12 @@ inline ManagedWindowRep* ManagedWindow::rep() const { return rep_; }
 class ApplicationWindow : public ManagedWindow {
 public:
     ApplicationWindow(Glyph*);
+    ApplicationWindow(Glyph*, const char* display);
     ~ApplicationWindow();
 protected:
     virtual void compute_geometry();
     virtual void set_props();
+    const char* _otherdisplay;
 };
 
 class TopLevelWindow : public ManagedWindow {

@@ -29,7 +29,7 @@
 #ifndef iv_layout_h
 #define iv_layout_h
 
-#include <InterViews/deck.h>
+#include <IV-3_1/InterViews/deck.h> // too avoid confusion with IV-2_6
 #include <InterViews/monoglyph.h>
 #include <InterViews/polyglyph.h>
 #include <InterViews/scrbox.h>
@@ -53,6 +53,8 @@ class Color;
 class Font;
 class PolyGlyph;
 
+//: factory object for layout glyphs.
+// <a href=../refman3.1/refman.html#PAGE61>in reference manual</a>
 class LayoutKit {
 protected:
     LayoutKit();

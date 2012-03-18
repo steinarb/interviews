@@ -40,6 +40,10 @@ class Iterator;
 class Painter;
 class UList;
 
+//: damage-repair mechanism
+// maintains an array of non-overlapping rectangles representing
+// damaged areas of of a canvas, used for smart redraw.
+// <p><a href=../man3.1/Damage.html>man page</a>
 class Damage {
 public:
     Damage(Canvas* = nil, Painter* = nil, Graphic* = nil);
@@ -83,7 +87,7 @@ protected:
 protected:
     UList* _additions;
     UList* _areas;
-private:
+protected:
     Canvas* _canvas;
     Painter* _output;
     Graphic* _graphic;

@@ -57,9 +57,10 @@ class Unidraw;
 class UList;
 class World;
 
-class istream;
-class ostream;
+#include <iosfwd>
 
+//: stores and retrieves named objects.
+// <a href=../man3.1/Catalog.html>man page</a>
 class Catalog {
 public:
     Catalog(const char*, Creator*, float version = UV_LATEST);
@@ -148,7 +149,7 @@ public:
     Raster* ReadRaster(istream&);
     void ReadRasterData(Raster*, istream&);
 
-    void WriteBgFilled(boolean, ostream&);
+    void WriteBgFilled(int, ostream&);
     void WriteBrush(PSBrush*, ostream&);
     void WriteColor(PSColor*, ostream&);
     void WriteFont(PSFont*, ostream&);
@@ -167,22 +168,25 @@ public:
 
     PSBrush* FindNoneBrush();
     PSBrush* FindBrush(int, int);
+    PSBrush* FindBrush(int, float);
     PSColor* FindColor(const char*, int = 0, int = 0, int = 0);
+    PSColor* FindNoneColor();
     PSFont* FindFont(const char*, const char* = "", const char* = "");
     PSPattern* FindNonePattern();
     PSPattern* FindGrayLevel(float);
     PSPattern* FindPattern(int[], int);
-protected:
     void Register(EditorInfo*, const char*);
     void Register(Component*, const char*);
     void Register(Command*, const char*);
     void Register(Tool*, const char*);
 
     int GetToken(istream& in, char* buf, int buf_size);
-private:
+protected:
     friend class Unidraw;
     void Init(World*);
+public:
     const char* Name(const char*, int);
+protected:
 
     ClassId ReadClassId(istream&, int& inst_id, ClassId&, const char*&);
     void* ReadObject(istream&);
@@ -207,7 +211,7 @@ private:
     boolean RetrieveObject(istream&, void*&);
     boolean FileSave(void*, ClassId, const char*);
     boolean FileRetrieve(const char*, void*&);
-private:
+protected:
     char* _name;
     Creator* _creator;
     float _version;
@@ -223,7 +227,7 @@ private:
     ObjectMap* _curMap;
     ObjectMap* _substMap;
     float _fileVersion;
-#ifdef __GNUG__
+#ifdef __GNUC__
     char* _tmpfile;
 #endif
 
@@ -256,15 +260,15 @@ public:
     ClassId GetClientId();
 
     void* GetObject(int id);
-    int GetId(void* obj);
+    unsigned long GetId(void* obj);
 
     ClassId GetOrigClassId(void* obj);
     const char* GetDelim(void* obj);
     UArray* GetExtraData(void* obj);
-private:
+protected:
     ObjectMapElem* Find(void*);
     ObjectMapElem* Find(int);
-private:
+protected:
     UHashTable _objKeys, _idKeys;
     void* _client;
     ClassId _id;

@@ -34,6 +34,8 @@
 
 class GraphicComp;
 
+//: manages persistent information contained in a Control
+// <a href=../man3.1/ControlInfo.html>man page</a>
 class ControlInfo {
 public:
     ControlInfo(
@@ -56,9 +58,9 @@ public:
     void* GetOwner();
 
     virtual ControlInfo* Copy();
-private:
+protected:
     void Init(const char*, const char*, void*);
-private:
+protected:
     GraphicComp* _label;
     char* _keyLabel;
     char* _keyCode;

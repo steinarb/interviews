@@ -37,6 +37,8 @@
 
 class PinGraphic;
 
+//: pin component
+// <a href=../man3.1/PinComp.html>man page</a>
 class PinComp : public Connector {
 public:
     PinComp(PinGraphic* = nil);
@@ -119,12 +121,18 @@ public:
     SlidingPin(
         Painter*, Canvas*, Coord cx, Coord cy, int, Coord rfx, Coord rfy
     );
+    virtual ClassId GetClassId() { return SLIDINGPIN; }
+    virtual boolean IsA (ClassId id) 
+      { return SLIDINGPIN == id || SlidingEllipse::IsA(id); }
     virtual void Draw();
 };
 
 class FixedPin : public Rubberband {
 public:
     FixedPin(Painter*, Canvas*, Coord, Coord, int);
+    virtual ClassId GetClassId() { return FIXEDPIN; }
+    virtual boolean IsA (ClassId id) 
+      { return FIXEDPIN == id || Rubberband::IsA(id); }
     virtual void GetOriginal(Coord&, Coord&, int&);
     virtual void Draw();
 protected:

@@ -37,6 +37,8 @@
 
 class RasterRep;
 
+//: raster data object.
+// <a href=../refman3.1/refman.html#PAGE43>in reference manual</a>
 class Raster : public Resource {
 public:
     Raster(unsigned long width, unsigned long height);
@@ -67,10 +69,15 @@ public:
     );
 
     virtual void flush() const;
+    virtual void flushrect(IntCoord l, IntCoord b, IntCoord s, IntCoord t) const;
+    // flush rectangular region of internal XImage data structure 
+    // to a pixmap on the X server.
 
     RasterRep* rep() const;
 protected:
     Raster(RasterRep*);
+
+    boolean init_shared_memory();
 private:
     RasterRep* rep_;
 

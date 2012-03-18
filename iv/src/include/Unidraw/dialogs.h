@@ -37,6 +37,8 @@ class MarginFrame;
 class MatchEditor;
 class PrintBS;
 
+//: base class for simple, common dialog boxes (Unidraw).
+// <a href=../man3.1/BasicDialog.html>man page</a>
 class BasicDialog : public Dialog {
 public:
     void SetTitle(const char*);
@@ -55,7 +57,7 @@ protected:
     boolean IsAChild(Interactor*);
 protected:
     MarginFrame* _title, *_subtitle;
-private:
+protected:
     void Init(const char*, const char*);
 };
 
@@ -64,7 +66,7 @@ public:
     AcknowledgeDialog(const char* title, const char* subtitle = "");
 
     virtual void Acknowledge();
-private:
+protected:
     Interactor* Interior();
 };
 
@@ -73,7 +75,7 @@ public:
     ConfirmDialog(const char* title, const char* subtitle = "");
 
     virtual char Confirm();
-private:
+protected:
     Interactor* Interior();
 };
 
@@ -112,9 +114,9 @@ public:
 protected:
     virtual void UpdateEditor();
     virtual void UpdateBrowser();
-private:
+protected:
     Interactor* Interior();
-private:
+protected:
     PrintBS* _dest;
     char* _last_print_cmd;
     char* _last_file_name;
@@ -130,9 +132,9 @@ public:
 
     virtual void GetValues(float& xincr, float& yincr);
     void SelectMessage();
-private:
+protected:
     Interactor* Interior();
-private:
+protected:
     MatchEditor* _medit;
     ButtonState* _units;
 };

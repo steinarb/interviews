@@ -38,6 +38,8 @@ class Observer;
 
 struct AdjustableImpl;
 
+//: handles request to modify its viewing editor.
+// <a href=../refman3.1/refman.html#PAGE27>in reference manual</a>.
 class Adjustable {
 public:
     Adjustable();

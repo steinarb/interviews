@@ -1,8 +1,9 @@
 XCOMM
-XCOMM include files for using Unidraw tools
+XCOMM Unidraw Tools include files
 XCOMM
 
-HEADERS = *.h
-DEST = $(INCDIR)/Unidraw/Tools
+PACKAGE = include_tools
 
-InstallMultipleFlags($(HEADERS),$(DEST),$(INSTINCFLAGS))
+IvmkcmTargets($(PACKAGE))
+
+InstallIncludes(Unidraw/Tools)

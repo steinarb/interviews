@@ -28,6 +28,11 @@
 #ifndef unidraw_commands_command_h
 #define unidraw_commands_command_h
 
+#define LEAKCHECK
+#ifdef LEAKCHECK
+class LeakChecker;
+#endif
+
 #include <Unidraw/globals.h>
 
 class Clipboard;
@@ -40,9 +45,10 @@ class GraphicComp;
 class Iterator;
 class Selection;
 
-class istream;
-class ostream;
+#include <iosfwd>
 
+//: base class for command objects.
+// <a href=../man3.1/Command.html>man page</a>
 class Command {
 public:
     virtual void Execute();
@@ -89,11 +95,16 @@ protected:
     ControlInfo* _ctrlInfo;
     Editor* _editor;
     Clipboard* _clipboard;
-private:
+protected:
     DataCache* CopyData();
     void SetData(DataCache*);
-private:
+protected:
     DataCache* _cache;
+
+#ifdef LEAKCHECK
+ public:
+    static LeakChecker* _leakchecker;
+#endif
 };
 
 #endif

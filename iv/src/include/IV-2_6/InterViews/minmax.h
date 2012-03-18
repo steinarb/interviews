@@ -27,6 +27,8 @@
 
 #include <InterViews/boolean.h>
 
+#if !defined(min) && !defined(max)
+
 #define declare_2(T) \
 inline T min(T a, T b) { return a < b ? a : b; } \
 inline T max(T a, T b) { return a > b ? a : b; } \
@@ -55,10 +57,16 @@ declare_4(int)
 declare_4(float)
 declare_4(double)
 
+#endif /* !defined(min) && !defined(max) */
+
+#if __GNUC__<3 && 0 /* removed, used Math::round from now on */
 inline int round(double x) { return x > 0 ? int(x+0.5) : -int(-x+0.5); }
+#endif
 
 inline boolean equal(float x, float y, float e) {
     return x - y < e && y - x < e;
 }
 
 #endif
+
+

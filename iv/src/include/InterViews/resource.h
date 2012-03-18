@@ -31,6 +31,8 @@
 
 #include <InterViews/enter-scope.h>
 
+//: shared reference-counted objects.
+// <a href=../man3.1/Resource.html>man page</a>
 class Resource {
 public:
     Resource();
@@ -53,7 +55,7 @@ public:
     /* for backward compatibility */
     virtual void Reference() const { ref(); }
     virtual void Unreference() const { unref(); }
-private:
+
     unsigned refcount_;
 private:
     /* prohibit default assignment */
