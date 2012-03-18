@@ -1,0 +1,27 @@
+The InterViews GUI toolkit.
+
+This repository tries to preserve the available history of the
+InterViews GUI toolkit from Stanford, and later SGI.
+
+Copyright of this code resides in iv/COPYRIGHT
+
+My reason for doing this, is to be able to browse the history of
+InterViews.
+
+InterViews was (and I still think is) a very good GUI toolkit.
+
+I've imported the tar balls of first the original InterViews 2.6,
+3.0.1, 3.1, and 3.2a releases.
+
+InterViews had two descendants:
+ - Fresco (which I was unable to google my way to any releases of)
+ - ivtools http://www.ivtools.org/ivtools/
+
+Then I've imported the ivtools tar balls I could find into a branch
+named ivtools.
+
+Finally I merged the ivtools branch into master, replacing the
+original InterViews contents.
+
+The ivtools code has many improvements to the graphical editor code of
+InterViews.  The ivtools code also replaces IMake with GNU configure.
